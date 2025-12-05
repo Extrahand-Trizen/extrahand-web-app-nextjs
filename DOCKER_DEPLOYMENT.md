@@ -5,9 +5,8 @@ This guide explains how to build and deploy the ExtraHand Next.js web applicatio
 ## Prerequisites
 
 - Docker installed on your machine
-- AWS CLI configured (for ECS deployment)
-- AWS ECR repository created
-- AWS ECS cluster and service configured
+- For CapRover: CapRover instance set up and accessible
+- For AWS ECS: AWS CLI configured, ECR repository created, ECS cluster and service configured
 
 ## Building the Docker Image
 
