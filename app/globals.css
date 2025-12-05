@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colors from design tokens */
+  --color-primary-50: #fff9e6;
+  --color-primary-100: #fff2cc;
+  --color-primary-200: #ffe699;
+  --color-primary-300: #ffd966;
+  --color-primary-400: #ffcc33;
+  --color-primary-500: #f9b233;
+  --color-primary-600: #e6a030;
+  --color-primary-700: #cc8e2d;
+  --color-primary-800: #b37c2a;
+  --color-primary-900: #996a27;
+  
+  --color-secondary-50: #f3f4f6;
+  --color-secondary-100: #e5e7eb;
+  --color-secondary-200: #d1d5db;
+  --color-secondary-300: #9ca3af;
+  --color-secondary-400: #6b7280;
+  --color-secondary-500: #4b5563;
+  --color-secondary-600: #374151;
+  --color-secondary-700: #1f2937;
+  --color-secondary-800: #111827;
+  --color-secondary-900: #0d1117;
+  
+  --color-accent-yellow: #ffcc30;
+  --color-accent-orange: #f9b233;
+  
+  --color-neutral-white: #ffffff;
+  --color-neutral-black: #000000;
+  --color-neutral-gray-50: #f9fafb;
+  --color-neutral-gray-100: #f3f4f6;
+  --color-neutral-gray-200: #e5e7eb;
+  --color-neutral-gray-300: #d1d5db;
+  --color-neutral-gray-400: #9ca3af;
+  --color-neutral-gray-500: #6b7280;
+  --color-neutral-gray-600: #4b5563;
+  --color-neutral-gray-700: #374151;
+  --color-neutral-gray-800: #1f2937;
+  --color-neutral-gray-900: #111827;
+  
+  /* Semantic colors */
+  --color-semantic-success-500: #4CAF50;
+  --color-semantic-error-500: #F44336;
+  --color-semantic-warning-500: #FF9800;
+  --color-semantic-info-500: #2196F3;
+  --color-semantic-purple-500: #9C27B0;
+  
+  /* Typography */
+  --font-family-sans: Inter, system-ui, -apple-system, sans-serif;
+  --font-family-mono: Monaco, Consolas, monospace;
+  
+  /* Spacing - using Tailwind defaults but can be customized */
+  
+  /* Border radius */
+  --radius-none: 0px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 20px;
+  --radius-full: 9999px;
+}
+
+body {
+  font-family: var(--font-family-sans);
+  background: var(--color-neutral-white);
+  color: var(--color-secondary-900);
+  overflow-x: hidden;
+}
+
+html {
+  overflow-x: hidden;
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
