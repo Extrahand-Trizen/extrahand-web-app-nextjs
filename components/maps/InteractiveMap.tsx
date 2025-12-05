@@ -3,6 +3,7 @@
 /**
  * Interactive Map component using Leaflet
  * For location selection
+ * NOTE: This component must only be used with dynamic import (ssr: false)
  */
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -10,13 +11,15 @@ import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-lea
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// Fix for default marker icon in React Leaflet
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
+// Fix for default marker icon in React Leaflet (only on client)
+if (typeof window !== 'undefined' && L && L.Icon && L.Icon.Default) {
+  delete (L.Icon.Default.prototype as any)._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  });
+}
 
 interface InteractiveMapProps {
   onLocationSelect: (location: { latitude: number; longitude: number; address?: string }) => void;
@@ -53,10 +56,16 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   width = '100%',
   showCurrentLocation = false,
 }) => {
+  const [mounted, setMounted] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{ latitude: number; longitude: number } | null>(
     initialLocation || null
   );
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+
+  // Only render map on client side
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLocationSelect = (location: { latitude: number; longitude: number }) => {
     setSelectedLocation(location);
@@ -110,6 +119,17 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     position: 'relative' as const,
     zIndex: 1,
   };
+
+  // Don't render map during SSR
+  if (!mounted || typeof window === 'undefined') {
+    return (
+      <div className={mapClassName} style={mapStyle}>
+        <div className="w-full h-full flex items-center justify-center bg-gray-100 rounded-lg">
+          <p className="text-gray-500">Loading map...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={mapClassName} style={mapStyle}>

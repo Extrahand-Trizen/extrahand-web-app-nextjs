@@ -10,7 +10,23 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { InteractiveMap } from '@/components/maps/InteractiveMap';
+import dynamicImport from 'next/dynamic';
+
+// Dynamically import InteractiveMap to avoid SSR issues with Leaflet
+const InteractiveMap = dynamicImport(
+  () => import('@/components/maps/InteractiveMap').then(mod => ({ default: mod.InteractiveMap })),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="w-full rounded-lg bg-gray-100 flex items-center justify-center" style={{ height: '450px' }}>
+        <p className="text-gray-500">Loading map...</p>
+      </div>
+    )
+  }
+);
+
+// Disable static generation for this page (map requires client-side rendering)
+export const dynamic = 'force-dynamic';
 
 const PRIMARY_YELLOW = '#f9b233';
 const DARK = '#222';
