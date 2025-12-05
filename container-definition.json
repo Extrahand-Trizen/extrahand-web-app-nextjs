@@ -1,0 +1,93 @@
+[
+  {
+    "name": "extrahand-web-app-nextjs",
+    "image": "<ECR_REPOSITORY_URI>:<TAG>",
+    "essential": true,
+    "portMappings": [
+      {
+        "containerPort": 3000,
+        "protocol": "tcp",
+        "hostPort": 3000
+      }
+    ],
+    "environment": [
+      {
+        "name": "NODE_ENV",
+        "value": "production"
+      },
+      {
+        "name": "NEXT_TELEMETRY_DISABLED",
+        "value": "1"
+      },
+      {
+        "name": "PORT",
+        "value": "3000"
+      },
+      {
+        "name": "HOSTNAME",
+        "value": "0.0.0.0"
+      }
+    ],
+    "secrets": [
+      {
+        "name": "NEXT_PUBLIC_API_BASE_URL",
+        "valueFrom": "<SECRETS_MANAGER_ARN>/NEXT_PUBLIC_API_BASE_URL"
+      },
+      {
+        "name": "NEXT_PUBLIC_FIREBASE_API_KEY",
+        "valueFrom": "<SECRETS_MANAGER_ARN>/NEXT_PUBLIC_FIREBASE_API_KEY"
+      },
+      {
+        "name": "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN",
+        "valueFrom": "<SECRETS_MANAGER_ARN>/NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN"
+      },
+      {
+        "name": "NEXT_PUBLIC_FIREBASE_PROJECT_ID",
+        "valueFrom": "<SECRETS_MANAGER_ARN>/NEXT_PUBLIC_FIREBASE_PROJECT_ID"
+      },
+      {
+        "name": "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET",
+        "valueFrom": "<SECRETS_MANAGER_ARN>/NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET"
+      },
+      {
+        "name": "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID",
+        "valueFrom": "<SECRETS_MANAGER_ARN>/NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID"
+      },
+      {
+        "name": "NEXT_PUBLIC_FIREBASE_APP_ID",
+        "valueFrom": "<SECRETS_MANAGER_ARN>/NEXT_PUBLIC_FIREBASE_APP_ID"
+      },
+      {
+        "name": "NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID",
+        "valueFrom": "<SECRETS_MANAGER_ARN>/NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID"
+      }
+    ],
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "/ecs/extrahand-web-app-nextjs",
+        "awslogs-region": "<AWS_REGION>",
+        "awslogs-stream-prefix": "ecs"
+      }
+    },
+    "healthCheck": {
+      "command": [
+        "CMD-SHELL",
+        "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"
+      ],
+      "interval": 30,
+      "timeout": 5,
+      "retries": 3,
+      "startPeriod": 60
+    },
+    "memory": 512,
+    "cpu": 256,
+    "ulimits": [
+      {
+        "name": "nofile",
+        "softLimit": 65536,
+        "hardLimit": 65536
+      }
+    ]
+  }
+]
