@@ -76,6 +76,8 @@ export default function TasksPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const checkScreenSize = () => {
       const width = window.innerWidth;
       setIsMobileView(width <= 768);

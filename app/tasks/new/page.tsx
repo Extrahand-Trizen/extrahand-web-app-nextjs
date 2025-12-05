@@ -37,6 +37,8 @@ export default function PostTaskPage() {
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const checkScreenSize = () => {
       const width = window.innerWidth;
       setIsMobileView(width <= 768);

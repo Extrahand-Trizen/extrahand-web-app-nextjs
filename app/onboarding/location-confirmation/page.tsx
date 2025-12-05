@@ -19,6 +19,8 @@ export default function LocationConfirmationPage() {
   const [isMobileView, setIsMobileView] = useState(false);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const checkScreenSize = () => {
       const width = window.innerWidth;
       setIsMobileView(width <= 768);

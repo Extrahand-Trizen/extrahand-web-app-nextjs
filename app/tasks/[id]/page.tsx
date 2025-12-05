@@ -78,6 +78,8 @@ export default function TaskDetailsPage() {
   const [taskData] = useState(mockTaskData);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const checkScreenSize = () => {
       const width = window.innerWidth;
       setIsMobileView(width <= 768);

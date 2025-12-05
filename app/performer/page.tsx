@@ -34,6 +34,8 @@ export default function PerformerPage() {
 
   // Check screen size for mobile/desktop layout
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const checkScreenSize = () => {
       const width = window.innerWidth;
       setIsMobileView(width < 768);

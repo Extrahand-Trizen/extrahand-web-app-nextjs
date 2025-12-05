@@ -28,6 +28,8 @@ export default function SignUpPage() {
 
   // Check screen size for responsive layout
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const checkScreenSize = () => {
       const width = window.innerWidth;
       setIsMobileView(width <= 768);
