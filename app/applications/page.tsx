@@ -198,7 +198,7 @@ export default function ApplicationsPage() {
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600 font-medium">Task Budget:</span>
                       <span className="text-gray-900 font-semibold">
-                        ₹{typeof taskBudget === 'object' ? taskBudget.amount : taskBudget}
+                        ₹{taskBudget}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
