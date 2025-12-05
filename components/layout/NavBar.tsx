@@ -191,7 +191,7 @@ export const NavBar: React.FC<NavBarProps> = ({
                 <div className="p-5 border-t border-gray-200 bg-gray-50">
                   <div className="mb-4">
                     <p className="text-base font-bold mb-1" style={{ color: DARK }}>
-                      {userData?.name || userData?.firstName || 'User'}
+                      {userData?.name || 'User'}
                     </p>
                     <p className="text-sm text-gray-600">
                       {userData?.email || currentUser.email}
