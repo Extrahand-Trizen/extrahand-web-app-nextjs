@@ -71,16 +71,19 @@ export default function ProfilePage() {
     setEmail(userData.email || '');
     setPhone(userData.phone || '');
     setLocation(userData.location?.address || '');
-    setPhotoURL(userData.photoURL || '');
+    // photoURL is not part of UserProfile type, keeping as empty for now
+    setPhotoURL('');
     setRoles(userData.roles || ['both']);
     setUserType((userData.userType as 'individual' | 'business') || 'individual');
-    setSkills(userData.skills || []);
+    // Extract skills list from UserProfile skills object
+    setSkills(userData.skills?.list?.map(s => s.name) || []);
     setRating(userData.rating || 0);
     setTotalReviews(userData.totalReviews || 0);
     setTotalTasks(userData.totalTasks || 0);
     setCompletedTasks(userData.completedTasks || 0);
-    setPostedTasks(userData.postedTasks || 0);
-    setEarnedAmount(userData.earnedAmount || 0);
+    // postedTasks and earnedAmount are not part of UserProfile type, using mock values
+    setPostedTasks(0);
+    setEarnedAmount(0);
     
     if (userData.business?.description) {
       setDescription(userData.business.description);
