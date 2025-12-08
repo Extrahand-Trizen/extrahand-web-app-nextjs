@@ -1,105 +1,200 @@
-"use client";
-
 /**
- * How It Works Section component
- * Shows the 3-step process
+ * How It Works Section - Clean 3-step flow
+ *
+ * Design principles:
+ * - Separate flows for Posters and Taskers
+ * - Visual connection between steps
+ * - Clear, actionable descriptions
+ * - Strong CTA at the end
  */
 
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/design/utils";
+import {
+   FileText,
+   Users,
+   CheckCircle,
+   ArrowRight,
+   Briefcase,
+   MessageSquare,
+   Wallet,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const steps = [
+type UserRole = "poster" | "tasker";
+
+const posterSteps = [
    {
-      title: "Post a Task",
-      highlight: "Describe your task, location, and budget.",
+      step: 1,
+      icon: FileText,
+      title: "Post Your Task",
       description:
-         "Set your requirements and timeline from anywhere. The more details, the better your match!",
-      cta: "Start your first task",
-      image: "/assets/mobilescreens/post-task.jpg",
+         "Describe what you need done, set your budget, and choose when you need it completed.",
+      highlight: "Free to post",
    },
    {
-      title: "Get Matched",
-      highlight: "Connect with trusted locals.",
+      step: 2,
+      icon: Users,
+      title: "Get Quotes",
       description:
-         "Our smart algorithm finds verified, skilled helpers nearby. Review profiles, ratings, and chat instantly.",
-      cta: "See how matching works",
-      image: "/assets/mobilescreens/set-budget.jpg",
+         "Verified taskers in your area will send you offers. Compare ratings, reviews, and prices.",
+      highlight: "Usually within hours",
    },
    {
-      title: "Task Complete",
-      highlight: "Track and confirm completion.",
+      step: 3,
+      icon: CheckCircle,
+      title: "Get It Done",
       description:
-         "Monitor progress in real-time and receive photo/video proof when your task is finished. Release payment securely.",
-      cta: "Learn about secure completion",
-      image: "/assets/mobilescreens/approve-task.jpg",
+         "Choose your tasker, track progress in real-time, and pay securely when the task is complete.",
+      highlight: "100% satisfaction guaranteed",
    },
 ];
 
+const taskerSteps = [
+   {
+      step: 1,
+      icon: Briefcase,
+      title: "Browse Tasks",
+      description:
+         "Find tasks that match your skills and availability. Filter by category, location, and budget.",
+      highlight: "Flexible schedule",
+   },
+   {
+      step: 2,
+      icon: MessageSquare,
+      title: "Make Offers",
+      description:
+         "Send your best offer with a personal message. Stand out with your ratings and reviews.",
+      highlight: "Set your own rates",
+   },
+   {
+      step: 3,
+      icon: Wallet,
+      title: "Get Paid",
+      description:
+         "Complete the task, upload proof of work, and receive secure payment directly to your account.",
+      highlight: "Fast, secure payments",
+   },
+];
+
+interface StepCardProps {
+   step: number;
+   icon: React.ComponentType<{ className?: string }>;
+   title: string;
+   description: string;
+   highlight: string;
+   isLast: boolean;
+}
+
+const StepCard: React.FC<StepCardProps> = ({
+   step,
+   icon: Icon,
+   title,
+   description,
+   highlight,
+   isLast,
+}) => (
+   <div className="relative flex flex-col items-center text-center">
+      {/* Connector line - hidden on mobile and for last item */}
+      {!isLast && (
+         <div className="hidden md:block absolute top-10 left-[calc(50%+40px)] w-[calc(100%-80px)] h-0.5 bg-secondary-200">
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 border-t-2 border-r-2 border-secondary-300 rotate-45" />
+         </div>
+      )}
+
+      {/* Step number with icon */}
+      <div className="relative z-10 w-20 h-20 rounded-full bg-primary-500 flex items-center justify-center mb-6 shadow-lg shadow-primary-500/25">
+         <Icon className="w-8 h-8 text-secondary-900" />
+         <span className="absolute -top-2 -right-2 w-7 h-7 bg-secondary-900 text-white rounded-full flex items-center justify-center text-sm font-bold">
+            {step}
+         </span>
+      </div>
+
+      {/* Content */}
+      <h3 className="text-xl font-bold text-secondary-900 mb-3">{title}</h3>
+      <p className="text-secondary-600 leading-relaxed mb-4 max-w-xs">
+         {description}
+      </p>
+
+      {/* Highlight badge */}
+      <span className="inline-flex items-center px-3 py-1 bg-green-50 text-green-700 text-sm font-medium rounded-full">
+         <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
+         {highlight}
+      </span>
+   </div>
+);
+
 export const HowItWorksSection: React.FC = () => {
+   const [activeRole, setActiveRole] = useState<UserRole>("poster");
+   const steps = activeRole === "poster" ? posterSteps : taskerSteps;
+
    return (
-      <section
-         id="how-it-works"
-         className="py-20 bg-white relative overflow-x-hidden"
-      >
-         <div className="max-w-[1200px] mx-auto px-6">
-            {/* Section Header */}
-            <div className="text-center mb-16">
-               <h2 className="text-3xl md:text-[44px] font-bold text-secondary-900 mb-4 font-sans">
-                  How It Works
+      <section id="how-it-works" className="py-20 bg-white">
+         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Section header */}
+            <div className="text-center mb-12">
+               <h2 className="text-3xl sm:text-4xl font-bold text-secondary-900 mb-4">
+                  How ExtraHand Works
                </h2>
-               <p className="text-xl text-secondary-500/80 max-w-[600px] mx-auto font-sans">
-                  Getting your tasks done remotely has never been easier. Follow
-                  these simple steps and watch the magic happen.
+               <p className="text-lg text-secondary-600 max-w-2xl mx-auto">
+                  Whether you need help or want to earn, getting started takes
+                  just minutes.
                </p>
             </div>
 
-            {/* Steps */}
-            <div className="flex flex-col md:flex-row flex-wrap justify-between gap-8">
-               {steps.map((step, index) => (
-                  <div
-                     key={index}
-                     className="flex-1 min-w-[260px] max-w-[370px] flex flex-col items-center text-center p-2 bg-none mx-auto"
+            {/* Role toggle */}
+            <div className="flex justify-center mb-12">
+               <div className="inline-flex p-1.5 bg-secondary-100 rounded-xl">
+                  <button
+                     onClick={() => setActiveRole("poster")}
+                     className={cn(
+                        "px-6 py-3 rounded-lg font-semibold text-sm transition-all",
+                        activeRole === "poster"
+                           ? "bg-white text-secondary-900 shadow-md"
+                           : "text-secondary-600 hover:text-secondary-900"
+                     )}
                   >
-                     <div className="mb-6">
-                        <span className="inline-block bg-secondary-900 text-white font-bold rounded-full px-5 py-1.5 text-xl shadow-lg shadow-info-500/15">
-                           {index + 1}
-                        </span>
-                     </div>
-                     <div className="mb-6 w-full flex justify-center">
-                        <img
-                           src={step.image}
-                           alt={step.title}
-                           className="w-full max-w-[400px] h-auto rounded-2xl shadow-md"
-                           onError={(e) => {
-                              // Fallback placeholder
-                              (e.target as HTMLImageElement).style.display =
-                                 "none";
-                           }}
-                        />
-                     </div>
-                     <h3 className="text-xl md:text-2xl font-extrabold text-secondary-900 mb-2.5 font-sans leading-tight">
-                        {step.title}
-                     </h3>
-                     <div className="text-lg font-bold text-primary-500 mb-2 font-sans">
-                        {step.highlight}
-                     </div>
-                     <p className="text-sm md:text-base text-secondary-700 mb-4 max-w-[320px] mx-auto font-sans">
-                        {step.description}
-                     </p>
-                  </div>
+                     I need help
+                  </button>
+                  <button
+                     onClick={() => setActiveRole("tasker")}
+                     className={cn(
+                        "px-6 py-3 rounded-lg font-semibold text-sm transition-all",
+                        activeRole === "tasker"
+                           ? "bg-white text-secondary-900 shadow-md"
+                           : "text-secondary-600 hover:text-secondary-900"
+                     )}
+                  >
+                     I want to earn
+                  </button>
+               </div>
+            </div>
+
+            {/* Steps grid */}
+            <div className="grid md:grid-cols-3 gap-8 md:gap-12 mb-16">
+               {steps.map((step, idx) => (
+                  <StepCard
+                     key={`${activeRole}-${step.step}`}
+                     {...step}
+                     isLast={idx === steps.length - 1}
+                  />
                ))}
             </div>
 
-            {/* Centered Post your task Button */}
-            <div className="flex justify-center mt-12">
-               <Link href="/tasks/new">
+            {/* CTA */}
+            <div className="text-center">
+               <Link href={activeRole === "poster" ? "/tasks/new" : "/signup"}>
                   <Button
-                     variant="outline"
-                     className="text-lg px-5 py-2.5 text-secondary-900 bg-white border-2 border-accent-yellow rounded-lg font-semibold font-sans shadow-md shadow-primary-500/15 hover:bg-accent-yellow hover:text-secondary-900 transition-all hover:scale-105"
+                     size="lg"
+                     className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-bold text-lg px-10 py-6 rounded-xl shadow-lg shadow-primary-500/25 transition-all hover:shadow-xl hover:-translate-y-0.5"
                   >
-                     Post your task now
+                     {activeRole === "poster"
+                        ? "Post Your First Task"
+                        : "Start Earning Today"}
+                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                </Link>
             </div>
@@ -107,3 +202,5 @@ export const HowItWorksSection: React.FC = () => {
       </section>
    );
 };
+
+export default HowItWorksSection;
