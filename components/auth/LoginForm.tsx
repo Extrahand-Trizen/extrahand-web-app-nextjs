@@ -1,0 +1,182 @@
+"use client";
+
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import { ArrowLeft, Loader2, Smartphone } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+   Form,
+   FormControl,
+   FormField,
+   FormItem,
+   FormLabel,
+   FormMessage,
+} from "@/components/ui/form";
+import {
+   Card,
+   CardContent,
+   CardDescription,
+   CardHeader,
+   CardTitle,
+} from "@/components/ui/card";
+import {
+   phoneLoginSchema,
+   type PhoneLoginFormData,
+} from "@/lib/validations/auth";
+import { formatPhoneNumber } from "@/lib/utils/phone";
+
+interface LoginFormProps {
+   onSuccess?: (phone: string) => void;
+}
+
+export function LoginForm({ onSuccess }: LoginFormProps) {
+   const router = useRouter();
+   const [isSubmitting, setIsSubmitting] = useState(false);
+
+   const form = useForm<PhoneLoginFormData>({
+      resolver: zodResolver(phoneLoginSchema),
+      mode: "onChange",
+      defaultValues: {
+         phone: "",
+      },
+   });
+
+   const onSubmit = async (data: PhoneLoginFormData) => {
+      setIsSubmitting(true);
+
+      try {
+         // Simulate API call to send OTP
+         await new Promise((resolve) => setTimeout(resolve, 1000));
+
+         const formattedPhone = formatPhoneNumber(data.phone);
+
+         toast.success("OTP sent!", {
+            description: `Verification code sent to ${formattedPhone}`,
+         });
+
+         if (onSuccess) {
+            onSuccess(formattedPhone);
+         } else {
+            router.push(
+               `/otp-verification?phone=${encodeURIComponent(
+                  formattedPhone
+               )}&type=login`
+            );
+         }
+      } catch {
+         toast.error("Failed to send OTP", {
+            description: "Please check your phone number and try again.",
+         });
+      } finally {
+         setIsSubmitting(false);
+      }
+   };
+
+   const handleGoogleLogin = async () => {
+      setIsSubmitting(true);
+      try {
+         await new Promise((resolve) => setTimeout(resolve, 500));
+         toast.success("Signed in with Google!", {
+            description: "Redirecting...",
+         });
+         router.push("/onboarding/choose-location-method");
+      } catch {
+         toast.error("Google sign-in failed", {
+            description: "Please try again.",
+         });
+      } finally {
+         setIsSubmitting(false);
+      }
+   };
+
+   return (
+      <div className="min-h-screen bg-linear-to-b from-white to-secondary-50 flex flex-col">
+         {/* Header */}
+         <header className="px-4 py-4 lg:px-8">
+            <Link
+               href="/"
+               className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+            >
+               <ArrowLeft className="h-4 w-4" />
+               Back to home
+            </Link>
+         </header>
+
+         {/* Main Content */}
+         <div className="flex-1 flex items-center justify-center px-4 py-8">
+            <Card className="w-full max-w-md shadow-xl">
+               <CardHeader className="space-y-2 text-center">
+                  <CardTitle className="text-2xl">Welcome back</CardTitle>
+                  <CardDescription>
+                     Sign in to your ExtraHand account
+                  </CardDescription>
+               </CardHeader>
+
+               <CardContent className="space-y-6">
+                  {/* Form */}
+                  <Form {...form}>
+                     <form
+                        onSubmit={form.handleSubmit(onSubmit)}
+                        className="space-y-4"
+                     >
+                        <FormField
+                           control={form.control}
+                           name="phone"
+                           render={({ field }) => (
+                              <FormItem>
+                                 <FormLabel>Phone Number</FormLabel>
+                                 <FormControl>
+                                    <div className="relative">
+                                       <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                                       <Input
+                                          placeholder="976543210"
+                                          className="pl-10"
+                                          autoComplete="tel"
+                                          {...field}
+                                       />
+                                    </div>
+                                 </FormControl>
+                                 <FormMessage />
+                              </FormItem>
+                           )}
+                        />
+
+                        <Button
+                           type="submit"
+                           size="lg"
+                           className="w-full"
+                           disabled={isSubmitting}
+                        >
+                           {isSubmitting ? (
+                              <>
+                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                 Sending OTP...
+                              </>
+                           ) : (
+                              "Continue"
+                           )}
+                        </Button>
+
+                        <p className="text-center text-sm text-gray-600">
+                           Don't have an account?{" "}
+                           <Link
+                              href="/signup"
+                              className="text-primary-500 hover:underline font-medium"
+                           >
+                              Sign up
+                           </Link>
+                        </p>
+                     </form>
+                  </Form>
+               </CardContent>
+            </Card>
+         </div>
+      </div>
+   );
+}
