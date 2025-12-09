@@ -107,24 +107,6 @@ export const TrustSection: React.FC = () => {
             <TrustCard key={idx} feature={feature} />
           ))}
         </div>
-
-        {/* Trust badges bar */}
-        <div className="mt-12 pt-8 border-t border-secondary-100">
-          <div className="flex flex-wrap items-center justify-center gap-8 text-secondary-400">
-            <div className="flex items-center gap-2">
-              <Lock className="w-5 h-5" />
-              <span className="text-sm font-medium">256-bit SSL Encryption</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CreditCard className="w-5 h-5" />
-              <span className="text-sm font-medium">PCI DSS Compliant</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5" />
-              <span className="text-sm font-medium">24/7 Support</span>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   );

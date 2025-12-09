@@ -70,7 +70,7 @@ export const FinalCTASection: React.FC = () => {
                   <Button
                      variant="outline"
                      size="lg"
-                     className="border-2 border-secondary-600 text-white hover:bg-secondary-800 font-semibold text-lg px-10 py-6 rounded-xl w-full sm:w-auto"
+                     className="border-2 border-secondary-600 font-semibold text-lg px-10 py-6 rounded-xl w-full sm:w-auto"
                   >
                      Become a Tasker
                   </Button>

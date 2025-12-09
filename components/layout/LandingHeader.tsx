@@ -213,6 +213,11 @@ export const LandingHeader: React.FC = () => {
 
                   {/* Desktop Navigation */}
                   <nav className="hidden md:flex items-center gap-6">
+                     <Link href="/tasks/new">
+                        <Button className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold shadow-sm">
+                           Post a Task
+                        </Button>
+                     </Link>
                      {navItems.map((item) =>
                         item.hasDropdown ? (
                            <div
@@ -369,15 +374,18 @@ export const LandingHeader: React.FC = () => {
                      </Link>
                      <Link href="/signup">
                         <Button
+                           variant="ghost"
+                           className="border-secondary-300 text-secondary-700 font-medium"
+                        >
+                           Signup
+                        </Button>
+                     </Link>
+                     <Link href="/signup">
+                        <Button
                            variant="outline"
                            className="border-secondary-300 text-secondary-700 font-medium"
                         >
                            Become a Tasker
-                        </Button>
-                     </Link>
-                     <Link href="/tasks/new">
-                        <Button className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold shadow-sm">
-                           Post a Task
                         </Button>
                      </Link>
                   </div>
