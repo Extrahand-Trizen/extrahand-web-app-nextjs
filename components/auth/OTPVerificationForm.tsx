@@ -23,6 +23,7 @@ import {
    CardTitle,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 const OTP_LENGTH = 6;
 const RESEND_TIMER = 30;
@@ -234,7 +235,21 @@ export function OTPVerificationForm({
          </header>
 
          {/* Main Content */}
-         <div className="flex-1 flex items-center justify-center px-4 py-8">
+         <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
+            {/* Logo */}
+            <div className="flex justify-center">
+               <div className="flex items-center gap-2 mb-5">
+                  <Image
+                     src="/assets/images/logo.png"
+                     alt="Extrahand"
+                     width={35}
+                     height={35}
+                  />
+                  <span className="text-lg font-bold text-gray-900">
+                     ExtraHand
+                  </span>
+               </div>
+            </div>
             <Card className="w-full max-w-md shadow-xl">
                <CardHeader className="space-y-4 text-center">
                   <div className="mx-auto w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center">

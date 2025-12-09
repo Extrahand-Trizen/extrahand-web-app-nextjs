@@ -37,6 +37,7 @@ import {
    type PhoneAuthFormData,
 } from "@/lib/validations/auth";
 import { formatPhoneNumber } from "@/lib/utils/phone";
+import Image from "next/image";
 
 const BENEFITS = [
    "Access to verified local taskers",
@@ -129,6 +130,12 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
                {/* Value Proposition - Hidden on mobile */}
                <div className="hidden lg:block space-y-6">
                   <div className="space-y-3">
+                     <Image
+                        src="/assets/images/logo.png"
+                        alt="Extrahand"
+                        width={40}
+                        height={40}
+                     />
                      <h1 className="text-4xl font-bold text-gray-900">
                         Join ExtraHand Today
                      </h1>
@@ -155,13 +162,29 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
 
                {/* Signup Form */}
                <Card className="shadow-xl">
-                  <CardHeader className="space-y-2">
-                     <CardTitle className="text-2xl">
-                        Create your account
-                     </CardTitle>
-                     <CardDescription>
-                        Sign up with your phone number
-                     </CardDescription>
+                  <CardHeader className="space-y-4">
+                     <div className="flex justify-center">
+                        <div className="flex items-center gap-2">
+                           <Image
+                              src="/assets/images/logo.png"
+                              alt="Extrahand"
+                              width={35}
+                              height={35}
+                           />
+                           <span className="text-lg font-bold text-gray-900">
+                              ExtraHand
+                           </span>
+                        </div>
+                     </div>
+                     {/* Logo */}
+                     <div className="space-y-2 text-center">
+                        <CardTitle className="text-2xl">
+                           Create your account
+                        </CardTitle>
+                        <CardDescription>
+                           Sign up with your phone number
+                        </CardDescription>
+                     </div>
                   </CardHeader>
 
                   <CardContent className="space-y-6">

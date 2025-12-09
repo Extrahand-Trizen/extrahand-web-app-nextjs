@@ -30,6 +30,7 @@ import {
    type PhoneLoginFormData,
 } from "@/lib/validations/auth";
 import { formatPhoneNumber } from "@/lib/utils/phone";
+import Image from "next/image";
 
 interface LoginFormProps {
    onSuccess?: (phone: string) => void;
@@ -109,15 +110,30 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
          </header>
 
          {/* Main Content */}
-         <div className="flex-1 flex items-center justify-center px-4 py-8">
+         <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
+            {/* Logo */}
+            <div className="flex justify-center mb-5">
+               <div className="flex items-center gap-2">
+                  <Image
+                     src="/assets/images/logo.png"
+                     alt="Extrahand"
+                     width={35}
+                     height={35}
+                  />
+                  <span className="text-lg font-bold text-gray-900">
+                     ExtraHand
+                  </span>
+               </div>
+            </div>
             <Card className="w-full max-w-md shadow-xl">
-               <CardHeader className="space-y-2 text-center">
-                  <CardTitle className="text-2xl">Welcome back</CardTitle>
-                  <CardDescription>
-                     Sign in to your ExtraHand account
-                  </CardDescription>
-               </CardHeader>
-
+               <CardHeader className="space-y-4">
+                  <div className="space-y-2 text-center">
+                     <CardTitle className="text-2xl">Welcome back</CardTitle>
+                     <CardDescription>
+                        Sign in to your ExtraHand account
+                     </CardDescription>
+                  </div>
+               </CardHeader>{" "}
                <CardContent className="space-y-6">
                   {/* Form */}
                   <Form {...form}>
