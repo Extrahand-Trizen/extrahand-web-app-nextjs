@@ -91,14 +91,14 @@ export const cities: Record<string, CityInfo> = {
       },
    },
 
-   bengaluru: {
-      name: "Bengaluru",
+   bangalore: {
+      name: "Bangalore",
       state: "Karnataka",
-      slug: "bengaluru",
+      slug: "bangalore",
       description:
          "India’s tech capital with skilled taskers specializing in both tech and home services.",
       longDescription:
-         "Bengaluru’s go-to platform for getting things done. From Koramangala to Whitefield, connect with verified taskers for tech support, home services, and professional help.",
+         "Bangalore’s go-to platform for getting things done. From Koramangala to Whitefield, connect with verified taskers for tech support, home services, and professional help.",
       population: "13M+",
       activeTasks: 1876,
       activeTaskers: 4123,
@@ -118,7 +118,7 @@ export const cities: Record<string, CityInfo> = {
          "JP Nagar",
          "Yelahanka",
       ],
-      heroImage: "/assets/cities/bengaluru.png",
+      heroImage: "/assets/cities/bangalore.png",
       coordinates: {
          lat: 12.9716,
          lng: 77.5946,

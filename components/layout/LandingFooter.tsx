@@ -61,14 +61,14 @@ const footerLinks = {
    cities: {
       title: "Popular Cities",
       links: [
-         { label: "Delhi NCR", href: "locations/delhi" },
-         { label: "Mumbai", href: "locations/mumbai" },
-         { label: "Bangalore", href: "locations/bangalore" },
-         { label: "Hyderabad", href: "locations/hyderabad" },
-         { label: "Chennai", href: "locations/chennai" },
-         { label: "Kolkata", href: "locations/kolkata" },
-         { label: "Pune", href: "locations/pune" },
-         { label: "Ahmedabad", href: "locations/ahmedabad" },
+         { label: "Delhi NCR", href: "/locations/delhi" },
+         { label: "Mumbai", href: "/locations/mumbai" },
+         { label: "Bangalore", href: "/locations/bangalore" },
+         { label: "Hyderabad", href: "/locations/hyderabad" },
+         { label: "Chennai", href: "/locations/chennai" },
+         { label: "Kolkata", href: "/locations/kolkata" },
+         { label: "Pune", href: "/locations/pune" },
+         { label: "Ahmedabad", href: "/locations/ahmedabad" },
       ],
    },
 };
@@ -251,4 +251,3 @@ export const LandingFooter: React.FC = () => {
    );
 };
 
-export default LandingFooter;

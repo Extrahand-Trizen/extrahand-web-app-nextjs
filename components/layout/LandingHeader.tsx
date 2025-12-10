@@ -382,7 +382,7 @@ export const LandingHeader: React.FC = () => {
                            Signup
                         </Button>
                      </Link>
-                     <Link href="/signup">
+                     <Link href="/earn-money">
                         <Button
                            size="sm"
                            variant="outline"
@@ -442,12 +442,20 @@ export const LandingHeader: React.FC = () => {
                               Post a Task
                            </Button>
                         </Link>
-                        <Link href="/signup" className="w-full">
+                        <Link href="/earn-money" className="w-full">
                            <Button
                               variant="outline"
                               className="w-full border-secondary-300 text-secondary-700 font-medium py-6"
                            >
                               Become a Tasker
+                           </Button>
+                        </Link>
+                        <Link href="/signup" className="w-full">
+                           <Button
+                              variant="ghost"
+                              className="w-full text-secondary-700 font-medium py-6"
+                           >
+                              Signup
                            </Button>
                         </Link>
                         <Link href="/login" className="w-full">
