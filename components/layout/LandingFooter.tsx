@@ -30,6 +30,7 @@ const footerLinks = {
          { label: "How to Earn", href: "#" },
          { label: "Tasker Guidelines", href: "#" },
          { label: "Success Stories", href: "#testimonials" },
+         { label: "Resources", href: "#" },
       ],
    },
    company: {
@@ -39,15 +40,33 @@ const footerLinks = {
          { label: "Careers", href: "#" },
          { label: "Press", href: "#" },
          { label: "Contact", href: "#" },
-      ],
-   },
-   support: {
-      title: "Support",
-      links: [
          { label: "Help Center", href: "#" },
          { label: "FAQs", href: "#" },
          { label: "Community Guidelines", href: "#" },
          { label: "Report an Issue", href: "#" },
+      ],
+   },
+   categories: {
+      title: "Popular Categories",
+      links: [
+         { label: "Electricians", href: "#" },
+         { label: "Plumbers", href: "#" },
+         { label: "Home Cleaning", href: "#" },
+         { label: "Packers & Movers", href: "#" },
+         { label: "Carpenters", href: "#" },
+         { label: "AC Services", href: "#" },
+         { label: "Appliance Repair", href: "#" },
+      ],
+   },
+   cities: {
+      title: "Popular Cities",
+      links: [
+         { label: "Delhi NCR", href: "locations/delhi" },
+         { label: "Mumbai", href: "locations/mumbai" },
+         { label: "Bangalore", href: "locations/bangalore" },
+         { label: "Hyderabad", href: "locations/hyderabad" },
+         { label: "Chennai", href: "locations/chennai" },
+         { label: "Kolkata", href: "locations/kolkata" },
       ],
    },
 };
@@ -65,14 +84,14 @@ export const LandingFooter: React.FC = () => {
       <footer className="bg-secondary-900 text-white">
          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
             {/* Main footer content */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 lg:gap-12 mb-12">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 lg:gap-10 mb-12">
                {/* Brand column */}
                <div className="col-span-2 md:col-span-4 lg:col-span-1 mb-4 lg:mb-0">
                   <Link href="/" className="flex items-center gap-2 mb-4">
                      <img
                         src="/assets/images/logo.png"
                         alt="ExtraHand"
-                        className="h-8 w-8 brightness-0 invert"
+                        className="h-8 w-8"
                         onError={(e) => {
                            (e.target as HTMLImageElement).style.display =
                               "none";
