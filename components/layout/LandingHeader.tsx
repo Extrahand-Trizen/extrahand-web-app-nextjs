@@ -212,7 +212,12 @@ export const LandingHeader: React.FC = () => {
                   </Link>
 
                   {/* Desktop Navigation */}
-                  <nav className="hidden md:flex items-center gap-6">
+                  <nav className="hidden lg:flex items-center gap-6">
+                     <Link href="/tasks/new">
+                        <Button className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold shadow-sm">
+                           Post a Task
+                        </Button>
+                     </Link>
                      {navItems.map((item) =>
                         item.hasDropdown ? (
                            <div
@@ -358,9 +363,10 @@ export const LandingHeader: React.FC = () => {
                   </nav>
 
                   {/* Desktop CTA Group */}
-                  <div className="hidden md:flex items-center gap-3">
+                  <div className="hidden lg:flex items-center gap-2">
                      <Link href="/login">
                         <Button
+                           size="sm"
                            variant="ghost"
                            className="text-secondary-700 font-medium"
                         >
@@ -369,15 +375,20 @@ export const LandingHeader: React.FC = () => {
                      </Link>
                      <Link href="/signup">
                         <Button
+                           size="sm"
+                           variant="ghost"
+                           className="border-secondary-300 text-secondary-700 font-medium"
+                        >
+                           Signup
+                        </Button>
+                     </Link>
+                     <Link href="/signup">
+                        <Button
+                           size="sm"
                            variant="outline"
                            className="border-secondary-300 text-secondary-700 font-medium"
                         >
                            Become a Tasker
-                        </Button>
-                     </Link>
-                     <Link href="/tasks/new">
-                        <Button className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold shadow-sm">
-                           Post a Task
                         </Button>
                      </Link>
                   </div>
@@ -385,7 +396,7 @@ export const LandingHeader: React.FC = () => {
                   {/* Mobile Menu Button */}
                   <button
                      onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                     className="md:hidden p-2 rounded-lg hover:bg-secondary-100 transition-colors"
+                     className="lg:hidden p-2 rounded-lg hover:bg-secondary-100 transition-colors"
                      aria-label="Toggle menu"
                   >
                      {isMobileMenuOpen ? (
@@ -400,7 +411,7 @@ export const LandingHeader: React.FC = () => {
 
          {/* Mobile Menu Overlay */}
          {isMobileMenuOpen && (
-            <div className="fixed inset-0 z-40 md:hidden">
+            <div className="fixed inset-0 z-40 lg:hidden">
                {/* Backdrop */}
                <div
                   className="absolute inset-0 bg-black/20 backdrop-blur-sm"

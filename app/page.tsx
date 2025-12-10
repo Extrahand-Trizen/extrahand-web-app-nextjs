@@ -29,7 +29,7 @@ export default function LandingPage() {
    return (
       <div className="min-h-screen bg-white">
          <LandingHeader />
-         <main className="pb-28 md:pb-0">
+         <main>
             <HeroSection />
             <SocialProofBar />
             <HowItWorksSection />

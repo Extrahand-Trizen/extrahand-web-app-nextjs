@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth/context";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({
    subsets: ["latin"],
@@ -20,10 +21,13 @@ export default function RootLayout({
    children: React.ReactNode;
 }>) {
    return (
-      <html lang="en">
+      <html lang="en" suppressHydrationWarning>
          <body className={`${inter.variable} font-sans antialiased`}>
             <ErrorBoundary>
-               <AuthProvider>{children}</AuthProvider>
+               <AuthProvider>
+                  <Toaster />
+                  {children}
+               </AuthProvider>
             </ErrorBoundary>
          </body>
       </html>
