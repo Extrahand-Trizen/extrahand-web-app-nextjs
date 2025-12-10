@@ -1,6 +1,6 @@
 /**
- * Neighborhoods Grid Component
- * Display all served neighborhoods
+ * Neighborhoods Grid - Production Ready
+ * Simple neighborhood coverage display
  */
 
 "use client";
@@ -19,41 +19,63 @@ export function NeighborhoodsGrid({
    citySlug,
    cityName,
 }: NeighborhoodsGridProps) {
+   // Split into popular and other neighborhoods
+   const popularCount = Math.min(6, Math.floor(neighborhoods.length / 2));
+   const popularNeighborhoods = neighborhoods.slice(0, popularCount);
+   const otherNeighborhoods = neighborhoods.slice(popularCount);
+
    return (
-      <section className="py-20 lg:py-28 bg-linear-to-br from-secondary-50 via-white to-primary-50/30">
+      <section className="py-16 bg-white">
          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-               <h2 className="text-4xl sm:text-5xl font-bold text-secondary-900 mb-4 tracking-tight">
-                  We're in your neighborhood
+            <div className="mb-10">
+               <h2 className="text-3xl font-bold text-gray-900 mb-3">
+                  Neighborhood Coverage
                </h2>
-               <p className="text-xl text-secondary-600 max-w-2xl mx-auto">
-                  ExtraHand connects you with local taskers across all areas of{" "}
-                  {cityName}
+               <p className="text-gray-600">
+                  ExtraHand is available across {cityName}
                </p>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-               {neighborhoods.map((neighborhood, index) => (
-                  <Link
-                     key={neighborhood}
-                     href={`/tasks/new?location=${neighborhood}, ${citySlug}`}
-                     className="group"
-                     style={{
-                        animationDelay: `${index * 30}ms`,
-                     }}
-                  >
-                     <div className="relative bg-white hover:bg-gradient-to-br hover:from-primary-50 hover:to-orange-50 rounded-2xl p-5 text-center transition-all duration-300 border-2 border-secondary-100 hover:border-primary-300 hover:shadow-xl hover:-translate-y-1">
-                        {/* Decorative element */}
-                        <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-primary-100 to-orange-100 rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                        <MapPin className="w-6 h-6 text-secondary-400 group-hover:text-primary-600 mx-auto mb-3 transition-colors duration-300" />
-                        <div className="font-semibold text-secondary-900 group-hover:text-primary-700 transition-colors text-sm lg:text-base">
+            {/* Popular neighborhoods */}
+            <div className="mb-8">
+               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
+                  Popular Areas
+               </h3>
+               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                  {popularNeighborhoods.map((neighborhood) => (
+                     <Link
+                        key={neighborhood}
+                        href={`/tasks/new?location=${neighborhood}, ${citySlug}`}
+                        className="flex items-center gap-2 px-4 py-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors"
+                     >
+                        <MapPin className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                        <span className="text-sm font-medium text-gray-900 truncate">
                            {neighborhood}
-                        </div>
-                     </div>
-                  </Link>
-               ))}
+                        </span>
+                     </Link>
+                  ))}
+               </div>
             </div>
+
+            {/* Other neighborhoods */}
+            {otherNeighborhoods.length > 0 && (
+               <div>
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
+                     Also Available In
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                     {otherNeighborhoods.map((neighborhood) => (
+                        <Link
+                           key={neighborhood}
+                           href={`/tasks/new?location=${neighborhood}, ${citySlug}`}
+                           className="px-3 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded-md text-sm text-gray-700 hover:text-gray-900 transition-colors"
+                        >
+                           {neighborhood}
+                        </Link>
+                     ))}
+                  </div>
+               </div>
+            )}
          </div>
       </section>
    );

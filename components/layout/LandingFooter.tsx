@@ -67,6 +67,8 @@ const footerLinks = {
          { label: "Hyderabad", href: "locations/hyderabad" },
          { label: "Chennai", href: "locations/chennai" },
          { label: "Kolkata", href: "locations/kolkata" },
+         { label: "Pune", href: "locations/pune" },
+         { label: "Ahmedabad", href: "locations/ahmedabad" },
       ],
    },
 };
