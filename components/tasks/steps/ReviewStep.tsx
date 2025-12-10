@@ -1,0 +1,381 @@
+"use client";
+
+/**
+ * Step 4: Review & Submit
+ * Summary of task details with edit links and guidelines checkbox
+ * Using React Hook Form with Zod validation
+ */
+
+import React from "react";
+import { UseFormReturn } from "react-hook-form";
+import { TaskFormData } from "../TaskCreationFlow";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+   FormControl,
+   FormField,
+   FormItem,
+   FormLabel,
+   FormMessage,
+} from "@/components/ui/form";
+import { format } from "date-fns";
+import {
+   MapPin,
+   Calendar,
+   Clock,
+   IndianRupee,
+   AlertCircle,
+   Edit2,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+
+interface ReviewStepProps {
+   form: UseFormReturn<TaskFormData>;
+   onEdit: (step: number) => void;
+   onSubmit: () => void;
+   isSubmitting: boolean;
+}
+
+const CATEGORIES: Record<string, { label: string; icon: string }> = {
+   cleaning: { label: "Cleaning", icon: "🧹" },
+   repair: { label: "Repairs", icon: "🔧" },
+   delivery: { label: "Delivery", icon: "📦" },
+   assembly: { label: "Assembly", icon: "🔨" },
+   gardening: { label: "Gardening", icon: "🌱" },
+   petcare: { label: "Pet Care", icon: "🐕" },
+   other: { label: "Other", icon: "✨" },
+};
+
+const URGENCY_OPTIONS: Record<string, { label: string; surcharge: number }> = {
+   standard: { label: "Standard", surcharge: 0 },
+   soon: { label: "Soon", surcharge: 20 },
+   urgent: { label: "Urgent", surcharge: 50 },
+};
+
+export function ReviewStep({
+   form,
+   onEdit,
+   onSubmit,
+   isSubmitting,
+}: ReviewStepProps) {
+   const data = form.watch();
+   const agreedToGuidelines = form.watch("agreedToGuidelines");
+
+   // Calculate warnings
+   const warnings: string[] = [];
+   if (data.budgetType === "fixed" && data.budget && data.budget < 200) {
+      warnings.push(
+         "Your budget is below typical range. You may receive fewer offers."
+      );
+   }
+   if (data.flexibility === "exact") {
+      warnings.push(
+         "Exact timing may limit available taskers. Consider adding flexibility."
+      );
+   }
+
+   const category = CATEGORIES[data.category] || { label: "Other", icon: "✨" };
+   const urgency = URGENCY_OPTIONS[data.urgency] || {
+      label: "Standard",
+      surcharge: 0,
+   };
+   const totalBudget =
+      data.budgetType === "fixed" && data.budget
+         ? data.budget + urgency.surcharge
+         : null;
+
+   return (
+      <div className="space-y-6">
+         {/* Header */}
+         <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+               Review your task
+            </h2>
+            <p className="text-sm text-gray-600">
+               Check everything looks good before posting
+            </p>
+         </div>
+
+         {/* Warnings */}
+         {warnings.length > 0 && (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg space-y-2">
+               {warnings.map((warning, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                     <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                     <p className="text-sm text-amber-800">{warning}</p>
+                  </div>
+               ))}
+            </div>
+         )}
+
+         {/* Task Details Card */}
+         <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+            <div className="flex items-start justify-between">
+               <h3 className="text-lg font-semibold text-gray-900">
+                  Task Details
+               </h3>
+               <button
+                  type="button"
+                  onClick={() => onEdit(1)}
+                  className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700"
+               >
+                  <Edit2 className="w-4 h-4" />
+                  Edit
+               </button>
+            </div>
+
+            <div className="space-y-3">
+               <div>
+                  <div className="flex items-center gap-2 mb-1">
+                     <span className="text-2xl">{category.icon}</span>
+                     <span className="text-base font-medium text-gray-900">
+                        {category.label}
+                     </span>
+                     {data.subcategory && (
+                        <>
+                           <span className="text-gray-400">•</span>
+                           <span className="text-sm text-gray-600">
+                              {data.subcategory}
+                           </span>
+                        </>
+                     )}
+                  </div>
+               </div>
+
+               <div>
+                  <h4 className="text-base font-semibold text-gray-900 mb-1">
+                     {data.title}
+                  </h4>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                     {data.description}
+                  </p>
+               </div>
+
+               {data.requirements.length > 0 && (
+                  <div>
+                     <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 block">
+                        Requirements
+                     </span>
+                     <div className="flex flex-wrap gap-2">
+                        {data.requirements.map((req, index) => (
+                           <Badge
+                              key={index}
+                              variant="secondary"
+                              className="h-6 px-3 text-xs bg-gray-100 text-gray-700"
+                           >
+                              {req}
+                           </Badge>
+                        ))}
+                     </div>
+                  </div>
+               )}
+
+               {data.estimatedDuration && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                     <Clock className="w-4 h-4" />
+                     <span>Estimated {data.estimatedDuration} hours</span>
+                  </div>
+               )}
+            </div>
+         </div>
+
+         {/* Location & Schedule Card */}
+         <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+            <div className="flex items-start justify-between">
+               <h3 className="text-lg font-semibold text-gray-900">
+                  Location & Schedule
+               </h3>
+               <button
+                  type="button"
+                  onClick={() => onEdit(2)}
+                  className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700"
+               >
+                  <Edit2 className="w-4 h-4" />
+                  Edit
+               </button>
+            </div>
+
+            <div className="space-y-3">
+               <div className="flex items-start gap-3">
+                  <MapPin className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
+                  <div>
+                     <p className="text-sm font-medium text-gray-900">
+                        {data.location.address}
+                     </p>
+                     {data.location.city && (
+                        <p className="text-xs text-gray-500 mt-1">
+                           {data.location.city}
+                           {data.location.state && `, ${data.location.state}`}
+                        </p>
+                     )}
+                  </div>
+               </div>
+
+               <div className="flex items-center gap-3">
+                  <Calendar className="w-5 h-5 text-gray-400" />
+                  <span className="text-sm text-gray-900">
+                     {data.scheduledDate
+                        ? format(data.scheduledDate, "EEEE, MMMM d, yyyy")
+                        : "Date not set"}
+                  </span>
+               </div>
+
+               <div className="flex items-center gap-3">
+                  <Clock className="w-5 h-5 text-gray-400" />
+                  <div className="flex items-center gap-2">
+                     <span className="text-sm text-gray-900">
+                        {format(data.scheduledTimeStart, "MMM d, h:mm aa")} -{" "}
+                        {format(data.scheduledTimeEnd, "MMM d, h:mm aa")}
+                     </span>
+                     {data.flexibility !== "exact" && (
+                        <Badge
+                           variant="secondary"
+                           className="h-5 px-2 text-xs bg-blue-50 text-blue-700"
+                        >
+                           {data.flexibility === "flexible" && "±1 hour"}
+                           {data.flexibility === "very_flexible" && "±3 hours"}
+                        </Badge>
+                     )}
+                  </div>
+               </div>
+            </div>
+         </div>
+
+         {/* Budget Card */}
+         <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+            <div className="flex items-start justify-between">
+               <h3 className="text-lg font-semibold text-gray-900">Budget</h3>
+               <button
+                  type="button"
+                  onClick={() => onEdit(3)}
+                  className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700"
+               >
+                  <Edit2 className="w-4 h-4" />
+                  Edit
+               </button>
+            </div>
+
+            <div className="space-y-3">
+               {data.budgetType === "fixed" && totalBudget ? (
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                     <div className="flex items-center gap-3">
+                        <IndianRupee className="w-5 h-5 text-gray-600" />
+                        <div>
+                           <span className="text-sm text-gray-600 block">
+                              Fixed price
+                           </span>
+                           {urgency.surcharge > 0 && (
+                              <span className="text-xs text-gray-500">
+                                 ₹{data.budget} + ₹{urgency.surcharge} urgency
+                                 fee
+                              </span>
+                           )}
+                        </div>
+                     </div>
+                     <span className="text-2xl font-bold text-gray-900">
+                        ₹{totalBudget}
+                     </span>
+                  </div>
+               ) : (
+                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                     <svg
+                        className="w-5 h-5 text-gray-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                     >
+                        <path
+                           strokeLinecap="round"
+                           strokeLinejoin="round"
+                           strokeWidth={2}
+                           d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                        />
+                     </svg>
+                     <span className="text-sm text-gray-900 font-medium">
+                        Negotiable - Review offers from taskers
+                     </span>
+                  </div>
+               )}
+
+               <div className="flex items-center gap-2 pt-1">
+                  <Badge
+                     variant="secondary"
+                     className={cn(
+                        "h-6 px-3 text-xs font-medium",
+                        data.urgency === "urgent" &&
+                           "bg-orange-100 text-orange-700",
+                        data.urgency === "soon" && "bg-blue-100 text-blue-700",
+                        data.urgency === "standard" &&
+                           "bg-gray-100 text-gray-700"
+                     )}
+                  >
+                     {urgency.label}
+                  </Badge>
+                  {data.urgency === "urgent" && (
+                     <span className="text-xs text-gray-500">
+                        Priority placement
+                     </span>
+                  )}
+               </div>
+            </div>
+         </div>
+
+         {/* Guidelines Checkbox */}
+         <FormField
+            control={form.control}
+            name="agreedToGuidelines"
+            render={({ field }) => (
+               <FormItem className="space-y-0">
+                  <div className="inline-flex items-start gap-2">
+                     <FormControl>
+                        <Checkbox
+                           checked={field.value}
+                           onCheckedChange={field.onChange}
+                           className="mt-0.5"
+                        />
+                     </FormControl>
+
+                     {/* inline text container */}
+                     <FormLabel className="inline text-sm font-normal text-gray-700 leading-relaxed cursor-pointer">
+                        I agree to ExtraHand&apos;s{" "}
+                        <a
+                           href="/terms"
+                           className="inline text-blue-600 hover:underline"
+                        >
+                           Terms of Service
+                        </a>{" "}
+                        and{" "}
+                        <a
+                           href="/guidelines"
+                           className="inline text-blue-600 hover:underline"
+                        >
+                           Community Guidelines
+                        </a>
+                        . I understand that taskers are independent contractors.
+                     </FormLabel>
+                  </div>
+
+                  <FormMessage className="mt-1" />
+               </FormItem>
+            )}
+         />
+
+         {/* Submit Button */}
+         <div className="pt-4 space-y-3">
+            <Button
+               type="submit"
+               onClick={onSubmit}
+               disabled={!agreedToGuidelines || isSubmitting}
+               className="w-full h-12 font-medium bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300"
+               size="lg"
+            >
+               {isSubmitting ? "Posting..." : "Post Task"}
+            </Button>
+            <p className="text-xs text-center text-gray-500">
+               Your task will be visible to taskers in your area immediately
+            </p>
+         </div>
+      </div>
+   );
+}
