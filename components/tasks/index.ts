@@ -1,3 +1,4 @@
+// Task Creation Flow
 export { TaskCreationFlow } from "./TaskCreationFlow";
 export type { TaskFormData } from "./TaskCreationFlow";
 export { TaskBasicsStep } from "./steps/TaskBasicsStep";
@@ -7,3 +8,8 @@ export { ReviewStep } from "./steps/ReviewStep";
 export { ImageUpload } from "../shared/ImageUpload";
 export { InteractiveLocationPicker } from "../shared/InteractiveLocationPicker";
 export { TaskCreationErrorBoundary } from "./TaskCreationErrorBoundary";
+export { TaskMap } from "./TaskMap";
+export { TaskCard } from "./TaskCard";
+export { CompactFilterBar } from "./CompactFilterBar";
+export type { CompactFilterState } from "./CompactFilterBar";
+export { TaskListSkeleton, TaskCardSkeleton } from "./TaskSkeleton";

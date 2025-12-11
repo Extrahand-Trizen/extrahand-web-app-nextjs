@@ -70,8 +70,7 @@ export default async function CityPage({ params }: PageProps) {
 
    return (
       <>
-         <LandingHeader />
-         <div className="min-h-screen bg-white">
+         <main>
             {/* Hero Section */}
             <CityHero city={cityInfo} />
 
@@ -91,8 +90,7 @@ export default async function CityPage({ params }: PageProps) {
                citySlug={cityInfo.slug}
                cityName={cityInfo.name}
             />
-         </div>
-         <LandingFooter />
+         </main>
       </>
    );
 }

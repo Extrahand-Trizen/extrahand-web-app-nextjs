@@ -12,8 +12,7 @@ import { LandingFooter } from "@/components/layout/LandingFooter";
 export default function EarnMoneyPage() {
    return (
       <>
-         <LandingHeader />
-         <main className="min-h-screen">
+         <main>
             <TaskerHero />
             <WhoCanBeTasker />
             <HowTaskingWorks />
@@ -21,7 +20,6 @@ export default function EarnMoneyPage() {
             <TaskerFAQ />
             <FinalCTA />
          </main>
-         <LandingFooter />
       </>
    );
 }
