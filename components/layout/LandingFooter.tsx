@@ -84,7 +84,7 @@ const socialLinks = [
 export const LandingFooter: React.FC = () => {
    return (
       <footer className="bg-secondary-900 text-white">
-         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-12">
             {/* Main footer content */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 lg:gap-10 mb-12">
                {/* Brand column */}
@@ -93,15 +93,17 @@ export const LandingFooter: React.FC = () => {
                      <img
                         src="/assets/images/logo.png"
                         alt="ExtraHand"
-                        className="h-8 w-8"
+                        className="size-8 md:size-12"
                         onError={(e) => {
                            (e.target as HTMLImageElement).style.display =
                               "none";
                         }}
                      />
-                     <span className="text-xl font-bold">ExtraHand</span>
+                     <span className="text-lg md:text-xl font-bold">
+                        ExtraHand
+                     </span>
                   </Link>
-                  <p className="text-secondary-400 text-sm leading-relaxed mb-6">
+                  <p className="text-secondary-400 text-xs md:text-sm leading-relaxed mb-4 md:mb-6">
                      Get any task done by verified local experts. Safe, secure,
                      and simple.
                   </p>
@@ -113,9 +115,9 @@ export const LandingFooter: React.FC = () => {
                            key={social.label}
                            href={social.href}
                            aria-label={social.label}
-                           className="w-10 h-10 rounded-full bg-secondary-800 hover:bg-secondary-700 flex items-center justify-center transition-colors"
+                           className="size-8 md:size-10 rounded-full bg-secondary-800 hover:bg-secondary-700 flex items-center justify-center transition-colors"
                         >
-                           <social.icon className="w-5 h-5 text-secondary-400" />
+                           <social.icon className="size-4 md:size-5 text-secondary-400" />
                         </a>
                      ))}
                   </div>
@@ -124,15 +126,15 @@ export const LandingFooter: React.FC = () => {
                {/* Link columns */}
                {Object.values(footerLinks).map((column) => (
                   <div key={column.title}>
-                     <h3 className="font-semibold text-white mb-4">
+                     <h3 className="text-sm md:text-base font-semibold text-white mb-3 md:mb-4">
                         {column.title}
                      </h3>
-                     <ul className="space-y-3">
+                     <ul className="md:space-y-3">
                         {column.links.map((link) => (
                            <li key={link.label}>
                               <Link
                                  href={link.href}
-                                 className="text-secondary-400 hover:text-white text-sm transition-colors"
+                                 className="text-secondary-400 hover:text-white text-xs md:text-sm transition-colors"
                               >
                                  {link.label}
                               </Link>
@@ -144,13 +146,13 @@ export const LandingFooter: React.FC = () => {
             </div>
 
             {/* App download section */}
-            <div className="border-t border-secondary-800 pt-8 mb-8">
+            <div className="border-t border-secondary-800 py-6 md:py-8">
                <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
                   <div>
-                     <h4 className="font-semibold text-white mb-1">
+                     <h4 className="font-semibold text-white text-sm md:text-base mb-1">
                         Get the app
                      </h4>
-                     <p className="text-secondary-400 text-sm">
+                     <p className="text-secondary-400 text-xs md:text-sm">
                         Download ExtraHand on your mobile device
                      </p>
                   </div>
@@ -158,10 +160,10 @@ export const LandingFooter: React.FC = () => {
                      {/* App Store */}
                      <a
                         href="#"
-                        className="flex items-center gap-3 bg-white rounded-xl px-4 py-2.5 hover:bg-secondary-100 transition-colors"
+                        className="flex items-center gap-3 bg-white rounded-xl px-3 py-2 md:px-4 md:py-2.5 hover:bg-secondary-100 transition-colors"
                      >
                         <svg
-                           className="w-7 h-7"
+                           className="size-5 md:size-7"
                            viewBox="0 0 24 24"
                            fill="none"
                         >
@@ -174,7 +176,7 @@ export const LandingFooter: React.FC = () => {
                            <p className="text-[10px] text-secondary-500 leading-none">
                               Download on the
                            </p>
-                           <p className="text-sm font-semibold text-secondary-900">
+                           <p className="text-xs md:text-sm font-semibold text-secondary-900">
                               App Store
                            </p>
                         </div>
@@ -183,10 +185,10 @@ export const LandingFooter: React.FC = () => {
                      {/* Google Play */}
                      <a
                         href="#"
-                        className="flex items-center gap-3 bg-white rounded-xl px-4 py-2.5 hover:bg-secondary-100 transition-colors"
+                        className="flex items-center gap-3 bg-white rounded-xl px-3 py-2 md:px-4 md:py-2.5 hover:bg-secondary-100 transition-colors"
                      >
                         <svg
-                           className="w-6 h-6"
+                           className="size-5 md:size-6"
                            viewBox="0 0 24 24"
                            fill="none"
                         >
@@ -211,7 +213,7 @@ export const LandingFooter: React.FC = () => {
                            <p className="text-[10px] text-secondary-500 leading-none">
                               Get it on
                            </p>
-                           <p className="text-sm font-semibold text-secondary-900">
+                           <p className="text-xs md:text-sm font-semibold text-secondary-900">
                               Google Play
                            </p>
                         </div>
@@ -221,11 +223,11 @@ export const LandingFooter: React.FC = () => {
             </div>
 
             {/* Bottom bar */}
-            <div className="border-t border-secondary-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-               <p className="text-secondary-500 text-sm">
+            <div className="border-t border-secondary-800 py-5 md:pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+               <p className="text-secondary-500 text-xs md:text-sm">
                   © {new Date().getFullYear()} ExtraHand. All rights reserved.
                </p>
-               <div className="flex items-center gap-6 text-sm">
+               <div className="flex items-center gap-6 text-xs md:text-sm">
                   <Link
                      href="#"
                      className="text-secondary-400 hover:text-white transition-colors"
@@ -250,4 +252,3 @@ export const LandingFooter: React.FC = () => {
       </footer>
    );
 };
-

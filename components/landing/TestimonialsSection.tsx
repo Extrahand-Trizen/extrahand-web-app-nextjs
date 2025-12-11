@@ -65,24 +65,24 @@ interface TestimonialCardProps {
 }
 
 const TestimonialCard: React.FC<TestimonialCardProps> = ({ testimonial }) => (
-   <div className="bg-white rounded-2xl p-6 shadow-sm border border-secondary-100 hover:shadow-lg transition-shadow">
+   <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-secondary-100 hover:shadow-lg transition-shadow">
       {/* Quote icon */}
-      <Quote className="w-8 h-8 text-primary-200 mb-4" />
+      <Quote className="size-6 md:size-8 text-primary-200 mb-4" />
 
       {/* Quote text */}
-      <p className="text-secondary-700 leading-relaxed mb-6">
+      <p className="text-secondary-700 leading-relaxed mb-4 md:mb-6 text-sm md:text-base">
          "{testimonial.quote}"
       </p>
 
       {/* Highlight badge */}
-      <div className="inline-flex items-center px-3 py-1.5 bg-primary-50 text-primary-700 text-sm font-semibold rounded-full mb-6">
+      <div className="inline-flex items-center px-3 py-1.5 bg-primary-50 text-primary-700 text-xs md:text-sm font-semibold rounded-full mb-6">
          {testimonial.highlight}
       </div>
 
       {/* Author info */}
       <div className="flex items-center gap-4 pt-4 border-t border-secondary-100">
          {/* Avatar */}
-         <div className="w-12 h-12 rounded-full bg-secondary-100 overflow-hidden">
+         <div className="size-8 md:size-12 rounded-full bg-secondary-100 overflow-hidden">
             <img
                src={testimonial.avatar}
                alt={testimonial.name}
@@ -100,8 +100,8 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({ testimonial }) => (
 
          {/* Name and details */}
          <div className="flex-1">
-            <p className="font-bold text-secondary-900">{testimonial.name}</p>
-            <p className="text-sm text-secondary-500">
+            <p className="font-bold text-secondary-900 text-sm md:text-base">{testimonial.name}</p>
+            <p className="text-xs md:text-sm text-secondary-500">
                {testimonial.role} • {testimonial.location}
             </p>
          </div>
@@ -112,7 +112,7 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({ testimonial }) => (
                <Star
                   key={i}
                   className={cn(
-                     "w-4 h-4",
+                     "size-4",
                      i < testimonial.rating
                         ? "text-yellow-400 fill-yellow-400"
                         : "text-secondary-200"
@@ -126,14 +126,14 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({ testimonial }) => (
 
 export const TestimonialsSection: React.FC = () => {
    return (
-      <section id="testimonials" className="py-20 bg-secondary-50/50">
+      <section id="testimonials" className="py-12 md:py-20 bg-secondary-50/50">
          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Section header */}
-            <div className="text-center mb-12">
-               <h2 className="text-3xl sm:text-4xl font-bold text-secondary-900 mb-4">
+            <div className="text-center mb-8 md:mb-12">
+               <h2 className="text-2xl md:text-4xl font-bold text-secondary-900 mb-4">
                   Loved by Thousands
                </h2>
-               <p className="text-lg text-secondary-600 max-w-2xl mx-auto">
+               <p className="text-sm md:text-lg text-secondary-600 max-w-2xl mx-auto">
                   Real stories from real people who use ExtraHand every day.
                </p>
             </div>
@@ -158,21 +158,21 @@ export const TestimonialsSection: React.FC = () => {
             </div>
 
             {/* Overall rating */}
-            <div className="mt-12 text-center">
+            <div className="mt-6 md:mt-12 text-center">
                <div className="inline-flex items-center gap-3 bg-white px-6 py-4 rounded-2xl shadow-sm border border-secondary-100">
                   <div className="flex items-center gap-1">
                      {[...Array(5)].map((_, i) => (
                         <Star
                            key={i}
-                           className="w-6 h-6 text-yellow-400 fill-yellow-400"
+                           className="size-4 md:size-6 text-yellow-400 fill-yellow-400"
                         />
                      ))}
                   </div>
                   <div className="text-left">
-                     <p className="font-bold text-secondary-900">
+                     <p className="font-bold text-secondary-900 text-sm md:text-base">
                         4.8 out of 5
                      </p>
-                     <p className="text-sm text-secondary-500">
+                     <p className="text-xs md:text-sm text-secondary-500">
                         Based on 12,500+ reviews
                      </p>
                   </div>

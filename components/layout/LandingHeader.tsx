@@ -194,19 +194,19 @@ export const LandingHeader: React.FC = () => {
             )}
          >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-               <div className="flex items-center justify-between h-16">
+               <div className="flex items-center justify-between h-14 md:h-16">
                   {/* Logo */}
                   <Link href="/" className="flex items-center gap-2 shrink-0">
                      <img
                         src="/assets/images/logo.png"
                         alt="ExtraHand"
-                        className="h-8 w-8"
+                        className="size-7 md:size-8"
                         onError={(e) => {
                            (e.target as HTMLImageElement).style.display =
                               "none";
                         }}
                      />
-                     <span className="text-xl font-bold text-secondary-900">
+                     <span className="text-lg md:text-xl font-bold text-secondary-900">
                         ExtraHand
                      </span>
                   </Link>
@@ -420,13 +420,13 @@ export const LandingHeader: React.FC = () => {
 
                {/* Menu Panel */}
                <div className="absolute top-16 left-0 right-0 bg-white border-b border-secondary-200 shadow-lg">
-                  <nav className="px-4 py-4">
+                  <nav className="p-2">
                      {/* Nav Items */}
                      {navItems.map((item) => (
                         <button
                            key={item.label}
                            onClick={() => handleNavClick(item.href)}
-                           className="w-full text-left py-3 px-4 text-base font-medium text-secondary-700 hover:bg-secondary-50 rounded-lg transition-colors"
+                           className="w-full text-left py-2 px-3 md:py-3 md:px-4 text-sm md:text-base font-medium text-secondary-700 hover:bg-secondary-50 rounded-lg transition-colors"
                         >
                            {item.label}
                         </button>
@@ -438,14 +438,14 @@ export const LandingHeader: React.FC = () => {
                      {/* CTA Buttons */}
                      <div className="flex flex-col gap-3 px-4">
                         <Link href="/tasks/new" className="w-full">
-                           <Button className="w-full bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold py-6">
+                           <Button className="w-full bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold py-5">
                               Post a Task
                            </Button>
                         </Link>
                         <Link href="/earn-money" className="w-full">
                            <Button
                               variant="outline"
-                              className="w-full border-secondary-300 text-secondary-700 font-medium py-6"
+                              className="w-full border-secondary-300 text-secondary-700 font-medium py-5"
                            >
                               Become a Tasker
                            </Button>
@@ -453,7 +453,7 @@ export const LandingHeader: React.FC = () => {
                         <Link href="/signup" className="w-full">
                            <Button
                               variant="ghost"
-                              className="w-full text-secondary-700 font-medium py-6"
+                              className="w-full text-secondary-700 font-medium py-5"
                            >
                               Signup
                            </Button>
@@ -461,7 +461,7 @@ export const LandingHeader: React.FC = () => {
                         <Link href="/login" className="w-full">
                            <Button
                               variant="ghost"
-                              className="w-full text-secondary-700 font-medium py-6"
+                              className="w-full text-secondary-700 font-medium py-5"
                            >
                               Log in
                            </Button>

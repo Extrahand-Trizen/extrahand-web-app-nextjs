@@ -33,7 +33,7 @@ export const HeroSection: React.FC = () => {
    };
 
    return (
-      <section className="relative h-[600px] flex items-center justify-center overflow-hidden">
+      <section className="relative h-[450px] md:h-[600px] flex items-center justify-center overflow-hidden">
          {/* Background Image Carousel */}
          <div className="absolute inset-0 z-0">
             {heroImages.map((image, index) => (
@@ -54,37 +54,38 @@ export const HeroSection: React.FC = () => {
 
          {/* 2. The Content Card */}
          <div className="relative z-10 w-full max-w-3xl px-4 text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 drop-shadow-md tracking-tight">
+            <h1 className="text-3xl md:text-4xl lg:text-6xl font-semibold text-white mb-3 leading-tight tracking-tight">
                How can we help you today?
             </h1>
 
-            <p className="text-lg md:text-xl text-white/90 mb-8 font-medium drop-shadow-sm">
-               Join 50,000+ neighbors getting things done.
+            <p className="text-sm md:text-lg text-white/90 mb-5 font-medium">
+               Join 50,000+ neighbours getting things done.
             </p>
 
             {/* 3. The "Floating" Search Bar */}
-            <div className="bg-white p-2 rounded-2xl shadow-2xl max-w-2xl mx-auto">
+            <div className="bg-white p-2 rounded-lg shadow-lg max-w-2xl mx-auto">
                <form
                   onSubmit={handleSearch}
                   className="flex flex-col sm:flex-row items-center gap-2"
                >
                   <div className="relative flex-1 w-full">
-                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                        <Search className="w-5 h-5" />
+                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                        <Search className="w-4 h-4" />
                      </div>
                      <input
                         type="text"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Try 'Mount a TV' or 'House Cleaning'"
-                        className="w-full h-14 pl-12 pr-4 rounded-xl bg-transparent outline-none text-gray-800 placeholder:text-gray-400 text-lg"
+                        placeholder="Try: Mount a TV, House cleaning, or Moving"
+                        className="w-full h-10 pl-10 pr-3 rounded-md bg-transparent outline-none text-gray-800 placeholder:text-gray-400 text-sm"
+                        aria-label="Search tasks or describe what you need"
                      />
                   </div>
 
                   <Button
                      type="submit"
                      size="lg"
-                     className="w-full sm:w-auto h-14 px-8 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-bold text-lg shadow-md"
+                     className="h-8 md:h-10 px-5 rounded-md bg-primary-600 hover:bg-primary-700 text-white font-semibold text-sm shadow-sm"
                   >
                      Get Offers
                   </Button>
@@ -105,7 +106,7 @@ export const HeroSection: React.FC = () => {
                   <button
                      key={tag}
                      onClick={() => setQuery(tag)}
-                     className="px-4 py-2 rounded-full bg-white/20 hover:bg-white/30 text-white backdrop-blur-md text-sm font-medium transition-all border border-white/30"
+                     className="px-3 md:px-4 py-1 md:py-2 rounded-full bg-white/20 hover:bg-white/30 text-white backdrop-blur-md text-xs md:text-sm font-medium transition-all border border-white/30"
                   >
                      {tag}
                   </button>
