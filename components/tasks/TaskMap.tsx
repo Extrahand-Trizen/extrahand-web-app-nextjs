@@ -39,18 +39,31 @@ export function TaskMap({
 
    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-   // Load Google Maps Script
+   // Load Google Maps Script (only once globally)
    useEffect(() => {
       if (!apiKey) {
          console.warn("Google Maps API key not configured");
          return;
       }
 
+      // Check if already loaded
       if (window.google?.maps) {
          setMapLoaded(true);
          return;
       }
 
+      // Check if script is already being loaded
+      const existingScript = document.querySelector(
+         'script[src*="maps.googleapis.com/maps/api/js"]'
+      );
+
+      if (existingScript) {
+         // Script already exists, just wait for it to load
+         existingScript.addEventListener("load", () => setMapLoaded(true));
+         return;
+      }
+
+      // Create new script only if it doesn't exist
       const script = document.createElement("script");
       script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
       script.async = true;
@@ -58,7 +71,16 @@ export function TaskMap({
       script.onload = () => setMapLoaded(true);
       script.onerror = () => console.error("Failed to load Google Maps");
       document.head.appendChild(script);
-   }, []);
+
+      return () => {
+         // Cleanup: remove event listener if component unmounts before load
+         if (existingScript) {
+            existingScript.removeEventListener("load", () =>
+               setMapLoaded(true)
+            );
+         }
+      };
+   }, [apiKey]);
 
    // Initialize Google Map
    useEffect(() => {

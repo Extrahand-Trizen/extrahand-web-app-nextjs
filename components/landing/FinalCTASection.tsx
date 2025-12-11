@@ -43,16 +43,20 @@ export const FinalCTASection: React.FC = () => {
             </p>
 
             {/* Benefits checklist */}
-            <div className="flex flex-col justify-center items-start md:items-center gap-4 mb-10">
-               {benefits.map((benefit, idx) => (
-                  <div
-                     key={idx}
-                     className="flex items-center gap-2 text-secondary-300"
-                  >
-                     <CheckCircle className="size-4 md:size-5 text-primary-400" />
-                     <span className="text-xs md:text-sm font-medium">{benefit}</span>
-                  </div>
-               ))}
+            <div className="flex flex-col items-center justify-center md:items-center gap-4 mb-10">
+               <div className="flex flex-col text-left gap-4">
+                  {benefits.map((benefit, idx) => (
+                     <div
+                        key={idx}
+                        className="flex items-center gap-2 text-secondary-300"
+                     >
+                        <CheckCircle className="size-4 md:size-5 text-primary-400" />
+                        <span className="text-xs md:text-sm font-medium">
+                           {benefit}
+                        </span>
+                     </div>
+                  ))}
+               </div>
             </div>
 
             {/* CTA buttons */}
