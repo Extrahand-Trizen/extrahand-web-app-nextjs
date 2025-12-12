@@ -5,11 +5,19 @@ FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
+# Configure npm for better network reliability
+RUN npm config set fetch-retries 5 && \
+    npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000 && \
+    npm config set fetch-timeout 300000
+
 # Copy package files
 COPY package.json package-lock.json* ./
 
-# Install dependencies
-RUN npm ci
+# Install dependencies with retry logic
+RUN npm ci --prefer-offline --no-audit || \
+    (echo "First attempt failed, retrying..." && sleep 5 && npm ci --prefer-offline --no-audit) || \
+    (echo "Second attempt failed, retrying with cache clear..." && npm cache clean --force && npm ci --prefer-offline --no-audit)
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder
