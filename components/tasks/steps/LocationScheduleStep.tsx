@@ -59,10 +59,10 @@ export function LocationScheduleStep({
       <div className="space-y-6">
          {/* Header */}
          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
                Where and when?
             </h2>
-            <p className="text-sm text-gray-600">
+            <p className="text-xs md:text-sm text-gray-600">
                Set location and schedule for your task
             </p>
          </div>
@@ -73,7 +73,7 @@ export function LocationScheduleStep({
             name="location"
             render={({ field }) => (
                <FormItem>
-                  <FormLabel>Task location</FormLabel>
+                  <FormLabel className="text-xs md:text-sm">Task location</FormLabel>
                   <FormControl>
                      <InteractiveLocationPicker
                         value={field.value as any}
@@ -95,16 +95,16 @@ export function LocationScheduleStep({
                name="location.pinCode"
                render={({ field }) => (
                   <FormItem className="animate-in slide-in-from-top duration-200">
-                     <FormLabel>Pin Code (optional)</FormLabel>
+                     <FormLabel className="text-xs md:text-sm">Pin Code (optional)</FormLabel>
                      <FormControl>
                         <Input
                            placeholder="e.g., 560001"
                            {...field}
-                           className="h-12"
+                           className="h-10 text-sm"
                            maxLength={6}
                         />
                      </FormControl>
-                     <FormDescription>
+                     <FormDescription className="text-xs">
                         Helps taskers in your area find this task
                      </FormDescription>
                      <FormMessage />
@@ -119,9 +119,9 @@ export function LocationScheduleStep({
             name="scheduledDate"
             render={({ field }) => (
                <FormItem>
-                  <FormLabel>Task date</FormLabel>
+                  <FormLabel className="text-xs md:text-sm">Task date</FormLabel>
                   <FormControl>
-                     <div className="space-y-3">
+                     <div className="space-y-2">
                         {/* Quick date buttons */}
                         <div className="grid grid-cols-4 gap-2">
                            {QUICK_DATES.map((quick) => (
@@ -137,7 +137,7 @@ export function LocationScheduleStep({
                                              addDays(new Date(), quick.value),
                                              "yyyy-MM-dd"
                                           )
-                                       ? "border-blue-600 bg-blue-50 text-blue-600"
+                                       ? "border-primary-600 bg-primary-50 text-primary-600"
                                        : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
                                  )}
                               >
@@ -153,7 +153,7 @@ export function LocationScheduleStep({
                                  type="button"
                                  variant="outline"
                                  className={cn(
-                                    "w-full h-12 justify-start text-left font-normal",
+                                    "w-full h-10 justify-start text-left font-normal",
                                     !field.value && "text-gray-500"
                                  )}
                               >
@@ -191,15 +191,16 @@ export function LocationScheduleStep({
             name="scheduledTimeStart"
             render={({ field }) => (
                <FormItem>
-                  <FormLabel>Start date & time</FormLabel>
+                  <FormLabel className="text-xs md:text-sm">Start date & time</FormLabel>
                   <FormControl>
                      <DateTimePicker
                         value={field.value}
                         onChange={field.onChange}
                         placeholder="Select start date & time"
+                        className="h-10"
                      />
                   </FormControl>
-                  <FormDescription>When should the task begin?</FormDescription>
+                  <FormDescription className="text-xs">When should the task begin?</FormDescription>
                   <FormMessage />
                </FormItem>
             )}
@@ -211,15 +212,16 @@ export function LocationScheduleStep({
             name="scheduledTimeEnd"
             render={({ field }) => (
                <FormItem>
-                  <FormLabel>End date & time</FormLabel>
+                  <FormLabel className="text-xs md:text-sm">End date & time</FormLabel>
                   <FormControl>
                      <DateTimePicker
                         value={field.value}
                         onChange={field.onChange}
                         placeholder="Select end date & time"
+                        className="h-10"
                      />
                   </FormControl>
-                  <FormDescription>
+                  <FormDescription className="text-xs">
                      When should the task be completed by?
                   </FormDescription>
                   <FormMessage />
@@ -233,7 +235,7 @@ export function LocationScheduleStep({
             name="flexibility"
             render={({ field }) => (
                <FormItem>
-                  <FormLabel>Time flexibility</FormLabel>
+                  <FormLabel className="text-xs md:text-sm">Time flexibility</FormLabel>
                   <FormControl>
                      <div className="grid grid-cols-3 gap-3">
                         {["exact", "flexible", "very_flexible"].map((flex) => (
@@ -242,9 +244,9 @@ export function LocationScheduleStep({
                               type="button"
                               onClick={() => field.onChange(flex)}
                               className={cn(
-                                 "h-14 rounded-lg border-2 text-sm font-medium transition-all",
+                                 "h-10 rounded-lg border-2 text-sm font-medium transition-all",
                                  field.value === flex
-                                    ? "border-blue-600 bg-blue-50 text-blue-600"
+                                    ? "border-primary-600 bg-primary-50 text-primary-600"
                                     : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
                               )}
                            >
@@ -255,7 +257,7 @@ export function LocationScheduleStep({
                         ))}
                      </div>
                   </FormControl>
-                  <FormDescription>
+                  <FormDescription className="text-xs">
                      More flexibility can get you more offers
                   </FormDescription>
                   <FormMessage />
@@ -268,7 +270,7 @@ export function LocationScheduleStep({
             <Button
                type="button"
                onClick={onNext}
-               className="w-full h-12 font-medium bg-blue-600 hover:bg-blue-700"
+               className="w-full h-10 font-medium bg-primary-600 hover:bg-primary-700"
                size="lg"
             >
                Continue

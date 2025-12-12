@@ -22,35 +22,28 @@ interface LocationData {
    coordinates?: [number, number] | undefined; // [lng, lat]
 }
 
+interface LocationSuggestion {
+   place_id: string;
+   description: string;
+   main_text: string;
+   secondary_text: string;
+}
+
 interface InteractiveLocationPickerProps {
    value: LocationData;
    onChange: (location: LocationData) => void;
    onCoordinatesChange?: (coords: [number, number]) => void;
 }
 
-// Geocoding service (will integrate with Google Maps Geocoding API)
-const reverseGeocode = async (
-   lat: number,
-   lng: number
-): Promise<Partial<LocationData>> => {
-   // TODO: Replace with actual Google Maps Geocoding API
-   // For now, return mock data
+// Parse location data from geocoding API response
+const parseLocationFromGeocode = (data: any): Partial<LocationData> => {
    return {
-      address: `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
-      city: "Bangalore",
-      state: "Karnataka",
-      pinCode: "560001",
-      country: "India",
+      address: data.address || data.description || "",
+      city: data.raw.address.city || "",
+      state: data.raw.address.state || "",
+      pinCode: data.raw.address.postcode,
+      country: data.raw.address.country || "India",
    };
-};
-
-const geocodeAddress = async (
-   address: string
-): Promise<{ lat: number; lng: number } | null> => {
-   // TODO: Replace with actual Google Maps Geocoding API
-   // For now, return mock coordinates (Bangalore)
-   if (!address.trim()) return null;
-   return { lat: 12.9716, lng: 77.5946 };
 };
 
 export function InteractiveLocationPicker({
@@ -66,8 +59,43 @@ export function InteractiveLocationPicker({
       value.coordinates || [77.5946, 12.9716]
    );
    const [addressInput, setAddressInput] = useState(value.address);
-   const [suggestions, setSuggestions] = useState<string[]>([]);
+   const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
    const [showSuggestions, setShowSuggestions] = useState(false);
+   const [isSearching, setIsSearching] = useState(false);
+
+   // Debounce location search
+   useEffect(() => {
+      if (!addressInput || addressInput.length < 2) {
+         setSuggestions([]);
+         return;
+      }
+
+      const timer = setTimeout(() => {
+         searchLocations(addressInput);
+      }, 300);
+
+      return () => clearTimeout(timer);
+   }, [addressInput]);
+
+   // Search locations using API
+   const searchLocations = async (searchText: string) => {
+      setIsSearching(true);
+      try {
+         const response = await fetch(
+            `/api/geocode/search?input=${encodeURIComponent(searchText)}`
+         );
+         const data = await response.json();
+
+         if (data.suggestions) {
+            setSuggestions(data.suggestions);
+         }
+      } catch (error) {
+         console.error("Error searching locations:", error);
+         toast.error("Could not search locations");
+      } finally {
+         setIsSearching(false);
+      }
+   };
 
    // Get user's current location
    const handleLocateMe = useCallback(() => {
@@ -95,9 +123,19 @@ export function InteractiveLocationPicker({
             setMapCenter(coords);
             setMarkerPosition(coords);
 
-            // Reverse geocode to get address
+            // Reverse geocode to get address using API
             try {
-               const locationData = await reverseGeocode(latitude, longitude);
+               const response = await fetch(
+                  `/api/geocode?lat=${latitude}&lng=${longitude}`
+               );
+
+               if (!response.ok) {
+                  throw new Error("Geocoding failed");
+               }
+
+               const data = await response.json();
+               const locationData = parseLocationFromGeocode(data);
+
                const updatedLocation: LocationData = {
                   ...value,
                   ...locationData,
@@ -108,7 +146,9 @@ export function InteractiveLocationPicker({
                onCoordinatesChange?.(coords);
 
                toast.success("Location detected successfully!", {
-                  description: `${locationData.city}, ${locationData.state}`,
+                  description: `${locationData.city || ""}, ${
+                     locationData.state || ""
+                  }`,
                });
             } catch (error) {
                toast.error("Could not get address details");
@@ -129,7 +169,8 @@ export function InteractiveLocationPicker({
                   errorMessage = "Location information unavailable";
                   break;
                case error.TIMEOUT:
-                  errorMessage = "Location request timed out. Please try again.";
+                  errorMessage =
+                     "Location request timed out. Please try again.";
                   break;
             }
 
@@ -143,59 +184,66 @@ export function InteractiveLocationPicker({
       );
    }, [value, onChange, onCoordinatesChange]);
 
-   // Handle address search
-   const handleAddressSearch = useCallback(async () => {
-      if (!addressInput.trim()) return;
+   // Handle address search (when user presses Enter or searches)
+   const handleAddressSearch = useCallback(
+      async (selectedSuggestion?: LocationSuggestion) => {
+         const searchAddress = selectedSuggestion?.description || addressInput;
+         if (!searchAddress.trim()) return;
 
-      setIsLoadingLocation(true);
-      try {
-         const coords = await geocodeAddress(addressInput);
-         if (coords) {
-            const newCoords: [number, number] = [coords.lng, coords.lat];
-            setMapCenter(newCoords);
-            setMarkerPosition(newCoords);
+         setIsLoadingLocation(true);
+         try {
+            // If we have a place_id from a suggestion, we can use it for more accurate results
+            const url = selectedSuggestion?.place_id
+               ? `/api/geocode/details?placeId=${selectedSuggestion.place_id}`
+               : `/api/geocode/search?input=${encodeURIComponent(
+                    searchAddress
+                 )}`;
 
-            const locationData = await reverseGeocode(coords.lat, coords.lng);
-            const updatedLocation: LocationData = {
-               ...value,
-               address: addressInput,
-               ...locationData,
-               coordinates: newCoords,
-            };
-            onChange(updatedLocation);
-            onCoordinatesChange?.(newCoords);
+            const response = await fetch(url);
+            const data = await response.json();
 
-            toast.success("Location found");
+            if (data.coordinates || (data.lat && data.lng)) {
+               const lat = data.coordinates?.[1] || data.lat;
+               const lng = data.coordinates?.[0] || data.lng;
+               const newCoords: [number, number] = [lng, lat];
+
+               setMapCenter(newCoords);
+               setMarkerPosition(newCoords);
+
+               const locationData = parseLocationFromGeocode(data);
+               const updatedLocation: LocationData = {
+                  ...value,
+                  address: searchAddress,
+                  ...locationData,
+                  coordinates: newCoords,
+               };
+               onChange(updatedLocation);
+               onCoordinatesChange?.(newCoords);
+
+               toast.success("Location found");
+            }
+         } catch (error) {
+            toast.error("Could not find location");
+         } finally {
+            setIsLoadingLocation(false);
+            setShowSuggestions(false);
          }
-      } catch (error) {
-         toast.error("Could not find location");
-      } finally {
-         setIsLoadingLocation(false);
-      }
-   }, [addressInput, value, onChange, onCoordinatesChange]);
+      },
+      [addressInput, value, onChange, onCoordinatesChange]
+   );
 
-   // Mock address suggestions (will be replaced with Google Places Autocomplete)
+   // Handle address input change
    const handleAddressInputChange = (input: string) => {
       setAddressInput(input);
-
-      if (input.length > 3) {
-         // Mock suggestions - replace with actual Google Places API
-         setSuggestions([
-            `${input} - Koramangala, Bangalore`,
-            `${input} - Indiranagar, Bangalore`,
-            `${input} - Whitefield, Bangalore`,
-         ]);
+      if (input.length >= 2) {
          setShowSuggestions(true);
-      } else {
-         setSuggestions([]);
-         setShowSuggestions(false);
       }
    };
 
-   const handleSuggestionClick = (suggestion: string) => {
-      setAddressInput(suggestion);
-      setShowSuggestions(false);
-      onChange({ ...value, address: suggestion });
+   // Handle suggestion click
+   const handleSuggestionClick = (suggestion: LocationSuggestion) => {
+      setAddressInput(suggestion.description);
+      handleAddressSearch(suggestion);
    };
 
    return (
@@ -220,24 +268,38 @@ export function InteractiveLocationPicker({
                      }
                   }}
                   placeholder="Enter your address"
-                  className="h-12 pl-12 pr-4"
+                  className="h-10 text-sm pl-12 pr-4"
                />
             </div>
 
             {/* Address Suggestions Dropdown */}
             {showSuggestions && suggestions.length > 0 && (
                <div className="absolute z-20 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
-                  {suggestions.map((suggestion, index) => (
-                     <button
-                        key={index}
-                        type="button"
-                        className="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 transition-colors flex items-start gap-3"
-                        onClick={() => handleSuggestionClick(suggestion)}
-                     >
-                        <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
-                        <span className="text-gray-900">{suggestion}</span>
-                     </button>
-                  ))}
+                  {isSearching && (
+                     <div className="px-4 py-3 text-center text-sm text-gray-500">
+                        <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
+                        Searching...
+                     </div>
+                  )}
+                  {!isSearching &&
+                     suggestions.map((suggestion, index) => (
+                        <button
+                           key={suggestion.place_id || index}
+                           type="button"
+                           className="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 transition-colors flex items-start gap-3"
+                           onClick={() => handleSuggestionClick(suggestion)}
+                        >
+                           <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                           <div className="flex-1 min-w-0">
+                              <div className="text-gray-900 text-sm font-medium">
+                                 {suggestion.main_text}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                 {suggestion.secondary_text}
+                              </div>
+                           </div>
+                        </button>
+                     ))}
                </div>
             )}
          </div>
@@ -246,7 +308,7 @@ export function InteractiveLocationPicker({
          <Button
             type="button"
             variant="outline"
-            className="w-full h-12 font-medium gap-2"
+            className="w-full h-10 text-sm font-medium gap-2"
             onClick={handleLocateMe}
             disabled={isLoadingLocation}
          >
@@ -301,38 +363,38 @@ export function InteractiveLocationPicker({
 
          {/* Location Details Grid */}
          {value.coordinates && (
-            <div className="grid grid-cols-2 gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="grid grid-cols-2 md:gap-3 p-2 md:p-4 bg-blue-50 border border-blue-200 rounded-lg">
                <div>
-                  <label className="text-xs font-medium text-gray-600">
+                  <label className="text-[10px] md:text-xs font-medium text-gray-600">
                      City
                   </label>
-                  <p className="text-sm font-semibold text-gray-900 mt-0.5">
+                  <p className="text-xs md:text-sm font-semibold text-gray-900 mt-0.5">
                      {value.city || "—"}
                   </p>
                </div>
                <div>
-                  <label className="text-xs font-medium text-gray-600">
+                  <label className="text-[10px] md:text-xs font-medium text-gray-600">
                      State
                   </label>
-                  <p className="text-sm font-semibold text-gray-900 mt-0.5">
+                  <p className="text-xs md:text-sm font-semibold text-gray-900 mt-0.5">
                      {value.state || "—"}
                   </p>
                </div>
                {value.pinCode && (
                   <div>
-                     <label className="text-xs font-medium text-gray-600">
+                     <label className="text-[10px] md:text-xs font-medium text-gray-600">
                         Pin Code
                      </label>
-                     <p className="text-sm font-semibold text-gray-900 mt-0.5">
+                     <p className="text-xs md:text-sm font-semibold text-gray-900 mt-0.5">
                         {value.pinCode}
                      </p>
                   </div>
                )}
                <div>
-                  <label className="text-xs font-medium text-gray-600">
+                  <label className="text-[10px] md:text-xs font-medium text-gray-600">
                      Coordinates
                   </label>
-                  <p className="text-xs font-mono text-gray-700 mt-0.5">
+                  <p className="text-xs md:text-sm font-mono text-gray-700 mt-0.5">
                      {value.coordinates[1].toFixed(4)},{" "}
                      {value.coordinates[0].toFixed(4)}
                   </p>

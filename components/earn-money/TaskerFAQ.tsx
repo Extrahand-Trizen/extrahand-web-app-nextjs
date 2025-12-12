@@ -45,9 +45,9 @@ export function TaskerFAQ() {
    ];
 
    return (
-      <section className="py-20 bg-secondary-50">
+      <section className="py-12 bg-secondary-50">
          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-3xl sm:text-4xl font-bold text-secondary-900 mb-10 text-center">
+            <h2 className="text-3xl sm:text-4xl font-bold text-secondary-900 mb-7 md:mb-10 text-center">
                Common questions
             </h2>
 
@@ -61,9 +61,9 @@ export function TaskerFAQ() {
                         onClick={() =>
                            setOpenIndex(openIndex === index ? null : index)
                         }
-                        className="w-full flex items-center justify-between p-5 text-left hover:bg-secondary-50 transition-colors"
+                        className="w-full flex items-center justify-between p-4 md:p-5 text-left hover:bg-secondary-50 transition-colors"
                      >
-                        <span className="font-bold text-secondary-900 pr-4">
+                        <span className="font-semibold text-secondary-900 pr-4">
                            {faq.question}
                         </span>
                         <ChevronDown
@@ -73,7 +73,7 @@ export function TaskerFAQ() {
                         />
                      </button>
                      {openIndex === index && (
-                        <div className="px-5 pb-5 pt-0">
+                        <div className="px-5 pb-5 pt-0 text-sm">
                            <p className="text-secondary-700">{faq.answer}</p>
                         </div>
                      )}

@@ -5,20 +5,27 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { TaskMap } from "@/components/tasks/TaskMap";
 import { TaskCard } from "@/components/tasks/TaskCard";
-import {
-   CompactFilterBar,
-   CompactFilterState,
-} from "@/components/tasks/CompactFilterBar";
+import { CompactFilterBar } from "@/components/tasks/CompactFilterBar";
 import { TaskListSkeleton } from "@/components/tasks/TaskSkeleton";
 import { mockTasksData } from "@/lib/data/mockTasks";
 import type { Task } from "@/types/task";
 import { MapIcon, List, Plus } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const HYDERABAD_CENTER = { lat: 17.385, lng: 78.4867 };
 
+type CompactFilterState = {
+   categories: string[];
+   suburb: string;
+   remotely: boolean;
+   minBudget: number;
+   maxBudget: number;
+   sortBy: "recent" | "nearest" | "price-low" | "price-high";
+};
+
 // tweak these to match your header/filter/footer sizes
 const HEADER_HEIGHT_PX = 110;
-const FILTER_BAR_HEIGHT_PX = 64;
+const FILTER_BAR_HEIGHT_PX = 0;
 const TOP_OFFSET_PX = HEADER_HEIGHT_PX + FILTER_BAR_HEIGHT_PX;
 
 const calculateDistance = (
@@ -48,7 +55,6 @@ export default function TasksPage() {
    const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
    const [isLoading, setIsLoading] = useState(true);
    const [showMobileMap, setShowMobileMap] = useState(false);
-   const [isMobile, setIsMobile] = useState(false);
 
    const [filters, setFilters] = useState<CompactFilterState>({
       categories: [],
@@ -59,13 +65,7 @@ export default function TasksPage() {
       sortBy: "recent",
    });
 
-   // Check screen size
-   useEffect(() => {
-      const checkMobile = () => setIsMobile(window.innerWidth < 1024);
-      checkMobile();
-      window.addEventListener("resize", checkMobile);
-      return () => window.removeEventListener("resize", checkMobile);
-   }, []);
+   const isMobile = useIsMobile();
 
    // Simulate initial loading
    useEffect(() => {
@@ -179,7 +179,7 @@ export default function TasksPage() {
 
          {/* Main content */}
          <div className="w-full max-w-7xl mx-auto px-4">
-            <div className="flex gap-6">
+            <div className="flex gap-4">
                {/* Left column: list */}
                <div
                   className={`w-full lg:w-1/2 ${
@@ -190,7 +190,7 @@ export default function TasksPage() {
                      style={{
                         maxHeight: `calc(100vh - ${TOP_OFFSET_PX}px)`,
                      }}
-                     className="overflow-y-auto pb-8"
+                     className="overflow-y-auto py-8 md:px-3"
                   >
                      {isLoading ? (
                         <div className="p-4">
@@ -199,7 +199,7 @@ export default function TasksPage() {
                      ) : filteredTasks.length === 0 ? (
                         <EmptyState />
                      ) : (
-                        <div className="space-y-0">
+                        <div className="space-y-5">
                            {filteredTasks.map((task) => (
                               <TaskCard
                                  key={task._id}
@@ -248,7 +248,7 @@ export default function TasksPage() {
                   </div>
                ) : (
                   showMobileMap && (
-                     <div className="fixed inset-0 top-[110px] z-30 bg-white">
+                     <div className="fixed inset-0 top-[120px] z-30 bg-white">
                         <TaskMap
                            tasks={filteredTasks}
                            selectedTaskId={selectedTaskId}

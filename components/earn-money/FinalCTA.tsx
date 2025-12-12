@@ -16,36 +16,40 @@ export function FinalCTA() {
          </div>
 
          <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-white leading-tight">
+            <h2 className="text-2xl md:text-4xl font-bold text-white mb-6 leading-tight">
                Ready to become a tasker?
             </h2>
-            <p className="text-xl text-secondary-300 mb-8 max-w-2xl mx-auto">
+            <p className="text-sm md:text-lg text-secondary-300 max-w-2xl mx-auto mb-8">
                Join thousands of people earning on their own schedule. Sign up
                is free and takes just minutes.
             </p>
 
             {/* Benefits */}
-            <div className="flex flex-wrap justify-center gap-4 mb-10">
-               {[
-                  "No signup fee",
-                  "You set your rates",
-                  "Choose your tasks",
-                  "Get paid fast",
-               ].map((benefit) => (
-                  <div
-                     key={benefit}
-                     className="flex items-center gap-2 text-secondary-300"
-                  >
-                     <CheckCircle className="w-5 h-5 text-primary-400" />
-                     <span className="text-sm font-medium">{benefit}</span>
-                  </div>
-               ))}
+            <div className="flex flex-col items-center justify-center md:items-center gap-4 mb-8">
+               <div className="flex flex-col text-left gap-4">
+                  {[
+                     "No signup fee",
+                     "You set your rates",
+                     "Choose your tasks",
+                     "Get paid fast",
+                  ].map((benefit, idx) => (
+                     <div
+                        key={idx}
+                        className="flex items-center gap-2 text-secondary-300"
+                     >
+                        <CheckCircle className="size-4 md:size-5 text-primary-400" />
+                        <span className="text-xs md:text-sm font-medium">
+                           {benefit}
+                        </span>
+                     </div>
+                  ))}
+               </div>
             </div>
 
             <Button
                size="lg"
                asChild
-               className="text-lg px-10 py-7 bg-primary-500 hover:bg-primary-400 text-secondary-900 font-bold shadow-2xl shadow-primary-500/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+               className="md:text-lg px-7 md:px-10 py-4 md:py-7 bg-primary-500 hover:bg-primary-400 text-secondary-900 font-bold shadow-2xl shadow-primary-500/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
             >
                <Link href="/onboarding/role-selection?role=performer">
                   Become a Tasker
@@ -53,7 +57,7 @@ export function FinalCTA() {
                </Link>
             </Button>
 
-            <p className="text-sm text-secondary-400 mt-6">
+            <p className="text-xs md:text-sm text-secondary-400 mt-4 md:mt-6">
                Already have an account?{" "}
                <Link
                   href="/login"

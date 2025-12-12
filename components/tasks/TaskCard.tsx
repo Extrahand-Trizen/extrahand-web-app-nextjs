@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MapPin, Clock, MessageSquare, Tag } from "lucide-react";
+import { MapPin, Clock, MessageSquare, Tag, Calendar } from "lucide-react";
 import type { Task } from "@/types/task";
 
 interface TaskCardProps {
@@ -42,13 +42,13 @@ export function TaskCard({ task, isSelected = false, onClick }: TaskCardProps) {
       switch (task.urgency) {
          case "urgent":
             return (
-               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
-                  🔥 Urgent
+               <span className="inline-flex items-center px-2 md:px-2.5 py-0.5 rounded-full text-[9px] md:text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
+                  Urgent
                </span>
             );
          case "high":
             return (
-               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 border border-orange-200">
+               <span className="inline-flex items-center px-2 md:px-2.5 py-0.5 rounded-full text-[9px] md:text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
                   High Priority
                </span>
             );
@@ -64,13 +64,13 @@ export function TaskCard({ task, isSelected = false, onClick }: TaskCardProps) {
       switch (task.status) {
          case "open":
             return (
-               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+               <span className="inline-flex items-center px-1 md:px-2 py-0.5 rounded text-[9px] md:text-xs font-medium bg-green-100 text-green-800">
                   Open
                </span>
             );
          case "assigned":
             return (
-               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+               <span className="inline-flex items-center px-1 md:px-2 py-0.5 rounded text-[9px] md:text-xs font-medium bg-green-100 text-green-800">
                   Assigned
                </span>
             );
@@ -82,36 +82,36 @@ export function TaskCard({ task, isSelected = false, onClick }: TaskCardProps) {
    return (
       <div
          onClick={onClick}
-         className={`group bg-white rounded-lg border-2 transition-all cursor-pointer hover:shadow-md p-4 mb-3 ${
+         className={`group bg-white rounded-lg border-2 transition-all cursor-pointer hover:shadow-md p-3 md:p-4 ${
             isSelected
                ? "border-primary-500 shadow-md"
                : "border-secondary-200 hover:border-primary-300"
          }`}
       >
          {/* Header - Status, Urgency, Category */}
-         <div className="flex items-start justify-between mb-2">
+         <div className="flex justify-between mb-2">
             <div className="flex flex-wrap items-center gap-2">
                {getStatusBadge()}
                {getUrgencyBadge()}
-               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-secondary-100 text-secondary-700">
-                  <Tag className="w-3 h-3 mr-1" />
+               <span className="inline-flex items-center px-1 md:px-2 py-0.5 rounded text-[10px] md:text-xs font-medium bg-secondary-100 text-secondary-700">
+                  <Tag className="size-2 md:size-3 mr-1" />
                   {task.category}
                </span>
             </div>
-            <div className="text-xs text-secondary-500 flex items-center gap-1">
-               <Clock className="w-3 h-3" />
+            <div className="text-[10px] md:text-xs text-secondary-500 flex items-center gap-1">
+               <Clock className="size-2 md:size-3" />
                {getTimeAgo(task.createdAt)}
             </div>
          </div>
 
          {/* Title */}
-         <h3 className="text-lg font-bold text-secondary-900 mb-2 line-clamp-2 group-hover:text-primary-600 transition-colors">
+         <h3 className="md:text-lg font-bold text-secondary-900 mb-2 line-clamp-2 group-hover:text-primary-600 transition-colors">
             {task.title}
          </h3>
 
          {/* Description */}
          {task.description && (
-            <p className="text-sm text-secondary-600 mb-3 line-clamp-2">
+            <p className="text-xs md:text-sm text-secondary-600 mb-3 line-clamp-2">
                {task.description}
             </p>
          )}
@@ -119,13 +119,13 @@ export function TaskCard({ task, isSelected = false, onClick }: TaskCardProps) {
          {/* Location and Meta Info */}
          <div className="flex items-center justify-between mb-3 text-sm">
             <div className="flex items-center gap-3 text-secondary-600">
-               <span className="flex items-center gap-1">
-                  <MapPin className="w-4 h-4 text-primary-500" />
+               <span className="flex items-center gap-1 text-xs md:text-sm">
+                  <MapPin className="size-3 md:size-4" />
                   <span className="font-medium">{task.location.city}</span>
                </span>
                {task.applications > 0 && (
-                  <span className="flex items-center gap-1 text-primary-600 font-semibold">
-                     <MessageSquare className="w-4 h-4" />
+                  <span className="flex items-center gap-1 text-primary-600 text-xs md:text-sm font-semibold">
+                     <MessageSquare className="size-3 md:size-4" />
                      {task.applications} offer
                      {task.applications > 1 ? "s" : ""}
                   </span>
@@ -136,10 +136,10 @@ export function TaskCard({ task, isSelected = false, onClick }: TaskCardProps) {
          {/* Budget and Type */}
          <div className="flex items-center justify-between pt-3 border-t border-secondary-200">
             <div>
-               <div className="text-2xl font-bold text-secondary-900">
+               <div className="text-xl md:text-2xl font-bold text-secondary-900">
                   ₹{budgetAmount}
                </div>
-               <div className="text-xs text-secondary-500">
+               <div className="text-[9px] md:text-xs text-secondary-500">
                   {task.budgetType === "fixed" && "Fixed price"}
                   {task.budgetType === "hourly" && "Per hour"}
                   {task.budgetType === "negotiable" && "Negotiable"}
@@ -151,7 +151,7 @@ export function TaskCard({ task, isSelected = false, onClick }: TaskCardProps) {
                   <div className="text-sm font-semibold text-secondary-700">
                      {task.estimatedDuration}h
                   </div>
-                  <div className="text-xs text-secondary-500">
+                  <div className="text-[9px] md:text-xs text-secondary-500">
                      Est. duration
                   </div>
                </div>
@@ -160,8 +160,9 @@ export function TaskCard({ task, isSelected = false, onClick }: TaskCardProps) {
 
          {/* Scheduled Date/Time if available */}
          {task.scheduledDate && (
-            <div className="mt-2 text-xs text-secondary-600 bg-secondary-50 px-2 py-1 rounded">
-               📅 Scheduled: {new Date(task.scheduledDate).toLocaleDateString()}{" "}
+            <div className="flex mt-2 text-xs text-secondary-600 bg-secondary-50 p-2 rounded">
+               <Calendar className="size-3 md:size-4 mr-2" /> Scheduled:{" "}
+               {new Date(task.scheduledDate).toLocaleDateString()}{" "}
                {task.scheduledTime && `at ${task.scheduledTime}`}
             </div>
          )}

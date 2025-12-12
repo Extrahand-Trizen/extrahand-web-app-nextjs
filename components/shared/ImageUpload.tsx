@@ -154,7 +154,7 @@ export function ImageUpload({
                className={cn(
                   "relative border-2 border-dashed rounded-lg p-6 transition-all",
                   isDragging
-                     ? "border-blue-600 bg-blue-50"
+                     ? "border-primary-600 bg-primary-50"
                      : "border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100"
                )}
             >
@@ -171,13 +171,13 @@ export function ImageUpload({
                <div className="flex flex-col items-center justify-center text-center">
                   {isUploading ? (
                      <>
-                        <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-3" />
+                        <Loader2 className="w-12 h-12 text-primary-600 animate-spin mb-3" />
                         <p className="text-sm font-medium text-gray-700">Uploading images...</p>
                      </>
                   ) : (
                      <>
-                        <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-3">
-                           <Upload className="w-8 h-8 text-blue-600" />
+                        <div className="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center mb-3">
+                           <Upload className="w-8 h-8 text-primary-600" />
                         </div>
                         <p className="text-sm font-medium text-gray-900 mb-1">
                            {isDragging ? "Drop images here" : "Upload task images"}

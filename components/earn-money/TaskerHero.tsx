@@ -4,7 +4,7 @@ import { ArrowRight, Clock, Star, Users } from "lucide-react";
 
 export function TaskerHero() {
    return (
-      <section className="relative py-20 sm:py-24 bg-white overflow-hidden">
+      <section className="relative py-12 md:py-20 bg-white overflow-hidden">
          {/* Subtle background tint */}
          <div className="absolute inset-0 pointer-events-none">
             <div className="absolute -top-24 right-0 w-80 h-80 bg-primary-100/40 rounded-full blur-3xl" />
@@ -12,55 +12,55 @@ export function TaskerHero() {
          </div>
 
          <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-secondary-900 leading-tight">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-secondary-900 leading-tight">
                Earn by helping people in your city
             </h1>
 
-            <p className="mt-7 text-base sm:text-lg text-secondary-600 max-w-3xl mx-auto">
+            <p className="mt-5 text-sm md:text-lg text-secondary-600 mb-5 font-medium">
                ExtraHand connects you with people who need help with everyday
                tasks. Choose the kind of work you want to do and decide when you
                are available.
             </p>
 
             {/* Stats strip */}
-            <div className="mt-12 flex flex-wrap justify-center gap-8">
-               <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-lg bg-secondary-100 flex items-center justify-center">
-                     <Users className="w-5 h-5 text-secondary-700" />
+            <div className="mt-8 md:mt-12 w-[80%] mx-auto flex flex-col sm:flex-row gap-5 md:gap-8">
+               <div className="flex items-start gap-3">
+                  <div className="size-8 md:size-11 rounded-lg bg-secondary-100 flex items-center justify-center">
+                     <Users className="size-4 md:size-5 text-secondary-700" />
                   </div>
                   <div className="text-left">
-                     <p className="text-xl font-semibold text-secondary-900">
+                     <p className="md:text-lg font-semibold text-secondary-900">
                         10K+
                      </p>
-                     <p className="text-xs text-secondary-600">
+                     <p className="text-[10px] md:text-xs text-secondary-600">
                         Customers using ExtraHand
                      </p>
                   </div>
                </div>
 
                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-lg bg-primary-100 flex items-center justify-center">
-                     <Clock className="w-5 h-5 text-primary-700" />
+                  <div className="size-8 md:size-11 rounded-lg bg-primary-100 flex items-center justify-center">
+                     <Clock className="size-4 md:size-5 text-primary-700" />
                   </div>
                   <div className="text-left">
-                     <p className="text-xl font-semibold text-secondary-900">
+                     <p className="md:text-lg font-semibold text-secondary-900">
                         Flexible
                      </p>
-                     <p className="text-xs text-secondary-600">
+                     <p className="text-[10px] md:text-xs text-secondary-600">
                         You choose when to work
                      </p>
                   </div>
                </div>
 
                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-lg bg-yellow-100 flex items-center justify-center">
-                     <Star className="w-5 h-5 text-yellow-600" />
+                  <div className="size-8 md:size-11 rounded-lg bg-yellow-100 flex items-center justify-center">
+                     <Star className="size-4 md:size-5 text-yellow-600" />
                   </div>
                   <div className="text-left">
-                     <p className="text-xl font-semibold text-secondary-900">
+                     <p className="md:text-lg font-semibold text-secondary-900">
                         4.8 / 5
                      </p>
-                     <p className="text-xs text-secondary-600">
+                     <p className="text-[10px] md:text-xs text-secondary-600">
                         Average tasker rating
                      </p>
                   </div>

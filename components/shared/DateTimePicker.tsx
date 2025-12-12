@@ -36,7 +36,7 @@ export function DateTimePicker({
    const handleDateSelect = (date: Date | undefined) => {
       if (date) {
          // Preserve existing time if any
-         if (value) {
+         if (value && value instanceof Date && !isNaN(value.getTime())) {
             const newDate = new Date(date);
             newDate.setHours(value.getHours());
             newDate.setMinutes(value.getMinutes());
@@ -57,7 +57,10 @@ export function DateTimePicker({
       type: "hour" | "minute" | "ampm",
       timeValue: string
    ) => {
-      const currentDate = value || new Date();
+      const currentDate =
+         value && value instanceof Date && !isNaN(value.getTime())
+            ? value
+            : new Date();
       const newDate = new Date(currentDate);
 
       if (type === "hour") {
@@ -98,7 +101,7 @@ export function DateTimePicker({
                disabled={disabled}
             >
                <CalendarIcon className="mr-2 h-4 w-4" />
-               {value ? (
+               {value && value instanceof Date && !isNaN(value.getTime()) ? (
                   format(value, "MM/dd/yyyy hh:mm aa")
                ) : (
                   <span>{placeholder}</span>
@@ -122,24 +125,28 @@ export function DateTimePicker({
                      <div className="flex sm:flex-col p-2">
                         {Array.from({ length: 12 }, (_, i) => i + 1)
                            .reverse()
-                           .map((hour) => (
-                              <Button
-                                 key={hour}
-                                 size="icon"
-                                 variant={
-                                    value && value.getHours() % 12 === hour % 12
-                                       ? "default"
-                                       : "ghost"
-                                 }
-                                 className="sm:w-full shrink-0 aspect-square"
-                                 onClick={() =>
-                                    handleTimeChange("hour", hour.toString())
-                                 }
-                                 type="button"
-                              >
-                                 {hour}
-                              </Button>
-                           ))}
+                           .map((hour) => {
+                              const isSelected =
+                                 value &&
+                                 value instanceof Date &&
+                                 !isNaN(value.getTime()) &&
+                                 value.getHours() % 12 === hour % 12;
+
+                              return (
+                                 <Button
+                                    key={hour}
+                                    size="icon"
+                                    variant={isSelected ? "default" : "ghost"}
+                                    className="sm:w-full shrink-0 aspect-square"
+                                    onClick={() =>
+                                       handleTimeChange("hour", hour.toString())
+                                    }
+                                    type="button"
+                                 >
+                                    {hour}
+                                 </Button>
+                              );
+                           })}
                      </div>
                      <ScrollBar
                         orientation="horizontal"
@@ -151,27 +158,31 @@ export function DateTimePicker({
                   <ScrollArea className="w-64 sm:w-auto">
                      <div className="flex sm:flex-col p-2">
                         {Array.from({ length: 12 }, (_, i) => i * 5).map(
-                           (minute) => (
-                              <Button
-                                 key={minute}
-                                 size="icon"
-                                 variant={
-                                    value && value.getMinutes() === minute
-                                       ? "default"
-                                       : "ghost"
-                                 }
-                                 className="sm:w-full shrink-0 aspect-square"
-                                 onClick={() =>
-                                    handleTimeChange(
-                                       "minute",
-                                       minute.toString()
-                                    )
-                                 }
-                                 type="button"
-                              >
-                                 {minute.toString().padStart(2, "0")}
-                              </Button>
-                           )
+                           (minute) => {
+                              const isSelected =
+                                 value &&
+                                 value instanceof Date &&
+                                 !isNaN(value.getTime()) &&
+                                 value.getMinutes() === minute;
+
+                              return (
+                                 <Button
+                                    key={minute}
+                                    size="icon"
+                                    variant={isSelected ? "default" : "ghost"}
+                                    className="sm:w-full shrink-0 aspect-square"
+                                    onClick={() =>
+                                       handleTimeChange(
+                                          "minute",
+                                          minute.toString()
+                                       )
+                                    }
+                                    type="button"
+                                 >
+                                    {minute.toString().padStart(2, "0")}
+                                 </Button>
+                              );
+                           }
                         )}
                      </div>
                      <ScrollBar
@@ -183,24 +194,27 @@ export function DateTimePicker({
                   {/* AM/PM */}
                   <ScrollArea className="">
                      <div className="flex sm:flex-col p-2">
-                        {["AM", "PM"].map((ampm) => (
-                           <Button
-                              key={ampm}
-                              size="icon"
-                              variant={
-                                 value &&
-                                 ((ampm === "AM" && value.getHours() < 12) ||
-                                    (ampm === "PM" && value.getHours() >= 12))
-                                    ? "default"
-                                    : "ghost"
-                              }
-                              className="sm:w-full shrink-0 aspect-square"
-                              onClick={() => handleTimeChange("ampm", ampm)}
-                              type="button"
-                           >
-                              {ampm}
-                           </Button>
-                        ))}
+                        {["AM", "PM"].map((ampm) => {
+                           const isSelected =
+                              value &&
+                              value instanceof Date &&
+                              !isNaN(value.getTime()) &&
+                              ((ampm === "AM" && value.getHours() < 12) ||
+                                 (ampm === "PM" && value.getHours() >= 12));
+
+                           return (
+                              <Button
+                                 key={ampm}
+                                 size="icon"
+                                 variant={isSelected ? "default" : "ghost"}
+                                 className="sm:w-full shrink-0 aspect-square"
+                                 onClick={() => handleTimeChange("ampm", ampm)}
+                                 type="button"
+                              >
+                                 {ampm}
+                              </Button>
+                           );
+                        })}
                      </div>
                   </ScrollArea>
                </div>

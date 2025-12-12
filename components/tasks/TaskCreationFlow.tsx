@@ -171,8 +171,6 @@ export function TaskCreationFlow() {
       setIsSubmitting(true);
 
       try {
-         console.log("Submitting task:", data);
-
          // TODO: Replace with actual API call
          await new Promise((resolve) => setTimeout(resolve, 2000));
 
@@ -238,7 +236,7 @@ export function TaskCreationFlow() {
                   <Button
                      variant="ghost"
                      onClick={handleSaveDraft}
-                     className="text-blue-600 hover:text-blue-700"
+                     className="text-primary-600 hover:text-primary-700"
                   >
                      Save Draft
                   </Button>
@@ -247,7 +245,7 @@ export function TaskCreationFlow() {
                {/* Progress Bar */}
                <div className="h-1 bg-gray-100">
                   <div
-                     className="h-full bg-blue-600 transition-all duration-300 ease-out"
+                     className="h-full bg-primary-600 transition-all duration-300 ease-out"
                      style={{ width: `${progress}%` }}
                   />
                </div>

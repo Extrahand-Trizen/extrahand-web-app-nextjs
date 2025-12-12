@@ -45,7 +45,7 @@ const URGENCY_OPTIONS = [
       badge: "+₹20",
       surcharge: 20,
       icon: Clock,
-      color: "blue",
+      color: "primary",
    },
    {
       id: "urgent",
@@ -73,10 +73,10 @@ export function BudgetStep({ form, onNext }: BudgetStepProps) {
       <div className="space-y-6">
          {/* Header */}
          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
                What's your budget?
             </h2>
-            <p className="text-sm text-gray-600">
+            <p className="text-xs md:text-sm text-gray-600">
                Set a fair price or let taskers make offers
             </p>
          </div>
@@ -87,7 +87,7 @@ export function BudgetStep({ form, onNext }: BudgetStepProps) {
             name="budgetType"
             render={({ field }) => (
                <FormItem>
-                  <FormLabel>Payment approach</FormLabel>
+                  <FormLabel className="text-xs md:text-sm">Payment approach</FormLabel>
                   <FormControl>
                      <div className="grid grid-cols-2 gap-4">
                         <button
@@ -97,27 +97,27 @@ export function BudgetStep({ form, onNext }: BudgetStepProps) {
                               form.setValue("budget", null);
                            }}
                            className={cn(
-                              "h-24 rounded-xl border-2 p-4 text-left transition-all",
+                              "h-16 md:h-24 rounded-xl border-2 p-2.5 md:p-4 text-left transition-all",
                               field.value === "fixed"
-                                 ? "border-blue-600 bg-blue-50"
+                                 ? "border-primary-600 bg-primary-50"
                                  : "border-gray-200 bg-white hover:border-gray-300"
                            )}
                         >
                            <div className="flex flex-col h-full justify-between">
                               <div className="flex items-center gap-2">
-                                 <IndianRupee className="w-5 h-5 text-gray-700" />
-                                 <span className="text-base font-semibold text-gray-900">
+                                 <IndianRupee className="size-4 md:size-5 text-gray-700" />
+                                 <span className="text-sm font-semibold text-gray-900">
                                     Fixed price
                                  </span>
                               </div>
-                              <p className="text-xs text-gray-600 mt-2">
+                              <p className="text-[9px] md:text-xs text-gray-600 mt-2">
                                  You set the price
                               </p>
                            </div>
                            {field.value === "fixed" && (
                               <div className="absolute top-3 right-3">
                                  <svg
-                                    className="w-5 h-5 text-blue-600"
+                                    className="size-4 md:size-5 text-primary-600"
                                     fill="currentColor"
                                     viewBox="0 0 20 20"
                                  >
@@ -138,16 +138,16 @@ export function BudgetStep({ form, onNext }: BudgetStepProps) {
                               form.setValue("budget", null);
                            }}
                            className={cn(
-                              "h-24 rounded-xl border-2 p-4 text-left transition-all relative",
+                              "h-16 md:h-24 rounded-xl border-2 p-2.5 md:p-4 text-left transition-all relative",
                               field.value === "negotiable"
-                                 ? "border-blue-600 bg-blue-50"
+                                 ? "border-primary-600 bg-primary-50"
                                  : "border-gray-200 bg-white hover:border-gray-300"
                            )}
                         >
                            <div className="flex flex-col h-full justify-between">
                               <div className="flex items-center gap-2">
                                  <svg
-                                    className="w-5 h-5 text-gray-700"
+                                    className="size-4 md:size-5 text-gray-700"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -159,18 +159,18 @@ export function BudgetStep({ form, onNext }: BudgetStepProps) {
                                        d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
                                     />
                                  </svg>
-                                 <span className="text-base font-semibold text-gray-900">
+                                 <span className="text-sm font-semibold text-gray-900">
                                     Negotiable
                                  </span>
                               </div>
-                              <p className="text-xs text-gray-600 mt-2">
+                              <p className="text-[9px] md:text-xs text-gray-600 mt-2">
                                  Review offers from taskers
                               </p>
                            </div>
                            {field.value === "negotiable" && (
                               <div className="absolute top-3 right-3">
                                  <svg
-                                    className="w-5 h-5 text-blue-600"
+                                    className="size-4 md:size-5 text-primary-600"
                                     fill="currentColor"
                                     viewBox="0 0 20 20"
                                  >
@@ -197,16 +197,16 @@ export function BudgetStep({ form, onNext }: BudgetStepProps) {
                name="budget"
                render={({ field }) => (
                   <FormItem className="animate-in slide-in-from-top duration-200">
-                     <FormLabel>Your budget</FormLabel>
+                     <FormLabel className="text-xs md:text-sm">Your budget</FormLabel>
                      <FormControl>
                         <div className="relative">
-                           <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                           <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 size-4 md:size-5 text-gray-400" />
                            <Input
                               type="number"
                               placeholder="500"
                               min="50"
                               max="50000"
-                              className="h-12 pl-12 text-lg"
+                              className="h-10 pl-12 text-sm"
                               value={field.value || ""}
                               onChange={(e) =>
                                  field.onChange(
@@ -218,7 +218,7 @@ export function BudgetStep({ form, onNext }: BudgetStepProps) {
                            />
                         </div>
                      </FormControl>
-                     <FormDescription>
+                     <FormDescription className="text-xs">
                         Minimum ₹50, maximum ₹50,000. Similar tasks typically
                         cost ₹200-800.
                      </FormDescription>
@@ -234,7 +234,7 @@ export function BudgetStep({ form, onNext }: BudgetStepProps) {
             name="urgency"
             render={({ field }) => (
                <FormItem>
-                  <FormLabel>How urgent is this?</FormLabel>
+                  <FormLabel className="text-xs md:text-sm">How urgent is this?</FormLabel>
                   <FormControl>
                      <div className="space-y-3">
                         {URGENCY_OPTIONS.map((option) => {
@@ -247,31 +247,31 @@ export function BudgetStep({ form, onNext }: BudgetStepProps) {
                                  type="button"
                                  onClick={() => field.onChange(option.id)}
                                  className={cn(
-                                    "w-full h-20 rounded-xl border-2 p-4 text-left transition-all relative",
+                                    "w-full h-16 md:h-20 rounded-xl border-2 p-2 md:p-4 text-left transition-all relative",
                                     isSelected
-                                       ? "border-blue-600 bg-blue-50"
+                                       ? "border-primary-600 bg-primary-50"
                                        : "border-gray-200 bg-white hover:border-gray-300"
                                  )}
                               >
                                  <div className="flex items-start gap-4">
                                     <div
                                        className={cn(
-                                          "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
+                                          "size-8 md:size-10 rounded-lg flex items-center justify-center shrink-0",
                                           option.color === "gray" &&
                                              "bg-gray-100",
-                                          option.color === "blue" &&
-                                             "bg-blue-100",
+                                          option.color === "primary" &&
+                                             "bg-primary-100",
                                           option.color === "orange" &&
                                              "bg-orange-100"
                                        )}
                                     >
                                        <Icon
                                           className={cn(
-                                             "w-5 h-5",
+                                             "size-4 md:size-5",
                                              option.color === "gray" &&
                                                 "text-gray-600",
-                                             option.color === "blue" &&
-                                                "text-blue-600",
+                                             option.color === "primary" &&
+                                                "text-primary-600",
                                              option.color === "orange" &&
                                                 "text-orange-600"
                                           )}
@@ -279,16 +279,16 @@ export function BudgetStep({ form, onNext }: BudgetStepProps) {
                                     </div>
                                     <div className="flex-1">
                                        <div className="flex items-center gap-2 mb-1">
-                                          <span className="text-base font-semibold text-gray-900">
+                                          <span className="text-sm md:text-base font-semibold text-gray-900">
                                              {option.label}
                                           </span>
                                           {option.badge && (
                                              <Badge
                                                 variant="secondary"
                                                 className={cn(
-                                                   "h-5 px-2 text-xs font-medium",
-                                                   option.color === "blue" &&
-                                                      "bg-blue-100 text-blue-700",
+                                                   "h-5 px-2 text-[9px] md:text-xs font-medium",
+                                                   option.color === "primary" &&
+                                                      "bg-primary-100 text-primary-700",
                                                    option.color === "orange" &&
                                                       "bg-orange-100 text-orange-700"
                                                 )}
@@ -297,14 +297,14 @@ export function BudgetStep({ form, onNext }: BudgetStepProps) {
                                              </Badge>
                                           )}
                                        </div>
-                                       <p className="text-sm text-gray-600">
+                                       <p className="text-xs md:text-sm text-gray-600">
                                           {option.description}
                                        </p>
                                     </div>
                                     {isSelected && (
                                        <div className="absolute top-4 right-4">
                                           <svg
-                                             className="w-5 h-5 text-blue-600"
+                                             className="w-5 h-5 text-primary-600"
                                              fill="currentColor"
                                              viewBox="0 0 20 20"
                                           >
@@ -322,7 +322,7 @@ export function BudgetStep({ form, onNext }: BudgetStepProps) {
                         })}
                      </div>
                   </FormControl>
-                  <FormDescription>
+                  <FormDescription className="text-xs">
                      Urgent tasks get priority placement
                   </FormDescription>
                   <FormMessage />
@@ -332,12 +332,12 @@ export function BudgetStep({ form, onNext }: BudgetStepProps) {
 
          {/* Total Budget Display */}
          {totalBudget && (
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="p-3 md:p-4 bg-primary-50 border border-primary-200 rounded-lg">
                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">
+                  <span className="text-xs md:text-sm font-medium text-gray-700">
                      Total amount (including urgency fee)
                   </span>
-                  <span className="text-lg font-bold text-blue-600">
+                  <span className="md:text-lg font-bold text-primary-600">
                      ₹{totalBudget}
                   </span>
                </div>
@@ -345,11 +345,11 @@ export function BudgetStep({ form, onNext }: BudgetStepProps) {
          )}
 
          {/* Continue Button */}
-         <div className="pt-4">
+         <div className="pt-2">
             <Button
                type="button"
                onClick={onNext}
-               className="w-full h-12 font-medium bg-blue-600 hover:bg-blue-700"
+               className="w-full h-10 font-medium bg-primary-600 hover:bg-primary-700"
                size="lg"
             >
                Continue to Review

@@ -89,21 +89,21 @@ export function ReviewStep({
       <div className="space-y-6">
          {/* Header */}
          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
                Review your task
             </h2>
-            <p className="text-sm text-gray-600">
+            <p className="text-xs md:text-sm text-gray-600">
                Check everything looks good before posting
             </p>
          </div>
 
          {/* Warnings */}
          {warnings.length > 0 && (
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg space-y-2">
+            <div className="p-3 md:p-4 bg-amber-50 border border-amber-200 rounded-lg space-y-2">
                {warnings.map((warning, index) => (
                   <div key={index} className="flex items-start gap-3">
-                     <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                     <p className="text-sm text-amber-800">{warning}</p>
+                     <AlertCircle className="size-4 md:size-5 text-amber-600 shrink-0 mt-0.5" />
+                     <p className="text-xs md:text-sm text-amber-800">{warning}</p>
                   </div>
                ))}
             </div>
@@ -112,13 +112,13 @@ export function ReviewStep({
          {/* Task Details Card */}
          <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
             <div className="flex items-start justify-between">
-               <h3 className="text-lg font-semibold text-gray-900">
+               <h3 className="md:text-base font-semibold text-gray-900">
                   Task Details
                </h3>
                <button
                   type="button"
                   onClick={() => onEdit(1)}
-                  className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700"
+                  className="flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-700"
                >
                   <Edit2 className="w-4 h-4" />
                   Edit
@@ -128,14 +128,14 @@ export function ReviewStep({
             <div className="space-y-3">
                <div>
                   <div className="flex items-center gap-2 mb-1">
-                     <span className="text-2xl">{category.icon}</span>
-                     <span className="text-base font-medium text-gray-900">
+                     <span className="text-xl md:text-2xl">{category.icon}</span>
+                     <span className="text-sm md:text-base font-medium text-gray-900">
                         {category.label}
                      </span>
                      {data.subcategory && (
                         <>
                            <span className="text-gray-400">•</span>
-                           <span className="text-sm text-gray-600">
+                           <span className="text-xs md:text-sm text-gray-600">
                               {data.subcategory}
                            </span>
                         </>
@@ -144,10 +144,10 @@ export function ReviewStep({
                </div>
 
                <div>
-                  <h4 className="text-base font-semibold text-gray-900 mb-1">
+                  <h4 className="text-sm md:text-base font-semibold text-gray-900 mb-1">
                      {data.title}
                   </h4>
-                  <p className="text-sm text-gray-600 leading-relaxed">
+                  <p className="text-xs md:text-sm text-gray-600 leading-relaxed">
                      {data.description}
                   </p>
                </div>
@@ -162,7 +162,7 @@ export function ReviewStep({
                            <Badge
                               key={index}
                               variant="secondary"
-                              className="h-6 px-3 text-xs bg-gray-100 text-gray-700"
+                              className="h-4 md:h-6 px-1 md:px-3 text-[9px] md:text-xs bg-gray-100 text-gray-700"
                            >
                               {req}
                            </Badge>
@@ -172,7 +172,7 @@ export function ReviewStep({
                )}
 
                {data.estimatedDuration && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2 text-xs md:text-sm text-gray-600">
                      <Clock className="w-4 h-4" />
                      <span>Estimated {data.estimatedDuration} hours</span>
                   </div>
@@ -183,13 +183,13 @@ export function ReviewStep({
          {/* Location & Schedule Card */}
          <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
             <div className="flex items-start justify-between">
-               <h3 className="text-lg font-semibold text-gray-900">
+               <h3 className="md:text-base font-semibold text-gray-900">
                   Location & Schedule
                </h3>
                <button
                   type="button"
                   onClick={() => onEdit(2)}
-                  className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700"
+                  className="flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-700"
                >
                   <Edit2 className="w-4 h-4" />
                   Edit
@@ -198,13 +198,13 @@ export function ReviewStep({
 
             <div className="space-y-3">
                <div className="flex items-start gap-3">
-                  <MapPin className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
+                  <MapPin className="size-4 md:size-5 text-gray-400 shrink-0 mt-0.5" />
                   <div>
-                     <p className="text-sm font-medium text-gray-900">
+                     <p className="text-xs md:text-sm font-medium text-gray-900">
                         {data.location.address}
                      </p>
                      {data.location.city && (
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-[9px] md:text-xs text-gray-500 mt-1">
                            {data.location.city}
                            {data.location.state && `, ${data.location.state}`}
                         </p>
@@ -213,8 +213,8 @@ export function ReviewStep({
                </div>
 
                <div className="flex items-center gap-3">
-                  <Calendar className="w-5 h-5 text-gray-400" />
-                  <span className="text-sm text-gray-900">
+                  <Calendar className="size-4 md:size-5 text-gray-400" />
+                  <span className="text-xs md:text-sm text-gray-900">
                      {data.scheduledDate
                         ? format(data.scheduledDate, "EEEE, MMMM d, yyyy")
                         : "Date not set"}
@@ -222,16 +222,16 @@ export function ReviewStep({
                </div>
 
                <div className="flex items-center gap-3">
-                  <Clock className="w-5 h-5 text-gray-400" />
+                  <Clock className="size-4 md:size-5 text-gray-400" />
                   <div className="flex items-center gap-2">
-                     <span className="text-sm text-gray-900">
+                     <span className="text-xs md:text-sm text-gray-900">
                         {format(data.scheduledTimeStart, "MMM d, h:mm aa")} -{" "}
                         {format(data.scheduledTimeEnd, "MMM d, h:mm aa")}
                      </span>
                      {data.flexibility !== "exact" && (
                         <Badge
                            variant="secondary"
-                           className="h-5 px-2 text-xs bg-blue-50 text-blue-700"
+                           className="h-5 px-2 text-[10px] md:text-xs bg-primary-50 text-primary-700"
                         >
                            {data.flexibility === "flexible" && "±1 hour"}
                            {data.flexibility === "very_flexible" && "±3 hours"}
@@ -245,42 +245,42 @@ export function ReviewStep({
          {/* Budget Card */}
          <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
             <div className="flex items-start justify-between">
-               <h3 className="text-lg font-semibold text-gray-900">Budget</h3>
+               <h3 className="md:text-base font-semibold text-gray-900">Budget</h3>
                <button
                   type="button"
                   onClick={() => onEdit(3)}
-                  className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700"
+                  className="flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-700"
                >
                   <Edit2 className="w-4 h-4" />
                   Edit
                </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
                {data.budgetType === "fixed" && totalBudget ? (
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between p-2 md:p-4 bg-gray-50 rounded-lg">
                      <div className="flex items-center gap-3">
-                        <IndianRupee className="w-5 h-5 text-gray-600" />
+                        <IndianRupee className="size-4 md:size-5 text-gray-600" />
                         <div>
-                           <span className="text-sm text-gray-600 block">
+                           <span className="text-xs md:text-sm text-gray-600 block">
                               Fixed price
                            </span>
                            {urgency.surcharge > 0 && (
-                              <span className="text-xs text-gray-500">
+                              <span className="text-[9px] md:text-xs text-gray-500">
                                  ₹{data.budget} + ₹{urgency.surcharge} urgency
                                  fee
                               </span>
                            )}
                         </div>
                      </div>
-                     <span className="text-2xl font-bold text-gray-900">
+                     <span className="text-xl md:text-2xl font-bold text-gray-900">
                         ₹{totalBudget}
                      </span>
                   </div>
                ) : (
-                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3 p-2 md:p-4 bg-gray-50 rounded-lg">
                      <svg
-                        className="w-5 h-5 text-gray-600"
+                        className="size-4 md:size-5 text-gray-600"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -292,7 +292,7 @@ export function ReviewStep({
                            d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
                         />
                      </svg>
-                     <span className="text-sm text-gray-900 font-medium">
+                     <span className="text-xs md:text-sm text-gray-900 font-medium">
                         Negotiable - Review offers from taskers
                      </span>
                   </div>
@@ -302,10 +302,10 @@ export function ReviewStep({
                   <Badge
                      variant="secondary"
                      className={cn(
-                        "h-6 px-3 text-xs font-medium",
+                        "h-4 md:h-6 px-3 text-[9px] md:text-xs font-medium",
                         data.urgency === "urgent" &&
                            "bg-orange-100 text-orange-700",
-                        data.urgency === "soon" && "bg-blue-100 text-blue-700",
+                        data.urgency === "soon" && "bg-primary-100 text-primary-700",
                         data.urgency === "standard" &&
                            "bg-gray-100 text-gray-700"
                      )}
@@ -337,18 +337,18 @@ export function ReviewStep({
                      </FormControl>
 
                      {/* inline text container */}
-                     <FormLabel className="inline text-sm font-normal text-gray-700 leading-relaxed cursor-pointer">
+                     <FormLabel className="inline text-xs md:text-sm font-normal text-gray-700 leading-relaxed cursor-pointer">
                         I agree to ExtraHand&apos;s{" "}
                         <a
                            href="/terms"
-                           className="inline text-blue-600 hover:underline"
+                           className="inline text-primary-600 hover:underline"
                         >
                            Terms of Service
                         </a>{" "}
                         and{" "}
                         <a
                            href="/guidelines"
-                           className="inline text-blue-600 hover:underline"
+                           className="inline text-primary-600 hover:underline"
                         >
                            Community Guidelines
                         </a>
@@ -356,7 +356,7 @@ export function ReviewStep({
                      </FormLabel>
                   </div>
 
-                  <FormMessage className="mt-1" />
+                  <FormMessage />
                </FormItem>
             )}
          />
@@ -367,7 +367,7 @@ export function ReviewStep({
                type="submit"
                onClick={onSubmit}
                disabled={!agreedToGuidelines || isSubmitting}
-               className="w-full h-12 font-medium bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300"
+               className="w-full h-10 font-medium bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300"
                size="lg"
             >
                {isSubmitting ? "Posting..." : "Post Task"}

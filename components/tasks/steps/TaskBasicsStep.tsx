@@ -143,13 +143,13 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
    };
 
    return (
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
          {/* Header */}
          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
                What do you need done?
             </h2>
-            <p className="text-sm text-gray-600">
+            <p className="text-xs md:text-sm text-gray-600">
                Give taskers a clear idea of the job
             </p>
          </div>
@@ -160,17 +160,17 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
             name="title"
             render={({ field }) => (
                <FormItem>
-                  <FormLabel>Task title</FormLabel>
+                  <FormLabel className="text-xs md:text-sm">Task title</FormLabel>
                   <FormControl>
                      <Input
                         placeholder="e.g., Deep clean 2-bedroom apartment"
                         {...field}
-                        className="h-12"
+                        className="h-10 text-sm"
                         maxLength={200}
                      />
                   </FormControl>
                   {title.length >= 150 && (
-                     <FormDescription className="text-gray-500">
+                     <FormDescription className="text-xs text-gray-500">
                         {title.length}/200 characters
                      </FormDescription>
                   )}
@@ -185,17 +185,17 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
             name="description"
             render={({ field }) => (
                <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel className="text-xs md:text-sm">Description</FormLabel>
                   <FormControl>
                      <Textarea
                         placeholder="Describe what needs to be done, any specific requirements, and what the tasker should know"
                         {...field}
-                        rows={5}
+                        rows={4}
                         maxLength={2000}
-                        className="min-h-[120px] max-h-80 resize-none"
+                        className="min-h-[100px] text-sm max-h-80 resize-none"
                      />
                   </FormControl>
-                  <FormDescription>
+                  <FormDescription className="text-xs">
                      Be specific about what you need. Clear details help you get
                      better offers.
                   </FormDescription>
@@ -215,7 +215,7 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
             name="category"
             render={({ field }) => (
                <FormItem>
-                  <FormLabel>Category</FormLabel>
+                  <FormLabel className="text-xs md:text-sm">Category</FormLabel>
                   <FormControl>
                      <div className="grid grid-cols-2 gap-3">
                         {CATEGORIES.map((cat) => (
@@ -227,16 +227,16 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
                                  form.setValue("subcategory", "");
                               }}
                               className={`
-                                 relative h-18 rounded-xl border-2 p-3 text-left transition-all
+                                 relative h-16 rounded-xl border-2 p-3 text-left transition-all
                                  ${
                                     field.value === cat.id
-                                       ? "border-blue-600 bg-blue-50"
+                                       ? "border-primary-600 bg-primary-50"
                                        : "border-gray-200 bg-white hover:border-gray-300"
                                  }
                               `}
                            >
                               <div className="flex items-center gap-3">
-                                 <span className="text-3xl">{cat.icon}</span>
+                                 <span className="text-2xl md:text-3xl">{cat.icon}</span>
                                  <span className="text-sm font-medium text-gray-900">
                                     {cat.label}
                                  </span>
@@ -244,7 +244,7 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
                               {field.value === cat.id && (
                                  <div className="absolute top-2 right-2">
                                     <svg
-                                       className="w-5 h-5 text-blue-600"
+                                       className="w-5 h-5 text-primary-600"
                                        fill="currentColor"
                                        viewBox="0 0 20 20"
                                     >
@@ -272,7 +272,7 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
                name="subcategory"
                render={({ field }) => (
                   <FormItem className="animate-in slide-in-from-top duration-200">
-                     <FormLabel>
+                     <FormLabel className="text-xs md:text-sm">
                         Type of{" "}
                         {CATEGORIES.find(
                            (c) => c.id === category
@@ -281,13 +281,13 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
                      <FormControl>
                         <select
                            {...field}
-                           className="w-full h-12 px-4 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                           className="w-full text-sm h-10 px-4 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-primary-600 focus:border-transparent"
                         >
-                           <option value="">
+                           <option value="" className="rounded-md text-sm text-muted-foreground">
                               Select specific type (optional)
                            </option>
                            {SUBCATEGORIES[category].map((sub) => (
-                              <option key={sub} value={sub}>
+                              <option key={sub} value={sub} className="rounded-md text-sm">
                                  {sub}
                               </option>
                            ))}
@@ -306,16 +306,16 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
                name="subcategory"
                render={({ field }) => (
                   <FormItem className="animate-in slide-in-from-top duration-200">
-                     <FormLabel>What type of task is it?</FormLabel>
+                     <FormLabel className="text-xs md:text-sm">What type of task is it?</FormLabel>
                      <FormControl>
                         <Input
                            {...field}
                            placeholder="e.g., Window cleaning, Tutoring, Photography"
-                           className="h-12"
+                           className="h-10 text-sm"
                            maxLength={50}
                         />
                      </FormControl>
-                     <FormDescription>
+                     <FormDescription className="text-xs">
                         Please describe your task in a few words (3-50
                         characters)
                      </FormDescription>
@@ -331,7 +331,7 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
             name="requirements"
             render={({ field }) => (
                <FormItem>
-                  <FormLabel>Special requirements (optional)</FormLabel>
+                  <FormLabel className="text-xs md:text-sm">Special requirements (optional)</FormLabel>
                   <FormControl>
                      <div>
                         <Input
@@ -339,21 +339,21 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
                            onChange={(e) => setRequirementInput(e.target.value)}
                            onKeyDown={handleKeyDown}
                            placeholder="Type and press Enter"
-                           className="h-12"
+                           className="h-10 text-sm"
                            disabled={requirements.length >= 10}
                         />
                      </div>
                   </FormControl>
-                  <FormDescription>
+                  <FormDescription className="text-xs">
                      e.g., pet-friendly, tools needed, parking available
                   </FormDescription>
                   {requirements.length > 0 && (
-                     <div className="flex flex-wrap gap-2 mt-3">
+                     <div className="flex flex-wrap gap-2 mt-1">
                         {requirements.map((req, index) => (
                            <Badge
                               key={index}
                               variant="secondary"
-                              className="h-7 px-3 text-sm bg-gray-100 text-gray-700 hover:bg-gray-200"
+                              className="h-5 px-3 text-xs md:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200"
                            >
                               {req}
                               <button
@@ -362,7 +362,7 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
                                  className="ml-1.5 hover:text-gray-900"
                                  aria-label="Remove requirement"
                               >
-                                 <X className="w-3 h-3" />
+                                 <X className="size-2 md:size-3" />
                               </button>
                            </Badge>
                         ))}
@@ -379,7 +379,7 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
             name="estimatedDuration"
             render={({ field }) => (
                <FormItem>
-                  <FormLabel>Estimated time needed (optional)</FormLabel>
+                  <FormLabel className="text-xs md:text-sm">Estimated time needed (optional)</FormLabel>
                   <FormControl>
                      <div className="flex items-center gap-3">
                         <Input
@@ -388,7 +388,7 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
                            min="0.5"
                            max="168"
                            step="0.5"
-                           className="h-12 flex-1"
+                           className="h-10 text-sm flex-1"
                            value={field.value || ""}
                            onChange={(e) =>
                               field.onChange(
@@ -398,12 +398,12 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
                               )
                            }
                         />
-                        <span className="text-sm text-gray-600 font-medium">
+                        <span className="text-xs md:text-sm text-gray-600 font-medium">
                            hours
                         </span>
                      </div>
                   </FormControl>
-                  <FormDescription>
+                  <FormDescription className="text-xs">
                      Your best guess helps taskers plan
                   </FormDescription>
                   <FormMessage />
@@ -417,7 +417,7 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
             name="tags"
             render={({ field }) => (
                <FormItem>
-                  <FormLabel>Tags (optional)</FormLabel>
+                  <FormLabel className="text-xs md:text-sm">Tags (optional)</FormLabel>
                   <FormControl>
                      <div>
                         <div className="relative">
@@ -427,32 +427,32 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
                               onChange={(e) => setTagInput(e.target.value)}
                               onKeyDown={handleTagKeyDown}
                               placeholder="Type and press Enter (2-20 chars)"
-                              className="h-12 pl-12"
+                              className="h-10 text-sm pl-12"
                               disabled={tags.length >= 5}
                               maxLength={20}
                            />
                         </div>
                      </div>
                   </FormControl>
-                  <FormDescription>
+                  <FormDescription className="text-xs">
                      Add keywords to help taskers find your task (max 5)
                   </FormDescription>
                   {tags.length > 0 && (
-                     <div className="flex flex-wrap gap-2 mt-3">
+                     <div className="flex flex-wrap gap-2 mt-1">
                         {tags.map((tag, index) => (
                            <Badge
                               key={index}
                               variant="secondary"
-                              className="h-7 px-3 text-sm bg-blue-50 text-blue-700 hover:bg-blue-100"
+                              className="h-7 px-3 text-xs bg-primary-50 text-primary-700 hover:bg-primary-100"
                            >
                               #{tag}
                               <button
                                  type="button"
                                  onClick={() => removeTag(index)}
-                                 className="ml-1.5 hover:text-blue-900"
+                                 className="ml-1.5 hover:text-primary-900"
                                  aria-label="Remove tag"
                               >
-                                 <X className="w-3 h-3" />
+                                 <X className="size-2 md:size-3" />
                               </button>
                            </Badge>
                         ))}
@@ -469,18 +469,18 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
             name="priority"
             render={({ field }) => (
                <FormItem>
-                  <FormLabel>Task priority (optional)</FormLabel>
+                  <FormLabel className="text-xs md:text-sm">Task priority (optional)</FormLabel>
                   <FormControl>
-                     <div className="grid grid-cols-3 gap-3">
+                     <div className="grid grid-cols-3 gap-4">
                         {["low", "normal", "high"].map((priority) => (
                            <button
                               key={priority}
                               type="button"
                               onClick={() => field.onChange(priority)}
                               className={cn(
-                                 "h-12 rounded-lg border-2 text-sm font-medium transition-all capitalize",
+                                 "h-10 rounded-lg border-2 text-sm font-medium transition-all capitalize",
                                  field.value === priority
-                                    ? "border-blue-600 bg-blue-50 text-blue-600"
+                                    ? "border-primary-600 bg-primary-50 text-primary-600"
                                     : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
                               )}
                            >
@@ -489,7 +489,7 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
                         ))}
                      </div>
                   </FormControl>
-                  <FormDescription>
+                  <FormDescription className="text-xs">
                      Priority helps taskers gauge importance
                   </FormDescription>
                   <FormMessage />
@@ -503,7 +503,7 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
             name="attachments"
             render={({ field }) => (
                <FormItem>
-                  <FormLabel>Task images (optional)</FormLabel>
+                  <FormLabel className="text-xs md:text-sm">Task images (optional)</FormLabel>
                   <FormControl>
                      <ImageUpload
                         value={field.value || []}
@@ -512,7 +512,7 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
                         maxSizeMB={5}
                      />
                   </FormControl>
-                  <FormDescription>
+                  <FormDescription className="text-xs">
                      Upload photos to help taskers understand the task better
                   </FormDescription>
                   <FormMessage />
@@ -525,7 +525,7 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
             <Button
                type="button"
                onClick={onNext}
-               className="w-full h-12 font-medium bg-blue-600 hover:bg-blue-700"
+               className="w-full h-10 font-medium bg-primary-600 hover:bg-primary-700"
                size="lg"
             >
                Continue
