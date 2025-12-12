@@ -1,65 +1,55 @@
 # Multi-stage build for Next.js production image
 
-# Stage 1: Dependencies
-FROM node:20-alpine AS deps
-RUN apk add --no-cache libc6-compat
+# --- Stage 1: Dependencies -------------------------------------
+FROM node:20-slim AS deps
 WORKDIR /app
 
-# Configure npm for better network reliability
+# Install OS dependencies needed for Next.js standalone
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    libc6 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Configure npm for better network reliability (simplified)
 RUN npm config set fetch-retries 5 && \
-    npm config set fetch-retry-mintimeout 20000 && \
-    npm config set fetch-retry-maxtimeout 120000 && \
     npm config set fetch-timeout 300000
 
 # Copy package files
 COPY package.json package-lock.json* ./
 
-# Install dependencies with retry logic
-RUN npm ci --prefer-offline --no-audit || \
-    (echo "First attempt failed, retrying..." && sleep 5 && npm ci --prefer-offline --no-audit) || \
-    (echo "Second attempt failed, retrying with cache clear..." && npm cache clean --force && npm ci --prefer-offline --no-audit)
+# Install dependencies (cached layer)
+RUN npm ci --no-audit
 
-# Stage 2: Builder
-FROM node:20-alpine AS builder
+# --- Stage 2: Builder --------------------------------------------
+FROM node:20-slim AS builder
 WORKDIR /app
 
-# Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
-
-# Copy application source
 COPY . .
 
-# Set environment variables for build
-ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# Build the application
 RUN npm run build
 
-# Stage 3: Runner (Production)
-FROM node:20-alpine AS runner
+# --- Stage 3: Runner ---------------------------------------------
+FROM node:20-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Create a non-root user
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
-
-# Copy necessary files from builder
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# Switch to non-root user
+# Create non-root user
+RUN useradd -m nextjs
 USER nextjs
 
-# Expose port
-EXPOSE 3000
+# Copy required artifacts
+COPY --from=builder --chown=nextjs:nextjs /app/public ./public
+COPY --from=builder --chown=nextjs:nextjs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nextjs /app/.next/static ./.next/static
 
+EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Start the application
 CMD ["node", "server.js"]
