@@ -32,7 +32,7 @@ const posterSteps = [
       icon: FileText,
       title: "Post Your Task",
       description:
-         "Describe what you need done, set your budget, and choose when you need it completed.",
+         "Describe what you need done, set a budget and choose when you need it.",
       highlight: "Free to post",
    },
    {
@@ -40,7 +40,7 @@ const posterSteps = [
       icon: Users,
       title: "Get Quotes",
       description:
-         "Verified taskers in your area will send you offers. Compare ratings, reviews, and prices.",
+         "Taskers send quotes. Review ratings, experience and price before choosing.",
       highlight: "Usually within hours",
    },
    {
@@ -48,7 +48,7 @@ const posterSteps = [
       icon: CheckCircle,
       title: "Get It Done",
       description:
-         "Choose your tasker, track progress in real-time, and pay securely when the task is complete.",
+         "Chat, coordinate and pay securely after the task is completed.",
       highlight: "100% satisfaction guaranteed",
    },
 ];
@@ -59,7 +59,7 @@ const taskerSteps = [
       icon: Briefcase,
       title: "Browse Tasks",
       description:
-         "Find tasks that match your skills and availability. Filter by category, location, and budget.",
+         "Find tasks that match your skills and availability in your city.",
       highlight: "Flexible schedule",
    },
    {
@@ -67,7 +67,7 @@ const taskerSteps = [
       icon: MessageSquare,
       title: "Make Offers",
       description:
-         "Send your best offer with a personal message. Stand out with your ratings and reviews.",
+         "Set your rate and share a short message to improve your chances.",
       highlight: "Set your own rates",
    },
    {
@@ -75,7 +75,7 @@ const taskerSteps = [
       icon: Wallet,
       title: "Get Paid",
       description:
-         "Complete the task, upload proof of work, and receive secure payment directly to your account.",
+         "Finish the work and receive secure payment once it's approved.",
       highlight: "Fast, secure payments",
    },
 ];
@@ -106,22 +106,22 @@ const StepCard: React.FC<StepCardProps> = ({
       )}
 
       {/* Step number with icon */}
-      <div className="relative z-10 w-20 h-20 rounded-full bg-primary-500 flex items-center justify-center mb-6 shadow-lg shadow-primary-500/25">
-         <Icon className="w-8 h-8 text-secondary-900" />
-         <span className="absolute -top-2 -right-2 w-7 h-7 bg-secondary-900 text-white rounded-full flex items-center justify-center text-sm font-bold">
+      <div className="relative z-10 w-14 h-14 md:w-20 md:h-20 rounded-full bg-primary-500 flex items-center justify-center mb-4 md:mb-6 shadow-lg shadow-primary-500/25">
+         <Icon className="size-6 md:size-8 text-secondary-900" />
+         <span className="absolute -top-2 -right-2 w-6 md:size-8 h-6 bg-secondary-900 text-white rounded-full flex items-center justify-center text-xs md:text-sm font-bold">
             {step}
          </span>
       </div>
 
       {/* Content */}
-      <h3 className="text-xl font-bold text-secondary-900 mb-3">{title}</h3>
-      <p className="text-secondary-600 leading-relaxed mb-4 max-w-xs">
+      <h3 className="md:text-xl font-bold text-secondary-900 mb-2 md:mb-3">{title}</h3>
+      <p className="text-xs md:text-base text-secondary-600 leading-relaxed mb-3 md:mb-4 max-w-xs">
          {description}
       </p>
 
       {/* Highlight badge */}
-      <span className="inline-flex items-center px-3 py-1 bg-green-50 text-green-700 text-sm font-medium rounded-full">
-         <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
+      <span className="inline-flex items-center px-3 py-1 bg-green-50 text-green-700 text-xs md:text-sm font-medium rounded-full">
+         <CheckCircle className="size-3 md:size-3.5 mr-1.5" />
          {highlight}
       </span>
    </div>
@@ -132,14 +132,14 @@ export const HowItWorksSection: React.FC = () => {
    const steps = activeRole === "poster" ? posterSteps : taskerSteps;
 
    return (
-      <section id="how-it-works" className="py-20 bg-white">
+      <section id="how-it-works" className="py-12 md:py-20 bg-white">
          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Section header */}
             <div className="text-center mb-12">
-               <h2 className="text-3xl sm:text-4xl font-bold text-secondary-900 mb-4">
+               <h2 className="text-2xl md:text-4xl font-bold text-secondary-900 mb-4">
                   How ExtraHand Works
                </h2>
-               <p className="text-lg text-secondary-600 max-w-2xl mx-auto">
+               <p className="text-sm md:text-lg text-secondary-600 max-w-2xl mx-auto">
                   Whether you need help or want to earn, getting started takes
                   just minutes.
                </p>
@@ -151,7 +151,7 @@ export const HowItWorksSection: React.FC = () => {
                   <button
                      onClick={() => setActiveRole("poster")}
                      className={cn(
-                        "px-6 py-3 rounded-lg font-semibold text-sm transition-all",
+                        "px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold text-sm transition-all",
                         activeRole === "poster"
                            ? "bg-white text-secondary-900 shadow-md"
                            : "text-secondary-600 hover:text-secondary-900"
@@ -162,7 +162,7 @@ export const HowItWorksSection: React.FC = () => {
                   <button
                      onClick={() => setActiveRole("tasker")}
                      className={cn(
-                        "px-6 py-3 rounded-lg font-semibold text-sm transition-all",
+                        "px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold text-sm transition-all",
                         activeRole === "tasker"
                            ? "bg-white text-secondary-900 shadow-md"
                            : "text-secondary-600 hover:text-secondary-900"
@@ -174,7 +174,7 @@ export const HowItWorksSection: React.FC = () => {
             </div>
 
             {/* Steps grid */}
-            <div className="grid md:grid-cols-3 gap-8 md:gap-12 mb-16">
+            <div className="grid md:grid-cols-3 gap-6 md:gap-12 mb-10 md:mb-16">
                {steps.map((step, idx) => (
                   <StepCard
                      key={`${activeRole}-${step.step}`}
@@ -189,7 +189,7 @@ export const HowItWorksSection: React.FC = () => {
                <Link href={activeRole === "poster" ? "/tasks/new" : "/signup"}>
                   <Button
                      size="lg"
-                     className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-bold text-lg px-10 py-6 rounded-xl shadow-lg shadow-primary-500/25 transition-all hover:shadow-xl hover:-translate-y-0.5"
+                     className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-bold text-sm md:text-lg px-6 py-3 md:px-10 md:py-6 rounded-xl shadow-lg shadow-primary-500/25 transition-all hover:shadow-xl hover:-translate-y-0.5"
                   >
                      {activeRole === "poster"
                         ? "Post Your First Task"

@@ -43,13 +43,13 @@ export const SocialProofBar: React.FC = () => {
                      key={idx}
                      className="flex flex-col items-center text-center group"
                   >
-                     <div className="w-12 h-12 rounded-full bg-primary-50 flex items-center justify-center mb-3 group-hover:bg-primary-100 transition-colors">
-                        <metric.icon className="w-6 h-6 text-primary-600" />
+                     <div className="w-8 h-8 md:w-12 md:h-12 rounded-full bg-primary-50 flex items-center justify-center mb-3 group-hover:bg-primary-100 transition-colors">
+                        <metric.icon className="size-4 md:size-6 text-primary-600" />
                      </div>
-                     <p className="text-2xl sm:text-3xl font-bold text-secondary-900">
+                     <p className="text-xl md:text-2xl font-bold text-secondary-900">
                         {metric.value}
                      </p>
-                     <p className="text-sm text-secondary-500 mt-1">
+                     <p className="text-xs md:text-sm text-secondary-500 mt-1">
                         {metric.label}
                      </p>
                   </div>

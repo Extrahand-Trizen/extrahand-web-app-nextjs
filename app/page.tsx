@@ -27,18 +27,14 @@ import {
 
 export default function LandingPage() {
    return (
-      <div className="min-h-screen bg-white">
-         <LandingHeader />
-         <main>
-            <HeroSection />
-            <SocialProofBar />
-            <HowItWorksSection />
-            <CategoriesExplorer />
-            <TrustSection />
-            <TestimonialsSection />
-            <FinalCTASection />
-         </main>
-         <LandingFooter />
-      </div>
+      <main>
+         <HeroSection />
+         <SocialProofBar />
+         <HowItWorksSection />
+         <CategoriesExplorer />
+         <TrustSection />
+         <TestimonialsSection />
+         <FinalCTASection />
+      </main>
    );
 }

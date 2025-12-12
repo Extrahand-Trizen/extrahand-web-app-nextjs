@@ -29,11 +29,11 @@ export function CityHero({ city }: CityHeroProps) {
             <div className="absolute inset-0 bg-linear-to-br from-black/60 via-black/50 to-black/60" />
          </div>
 
-         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="flex items-center justify-center gap-2 text-sm text-white/90 mb-6">
+         <div className="relative z-10 max-w-360 mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div className="flex items-center gap-2 text-xl text-white/90 mb-6">
                <Link
                   href="/"
-                  className="hover:text-primary-400 transition-colors"
+                  className="text-primary-400"
                >
                   Home
                </Link>

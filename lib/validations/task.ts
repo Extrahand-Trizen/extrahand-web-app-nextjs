@@ -1,0 +1,146 @@
+import { z } from "zod";
+
+/**
+ * Task creation validation schemas
+ */
+
+// Step 1: Task Basics
+export const taskBasicsSchema = z
+   .object({
+      title: z
+         .string()
+         .min(5, "Please add a few more details to your title")
+         .max(200, "Title is too long"),
+      description: z
+         .string()
+         .min(10, "Add more detail so taskers understand what's needed")
+         .max(2000, "Description is too long"),
+      category: z.string().min(1, "Please select a category"),
+      subcategory: z.string().optional(),
+      requirements: z.array(z.string()).max(10).default([]),
+      estimatedDuration: z.number().min(0.5).max(168).nullable().optional(),
+      tags: z.array(z.string()).max(5).default([]),
+      priority: z.enum(["low", "normal", "high"]).default("normal"),
+      attachments: z
+         .array(
+            z.object({
+               type: z.string(),
+               url: z.string(),
+               filename: z.string(),
+               uploadedAt: z.date().optional(),
+            })
+         )
+         .max(5)
+         .default([]),
+   })
+   .refine(
+      (data) => {
+         // If category is "other", subcategory must be provided with 3-50 characters
+         if (data.category === "other") {
+            return (
+               data.subcategory &&
+               data.subcategory.trim().length >= 3 &&
+               data.subcategory.trim().length <= 50
+            );
+         }
+         return true;
+      },
+      {
+         message:
+            "Please describe your task type (3-50 characters) for 'Other' category",
+         path: ["subcategory"],
+      }
+   );
+
+// Step 2: Location & Schedule
+export const locationScheduleSchema = z
+   .object({
+      location: z.object({
+         address: z.string().min(5, "Please add a location"),
+         city: z.string().min(1, "City is required"),
+         state: z.string().min(1, "State is required"),
+         pinCode: z.string().default(""),
+         country: z.string().default("India"),
+         coordinates: z.tuple([z.number(), z.number()]).optional(),
+      }),
+      scheduledDate: z.date().nullable(),
+      scheduledTimeStart: z.date(),
+      scheduledTimeEnd: z.date(),
+      flexibility: z.enum(["exact", "flexible", "very_flexible"]),
+   })
+   .refine((data) => data.scheduledDate !== null, {
+      message: "Please choose a date",
+      path: ["scheduledDate"],
+   })
+   .refine(
+      (data) => {
+         if (data.flexibility === "very_flexible") return true;
+
+         // Ensure end date/time is after start date/time
+         return data.scheduledTimeEnd > data.scheduledTimeStart;
+      },
+      {
+         message: "End date & time must be after start date & time",
+         path: ["scheduledTimeEnd"],
+      }
+   );
+
+// Step 3: Budget
+export const budgetSchema = z
+   .object({
+      budgetType: z.enum(["fixed", "hourly", "negotiable"]),
+      budget: z.number().nullable().optional(),
+      urgency: z.enum(["standard", "soon", "urgent"]),
+   })
+   .refine(
+      (data) => {
+         // If budgetType is not negotiable, budget is required
+         if (data.budgetType !== "negotiable") {
+            return (
+               data.budget !== null &&
+               data.budget !== undefined &&
+               data.budget > 0
+            );
+         }
+         return true;
+      },
+      {
+         message: "Please enter a budget",
+         path: ["budget"],
+      }
+   )
+   .refine(
+      (data) => {
+         if (data.budgetType === "negotiable") return true;
+         if (!data.budget) return true;
+         return data.budget >= 50;
+      },
+      {
+         message: "Please enter at least ₹50",
+         path: ["budget"],
+      }
+   )
+   .refine(
+      (data) => {
+         if (data.budgetType === "negotiable") return true;
+         if (!data.budget) return true;
+         return data.budget <= 50000;
+      },
+      {
+         message: "For tasks over ₹50,000, please contact support",
+         path: ["budget"],
+      }
+   );
+
+// Complete task schema (for final submission)
+export const completeTaskSchema = taskBasicsSchema
+   .merge(locationScheduleSchema)
+   .merge(budgetSchema)
+   .extend({
+      agreedToGuidelines: z.boolean(),
+   });
+
+export type TaskBasicsFormData = z.infer<typeof taskBasicsSchema>;
+export type LocationScheduleFormData = z.infer<typeof locationScheduleSchema>;
+export type BudgetFormData = z.infer<typeof budgetSchema>;
+export type CompleteTaskFormData = z.infer<typeof completeTaskSchema>;

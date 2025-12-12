@@ -1,11 +1,11 @@
 /**
- * City Stats Component
- * Display key metrics and trust indicators
+ * City Stats - Production Ready
+ * How it works + local activity/trust
  */
 
 "use client";
 
-import { Shield, Star, Clock, Award, Users, CheckCircle2 } from "lucide-react";
+import { Upload, Users, CheckCircle, TrendingUp } from "lucide-react";
 import { CityInfo } from "@/lib/data/cities";
 
 interface CityStatsProps {
@@ -13,127 +13,78 @@ interface CityStatsProps {
 }
 
 export function CityStats({ city }: CityStatsProps) {
-   const stats = [
+   const steps = [
+      {
+         icon: Upload,
+         title: `Post a task in ${city.name}`,
+         description: "Describe what you need help with and set your budget.",
+      },
       {
          icon: Users,
-         value: `${city.activeTaskers.toLocaleString()}+`,
-         label: "Verified Taskers",
-         color: "from-blue-500 to-cyan-500",
+         title: "Get offers from local taskers",
+         description:
+            "Review profiles, ratings, and prices from verified taskers.",
       },
       {
-         icon: CheckCircle2,
-         value: `${city.completedTasks.toLocaleString()}+`,
-         label: "Tasks Completed",
-         color: "from-green-500 to-emerald-500",
-      },
-      {
-         icon: Star,
-         value: city.avgRating.toString(),
-         label: "Average Rating",
-         color: "from-yellow-500 to-orange-500",
-         suffix: "/5",
-      },
-      {
-         icon: Clock,
-         value: "< 2 hrs",
-         label: "Avg Response Time",
-         color: "from-purple-500 to-pink-500",
-      },
-   ];
-
-   const trustFeatures = [
-      {
-         icon: Shield,
-         title: "Background Verified",
-         description: "All taskers undergo thorough verification",
-      },
-      {
-         icon: Award,
-         title: "Quality Guaranteed",
-         description: "100% satisfaction or your money back",
-      },
-      {
-         icon: Star,
-         title: "Rated & Reviewed",
-         description: "Real reviews from real customers",
+         icon: CheckCircle,
+         title: "Choose and confirm",
+         description: "Pick the right tasker and get your task done.",
       },
    ];
 
    return (
-      <section className="py-20 lg:py-28 bg-white">
+      <section className="py-16 bg-white">
          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Stats Grid */}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
-               {stats.map((stat, index) => (
-                  <div
-                     key={stat.label}
-                     className="relative group"
-                     style={{
-                        animationDelay: `${index * 100}ms`,
-                     }}
-                  >
-                     <div className="relative bg-white rounded-3xl p-8 border-2 border-secondary-100 group-hover:border-transparent transition-all duration-300 group-hover:shadow-2xl overflow-hidden">
-                        {/* Gradient background on hover */}
-                        <div
-                           className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
-                        />
-
-                        {/* Content */}
-                        <div className="relative z-10">
-                           <div
-                              className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br ${stat.color} text-white mb-6 shadow-lg`}
-                           >
-                              <stat.icon className="w-7 h-7" />
-                           </div>
-                           <div className="text-4xl font-bold text-secondary-900 group-hover:text-white mb-2 transition-colors">
-                              {stat.value}
-                              {stat.suffix && (
-                                 <span className="text-2xl text-secondary-400 group-hover:text-white/80">
-                                    {stat.suffix}
-                                 </span>
-                              )}
-                           </div>
-                           <div className="text-sm text-secondary-600 group-hover:text-white/90 font-medium transition-colors">
-                              {stat.label}
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-               ))}
-            </div>
-
-            {/* Trust Features */}
-            <div className="text-center mb-12">
-               <h2 className="text-3xl sm:text-4xl font-bold text-secondary-900 mb-4">
-                  Why choose ExtraHand?
+            {/* How it works */}
+            <div className="mb-16">
+               <h2 className="text-3xl font-bold text-gray-900 mb-10 text-center">
+                  How ExtraHand Works in {city.name}
                </h2>
-               <p className="text-lg text-secondary-600">
-                  Your safety and satisfaction are our top priorities
-               </p>
+               <div className="grid md:grid-cols-3 gap-8">
+                  {steps.map((step, index) => (
+                     <div key={index} className="text-center">
+                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 text-blue-600 mb-4">
+                           <step.icon className="w-6 h-6" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                           {step.title}
+                        </h3>
+                        <p className="text-gray-600">{step.description}</p>
+                     </div>
+                  ))}
+               </div>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8">
-               {trustFeatures.map((feature, index) => (
-                  <div
-                     key={feature.title}
-                     className="relative group"
-                     style={{
-                        animationDelay: `${index * 100}ms`,
-                     }}
-                  >
-                     <div className="bg-gradient-to-br from-secondary-50 to-primary-50/30 rounded-3xl p-8 text-center h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-2 border-transparent hover:border-primary-200">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-lg mb-6 group-hover:scale-110 transition-transform duration-300">
-                           <feature.icon className="w-8 h-8 text-primary-600" />
-                        </div>
-                        <h3 className="text-xl font-bold text-secondary-900 mb-3">
-                           {feature.title}
-                        </h3>
-                        <p className="text-secondary-600 leading-relaxed">
-                           {feature.description}
-                        </p>
+            {/* Local activity strip */}
+            <div className="bg-gray-50 rounded-lg p-8">
+               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 text-center">
+                  <div>
+                     <div className="text-3xl font-bold text-gray-900 mb-1">
+                        {city.activeTasks.toLocaleString()}
+                     </div>
+                     <div className="text-sm text-gray-600">Active tasks</div>
+                  </div>
+                  <div>
+                     <div className="text-3xl font-bold text-gray-900 mb-1">
+                        {city.activeTaskers.toLocaleString()}+
+                     </div>
+                     <div className="text-sm text-gray-600">Local taskers</div>
+                  </div>
+                  <div>
+                     <div className="text-3xl font-bold text-gray-900 mb-1">
+                        {city.completedTasks.toLocaleString()}+
+                     </div>
+                     <div className="text-sm text-gray-600">
+                        Tasks completed
                      </div>
                   </div>
-               ))}
+                  <div>
+                     <div className="text-3xl font-bold text-gray-900 mb-1">
+                        {city.avgRating} ★
+                     </div>
+                     <div className="text-sm text-gray-600">Average rating</div>
+                  </div>
+               </div>
             </div>
          </div>
       </section>

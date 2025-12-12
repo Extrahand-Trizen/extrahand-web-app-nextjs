@@ -1,421 +1,294 @@
-'use client';
+"use client";
 
-/**
- * Browse Tasks Page (Task Listing)
- * Shows all available tasks with search and filters
- * Matches: web-apps/extrahand-web-app/src/TaskListingScreen.tsx
- * NO API CALLS - Just UI with mock data
- */
+import React, { useState, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { TaskMap } from "@/components/tasks/TaskMap";
+import { TaskCard } from "@/components/tasks/TaskCard";
+import {
+   CompactFilterBar,
+   CompactFilterState,
+} from "@/components/tasks/CompactFilterBar";
+import { TaskListSkeleton } from "@/components/tasks/TaskSkeleton";
+import { mockTasksData } from "@/lib/data/mockTasks";
+import type { Task } from "@/types/task";
+import { MapIcon, List, Plus } from "lucide-react";
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { NavBar } from '@/components/layout/NavBar';
-import { Footer } from '@/components/layout/Footer';
+const HYDERABAD_CENTER = { lat: 17.385, lng: 78.4867 };
 
-const PRIMARY_YELLOW = '#f9b233';
-const PRIMARY_BLUE = '#2563eb';
+// tweak these to match your header/filter/footer sizes
+const HEADER_HEIGHT_PX = 110;
+const FILTER_BAR_HEIGHT_PX = 64;
+const TOP_OFFSET_PX = HEADER_HEIGHT_PX + FILTER_BAR_HEIGHT_PX;
 
-// Mock task data
-const mockTasks = [
-  {
-    id: 1,
-    title: 'Replace a kitchen tap',
-    location: 'Hyderabad',
-    date: 'Tomorrow',
-    time: 'Anytime',
-    price: '₹249',
-    poster: 'M',
-    posterAvatar: '👨‍🦱',
-  },
-  {
-    id: 2,
-    title: 'Plumber (leakage fix, pipe installation, bathroom fitting)',
-    location: 'Hyderabad',
-    date: 'Before 14 July',
-    time: 'Anytime',
-    price: '₹149',
-    poster: 'R',
-    posterAvatar: '👨‍💼',
-  },
-  {
-    id: 3,
-    title: 'Home Deep Cleaning',
-    location: 'Basheerbagh',
-    date: 'Tomorrow',
-    time: 'Anytime',
-    price: '₹249',
-    poster: 'S',
-    posterAvatar: '👨',
-  },
-  {
-    id: 4,
-    title: 'TV Mounting Service',
-    location: 'Hyderabad',
-    date: 'This week',
-    time: 'Afternoon',
-    price: '₹399',
-    poster: 'A',
-    posterAvatar: '👨‍🔧',
-  },
-  {
-    id: 5,
-    title: 'Garden Maintenance',
-    location: 'Secunderabad',
-    date: 'Next week',
-    time: 'Morning',
-    price: '₹199',
-    poster: 'K',
-    posterAvatar: '👨‍🌾',
-  },
-];
+const calculateDistance = (
+   lat1: number,
+   lon1: number,
+   lat2: number,
+   lon2: number
+) => {
+   const R = 6371;
+   const dLat = ((lat2 - lat1) * Math.PI) / 180;
+   const dLon = ((lon2 - lon1) * Math.PI) / 180;
+   const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+         Math.cos((lat2 * Math.PI) / 180) *
+         Math.sin(dLon / 2) *
+         Math.sin(dLon / 2);
+   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+   return R * c;
+};
 
 export default function TasksPage() {
-  const router = useRouter();
-  const [isMobileView, setIsMobileView] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+   const router = useRouter();
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
-    const checkScreenSize = () => {
-      const width = window.innerWidth;
-      setIsMobileView(width <= 768);
-    };
+   // State
+   const [searchQuery, setSearchQuery] = useState("");
+   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+   const [isLoading, setIsLoading] = useState(true);
+   const [showMobileMap, setShowMobileMap] = useState(false);
+   const [isMobile, setIsMobile] = useState(false);
 
-    checkScreenSize();
-    window.addEventListener('resize', checkScreenSize);
-    return () => window.removeEventListener('resize', checkScreenSize);
-  }, []);
+   const [filters, setFilters] = useState<CompactFilterState>({
+      categories: [],
+      suburb: "",
+      remotely: false,
+      minBudget: 0,
+      maxBudget: 100000,
+      sortBy: "recent",
+   });
 
-  const handleTaskClick = (taskId: number) => {
-    router.push(`/tasks/${taskId}`);
-  };
+   // Check screen size
+   useEffect(() => {
+      const checkMobile = () => setIsMobile(window.innerWidth < 1024);
+      checkMobile();
+      window.addEventListener("resize", checkMobile);
+      return () => window.removeEventListener("resize", checkMobile);
+   }, []);
 
-  const handleOpenClick = (taskId: number) => {
-    router.push(`/tasks/${taskId}`);
-  };
+   // Simulate initial loading
+   useEffect(() => {
+      const timer = setTimeout(() => setIsLoading(false), 800);
+      return () => clearTimeout(timer);
+   }, []);
 
-  const filteredTasks = mockTasks.filter(task =>
-    task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    task.location.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+   // Filter and sort tasks
+   const getFilteredTasks = useCallback((): Task[] => {
+      let filtered = [...mockTasksData];
 
-  // Mobile layout
-  if (isMobileView) {
-    return (
-      <div className="flex flex-col min-h-screen bg-white">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-5 pt-12 pb-4">
-          <div className="flex items-center justify-between mb-4">
-            {/* Logo */}
-            <div className="flex items-center">
-              <div className="relative w-8 h-8 rounded-full mr-2" style={{ backgroundColor: PRIMARY_YELLOW }}>
-                <span className="text-base text-white">✋</span>
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-lg text-white text-xs flex items-center justify-center" style={{ backgroundColor: PRIMARY_BLUE }}>
-                  ✓
-                </span>
-              </div>
-              <span className="text-lg font-bold text-black">Extrahand</span>
-            </div>
-            {/* Post a Task Button */}
-            <button
-              onClick={() => router.push('/tasks/new')}
-              className="px-5 py-2.5 rounded-full text-sm font-semibold"
-              style={{ backgroundColor: PRIMARY_YELLOW, color: '#000' }}
-            >
-              Post a Task
-            </button>
-          </div>
-          
-          {/* Navigation Links */}
-          <div className="flex items-center gap-5">
-            <button className="text-sm text-gray-600">Browse Tasks</button>
-            <button 
-              onClick={() => router.push('/performer?tab=my-tasks')}
-              className="text-sm text-gray-600"
-            >
-              My Tasks
-            </button>
-            <button className="text-sm text-gray-600">List my services</button>
-            <button
-              onClick={() => router.push('/profile')}
-              className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center"
-            >
-              <span className="text-lg">👤</span>
-            </button>
-          </div>
-        </div>
+      // Search filter
+      if (searchQuery.trim()) {
+         const query = searchQuery.toLowerCase();
+         filtered = filtered.filter(
+            (task) =>
+               task.title.toLowerCase().includes(query) ||
+               task.category.toLowerCase().includes(query) ||
+               task.description?.toLowerCase().includes(query) ||
+               task.location.city.toLowerCase().includes(query)
+         );
+      }
 
-        {/* Search and Filters */}
-        <div className="px-5 py-4 border-b border-gray-200">
-          {/* Search Bar */}
-          <div className="flex items-center bg-gray-50 rounded-full px-4 py-3 mb-4">
-            <span className="text-base mr-2.5">🔍</span>
-            <input
-              type="text"
-              placeholder="Search for a task"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 outline-none text-base bg-transparent"
-            />
-          </div>
-          
-          {/* Filter Buttons */}
-          <div className="flex flex-wrap gap-2">
-            <button className="px-3 py-1.5 bg-gray-50 rounded-2xl text-xs text-gray-600">
-              Category
-            </button>
-            <button className="px-3 py-1.5 bg-gray-50 rounded-2xl text-xs text-gray-600">
-              50km Adelaide SA
-            </button>
-            <button className="px-3 py-1.5 bg-gray-50 rounded-2xl text-xs text-gray-600">
-              Any price
-            </button>
-            <button className="px-3 py-1.5 bg-gray-50 rounded-2xl text-xs text-gray-600">
-              Other filters (1)
-            </button>
-            <button className="px-3 py-1.5 bg-gray-50 rounded-2xl text-xs text-gray-600">
-              Sort
-            </button>
-          </div>
-        </div>
+      // Category filter (multi-select)
+      if (filters.categories.length > 0) {
+         filtered = filtered.filter((task) =>
+            filters.categories.includes(task.category)
+         );
+      }
 
-        {/* Task List */}
-        <div className="flex-1 overflow-y-auto px-5 py-4">
-          <h2 className="text-lg font-bold text-black mb-4">Available Tasks</h2>
-          {filteredTasks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20">
-              <p className="text-gray-500 text-center mb-2">No tasks found</p>
-              <p className="text-sm text-gray-400 text-center">Try adjusting your search</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredTasks.map((task) => (
-                <div
-                  key={task.id}
-                  onClick={() => handleTaskClick(task.id)}
-                  className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                >
-                  {/* Task Header */}
-                  <div className="flex items-start justify-between mb-2.5">
-                    <h3 className="text-base font-semibold text-black flex-1 mr-2.5">
-                      {task.title}
-                    </h3>
-                    <div className="flex flex-col items-end">
-                      <span className="text-lg font-bold text-black mb-1.5">
-                        {task.price}
-                      </span>
-                      <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
-                        style={{ backgroundColor: PRIMARY_BLUE }}
-                      >
-                        {task.poster}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Task Details */}
-                  <div className="mb-2.5 space-y-1">
-                    <div className="flex items-center">
-                      <span className="text-sm mr-2">📍</span>
-                      <span className="text-sm text-gray-600">{task.location}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="text-sm mr-2">📅</span>
-                      <span className="text-sm text-gray-600">{task.date}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="text-sm mr-2">⏰</span>
-                      <span className="text-sm text-gray-600">{task.time}</span>
-                    </div>
-                  </div>
-                  
-                  {/* Open Button */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleOpenClick(task.id);
-                    }}
-                    className="text-sm font-medium"
-                    style={{ color: PRIMARY_BLUE }}
+      // Budget filter
+      const budgetValue = (task: Task) =>
+         typeof task.budget === "object" ? task.budget.amount : task.budget;
+
+      filtered = filtered.filter((task) => {
+         const price = budgetValue(task);
+         return price >= filters.minBudget && price <= filters.maxBudget;
+      });
+
+      // Sorting
+      if (filters.sortBy === "nearest") {
+         filtered.sort((a, b) => {
+            const [lngA, latA] = a.location?.coordinates || [0, 0];
+            const [lngB, latB] = b.location?.coordinates || [0, 0];
+            const distA = calculateDistance(
+               HYDERABAD_CENTER.lat,
+               HYDERABAD_CENTER.lng,
+               latA,
+               lngA
+            );
+            const distB = calculateDistance(
+               HYDERABAD_CENTER.lat,
+               HYDERABAD_CENTER.lng,
+               latB,
+               lngB
+            );
+            return distA - distB;
+         });
+      } else if (filters.sortBy === "price-low") {
+         filtered.sort((a, b) => budgetValue(a) - budgetValue(b));
+      } else if (filters.sortBy === "price-high") {
+         filtered.sort((a, b) => budgetValue(b) - budgetValue(a));
+      } else {
+         // Recent (default)
+         filtered.sort(
+            (a, b) =>
+               new Date(b.createdAt!).getTime() -
+               new Date(a.createdAt!).getTime()
+         );
+      }
+
+      return filtered;
+   }, [searchQuery, filters]);
+
+   const filteredTasks = getFilteredTasks();
+
+   // Empty state
+   const EmptyState = () => (
+      <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+         <div className="w-16 h-16 rounded-full bg-secondary-100 flex items-center justify-center mb-4">
+            <List className="w-8 h-8 text-secondary-400" />
+         </div>
+         <h3 className="text-lg font-semibold text-secondary-900 mb-2">
+            No tasks found
+         </h3>
+         <p className="text-sm text-secondary-600 mb-4 max-w-md">
+            {searchQuery
+               ? `No results for "${searchQuery}". Try different keywords or adjust your filters.`
+               : "Try adjusting your filters or post your own task to get started."}
+         </p>
+         <Button
+            onClick={() => router.push("/tasks/new")}
+            className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold"
+         >
+            <Plus className="w-4 h-4 mr-2" />
+            Post a task
+         </Button>
+      </div>
+   );
+
+   return (
+      <div className="flex flex-col bg-secondary-50">
+         {/* Filter bar (sticky) */}
+         <CompactFilterBar
+            filters={filters}
+            onFilterChange={setFilters}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            resultCount={filteredTasks.length}
+         />
+
+         {/* Main content */}
+         <div className="w-full max-w-7xl mx-auto px-4">
+            <div className="flex gap-6">
+               {/* Left column: list */}
+               <div
+                  className={`w-full lg:w-1/2 ${
+                     isMobile ? (showMobileMap ? "hidden" : "block") : "block"
+                  }`}
+               >
+                  <div
+                     style={{
+                        maxHeight: `calc(100vh - ${TOP_OFFSET_PX}px)`,
+                     }}
+                     className="overflow-y-auto pb-8"
                   >
-                    Open
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                     {isLoading ? (
+                        <div className="p-4">
+                           <TaskListSkeleton count={8} />
+                        </div>
+                     ) : filteredTasks.length === 0 ? (
+                        <EmptyState />
+                     ) : (
+                        <div className="space-y-0">
+                           {filteredTasks.map((task) => (
+                              <TaskCard
+                                 key={task._id}
+                                 task={task}
+                                 isSelected={selectedTaskId === task._id}
+                                 onClick={() => setSelectedTaskId(task._id)}
+                              />
+                           ))}
+                        </div>
+                     )}
 
-        <Footer />
-      </div>
-    );
-  }
-
-  // Desktop layout
-  return (
-    <div className="flex flex-col min-h-screen bg-white">
-      {/* Header */}
-      <div className="flex items-center justify-between px-12 md:px-16 pt-8 pb-5 border-b border-gray-200">
-        {/* Left: Logo */}
-        <div className="flex items-center">
-          <div className="relative w-8 h-8 rounded-full mr-2" style={{ backgroundColor: PRIMARY_YELLOW }}>
-            <span className="text-base text-white">✋</span>
-            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-lg text-white text-xs flex items-center justify-center" style={{ backgroundColor: PRIMARY_BLUE }}>
-              ✓
-            </span>
-          </div>
-          <span className="text-lg font-bold text-black">Extrahand</span>
-        </div>
-        
-        {/* Center: Post a Task Button */}
-        <div className="flex-1 flex justify-center">
-          <button
-            onClick={() => router.push('/tasks/new')}
-            className="px-8 py-3 rounded-full text-base font-semibold"
-            style={{ backgroundColor: PRIMARY_YELLOW, color: '#000' }}
-          >
-            Post a Task
-          </button>
-        </div>
-        
-        {/* Right: Navigation Links */}
-        <div className="flex items-center gap-8">
-          <button className="text-base text-gray-600">Browse Tasks</button>
-          <button 
-            onClick={() => router.push('/performer?tab=my-tasks')}
-            className="text-base text-gray-600"
-          >
-            My Tasks
-          </button>
-          <button className="text-base text-gray-600">List my services</button>
-          <button
-            onClick={() => router.push('/profile')}
-            className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center"
-          >
-            <span className="text-xl">👤</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Search and Filters */}
-      <div className="px-12 md:px-16 py-5 border-b border-gray-200">
-        {/* Search Bar */}
-        <div className="flex items-center bg-gray-50 rounded-full px-5 py-4 mb-5 max-w-[600px]">
-          <span className="text-lg mr-4">🔍</span>
-          <input
-            type="text"
-            placeholder="Search for a task"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 outline-none text-base bg-transparent"
-          />
-        </div>
-        
-        {/* Filter Buttons */}
-        <div className="flex gap-4">
-          <button className="px-4 py-2 bg-gray-50 rounded-full text-sm text-gray-600">
-            Category
-          </button>
-          <button className="px-4 py-2 bg-gray-50 rounded-full text-sm text-gray-600">
-            50km Adelaide SA
-          </button>
-          <button className="px-4 py-2 bg-gray-50 rounded-full text-sm text-gray-600">
-            Any price
-          </button>
-          <button className="px-4 py-2 bg-gray-50 rounded-full text-sm text-gray-600">
-            Other filters (1)
-          </button>
-          <button className="px-4 py-2 bg-gray-50 rounded-full text-sm text-gray-600">
-            Sort
-          </button>
-        </div>
-      </div>
-
-      {/* Main Content - Two Column Layout */}
-      <div className="flex flex-1">
-        {/* Left Side - Task List */}
-        <div className="flex-1 px-12 md:px-16 py-8 border-r border-gray-200 overflow-y-auto">
-          <h2 className="text-xl font-bold text-black mb-5">Available Tasks</h2>
-          {filteredTasks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20">
-              <p className="text-gray-500 text-center mb-2">No tasks found</p>
-              <p className="text-sm text-gray-400 text-center">Try adjusting your search</p>
-            </div>
-          ) : (
-            <div className="space-y-5">
-              {filteredTasks.map((task) => (
-                <div
-                  key={task.id}
-                  onClick={() => handleTaskClick(task.id)}
-                  className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                >
-                  {/* Task Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-black flex-1 mr-4">
-                      {task.title}
-                    </h3>
-                    <div className="flex flex-col items-end">
-                      <span className="text-xl font-bold text-black mb-2">
-                        {task.price}
-                      </span>
-                      <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center text-white text-base font-bold"
-                        style={{ backgroundColor: PRIMARY_BLUE }}
-                      >
-                        {task.poster}
-                      </div>
-                    </div>
+                     {/* Load more button */}
+                     {!isLoading && filteredTasks.length > 20 && (
+                        <div className="p-4 text-center border-t border-secondary-200">
+                           <Button
+                              variant="outline"
+                              className="border-secondary-300"
+                           >
+                              Load more tasks
+                           </Button>
+                        </div>
+                     )}
                   </div>
-                  
-                  {/* Task Details */}
-                  <div className="mb-4 space-y-2">
-                    <div className="flex items-center">
-                      <span className="text-base mr-2.5">📍</span>
-                      <span className="text-base text-gray-600">{task.location}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="text-base mr-2.5">📅</span>
-                      <span className="text-base text-gray-600">{task.date}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="text-base mr-2.5">⏰</span>
-                      <span className="text-base text-gray-600">{task.time}</span>
-                    </div>
-                  </div>
-                  
-                  {/* Open Button */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleOpenClick(task.id);
-                    }}
-                    className="text-base font-medium"
-                    style={{ color: PRIMARY_BLUE }}
-                  >
-                    Open
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        
-        {/* Right Side - Map View */}
-        <div className="flex-1 px-12 md:px-16 py-8">
-          <h2 className="text-xl font-bold text-black mb-5">Task Locations</h2>
-          <div className="flex-1 bg-gray-50 rounded-xl flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-gray-600 mb-2.5">Map View</p>
-              <p className="text-base text-gray-400 mb-1">Hyderabad, India</p>
-              <p className="text-base text-gray-400">Task locations would be displayed here</p>
-            </div>
-          </div>
-        </div>
-      </div>
+               </div>
 
-      <Footer />
-    </div>
-  );
+               {/* Right column: map */}
+               {!isMobile ? (
+                  <div className="hidden lg:block lg:w-1/2">
+                     <div
+                        className="sticky"
+                        style={{ top: `${TOP_OFFSET_PX}px` }}
+                     >
+                        <div
+                           style={{
+                              height: `calc(100vh - ${TOP_OFFSET_PX}px)`,
+                           }}
+                        >
+                           <TaskMap
+                              tasks={filteredTasks}
+                              selectedTaskId={selectedTaskId}
+                              onTaskSelect={setSelectedTaskId}
+                              centerCoordinates={HYDERABAD_CENTER}
+                           />
+                        </div>
+                     </div>
+                  </div>
+               ) : (
+                  showMobileMap && (
+                     <div className="fixed inset-0 top-[110px] z-30 bg-white">
+                        <TaskMap
+                           tasks={filteredTasks}
+                           selectedTaskId={selectedTaskId}
+                           onTaskSelect={setSelectedTaskId}
+                           centerCoordinates={HYDERABAD_CENTER}
+                        />
+                     </div>
+                  )
+               )}
+            </div>
+         </div>
+
+         {/* Mobile map toggle */}
+         {isMobile && (
+            <div className="fixed bottom-4 right-4 z-40">
+               <Button
+                  onClick={() => setShowMobileMap(!showMobileMap)}
+                  className="bg-white border-2 border-secondary-300 text-secondary-900 hover:bg-secondary-50 shadow-lg rounded-full w-14 h-14 p-0"
+               >
+                  {showMobileMap ? (
+                     <List className="w-6 h-6" />
+                  ) : (
+                     <MapIcon className="w-6 h-6" />
+                  )}
+               </Button>
+            </div>
+         )}
+
+         {/* Mobile floating post button */}
+         {isMobile && !showMobileMap && (
+            <div className="fixed bottom-4 left-4 z-40">
+               <Button
+                  onClick={() => router.push("/tasks/new")}
+                  className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold shadow-lg rounded-full px-6"
+               >
+                  <Plus className="w-5 h-5 mr-2" />
+                  Post Task
+               </Button>
+            </div>
+         )}
+      </div>
+   );
 }

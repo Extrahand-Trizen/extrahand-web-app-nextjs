@@ -4,6 +4,8 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/auth/context";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { Toaster } from "@/components/ui/sonner";
+import { LandingHeader } from "@/components/layout/LandingHeader";
+import { LandingFooter } from "@/components/layout/LandingFooter";
 
 const inter = Inter({
    subsets: ["latin"],
@@ -22,11 +24,20 @@ export default function RootLayout({
 }>) {
    return (
       <html lang="en" suppressHydrationWarning>
-         <body className={`${inter.variable} font-sans antialiased`}>
+         <body
+            className={`${inter.variable} font-sans antialiased`}
+            suppressHydrationWarning
+         >
             <ErrorBoundary>
                <AuthProvider>
-                  <Toaster />
-                  {children}
+                  <LandingHeader />
+                  <main className="min-h-[calc(100vh - 110px)]">
+                     <div className="w-full mx-auto">
+                        <Toaster />
+                        {children}
+                     </div>
+                  </main>
+                  <LandingFooter />
                </AuthProvider>
             </ErrorBoundary>
          </body>
