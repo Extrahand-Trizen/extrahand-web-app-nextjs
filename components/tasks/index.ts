@@ -13,3 +13,10 @@ export { TaskCard } from "./TaskCard";
 export { CompactFilterBar } from "./CompactFilterBar";
 export type { CompactFilterState } from "./CompactFilterBar";
 export { TaskListSkeleton, TaskCardSkeleton } from "./TaskSkeleton";
+
+// Task Details Components
+export { TaskDetailsHeader } from "./TaskDetailsHeader";
+export { TaskDetailsMain } from "./TaskDetailsMain";
+export { TaskDetailsSidebar } from "./TaskDetailsSidebar";
+export { TaskQuestionsSection } from "./TaskQuestionsSection";
+export { TaskOffersSection } from "./TaskOffersSection";

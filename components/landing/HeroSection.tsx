@@ -2,9 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Search, MapPin, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const heroImages = [
    "/assets/images/hero-bg1.png",
@@ -13,13 +14,26 @@ const heroImages = [
    "/assets/images/hero-bg4.png",
 ];
 
+interface LocationSuggestion {
+   place_id: string;
+   description: string;
+   main_text: string;
+   secondary_text: string;
+}
+
 export const HeroSection: React.FC = () => {
    const router = useRouter();
    const [query, setQuery] = useState("");
    const [location, setLocation] = useState("");
    const [isLoadingLocation, setIsLoadingLocation] = useState(false);
    const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+   const [locationSuggestions, setLocationSuggestions] = useState<
+      LocationSuggestion[]
+   >([]);
+   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+   const isMobile = useIsMobile();
 
    useEffect(() => {
       const interval = setInterval(() => {
@@ -29,6 +43,38 @@ export const HeroSection: React.FC = () => {
       return () => clearInterval(interval);
    }, []);
 
+   // Debounce location search
+   useEffect(() => {
+      if (!location || location.length < 2) {
+         setLocationSuggestions([]);
+         return;
+      }
+
+      const timer = setTimeout(() => {
+         searchLocations(location);
+      }, 300);
+
+      return () => clearTimeout(timer);
+   }, [location]);
+
+   const searchLocations = async (searchText: string) => {
+      setIsSearchingLocation(true);
+      try {
+         const response = await fetch(
+            `/api/geocode/search?input=${encodeURIComponent(searchText)}`
+         );
+         const data = await response.json();
+
+         if (data.suggestions) {
+            setLocationSuggestions(data.suggestions);
+         }
+      } catch (error) {
+         console.error("Error searching locations:", error);
+      } finally {
+         setIsSearchingLocation(false);
+      }
+   };
+
    const requestLocationPermission = async () => {
       setIsLoadingLocation(true);
       try {
@@ -37,27 +83,30 @@ export const HeroSection: React.FC = () => {
                async (position) => {
                   const { latitude, longitude } = position.coords;
 
-                  // Reverse geocode to get city name
-                  const response = await fetch(
-                     `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-                  );
-                  const data = await response.json();
+                  try {
+                     const response = await fetch(
+                        `/api/geocode?lat=${latitude}&lng=${longitude}`
+                     );
 
-                  const city =
-                     data.address?.city ||
-                     data.address?.town ||
-                     data.address?.village ||
-                     data.address?.state ||
-                     "Unknown Location";
+                     if (!response.ok) {
+                        throw new Error("Geocoding failed");
+                     }
 
-                  setLocation(city);
+                     const data = await response.json();
+
+                     if (data.address) {
+                        setLocation(data.address);
+                        setShowLocationDropdown(false);
+                     }
+                  } catch (error) {
+                     console.error("Error geocoding:", error);
+                  }
+
                   setIsLoadingLocation(false);
-                  setShowLocationDropdown(false);
                },
                (error) => {
                   console.error("Error getting location:", error);
                   setIsLoadingLocation(false);
-                  // Keep dropdown open so user can manually enter
                }
             );
          }
@@ -75,13 +124,13 @@ export const HeroSection: React.FC = () => {
 
       router.push(
          searchParams.toString()
-            ? `/tasks/new?${searchParams.toString()}`
-            : "/tasks/new"
+            ? `/tasks/${searchParams.toString()}`
+            : "/tasks"
       );
    };
 
    return (
-      <section className="relative h-[450px] md:h-[600px] flex items-center justify-center overflow-hidden">
+      <section className="relative h-[450px] md:h-[650px] flex items-center justify-center">
          {/* Background Image Carousel */}
          <div className="absolute inset-0 z-0">
             {heroImages.map((image, index) => (
@@ -111,118 +160,159 @@ export const HeroSection: React.FC = () => {
             </p>
 
             {/* 3. The "Floating" Search Bar */}
-            <div className="bg-white p-2 rounded-lg shadow-lg max-w-2xl mx-auto">
+            <div className="bg-white px-2 md:py-2 rounded-lg shadow-lg max-w-2xl mx-auto">
                <form
                   onSubmit={handleSearch}
-                  className="flex flex-col sm:flex-row items-center gap-2"
+                  className="flex items-center gap-0"
                >
-                  <div className="flex flex-1 w-full">
-                     {/* Task Search Input */}
-                     <div className="relative flex-1">
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                           <Search className="w-4 h-4" />
-                        </div>
-                        <input
+                  {/* Location Input with Dropdown */}
+                  <div className="relative w-5/12">
+                     <div className="relative">
+                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 z-10" />
+                        <Input
                            type="text"
-                           value={query}
-                           onChange={(e) => setQuery(e.target.value)}
-                           placeholder="Try: Mount a TV, House cleaning..."
-                           className="w-full h-10 pl-10 pr-3 bg-transparent outline-none text-gray-800 placeholder:text-gray-400 text-xs md:text-sm border-r border-gray-200"
-                           aria-label="Search tasks or describe what you need"
+                           value={location}
+                           onChange={(e) => setLocation(e.target.value)}
+                           onFocus={() => setShowLocationDropdown(true)}
+                           placeholder="Mumbai"
+                           className="h-10 pl-10 pr-3 border-0 border-r border-gray-200 rounded-r-none focus-visible:ring-0 focus-visible:ring-offset-0 text-xs md:text-sm"
+                           aria-label="Enter your location"
                         />
                      </div>
 
-                     {/* Location Input with Dropdown */}
-                     <div className="relative flex-1">
-                        <button
-                           type="button"
-                           onClick={() =>
-                              setShowLocationDropdown(!showLocationDropdown)
-                           }
-                           className="w-full h-10 pl-10 pr-3 bg-transparent outline-none text-left text-gray-800 text-sm flex items-center"
-                        >
-                           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                              {isLoadingLocation ? (
-                                 <Loader2 className="w-4 h-4 animate-spin" />
-                              ) : (
-                                 <MapPin className="w-4 h-4" />
-                              )}
-                           </div>
-                           <span
-                              className={cn(
-                                 "text-xs md:text-sm",
-                                 location ? "text-gray-800" : "text-gray-400"
-                              )}
-                           >
-                              {location || "Select location"}
-                           </span>
-                        </button>
-
-                        {/* Location Dropdown */}
-                        {showLocationDropdown && (
-                           <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
-                              {/* Use Current Location Button */}
+                     {/* Location Dropdown */}
+                     {showLocationDropdown && (
+                        <>
+                           <div
+                              className="fixed inset-0 z-100"
+                              onClick={() => setShowLocationDropdown(false)}
+                           />
+                           <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-101 overflow-hidden max-h-96 overflow-y-auto">
+                              {/* Detect Current Location */}
                               <button
                                  type="button"
                                  onClick={requestLocationPermission}
                                  disabled={isLoadingLocation}
                                  className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 border-b border-gray-100"
                               >
-                                 <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-                                    {isLoadingLocation ? (
-                                       <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
-                                    ) : (
-                                       <MapPin className="w-5 h-5 text-blue-600" />
-                                    )}
-                                 </div>
+                                 <MapPin className="size-4 md:size-5 text-primary-500 shrink-0" />
                                  <div className="flex-1">
-                                    <div className="font-semibold text-gray-900 text-sm">
-                                       Use my current location
+                                    <div className="font-medium text-primary-500 text-xs md:text-sm">
+                                       {isLoadingLocation
+                                          ? "Detecting..."
+                                          : "Detect Current Location"}
                                     </div>
-                                    <div className="text-xs text-gray-500">
-                                       We'll detect your location automatically
+                                    <div className="text-[9px] md:text-xs text-gray-500">
+                                       Using GPS
                                     </div>
                                  </div>
+                                 {isLoadingLocation && (
+                                    <Loader2 className="w-4 h-4 text-primary-500 animate-spin" />
+                                 )}
                               </button>
 
-                              {/* Manual Location Input */}
-                              <div className="p-3">
-                                 <input
-                                    type="text"
-                                    value={location}
-                                    onChange={(e) =>
-                                       setLocation(e.target.value)
-                                    }
-                                    placeholder="Or enter your location manually..."
-                                    className="w-full px-3 py-2 border border-gray-200 rounded-md outline-none focus:border-blue-500 text-sm"
-                                    aria-label="Enter your location manually"
-                                 />
-                              </div>
+                              {/* Search Results */}
+                              {isSearchingLocation && (
+                                 <div className="px-4 py-3 text-center text-sm text-gray-500">
+                                    <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
+                                    Searching...
+                                 </div>
+                              )}
 
-                              {/* Apply Button */}
-                              <div className="p-3 pt-0">
-                                 <Button
-                                    type="button"
-                                    onClick={() =>
-                                       setShowLocationDropdown(false)
-                                    }
-                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm"
-                                 >
-                                    Apply
-                                 </Button>
-                              </div>
+                              {locationSuggestions.length > 0 && (
+                                 <div className="p-2">
+                                    {locationSuggestions.map((suggestion) => (
+                                       <button
+                                          key={suggestion.place_id}
+                                          type="button"
+                                          onClick={() => {
+                                             setLocation(
+                                                suggestion.description
+                                             );
+                                             setShowLocationDropdown(false);
+                                          }}
+                                          className="w-full px-3 py-2 text-left hover:bg-gray-100 rounded transition-colors"
+                                       >
+                                          <div className="text-sm text-gray-900 font-medium">
+                                             {suggestion.main_text}
+                                          </div>
+                                          <div className="text-xs text-gray-500">
+                                             {suggestion.secondary_text}
+                                          </div>
+                                       </button>
+                                    ))}
+                                 </div>
+                              )}
+
+                              {/* Popular Cities (show when no search results) */}
+                              {!isSearchingLocation &&
+                                 locationSuggestions.length === 0 && (
+                                    <div className="p-3">
+                                       <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2 px-1">
+                                          Popular Cities
+                                       </h3>
+                                       <div className="md:space-y-1">
+                                          {[
+                                             "Bangalore",
+                                             "Chennai",
+                                             "Delhi NCR",
+                                             "Hyderabad",
+                                             "Kolkata",
+                                             "Mumbai",
+                                             "Pune",
+                                          ].map((city) => (
+                                             <button
+                                                key={city}
+                                                type="button"
+                                                onClick={() => {
+                                                   setLocation(city);
+                                                   setShowLocationDropdown(
+                                                      false
+                                                   );
+                                                }}
+                                                className="w-full px-2 py-1 md:px-3 md:py-2 text-left text-xs md:text-sm text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                                             >
+                                                {city}
+                                             </button>
+                                          ))}
+                                       </div>
+                                    </div>
+                                 )}
                            </div>
-                        )}
-                     </div>
+                        </>
+                     )}
                   </div>
 
-                  <Button
-                     type="submit"
-                     size="lg"
-                     className="h-8 md:h-10 px-5 rounded-md bg-primary-600 hover:bg-primary-700 text-white font-semibold text-sm shadow-sm w-full sm:w-auto"
-                  >
-                     Get Offers
-                  </Button>
+                  {/* Task Search Input */}
+                  <div className="relative flex-1">
+                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                     <Input
+                        type="text"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                           if (e.key === "Enter") {
+                              handleSearch(e);
+                           }
+                        }}
+                        placeholder="Try: Mount a TV, House cleaning..."
+                        className="h-10 pl-10 pr-3 border-0 rounded-l-none focus-visible:ring-0 focus-visible:ring-offset-0 text-xs md:text-sm"
+                        aria-label="Search tasks or describe what you need"
+                     />
+                  </div>
+
+                  {isMobile && (
+                     <button type="submit" onClick={handleSearch}>
+                        <div
+                           className={cn(
+                              "h-9 p-1 bg-primary-600 hover:bg-primary-700 rounded-lg flex items-center justify-center transition-colors",
+                              query ? "cursor-pointer" : "cursor-not-allowed"
+                           )}
+                        >
+                           <Search className="w-4 h-4 text-white" />
+                        </div>
+                     </button>
+                  )}
                </form>
             </div>
 
