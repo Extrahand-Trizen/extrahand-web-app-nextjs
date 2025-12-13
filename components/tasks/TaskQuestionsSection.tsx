@@ -75,7 +75,7 @@ export function TaskQuestionsSection({ taskId }: TaskQuestionsSectionProps) {
                <Button
                   onClick={() => setShowQuestionForm(true)}
                   size="sm"
-                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                  className="bg-primary-600 hover:bg-primary-700 text-white rounded-lg"
                >
                   Ask a Question
                </Button>
@@ -89,14 +89,14 @@ export function TaskQuestionsSection({ taskId }: TaskQuestionsSectionProps) {
                   value={newQuestion}
                   onChange={(e) => setNewQuestion(e.target.value)}
                   placeholder="What would you like to know about this task?"
-                  className="w-full px-4 py-3 text-sm border border-secondary-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  className="w-full px-4 py-3 text-sm border border-secondary-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
                   rows={4}
                />
                <div className="flex gap-3 mt-4">
                   <Button
                      onClick={handleAskQuestion}
                      size="sm"
-                     className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6"
+                     className="bg-primary-600 hover:bg-primary-700 text-white rounded-lg px-6"
                   >
                      Post Question
                   </Button>
@@ -157,12 +157,12 @@ export function TaskQuestionsSection({ taskId }: TaskQuestionsSectionProps) {
 
                      {/* Answer */}
                      {q.answer && (
-                        <div className="ml-15 pl-5 border-l-3 border-blue-300 bg-blue-50/30 py-4 px-5 rounded-r-2xl">
+                        <div className="ml-15 pl-5 border-l-3 border-primary-300 bg-primary-50/30 py-4 px-5 rounded-r-2xl">
                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-xs font-bold text-blue-700 uppercase tracking-wide">
+                              <span className="text-xs font-bold text-primary-700 uppercase tracking-wide">
                                  {q.answeredBy}
                               </span>
-                              <span className="text-xs text-blue-600">
+                              <span className="text-xs text-primary-600">
                                  replied
                               </span>
                            </div>
@@ -174,14 +174,14 @@ export function TaskQuestionsSection({ taskId }: TaskQuestionsSectionProps) {
 
                      {/* Actions */}
                      <div className="ml-15 mt-4 flex items-center gap-4">
-                        <button className="flex items-center gap-2 text-sm text-secondary-500 hover:text-blue-600 transition-colors font-semibold">
+                        <button className="flex items-center gap-2 text-sm text-secondary-500 hover:text-primary-600 transition-colors font-semibold">
                            <ThumbsUp className="w-4 h-4" />
                            <span>
                               {q.likes > 0 ? `${q.likes} helpful` : "Helpful"}
                            </span>
                         </button>
                         {!q.answer && (
-                           <button className="text-sm text-secondary-500 hover:text-blue-600 transition-colors font-semibold">
+                           <button className="text-sm text-secondary-500 hover:text-primary-600 transition-colors font-semibold">
                               Reply
                            </button>
                         )}

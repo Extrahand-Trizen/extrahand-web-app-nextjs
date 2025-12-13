@@ -1,23 +1,63 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, ChevronLeft } from "lucide-react";
+import {
+   AlertCircle,
+   ChevronLeft,
+   MapPin,
+   Calendar,
+   Clock,
+   User,
+   Star,
+   DollarSign,
+   ArrowRight,
+   CheckCircle,
+   Shield,
+} from "lucide-react";
 import { mockTasksData } from "@/lib/data/mockTasks";
 import { TaskDetailsHeader } from "@/components/tasks/TaskDetailsHeader";
 import { TaskDetailsMain } from "@/components/tasks/TaskDetailsMain";
 import { TaskDetailsSidebar } from "@/components/tasks/TaskDetailsSidebar";
 import { TaskQuestionsSection } from "@/components/tasks/TaskQuestionsSection";
 import { TaskOffersSection } from "@/components/tasks/TaskOffersSection";
+import { useIsMobile } from "@/hooks/use-mobile";
+
+const formatDate = (date: Date | string | undefined) => {
+   if (!date) return "Flexible";
+   const d = new Date(date);
+   return d.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+   });
+};
 
 export default function TaskDetailsPage() {
    const params = useParams();
    const router = useRouter();
    const taskId = params.id as string;
    const [activeTab, setActiveTab] = useState<"offers" | "questions">("offers");
+   const [showFixedCTA, setShowFixedCTA] = useState(false);
+   const [scrollY, setScrollY] = useState(0);
+   const isMobile = useIsMobile();
 
    const task = mockTasksData.find((t) => t._id === taskId);
+
+   useEffect(() => {
+      const handleScroll = () => {
+         const currentScroll = window.scrollY;
+         setScrollY(currentScroll);
+         // Show fixed CTA when user scrolls past 400px
+         setShowFixedCTA(currentScroll > 400);
+      };
+
+      window.addEventListener("scroll", handleScroll);
+      return () => window.removeEventListener("scroll", handleScroll);
+   }, []);
 
    if (!task) {
       return (
@@ -38,47 +78,54 @@ export default function TaskDetailsPage() {
       );
    }
 
+   const budgetAmount =
+      typeof task.budget === "object" ? task.budget.amount : task.budget;
+
    return (
-      <div className="min-h-screen bg-linear-to-b from-secondary-50 to-white">
-         {/* Back Button & Header */}
+      <div className="min-h-screen bg-linear-to-b from-secondary-50 to-white pb-24 md:pb-0">
+         {/* Back Button */}
          <div className="bg-white/80 backdrop-blur-sm border-b border-secondary-100">
-            <div className="max-w-7xl mx-auto px-4 py-6">
+            <div className="max-w-7xl mx-auto px-4 md:px-6 py-3">
                <button
-                  onClick={() => router.push("/tasks")}
-                  className="flex items-center text-secondary-500 hover:text-secondary-900 mb-4 transition-colors"
+                  onClick={() => router.back()}
+                  className="flex items-center text-secondary-500 hover:text-secondary-900 transition-colors"
                >
                   <ChevronLeft className="w-5 h-5 mr-1" />
-                  Back to tasks
+                  <span className="text-sm font-medium">Back</span>
                </button>
-               <TaskDetailsHeader task={task} />
             </div>
          </div>
 
+         {/* Header Component */}
+         <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 lg:py-6">
+            <TaskDetailsHeader task={task} showMobileCTA={isMobile} />
+         </div>
+
          {/* Main Content */}
-         <div className="max-w-7xl mx-auto px-4 py-8">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+         <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 lg:py-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
                {/* Left Column - Main Content */}
-               <div className="lg:col-span-2 space-y-8">
+               <div className="lg:col-span-2 space-y-6">
                   <TaskDetailsMain task={task} />
 
                   {/* Tabs */}
                   <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm overflow-hidden border border-secondary-100/50">
-                     <div className="flex gap-2 p-2">
+                     <div className="flex gap-2 p-2 border-b border-secondary-100">
                         <button
                            onClick={() => setActiveTab("offers")}
-                           className={`flex-1 px-6 py-3 text-sm font-semibold rounded-xl transition-all ${
+                           className={`flex-1 px-4 md:px-6 py-2 md:py-3 text-sm font-semibold rounded-xl transition-all ${
                               activeTab === "offers"
-                                 ? "bg-blue-600 text-white shadow-md"
+                                 ? "bg-primary-600 text-white shadow-md"
                                  : "text-secondary-600 hover:bg-secondary-50"
                            }`}
                         >
-                           Offers
+                           Offers ({task.applications || 0})
                         </button>
                         <button
                            onClick={() => setActiveTab("questions")}
-                           className={`flex-1 px-6 py-3 text-sm font-semibold rounded-xl transition-all ${
+                           className={`flex-1 px-4 md:px-6 py-2 md:py-3 text-sm font-semibold rounded-xl transition-all ${
                               activeTab === "questions"
-                                 ? "bg-blue-600 text-white shadow-md"
+                                 ? "bg-primary-600 text-white shadow-md"
                                  : "text-secondary-600 hover:bg-secondary-50"
                            }`}
                         >
@@ -97,10 +144,24 @@ export default function TaskDetailsPage() {
                   </div>
                </div>
 
-               {/* Right Sidebar */}
-               <TaskDetailsSidebar task={task} />
+               {/* Right Sidebar - Desktop Only */}
+               <div className="hidden lg:block">
+                  <TaskDetailsSidebar task={task} />
+               </div>
             </div>
          </div>
+
+         {/* Fixed Bottom CTA - Mobile */}
+         {showFixedCTA && (
+            <div className="fixed bottom-0 left-0 right-0 lg:hidden bg-white border-t border-secondary-200 shadow-xl animate-in slide-in-from-bottom-0 duration-300">
+               <div className="max-w-7xl mx-auto px-4 py-3">
+                  <Button className="w-full bg-primary-600 hover:bg-primary-700 text-white h-10 font-semibold rounded-xl flex items-center justify-center gap-2">
+                     Make an Offer
+                     <ArrowRight className="w-4 h-4" />
+                  </Button>
+               </div>
+            </div>
+         )}
       </div>
    );
 }

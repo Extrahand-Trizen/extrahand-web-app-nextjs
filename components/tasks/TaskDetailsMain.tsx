@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Image as ImageIcon } from "lucide-react";
+import {
+   ChevronDown,
+   ChevronUp,
+   Image as ImageIcon,
+   CheckCircle2,
+} from "lucide-react";
 import type { Task } from "@/types/task";
 
 interface TaskDetailsMainProps {
@@ -12,26 +17,26 @@ export function TaskDetailsMain({ task }: TaskDetailsMainProps) {
    const [showFullDescription, setShowFullDescription] = useState(false);
 
    const description = task.description || "";
-   const isLongDescription = description.length > 300;
+   const isLongDescription = description.length > 70;
    const displayDescription =
       showFullDescription || !isLongDescription
          ? description
          : description.substring(0, 300) + "...";
 
    return (
-      <div className="space-y-6">
+      <div className="space-y-4 lg:space-y-6">
          {/* Description Section */}
-         <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-8 shadow-sm border border-secondary-100/50">
-            <h2 className="text-xl font-bold text-secondary-900 mb-4">
+         <div className="bg-white/70 backdrop-blur-sm rounded-xl lg:rounded-2xl p-5 lg:p-8 shadow-sm border border-secondary-100/50">
+            <h2 className="md:text-lg font-bold text-secondary-900 mb-3 lg:mb-4">
                Task Details
             </h2>
-            <div className="text-secondary-700 text-base leading-relaxed whitespace-pre-wrap">
+            <div className="text-secondary-700 text-xs md:text-sm leading-relaxed whitespace-pre-wrap">
                {displayDescription}
             </div>
             {isLongDescription && (
                <button
                   onClick={() => setShowFullDescription(!showFullDescription)}
-                  className="mt-4 text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1.5 transition-colors"
+                  className="mt-4 text-xs md:text-sm font-semibold text-primary-600 hover:text-primary-700 flex items-center gap-1.5 transition-colors"
                >
                   {showFullDescription ? (
                      <>
@@ -47,22 +52,22 @@ export function TaskDetailsMain({ task }: TaskDetailsMainProps) {
          </div>
 
          {/* Images Section */}
-         {task.images && task.images.length > 0 && (
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-8 shadow-sm border border-secondary-100/50">
-               <h2 className="text-xl font-bold text-secondary-900 mb-4 flex items-center gap-2">
+         {task.attachments && task.attachments.length > 0 && (
+            <div className="bg-white/70 backdrop-blur-sm rounded-xl lg:rounded-2xl p-5 lg:p-8 shadow-sm border border-secondary-100/50">
+               <h2 className="text-lg lg:text-xl font-bold text-secondary-900 mb-3 lg:mb-4 flex items-center gap-2">
                   <ImageIcon className="w-5 h-5" />
-                  Photos ({task.images.length})
+                  Photos ({task.attachments.length})
                </h2>
-               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {task.images.map((image, index) => (
+               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 lg:gap-4">
+                  {task.attachments.map((image, index) => (
                      <div
                         key={index}
-                        className="aspect-square rounded-xl overflow-hidden bg-secondary-100"
+                        className="aspect-square rounded-lg lg:rounded-xl overflow-hidden bg-secondary-100 shadow-sm"
                      >
                         <img
-                           src={image}
+                           src={image.url}
                            alt={`Task image ${index + 1}`}
-                           className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
+                           className="w-full h-full object-cover hover:scale-105 transition-transform duration-300 cursor-pointer"
                         />
                      </div>
                   ))}
@@ -72,17 +77,17 @@ export function TaskDetailsMain({ task }: TaskDetailsMainProps) {
 
          {/* Requirements Section */}
          {task.requirements && task.requirements.length > 0 && (
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-8 shadow-sm border border-secondary-100/50">
-               <h2 className="text-xl font-bold text-secondary-900 mb-4">
+            <div className="bg-white/70 backdrop-blur-sm rounded-xl lg:rounded-2xl p-5 lg:p-8 shadow-sm border border-secondary-100/50">
+               <h2 className="text-lg lg:text-xl font-bold text-secondary-900 mb-3 lg:mb-4">
                   Requirements
                </h2>
-               <ul className="space-y-3">
+               <ul className="space-y-2.5 lg:space-y-3">
                   {task.requirements.map((req, index) => (
                      <li
                         key={index}
-                        className="flex items-start gap-2 text-sm text-secondary-700"
+                        className="flex items-start gap-2.5 text-sm lg:text-base text-secondary-700"
                      >
-                        <span className="text-green-600 mt-0.5">✓</span>
+                        <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
                         <span>{req}</span>
                      </li>
                   ))}
@@ -90,32 +95,22 @@ export function TaskDetailsMain({ task }: TaskDetailsMainProps) {
             </div>
          )}
 
-         {/* Skills Needed */}
+         {/* Skills & Tags */}
          {task.tags && task.tags.length > 0 && (
-            <div className="bg-white border border-secondary-200 rounded-lg p-6">
-               <h2 className="text-lg font-semibold text-secondary-900 mb-3">
+            <div className="bg-white/70 backdrop-blur-sm rounded-xl lg:rounded-2xl p-5 lg:p-8 shadow-sm border border-secondary-100/50">
+               <h2 className="text-lg lg:text-xl font-bold text-secondary-900 mb-3 lg:mb-4">
                   Skills & Tags
                </h2>
                <div className="flex flex-wrap gap-2">
                   {task.tags.map((tag, index) => (
                      <span
                         key={index}
-                        className="px-3 py-1.5 bg-secondary-100 text-secondary-700 text-sm rounded-full border border-secondary-200"
+                        className="px-3 py-1.5 bg-secondary-50 hover:bg-secondary-100 text-secondary-700 text-xs lg:text-sm rounded-full border border-secondary-200 transition-colors"
                      >
                         {tag}
                      </span>
                   ))}
                </div>
-            </div>
-         )}
-
-         {/* Additional Notes */}
-         {task.notes && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-               <h3 className="text-sm font-semibold text-blue-900 mb-2">
-                  Additional Notes
-               </h3>
-               <p className="text-sm text-blue-800">{task.notes}</p>
             </div>
          )}
       </div>
