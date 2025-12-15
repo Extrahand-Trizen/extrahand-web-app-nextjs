@@ -96,7 +96,7 @@ export function TaskDetailsSidebar({ task }: TaskDetailsSidebarProps) {
                Posted By
             </h3>
             <div className="flex items-start gap-3">
-               <div className="w-14 h-14 rounded-full bg-linear-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-md">
+               <div className="w-14 h-14 rounded-full bg-primary-500 flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-md">
                   {(task.requesterName || "U")[0].toUpperCase()}
                </div>
                <div className="flex-1 min-w-0">

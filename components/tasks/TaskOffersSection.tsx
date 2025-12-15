@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Star, CheckCircle, MessageSquare, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 interface Offer {
    id: string;
@@ -183,13 +184,15 @@ export function TaskOffersSection({ taskId }: TaskOffersSectionProps) {
                               View Profile
                            </Button>
 
-                           <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-secondary-200 text-secondary-700 hover:bg-secondary-50 rounded-lg text-[10px] md:text-xs font-medium"
-                           >
-                              Message
-                           </Button>
+                           <Link href="/chat">
+                              <Button
+                                 size="sm"
+                                 variant="outline"
+                                 className="border-secondary-200 text-secondary-700 hover:bg-secondary-50 rounded-lg text-[10px] md:text-xs font-medium"
+                              >
+                                 Message
+                              </Button>
+                           </Link>
 
                            <Button
                               size="sm"

@@ -65,10 +65,10 @@ export function TaskQuestionsSection({ taskId }: TaskQuestionsSectionProps) {
    };
 
    return (
-      <div className="p-8">
+      <div className="p-4 md:p-8">
          {/* Header */}
-         <div className="flex items-center justify-between mb-8">
-            <h2 className="text-xl font-bold text-secondary-900">
+         <div className="flex items-center justify-between mb-4 md:mb-8">
+            <h2 className="md:text-lg font-bold text-secondary-900">
                Questions ({questions.length})
             </h2>
             {!showQuestionForm && (
@@ -89,14 +89,14 @@ export function TaskQuestionsSection({ taskId }: TaskQuestionsSectionProps) {
                   value={newQuestion}
                   onChange={(e) => setNewQuestion(e.target.value)}
                   placeholder="What would you like to know about this task?"
-                  className="w-full px-4 py-3 text-sm border border-secondary-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
-                  rows={4}
+                  className="w-full px-4 py-3 text-xs md:text-sm border border-secondary-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+                  rows={3}
                />
-               <div className="flex gap-3 mt-4">
+               <div className="flex gap-3 mt-2 md:mt-4">
                   <Button
                      onClick={handleAskQuestion}
                      size="sm"
-                     className="bg-primary-600 hover:bg-primary-700 text-white rounded-lg px-6"
+                     className="bg-primary-600 hover:bg-primary-700 text-white rounded-lg px-3 md:px-5"
                   >
                      Post Question
                   </Button>
@@ -129,17 +129,18 @@ export function TaskQuestionsSection({ taskId }: TaskQuestionsSectionProps) {
                </p>
             </div>
          ) : (
-            <div className="space-y-6">
+            <div className="space-y-3">
                {questions.map((q) => (
-                  <div key={q.id} className="pb-6 last:pb-0">
+                  <div key={q.id} className="pb-5 sm:pb-6 last:pb-0">
                      {/* Question */}
-                     <div className="flex items-start gap-4 mb-4">
-                        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-base font-bold shrink-0 shadow-sm">
+                     <div className="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
+                        <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-primary-500 flex items-center justify-center text-white text-sm sm:text-base font-bold shrink-0 shadow-sm">
                            {q.author.charAt(0)}
                         </div>
+
                         <div className="flex-1 min-w-0">
-                           <div className="flex items-center gap-2 mb-2">
-                              <span className="font-bold text-secondary-900">
+                           <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                              <span className="font-bold text-secondary-900 text-sm sm:text-base">
                                  {q.author}
                               </span>
                               <span className="text-xs text-secondary-300">
@@ -149,7 +150,8 @@ export function TaskQuestionsSection({ taskId }: TaskQuestionsSectionProps) {
                                  {q.timestamp}
                               </span>
                            </div>
-                           <p className="text-base text-secondary-700 leading-relaxed">
+
+                           <p className="text-xs md:text-sm text-secondary-700 leading-relaxed">
                               {q.question}
                            </p>
                         </div>
@@ -157,7 +159,7 @@ export function TaskQuestionsSection({ taskId }: TaskQuestionsSectionProps) {
 
                      {/* Answer */}
                      {q.answer && (
-                        <div className="ml-15 pl-5 border-l-3 border-primary-300 bg-primary-50/30 py-4 px-5 rounded-r-2xl">
+                        <div className="mt-3 sm:ml-12 sm:pl-5 sm:border-l-2 border-primary-300 bg-primary-50/40 py-3 sm:py-4 px-4 sm:px-5 rounded-xl sm:rounded-r-2xl">
                            <div className="flex items-center gap-2 mb-2">
                               <span className="text-xs font-bold text-primary-700 uppercase tracking-wide">
                                  {q.answeredBy}
@@ -166,22 +168,24 @@ export function TaskQuestionsSection({ taskId }: TaskQuestionsSectionProps) {
                                  replied
                               </span>
                            </div>
-                           <p className="text-base text-secondary-800 leading-relaxed">
+
+                           <p className="text-xs md:text-sm text-secondary-800 leading-relaxed">
                               {q.answer}
                            </p>
                         </div>
                      )}
 
                      {/* Actions */}
-                     <div className="ml-15 mt-4 flex items-center gap-4">
-                        <button className="flex items-center gap-2 text-sm text-secondary-500 hover:text-primary-600 transition-colors font-semibold">
+                     <div className="mt-3 sm:mt-4 flex items-center gap-4 sm:ml-12">
+                        <button className="flex items-center gap-2 text-xs sm:text-sm text-secondary-500 hover:text-primary-600 transition-colors             font-semibold">
                            <ThumbsUp className="w-4 h-4" />
                            <span>
                               {q.likes > 0 ? `${q.likes} helpful` : "Helpful"}
                            </span>
                         </button>
+
                         {!q.answer && (
-                           <button className="text-sm text-secondary-500 hover:text-primary-600 transition-colors font-semibold">
+                           <button className="text-xs sm:text-sm text-secondary-500 hover:text-primary-600 transition-colors font-semibold">
                               Reply
                            </button>
                         )}
