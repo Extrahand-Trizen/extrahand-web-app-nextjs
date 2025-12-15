@@ -10,8 +10,8 @@ export { InteractiveLocationPicker } from "../shared/InteractiveLocationPicker";
 export { TaskCreationErrorBoundary } from "./TaskCreationErrorBoundary";
 export { TaskMap } from "./TaskMap";
 export { TaskCard } from "./TaskCard";
+export { TaskDetailCard } from "./TaskDetailCard";
 export { CompactFilterBar } from "./CompactFilterBar";
-export type { CompactFilterState } from "./CompactFilterBar";
 export { TaskListSkeleton, TaskCardSkeleton } from "./TaskSkeleton";
 
 // Task Details Components

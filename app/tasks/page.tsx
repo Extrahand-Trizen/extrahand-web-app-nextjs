@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { TaskMap } from "@/components/tasks/TaskMap";
 import { TaskCard } from "@/components/tasks/TaskCard";
+import { TaskDetailCard } from "@/components/tasks/TaskDetailCard";
 import { CompactFilterBar } from "@/components/tasks/CompactFilterBar";
 import { TaskListSkeleton } from "@/components/tasks/TaskSkeleton";
 import { mockTasksData } from "@/lib/data/mockTasks";
@@ -53,6 +54,7 @@ export default function TasksPage() {
    // State
    const [searchQuery, setSearchQuery] = useState("");
    const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+   const [showTaskDetail, setShowTaskDetail] = useState(false);
    const [isLoading, setIsLoading] = useState(true);
    const [showMobileMap, setShowMobileMap] = useState(false);
 
@@ -141,6 +143,23 @@ export default function TasksPage() {
    }, [searchQuery, filters]);
 
    const filteredTasks = getFilteredTasks();
+   const selectedTask = filteredTasks.find((t) => t._id === selectedTaskId);
+
+   // Handle task selection - show detail card instead of redirecting
+   const handleTaskSelect = (taskId: string) => {
+      setSelectedTaskId(taskId);
+      setShowTaskDetail(true);
+      // On mobile, switch to map view when a task is selected
+      if (isMobile) {
+         setShowMobileMap(true);
+      }
+   };
+
+   // Handle closing detail card
+   const handleCloseDetail = () => {
+      setShowTaskDetail(false);
+      setSelectedTaskId(null);
+   };
 
    // Empty state
    const EmptyState = () => (
@@ -205,7 +224,7 @@ export default function TasksPage() {
                                  key={task._id}
                                  task={task}
                                  isSelected={selectedTaskId === task._id}
-                                 onClick={() => setSelectedTaskId(task._id)}
+                                 onClick={() => handleTaskSelect(task._id)}
                               />
                            ))}
                         </div>
@@ -233,6 +252,7 @@ export default function TasksPage() {
                         style={{ top: `${TOP_OFFSET_PX}px` }}
                      >
                         <div
+                           className="relative"
                            style={{
                               height: `calc(100vh - ${TOP_OFFSET_PX}px)`,
                            }}
@@ -240,9 +260,18 @@ export default function TasksPage() {
                            <TaskMap
                               tasks={filteredTasks}
                               selectedTaskId={selectedTaskId}
-                              onTaskSelect={setSelectedTaskId}
+                              onTaskSelect={handleTaskSelect}
                               centerCoordinates={HYDERABAD_CENTER}
                            />
+                           {/* Desktop Task Detail Card Overlay */}
+                           {showTaskDetail && selectedTask && (
+                              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 w-full px-4">
+                                 <TaskDetailCard
+                                    task={selectedTask}
+                                    onClose={handleCloseDetail}
+                                 />
+                              </div>
+                           )}
                         </div>
                      </div>
                   </div>
@@ -252,9 +281,18 @@ export default function TasksPage() {
                         <TaskMap
                            tasks={filteredTasks}
                            selectedTaskId={selectedTaskId}
-                           onTaskSelect={setSelectedTaskId}
+                           onTaskSelect={handleTaskSelect}
                            centerCoordinates={HYDERABAD_CENTER}
-                        />
+                        />{" "}
+                        {/* Mobile Task Detail Card Overlay */}
+                        {showTaskDetail && selectedTask && (
+                           <div className="absolute bottom-4 left-4 right-4 z-50">
+                              <TaskDetailCard
+                                 task={selectedTask}
+                                 onClose={handleCloseDetail}
+                              />
+                           </div>
+                        )}{" "}
                      </div>
                   )
                )}
