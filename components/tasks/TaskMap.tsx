@@ -37,15 +37,8 @@ export function TaskMap({
    const [mapLoaded, setMapLoaded] = useState(false);
    const boundsChangeTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-
-   // Load Google Maps Script (only once globally)
+   // Load Google Maps Script securely via backend proxy (only once globally)
    useEffect(() => {
-      if (!apiKey) {
-         console.warn("Google Maps API key not configured");
-         return;
-      }
-
       // Check if already loaded
       if (window.google?.maps) {
          setMapLoaded(true);
@@ -54,7 +47,7 @@ export function TaskMap({
 
       // Check if script is already being loaded
       const existingScript = document.querySelector(
-         'script[src*="maps.googleapis.com/maps/api/js"]'
+         'script[src*="/api/maps/script"]'
       );
 
       if (existingScript) {
@@ -63,9 +56,9 @@ export function TaskMap({
          return;
       }
 
-      // Create new script only if it doesn't exist
+      // Load script from our secure backend proxy
       const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+      script.src = "/api/maps/script"; // Backend route that hides the API key
       script.async = true;
       script.defer = true;
       script.onload = () => setMapLoaded(true);
@@ -80,7 +73,7 @@ export function TaskMap({
             );
          }
       };
-   }, [apiKey]);
+   }, []);
 
    // Initialize Google Map
    useEffect(() => {
@@ -330,21 +323,6 @@ export function TaskMap({
                <div className="text-center p-8">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
                   <p className="text-sm text-secondary-600">Loading map...</p>
-               </div>
-            </div>
-         )}
-
-         {/* API key error */}
-         {!apiKey && (
-            <div className="absolute inset-0 flex items-center justify-center bg-secondary-50 z-10 rounded-lg">
-               <div className="text-center p-8">
-                  <div className="text-5xl mb-4">🗺️</div>
-                  <p className="text-base font-semibold text-secondary-900 mb-2">
-                     Map View Unavailable
-                  </p>
-                  <p className="text-sm text-secondary-600">
-                     Configure Google Maps API key to enable
-                  </p>
                </div>
             </div>
          )}
