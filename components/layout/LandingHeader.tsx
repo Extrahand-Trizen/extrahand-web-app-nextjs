@@ -337,7 +337,7 @@ export const LandingHeader: React.FC = () => {
                                        </div>
                                        <div className="mt-3 pt-3 border-t border-secondary-100 text-right">
                                           <Link
-                                             href="/tasks"
+                                             href="/categories"
                                              className="text-sm font-medium text-primary-600 hover:underline"
                                              onClick={() =>
                                                 setIsCategoriesOpen(false)

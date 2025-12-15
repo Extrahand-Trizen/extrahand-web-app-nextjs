@@ -1,0 +1,16 @@
+export { default as CategoriesClient } from "./CategoriesClient";
+export { default as CategoryDetailClient } from "./CategoryDetailClient";
+export { EarningsCard } from "./EarningsCard";
+export { WhyJoinSection } from "./WhyJoinSection";
+export { TasksSection } from "./TasksSection";
+export { HeroSection } from "./HeroSection";
+export { EarningPotentialSection } from "./EarningPotentialSection";
+export { IncomeOpportunitiesSection } from "./IncomeOpportunitiesSection";
+export { HowToEarnSection } from "./HowToEarnSection";
+export { TopTaskersSection } from "./TopTaskersSection";
+export { InsuranceCoverSection } from "./InsuranceCoverSection";
+export { QuestionsSection } from "./QuestionsSection";
+export { WaysToEarnSection } from "./WaysToEarnSection";
+export { ExploreOtherWaysSection } from "./ExploreOtherWaysSection";
+export { TopLocationsSection } from "./TopLocationsSection";
+export { BrowseSimilarTasksSection } from "./BrowseSimilarTasksSection";
