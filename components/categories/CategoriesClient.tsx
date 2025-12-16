@@ -7,10 +7,12 @@ import { Category } from "@/types/category";
 
 interface CategoriesClientProps {
    categories: Category[];
+   viewType?: "jobs" | "services" | "tasks";
 }
 
 const CategoriesClient: React.FC<CategoriesClientProps> = ({
    categories = [],
+   viewType = "tasks",
 }) => {
    const [selectedCategory, setSelectedCategory] = useState<string | null>(
       null
@@ -35,9 +37,15 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
          {/* Left Sidebar - Categories List */}
          <section className="hidden md:flex self-start -mt-2 sm:-mt-5 flex-col gap-px text-sm sm:text-base font-medium text-[#0a1f44] ml-2 sm:ml-4 md:ml-6 lg:ml-8">
             {categories.map((category) => {
+               const suffix =
+                  viewType === "jobs"
+                     ? "Jobs"
+                     : viewType === "services"
+                     ? "Services"
+                     : "Tasks";
                const displayName = category.name.toLowerCase().endsWith("tasks")
-                  ? category.name
-                  : `${category.name} Tasks`;
+                  ? category.name.replace(/ Tasks$/i, ` ${suffix}`)
+                  : `${category.name} ${suffix}`;
 
                return (
                   <button
@@ -59,13 +67,19 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
          {/* Right Content Area */}
          <div className="flex-1 max-w-[760px] py-4 sm:py-6 px-4 sm:px-6 pb-6 sm:pb-8 md:pb-10 mt-0 ml-0 md:py-5 md:px-10 md:-mt-[60px]">
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-3 text-[#0a1f44]">
-               Earn money on Extrahand
+               {viewType === "jobs"
+                  ? "Find Jobs on Extrahand"
+                  : viewType === "services"
+                  ? "Find Services on Extrahand"
+                  : "Earn money on Extrahand"}
             </h1>
 
             <p className="text-base sm:text-lg md:text-xl lg:text-[22px] text-[#0a1f44] mb-4 sm:mb-6 leading-[1.6]">
-               Extrahand is India&apos;s largest job marketplace for all kinds
-               of Tasks from handymen to cleaners to gardeners. Sign up now and
-               get hired!
+               {viewType === "jobs"
+                  ? "Extrahand is India's largest job marketplace. Browse all available jobs from handymen to cleaners to gardeners. Sign up now and get hired!"
+                  : viewType === "services"
+                  ? "Extrahand is India's largest service marketplace. Find and hire skilled professionals for all kinds of services from handymen to cleaners to gardeners."
+                  : "Extrahand is India's largest job marketplace for all kinds of Tasks from handymen to cleaners to gardeners. Sign up now and get hired!"}
             </p>
 
             {/* All Categories List */}
@@ -84,7 +98,13 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                   >
                      {/* Category Name - Clickable Link */}
                      <Link
-                        href={`/categories/${category.slug}`}
+                        href={
+                           viewType === "jobs"
+                              ? `/jobs/${category.slug}`
+                              : viewType === "services"
+                              ? `/services/${category.slug}`
+                              : `/categories/${category.slug}`
+                        }
                         className="text-xl sm:text-2xl text-[#0a1f44] my-4 sm:my-5 mb-3 sm:mb-4 hover:text-yellow-500 hover:cursor-pointer transition-colors font-semibold block"
                      >
                         {categoryDisplayName}
@@ -139,10 +159,16 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                                        ""
                                     );
                                  }
+                                 const baseUrl =
+                                    viewType === "jobs"
+                                       ? "/jobs"
+                                       : viewType === "services"
+                                       ? "/services"
+                                       : "/categories";
                                  return (
                                     <Link
                                        key={subcategory._id || subcategory.slug}
-                                       href={`/categories/${category.slug}/${subcategorySlug}`}
+                                       href={`${baseUrl}/${category.slug}/${subcategorySlug}`}
                                        className="text-yellow-500 hover:text-yellow-600 hover:underline transition-colors duration-200 text-sm sm:text-base font-bold"
                                     >
                                        {subcategory.name}

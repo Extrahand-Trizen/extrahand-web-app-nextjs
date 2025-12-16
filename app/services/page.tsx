@@ -21,10 +21,10 @@ interface Subcategory {
 }
 
 /**
- * Categories Page (Server Component)
+ * Services Page (Server Component) - For Posters looking to hire
  * Fetches categories from MongoDB and passes them to client component
  */
-export default async function CategoriesPage() {
+export default async function ServicesPage() {
    let categories: Category[] = [];
 
    try {
@@ -54,22 +54,20 @@ export default async function CategoriesPage() {
                .sort({ name: 1 })
                .lean();
 
-            category.subcategories = subcategories.map((sub: any) =>
-               JSON.parse(JSON.stringify(sub))
+            category.subcategories = subcategories.map((subcat: any) =>
+               JSON.parse(JSON.stringify(subcat))
             );
-         } catch (error) {
+         } catch (err) {
             console.error(
-               `Error fetching subcategories for ${category.slug}:`,
-               error
+               `Failed to fetch subcategories for ${category.name}:`,
+               err
             );
             category.subcategories = [];
          }
       }
    } catch (error) {
       console.error("Error fetching categories:", error);
-      // If there's an error, categories will remain empty array
-      // The page will still render but without categories
    }
 
-   return <CategoriesClient categories={categories} />;
+   return <CategoriesClient categories={categories} viewType="services" />;
 }

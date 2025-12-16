@@ -1,21 +1,21 @@
 import React from "react";
-import { notFound } from "next/navigation";
 import connectDB from "@/lib/mongodb";
 import TaskCategory from "@/lib/models/TaskCategory";
 import CategoryDetailClient from "@/components/categories/CategoryDetailClient";
 import { CategoryDetail } from "@/types/category";
+import { CategoryNotFound } from "@/components/shared/CategoryNotFound";
 
-interface CategoryPageProps {
+interface ServicePageProps {
    params: Promise<{
       slug: string;
    }>;
 }
 
-export default async function CategoryPage({ params }: CategoryPageProps) {
+export default async function ServicePage({ params }: ServicePageProps) {
    const { slug } = await params;
 
    if (!slug) {
-      notFound();
+      return <CategoryNotFound type="service" />;
    }
 
    let categoryData: CategoryDetail | null = null;
@@ -26,13 +26,15 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       const category = await TaskCategory.findOne({ slug } as any).lean();
 
       if (!category) {
-         console.log(`Category with slug "${slug}" not found in database.`);
-         notFound();
+         console.log(
+            `Service category with slug "${slug}" not found in database.`
+         );
+         return <CategoryNotFound type="service" categoryName={slug} />;
       }
 
       if (!category.isPublished) {
          console.warn(
-            `Category "${slug}" is not published. Showing anyway in development mode.`
+            `Service category "${slug}" is not published. Showing anyway in development mode.`
          );
       }
 
@@ -51,18 +53,18 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
          }
       }
    } catch (error) {
-      console.error("Error fetching category:", error);
-      notFound();
+      console.error("Error fetching service category:", error);
+      return <CategoryNotFound type="service" categoryName={slug} />;
    }
 
    if (!categoryData) {
-      notFound();
+      return <CategoryNotFound type="service" categoryName={slug} />;
    }
 
    return <CategoryDetailClient category={categoryData} />;
 }
 
-export async function generateMetadata({ params }: CategoryPageProps) {
+export async function generateMetadata({ params }: ServicePageProps) {
    const { slug } = await params;
 
    try {
@@ -79,7 +81,7 @@ export async function generateMetadata({ params }: CategoryPageProps) {
          title:
             category.metaTitle ||
             category.heroTitle ||
-            `${category.name} Tasks`,
+            `${category.name} Services`,
          description: category.metaDescription || category.heroDescription,
       };
    } catch {

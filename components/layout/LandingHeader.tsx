@@ -122,7 +122,11 @@ export const LandingHeader: React.FC = () => {
    const [isScrolled, setIsScrolled] = useState(false);
    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
    const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
+   const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false);
    const [activeRole, setActiveRole] = useState<"poster" | "tasker">("poster");
+   const [mobileActiveRole, setMobileActiveRole] = useState<
+      "poster" | "tasker"
+   >("poster");
    const categoriesRef = useRef<HTMLDivElement>(null);
    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -170,7 +174,12 @@ export const LandingHeader: React.FC = () => {
       };
    }, [isMobileMenuOpen]);
 
-   const handleNavClick = (href: string) => {
+   const handleNavClick = (href: string, hasDropdown?: boolean) => {
+      if (hasDropdown) {
+         setIsMobileCategoriesOpen(true);
+         return;
+      }
+
       setIsMobileMenuOpen(false);
 
       if (href.startsWith("#")) {
@@ -314,11 +323,21 @@ export const LandingHeader: React.FC = () => {
                                                          href={
                                                             activeRole ===
                                                             "poster"
-                                                               ? `/tasks/new?category=${encodeURIComponent(
+                                                               ? `/services/${encodeURIComponent(
                                                                     task
+                                                                       .toLowerCase()
+                                                                       .replace(
+                                                                          /\s+/g,
+                                                                          "-"
+                                                                       )
                                                                  )}`
-                                                               : `/tasks?q=${encodeURIComponent(
+                                                               : `/jobs/${encodeURIComponent(
                                                                     task
+                                                                       .toLowerCase()
+                                                                       .replace(
+                                                                          /\s+/g,
+                                                                          "-"
+                                                                       )
                                                                  )}`
                                                          }
                                                          className="block py-1 text-secondary-600 hover:text-secondary-900 hover:underline"
@@ -337,7 +356,11 @@ export const LandingHeader: React.FC = () => {
                                        </div>
                                        <div className="mt-3 pt-3 border-t border-secondary-100 text-right">
                                           <Link
-                                             href="/categories"
+                                             href={
+                                                activeRole === "poster"
+                                                   ? "/services"
+                                                   : "/jobs"
+                                             }
                                              className="text-sm font-medium text-primary-600 hover:underline"
                                              onClick={() =>
                                                 setIsCategoriesOpen(false)
@@ -420,54 +443,157 @@ export const LandingHeader: React.FC = () => {
 
                {/* Menu Panel */}
                <div className="absolute top-16 left-0 right-0 bg-white border-b border-secondary-200 shadow-lg">
-                  <nav className="p-2">
-                     {/* Nav Items */}
-                     {navItems.map((item) => (
+                  {!isMobileCategoriesOpen ? (
+                     <nav className="p-2">
+                        {/* Nav Items */}
+                        {navItems.map((item) => (
+                           <button
+                              key={item.label}
+                              onClick={() =>
+                                 handleNavClick(item.href, item.hasDropdown)
+                              }
+                              className="w-full text-left py-2 px-3 md:py-3 md:px-4 text-sm md:text-base font-medium text-secondary-700 hover:bg-secondary-50 rounded-lg transition-colors"
+                           >
+                              {item.label}
+                           </button>
+                        ))}
+
+                        {/* Divider */}
+                        <div className="my-4 border-t border-secondary-100" />
+
+                        {/* CTA Buttons */}
+                        <div className="flex flex-col gap-3 px-4">
+                           <Link href="/tasks/new" className="w-full">
+                              <Button className="w-full bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold py-5">
+                                 Post a Task
+                              </Button>
+                           </Link>
+                           <Link href="/earn-money" className="w-full">
+                              <Button
+                                 variant="outline"
+                                 className="w-full border-secondary-300 text-secondary-700 font-medium py-5"
+                              >
+                                 Become a Tasker
+                              </Button>
+                           </Link>
+                           <Link href="/signup" className="w-full">
+                              <Button
+                                 variant="ghost"
+                                 className="w-full text-secondary-700 font-medium py-5"
+                              >
+                                 Signup
+                              </Button>
+                           </Link>
+                           <Link href="/login" className="w-full">
+                              <Button
+                                 variant="ghost"
+                                 className="w-full text-secondary-700 font-medium py-5"
+                              >
+                                 Log in
+                              </Button>
+                           </Link>
+                        </div>
+                     </nav>
+                  ) : (
+                     <div className="p-4">
+                        {/* Back Button */}
                         <button
-                           key={item.label}
-                           onClick={() => handleNavClick(item.href)}
-                           className="w-full text-left py-2 px-3 md:py-3 md:px-4 text-sm md:text-base font-medium text-secondary-700 hover:bg-secondary-50 rounded-lg transition-colors"
+                           onClick={() => setIsMobileCategoriesOpen(false)}
+                           className="flex items-center gap-2 text-secondary-700 font-medium mb-4 hover:text-secondary-900"
                         >
-                           {item.label}
+                           <ChevronDown className="w-5 h-5 rotate-90" />
+                           Back
                         </button>
-                     ))}
 
-                     {/* Divider */}
-                     <div className="my-4 border-t border-secondary-100" />
+                        {/* Role Selection */}
+                        <div className="mb-4">
+                           <h3 className="text-sm font-semibold text-secondary-900 mb-3">
+                              What are you looking for?
+                           </h3>
+                           <div className="flex gap-4">
+                              <button
+                                 type="button"
+                                 onClick={() => setMobileActiveRole("tasker")}
+                                 className={cn(
+                                    "w-full text-left rounded-lg border p-2 transition-colors",
+                                    mobileActiveRole === "tasker"
+                                       ? "bg-blue-50 border-blue-200"
+                                       : "bg-white border-secondary-200"
+                                 )}
+                              >
+                                 <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">
+                                    As a Tasker
+                                 </span>
+                                 <p className="text-[10px] text-secondary-600 mt-0.5">
+                                    I'm looking for work
+                                 </p>
+                              </button>
+                              <button
+                                 type="button"
+                                 onClick={() => setMobileActiveRole("poster")}
+                                 className={cn(
+                                    "w-full text-left rounded-lg border p-2 transition-colors",
+                                    mobileActiveRole === "poster"
+                                       ? "bg-primary-50 border-primary-200"
+                                       : "bg-white border-secondary-200"
+                                 )}
+                              >
+                                 <span className="text-xs font-semibold text-primary-600 uppercase tracking-wide">
+                                    As a Poster
+                                 </span>
+                                 <p className="text-[10px] text-secondary-600 mt-0.5">
+                                    I'm looking to hire someone
+                                 </p>
+                              </button>
+                           </div>
+                        </div>
 
-                     {/* CTA Buttons */}
-                     <div className="flex flex-col gap-3 px-4">
-                        <Link href="/tasks/new" className="w-full">
-                           <Button className="w-full bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold py-5">
-                              Post a Task
-                           </Button>
-                        </Link>
-                        <Link href="/earn-money" className="w-full">
-                           <Button
-                              variant="outline"
-                              className="w-full border-secondary-300 text-secondary-700 font-medium py-5"
-                           >
-                              Become a Tasker
-                           </Button>
-                        </Link>
-                        <Link href="/signup" className="w-full">
-                           <Button
-                              variant="ghost"
-                              className="w-full text-secondary-700 font-medium py-5"
-                           >
-                              Signup
-                           </Button>
-                        </Link>
-                        <Link href="/login" className="w-full">
-                           <Button
-                              variant="ghost"
-                              className="w-full text-secondary-700 font-medium py-5"
-                           >
-                              Log in
-                           </Button>
+                        {/* Categories List */}
+                        <div className="max-h-[50vh] overflow-y-auto space-y-1 mb-4">
+                           {taskTypes.flat().map((task) => (
+                              <Link
+                                 key={task}
+                                 href={
+                                    mobileActiveRole === "poster"
+                                       ? `/services/${encodeURIComponent(
+                                            task
+                                               .toLowerCase()
+                                               .replace(/\s+/g, "-")
+                                         )}`
+                                       : `/jobs/${encodeURIComponent(
+                                            task
+                                               .toLowerCase()
+                                               .replace(/\s+/g, "-")
+                                         )}`
+                                 }
+                                 className="block py-2 px-3 text-sm text-secondary-600 hover:bg-secondary-50 hover:text-secondary-900 rounded-lg"
+                                 onClick={() => {
+                                    setIsMobileCategoriesOpen(false);
+                                    setIsMobileMenuOpen(false);
+                                 }}
+                              >
+                                 {task}
+                              </Link>
+                           ))}
+                        </div>
+
+                        {/* View All Button */}
+                        <Link
+                           href={
+                              mobileActiveRole === "poster"
+                                 ? "/services"
+                                 : "/jobs"
+                           }
+                           className="block w-full text-center py-3 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg border border-primary-200"
+                           onClick={() => {
+                              setIsMobileCategoriesOpen(false);
+                              setIsMobileMenuOpen(false);
+                           }}
+                        >
+                           View All Categories
                         </Link>
                      </div>
-                  </nav>
+                  )}
                </div>
             </div>
          )}

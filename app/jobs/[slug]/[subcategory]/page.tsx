@@ -1,26 +1,26 @@
 import React from "react";
-import { notFound } from "next/navigation";
 import connectDB from "@/lib/mongodb";
 import TaskSubcategory from "@/lib/models/TaskSubcategory";
 import CategoryDetailClient from "@/components/categories/CategoryDetailClient";
 import { SubcategoryDetail } from "@/types/category";
+import { CategoryNotFound } from "@/components/shared/CategoryNotFound";
 
-interface SubcategoryPageProps {
+interface JobSubcategoryPageProps {
    params: Promise<{
       slug: string;
       subcategory: string;
    }>;
 }
 
-export default async function SubcategoryPage({
+export default async function JobSubcategoryPage({
    params,
-}: SubcategoryPageProps) {
+}: JobSubcategoryPageProps) {
    const resolvedParams = await params;
    const slug = resolvedParams?.slug;
    const subcategorySlug = resolvedParams.subcategory;
 
    if (!slug || !subcategorySlug) {
-      notFound();
+      return <CategoryNotFound type="job" />;
    }
 
    let subcategoryData: SubcategoryDetail | null = null;
@@ -42,12 +42,12 @@ export default async function SubcategoryPage({
       }
 
       if (!subcategory) {
-         notFound();
+         return <CategoryNotFound type="job" categoryName={subcategorySlug} />;
       }
 
       if (!subcategory.isPublished) {
          console.warn(
-            `Subcategory "${subcategorySlug}" is not published. Showing anyway.`
+            `Job subcategory "${subcategorySlug}" is not published. Showing anyway.`
          );
       }
 
@@ -67,18 +67,18 @@ export default async function SubcategoryPage({
          }
       }
    } catch (error) {
-      console.error("Error fetching subcategory:", error);
-      notFound();
+      console.error("Error fetching job subcategory:", error);
+      return <CategoryNotFound type="job" categoryName={subcategorySlug} />;
    }
 
    if (!subcategoryData) {
-      notFound();
+      return <CategoryNotFound type="job" categoryName={subcategorySlug} />;
    }
 
    return <CategoryDetailClient category={subcategoryData} />;
 }
 
-export async function generateMetadata({ params }: SubcategoryPageProps) {
+export async function generateMetadata({ params }: JobSubcategoryPageProps) {
    const resolvedParams = await params;
    const slug = resolvedParams?.slug;
    const subcategorySlug = resolvedParams?.subcategory;
@@ -100,7 +100,7 @@ export async function generateMetadata({ params }: SubcategoryPageProps) {
          title:
             subcategory.metaTitle ||
             subcategory.heroTitle ||
-            `${subcategory.name} Tasks`,
+            `${subcategory.name} Jobs`,
          description:
             subcategory.metaDescription || subcategory.heroDescription,
       };
