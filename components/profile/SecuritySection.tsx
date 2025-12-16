@@ -32,6 +32,7 @@ import {
    SessionInfo,
    PrivacySettings,
 } from "@/types/profile";
+import { Switch } from "../ui/switch";
 
 interface SecuritySectionProps {
    security: SecuritySettings;
@@ -93,7 +94,7 @@ export function SecuritySection({
          <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5">
             <div className="flex items-center justify-between flex-wrap gap-3">
                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
                      <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -108,7 +109,7 @@ export function SecuritySection({
                <Badge
                   variant="secondary"
                   className={cn(
-                     "flex-shrink-0 text-[10px] sm:text-xs",
+                     "shrink-0 text-[10px] sm:text-xs",
                      security.twoFactorEnabled
                         ? "bg-green-100 text-green-700"
                         : "bg-gray-100 text-gray-600"
@@ -194,7 +195,7 @@ function PasswordSection({
          <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5">
             <div className="flex items-center justify-between flex-wrap gap-3">
                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
                      <Key className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -212,7 +213,7 @@ function PasswordSection({
                   variant="outline"
                   size="sm"
                   onClick={() => setIsEditing(true)}
-                  className="text-xs h-8 px-3 flex-shrink-0"
+                  className="text-xs h-8 px-3 shrink-0"
                >
                   Change Password
                </Button>
@@ -224,7 +225,7 @@ function PasswordSection({
    return (
       <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 space-y-3 sm:space-y-4">
          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
                <Key className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
             </div>
             <div>
@@ -360,7 +361,7 @@ function SessionsSection({
       <div className="bg-white rounded-lg border border-gray-200">
          <div className="px-4 py-3 sm:px-5 sm:py-4 border-b border-gray-100 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-               <Monitor className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0" />
+               <Monitor className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0" />
                <div className="min-w-0 flex-1">
                   <h3 className="text-xs sm:text-sm font-medium text-gray-900">
                      Active Sessions
@@ -375,7 +376,7 @@ function SessionsSection({
                   variant="ghost"
                   size="sm"
                   onClick={onRevokeAllSessions}
-                  className="text-xs h-8 px-2 sm:px-3 flex-shrink-0"
+                  className="text-xs h-8 px-2 sm:px-3 shrink-0"
                >
                   <LogOut className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                   <span className="hidden sm:inline">Sign Out All</span>
@@ -391,7 +392,7 @@ function SessionsSection({
                      key={session.id}
                      className="px-4 py-3 sm:px-5 sm:py-4 flex items-center gap-3"
                   >
-                     <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                     <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
                         {session.device.toLowerCase().includes("mobile") ? (
                            <Smartphone className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                         ) : (
@@ -406,7 +407,7 @@ function SessionsSection({
                            {session.isCurrent && (
                               <Badge
                                  variant="secondary"
-                                 className="bg-green-100 text-green-700 text-[10px] flex-shrink-0"
+                                 className="bg-green-100 text-green-700 text-[10px] shrink-0"
                               >
                                  Current
                               </Badge>
@@ -422,7 +423,7 @@ function SessionsSection({
                            variant="ghost"
                            size="sm"
                            onClick={() => onRevokeSession(session.id)}
-                           className="text-xs h-8 px-2 sm:px-3 flex-shrink-0"
+                           className="text-xs h-8 px-2 sm:px-3 shrink-0"
                         >
                            Sign Out
                         </Button>
@@ -516,7 +517,7 @@ function PrivacySection({ privacy, onUpdate }: PrivacySectionProps) {
                <Button
                   onClick={handleSave}
                   size="sm"
-                  className="w-full sm:w-auto text-xs h-8"
+                  className="w-full sm:w-auto text-xs h-8 bg-primary-600"
                >
                   Save Privacy Settings
                </Button>
@@ -549,20 +550,11 @@ function PrivacyToggle({
                {description}
             </p>
          </div>
-         <button
-            onClick={() => onChange(!checked)}
-            className={cn(
-               "relative inline-flex h-5 w-9 items-center rounded-full transition-colors flex-shrink-0",
-               checked ? "bg-gray-900" : "bg-gray-200"
-            )}
-         >
-            <span
-               className={cn(
-                  "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
-                  checked ? "translate-x-4" : "translate-x-0.5"
-               )}
-            />
-         </button>
+         <Switch
+            checked={checked}
+            onCheckedChange={onChange}
+            className="data-[state=checked]:bg-primary-600"
+         />
       </div>
    );
 }
@@ -578,7 +570,7 @@ function DangerZone({ onDeleteAccount }: DangerZoneProps) {
       <div className="bg-white rounded-lg border border-red-200">
          <div className="px-4 py-3 sm:px-5 sm:py-4 border-b border-red-100">
             <div className="flex items-center gap-2 sm:gap-3">
-               <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 flex-shrink-0" />
+               <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 shrink-0" />
                <div>
                   <h3 className="text-xs sm:text-sm font-medium text-gray-900">
                      Danger Zone

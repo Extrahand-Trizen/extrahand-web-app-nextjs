@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import {
    User,
    Eye,
+   EyeOff,
    Edit3,
    Settings,
    Shield,
@@ -53,6 +54,12 @@ const navItems: ProfileNavItem[] = [
       description: "Task preferences",
    },
    {
+      id: "privacy",
+      label: "Privacy",
+      icon: <EyeOff className="w-5 h-5" />,
+      description: "Control visibility & data",
+   },
+   {
       id: "verifications",
       label: "Verifications",
       icon: <Shield className="w-5 h-5" />,
@@ -90,12 +97,7 @@ export function ProfileSidebar({
    className,
 }: ProfileSidebarProps) {
    return (
-      <nav
-         className={cn(
-            "w-64 bg-white border-r border-gray-200 min-h-full",
-            className
-         )}
-      >
+      <nav className={cn("w-64 bg-white border-r border-gray-200", className)}>
          <div className="p-4">
             <h2 className="text-lg font-semibold text-gray-900 mb-1">
                Account
@@ -119,7 +121,7 @@ export function ProfileSidebar({
                >
                   <span
                      className={cn(
-                        "flex-shrink-0",
+                        "shrink-0",
                         activeSection === item.id
                            ? "text-gray-900"
                            : "text-gray-400"

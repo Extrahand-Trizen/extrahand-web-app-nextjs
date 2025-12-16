@@ -138,7 +138,7 @@ export function ProfileOverview({ user, onNavigate }: ProfileOverviewProps) {
                {completionPercentage < 100 && (
                   <button
                      onClick={() => onNavigate("edit-profile")}
-                     className="flex items-center gap-1 mt-3 text-xs sm:text-sm text-blue-600 hover:text-blue-700 font-medium"
+                     className="flex items-center gap-1 mt-3 text-xs sm:text-sm text-primary-600 hover:text-primary-700 font-medium"
                   >
                      Complete your profile
                      <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -152,28 +152,28 @@ export function ProfileOverview({ user, onNavigate }: ProfileOverviewProps) {
             <StatCard
                label="Rating"
                value={user.rating?.toFixed(1) || "0.0"}
-               icon={<Star className="w-3 h-3 sm:w-4 sm:h-4 text-amber-500" />}
+               icon={<Star className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />}
                subtext={`${user.totalReviews || 0} reviews`}
             />
             <StatCard
                label="Completed"
                value={String(user.completedTasks || 0)}
                icon={
-                  <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
+                  <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
                }
             />
             <StatCard
                label="Total"
                value={String(user.totalTasks || 0)}
                icon={
-                  <Briefcase className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
+                  <Briefcase className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
                }
             />
             <StatCard
                label="Verified"
                value={`${verifiedCount}/${verificationItems.length}`}
                icon={
-                  <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500" />
+                  <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
                }
                onClick={() => onNavigate("verifications")}
             />
@@ -312,10 +312,10 @@ function QuickActionItem({
             </p>
          </div>
          {status === "complete" && (
-            <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 shrink-0" />
          )}
          {status === "pending" && (
-            <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 shrink-0" />
+            <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 shrink-0" />
          )}
          <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 shrink-0" />
       </button>

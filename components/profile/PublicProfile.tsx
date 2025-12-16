@@ -40,8 +40,8 @@ export function PublicProfile({
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Preview Banner (only for own profile) */}
       {isOwnProfile && (
-        <div className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3">
-          <p className="text-sm text-blue-700">
+        <div className="bg-primary-50 border border-primary-100 rounded-lg px-4 py-3">
+          <p className="text-sm text-primary-700">
             This is how your profile appears to others on ExtraHand
           </p>
         </div>
@@ -50,7 +50,7 @@ export function PublicProfile({
       {/* Profile Header */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="flex items-start gap-5">
-          <Avatar className="w-20 h-20 flex-shrink-0">
+          <Avatar className="w-20 h-20 shrink-0">
             <AvatarImage src={user.photoURL || undefined} alt={user.name} />
             <AvatarFallback className="bg-gray-100 text-gray-600 text-2xl font-medium">
               {user.name?.charAt(0).toUpperCase() || "U"}
@@ -306,7 +306,7 @@ interface WorkHistoryItemRowProps {
 function WorkHistoryItemRow({ item }: WorkHistoryItemRowProps) {
   return (
     <div className="px-5 py-3 flex items-center gap-3">
-      <Briefcase className="w-5 h-5 text-gray-400 flex-shrink-0" />
+      <Briefcase className="w-5 h-5 text-gray-400 shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-gray-900 truncate">
           {item.title}

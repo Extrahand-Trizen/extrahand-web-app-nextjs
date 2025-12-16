@@ -386,3 +386,20 @@ html {
 .dark [data-sonner-toast][data-type="info"] {
    background: linear-gradient(135deg, #1e3a8a 0%, #1f2937 100%) !important;
 }
+
+/* Verification progress animation */
+@keyframes progress {
+   0% {
+      transform: translateX(-100%);
+   }
+   50% {
+      transform: translateX(0%);
+   }
+   100% {
+      transform: translateX(100%);
+   }
+}
+
+.animate-progress {
+   animation: progress 2s ease-in-out infinite;
+}

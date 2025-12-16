@@ -370,7 +370,7 @@ export function ProfileEditForm({
                   className={cn(
                      "py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg border text-xs sm:text-sm font-medium transition-colors",
                      formData.userType === "individual"
-                        ? "border-gray-900 bg-gray-900 text-white"
+                        ? "border-primary-600 bg-primary-600 text-white"
                         : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
                   )}
                >
@@ -382,7 +382,7 @@ export function ProfileEditForm({
                   className={cn(
                      "py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg border text-xs sm:text-sm font-medium transition-colors",
                      formData.userType === "business"
-                        ? "border-gray-900 bg-gray-900 text-white"
+                        ? "border-primary-600 bg-primary-600 text-white"
                         : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
                   )}
                >

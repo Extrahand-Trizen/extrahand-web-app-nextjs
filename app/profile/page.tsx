@@ -22,7 +22,9 @@ import {
    NotificationsSection,
    SecuritySection,
    PreferencesSection,
+   PrivacySection,
 } from "@/components/profile";
+import { DEFAULT_NOTIFICATION_SETTINGS } from "@/types/consent";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Menu, X } from "lucide-react";
 
@@ -55,7 +57,7 @@ function ProfilePageContent() {
       skills: ["Handyman", "Assembly", "Delivery"],
       hourlyRate: 350,
       verifications: {
-         email: true,
+         email: false,
          phone: true,
          id: true,
          address: false,
@@ -137,8 +139,21 @@ function ProfilePageContent() {
 
    const handleVerify = async (type: string) => {
       console.log("Starting verification:", type);
-      // Would navigate to verification flow
-      alert(`Starting ${type} verification...`);
+      // Route to appropriate verification page
+      const verificationRoutes: Record<string, string> = {
+         phone: "/profile/verify/phone", // Might need to create or handle differently
+         email: "/profile/verify/email",
+         aadhaar: "/profile/verify/aadhaar",
+         bank: "/profile/verify/bank",
+      };
+
+      const route = verificationRoutes[type];
+      if (route) {
+         router.push(route);
+      } else {
+         // Fallback to main verifications page
+         router.push("/profile/verify");
+      }
    };
 
    const handleSaveNotifications = async (prefs: any) => {
@@ -196,7 +211,7 @@ function ProfilePageContent() {
    // Mobile layout
    if (isMobileView) {
       return (
-         <div className="bg-gray-50 min-h-screen">
+         <div className="bg-gray-50">
             {/* Mobile Header */}
             <div className="sticky top-0 z-50 bg-white border-b border-gray-200">
                <div className="flex items-center justify-between px-4 py-3">
@@ -257,7 +272,7 @@ function ProfilePageContent() {
             <ProfileSidebar
                activeSection={activeSection}
                onSectionChange={handleSectionChange}
-               className="hidden lg:block sticky top-0 h-screen"
+               className="hidden lg:block sticky top-0"
             />
 
             {/* Content Area */}
@@ -438,36 +453,23 @@ function renderSection(section: ProfileSection, props: SectionProps) {
       case "notifications":
          return (
             <NotificationsSection
-               preferences={{
-                  email: {
-                     taskUpdates: true,
-                     newMessages: true,
-                     marketing: false,
-                     accountAlerts: true,
-                     weeklyDigest: true,
+               settings={DEFAULT_NOTIFICATION_SETTINGS}
+               frequencySettings={{
+                  dailyDigest: false,
+                  quietHours: {
+                     enabled: false,
+                     start: "22:00",
+                     end: "08:00",
+                     timezone: "Asia/Kolkata",
                   },
-                  push: {
-                     taskUpdates: true,
-                     newMessages: true,
-                     marketing: false,
-                     accountAlerts: true,
-                  },
-                  inApp: {
-                     taskUpdates: true,
-                     newMessages: true,
-                     systemAlerts: true,
-                  },
-                  sms: {
-                     taskUpdates: false,
-                     accountAlerts: true,
-                  },
+                  maxPerDay: 0,
                }}
+               preferredChannel="push"
                onSave={onSaveNotifications}
             />
          );
 
       case "security":
-      case "privacy":
          return (
             <SecuritySection
                security={{
@@ -499,6 +501,21 @@ function renderSection(section: ProfileSection, props: SectionProps) {
                onRevokeAllSessions={onRevokeAllSessions}
                onUpdatePrivacy={onUpdatePrivacy}
                onDeleteAccount={onDeleteAccount}
+            />
+         );
+
+      case "privacy":
+         return (
+            <PrivacySection
+               settings={{
+                  profileVisibility: "registered_users",
+                  showEarnings: false,
+                  showTaskHistory: true,
+                  showReviews: true,
+                  locationSharing: true,
+                  analyticsTracking: true,
+               }}
+               onSave={onUpdatePrivacy}
             />
          );
 

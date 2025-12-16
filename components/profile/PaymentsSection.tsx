@@ -81,7 +81,7 @@ export function PaymentsSection({
                 <p className="text-xs sm:text-sm text-gray-500 mb-4">
                   No payment methods added yet
                 </p>
-                <Button onClick={onAddPaymentMethod} size="sm" className="text-xs h-8 px-3">
+                <Button onClick={onAddPaymentMethod} size="sm" className="text-xs h-8 px-3 bg-primary-700">
                   <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                   Add Payment Method
                 </Button>
@@ -90,7 +90,7 @@ export function PaymentsSection({
           </div>
 
           {paymentMethods.length > 0 && (
-            <Button variant="outline" onClick={onAddPaymentMethod} size="sm" className="w-full sm:w-auto text-xs h-9">
+            <Button variant="outline" onClick={onAddPaymentMethod} size="sm" className="w-full sm:w-auto text-xs h-9 bg-primary-700">
               <Plus className="w-4 h-4 mr-2" />
               Add Payment Method
             </Button>
@@ -126,7 +126,7 @@ export function PaymentsSection({
                 <p className="text-[10px] sm:text-xs text-gray-400 mb-4">
                   Add a bank account or UPI to receive payments for completed tasks
                 </p>
-                <Button onClick={onAddPayoutMethod} size="sm" className="text-xs h-8 px-3">
+                <Button onClick={onAddPayoutMethod} size="sm" className="text-xs h-8 px-3 bg-primary-700">
                   <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                   Add Payout Method
                 </Button>
