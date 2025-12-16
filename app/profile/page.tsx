@@ -1,58 +1,108 @@
 "use client";
 
 /**
- * Profile Page
- * User profile with edit functionality
- * Matches: web-apps/extrahand-web-app/src/ProfileScreen.tsx
- * NO API CALLS - Just UI with mock data
+ * Profile Page - Redesigned
+ * Professional, trustworthy profile and account management
+ * Clean, restrained design following marketplace best practices
  */
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { NavBar } from "@/components/layout/NavBar";
-import { Footer } from "@/components/layout/Footer";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth/context";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { ProfileSection } from "@/types/profile";
+import {
+   ProfileSidebar,
+   ProfileNavList,
+   ProfileOverview,
+   PublicProfile,
+   ProfileEditForm,
+   VerificationSection,
+   PaymentsSection,
+   NotificationsSection,
+   SecuritySection,
+   PreferencesSection,
+} from "@/components/profile";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Menu, X } from "lucide-react";
 
-const PRIMARY_YELLOW = "#f9b233";
-const PRIMARY_BLUE = "#2563eb";
-
-export default function ProfilePage() {
+function ProfilePageContent() {
    const router = useRouter();
-   const { currentUser, userData, loading: authLoading } = useAuth();
+   const searchParams = useSearchParams();
+   const {
+      currentUser,
+      userData,
+      loading: authLoading,
+      refreshUserData,
+   } = useAuth();
+
+   // Hardcoded preview user (development only) — used when no authenticated user is present
+   const HARDCODED_USER = {
+      id: "dev-user-1",
+      name: "Anita Kapoor",
+      displayName: "Anita K.",
+      firstName: "Anita",
+      lastName: "Kapoor",
+      email: "anita.kapoor@example.com",
+      phone: "+91 98765 43210",
+      avatarUrl:
+         "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400&auto=format&fit=crop&ixlib=rb-4.0.3&s=0a1e7d7f3d5c6b0f5f9b2c3a4d5e6f7a",
+      bio: "Friendly, reliable helper — I specialise in handyman tasks, deliveries, and event setup. I pride myself on punctuality and clear communication.",
+      location: { city: "Mumbai", state: "Maharashtra", country: "India" },
+      rating: 4.8,
+      reviewsCount: 122,
+      completedTasks: 540,
+      skills: ["Handyman", "Assembly", "Delivery"],
+      hourlyRate: 350,
+      verifications: {
+         email: true,
+         phone: true,
+         id: true,
+         address: false,
+         backgroundCheck: false,
+      },
+      paymentMethods: [],
+      payoutMethods: [],
+      preferences: {
+         preferredCategories: ["Delivery", "Home Services"],
+         availability: { monday: true, tuesday: true },
+         serviceRadius: 15,
+         language: "en",
+         currency: "INR",
+         timezone: "Asia/Kolkata",
+      },
+      notifications: {
+         email: { taskUpdates: true, newMessages: true, marketing: false },
+         push: { taskUpdates: true, newMessages: true },
+         inApp: { taskUpdates: true, newMessages: true },
+      },
+      security: { twoFactorEnabled: false },
+      createdAt: new Date().toISOString(),
+      lastActive: new Date().toISOString(),
+   };
+
+   const isPreview = !currentUser;
+   const effectiveUser = userData ?? HARDCODED_USER;
+
    const [isMobileView, setIsMobileView] = useState(false);
-   const [saving, setSaving] = useState(false);
+   const [activeSection, setActiveSection] =
+      useState<ProfileSection>("overview");
+   const [showMobileNav, setShowMobileNav] = useState(false);
 
-   // Form state
-   const [firstName, setFirstName] = useState("");
-   const [lastName, setLastName] = useState("");
-   const [tagline, setTagline] = useState("");
-   const [location, setLocation] = useState("");
-   const [email, setEmail] = useState("");
-   const [phone, setPhone] = useState("");
-   const [description, setDescription] = useState("");
-   const [skills, setSkills] = useState<string[]>([]);
-   const [roles, setRoles] = useState<string[]>(["both"]);
-   const [userType, setUserType] = useState<"individual" | "business">(
-      "individual"
-   );
-   const [photoURL, setPhotoURL] = useState("");
+   // Handle URL-based section navigation
+   useEffect(() => {
+      const section = searchParams.get("section") as ProfileSection;
+      if (section && isValidSection(section)) {
+         setActiveSection(section);
+      }
+   }, [searchParams]);
 
-   // Stats (mock data - would come from userData)
-   const [rating, setRating] = useState(0);
-   const [totalReviews, setTotalReviews] = useState(0);
-   const [totalTasks, setTotalTasks] = useState(0);
-   const [completedTasks, setCompletedTasks] = useState(0);
-   const [postedTasks, setPostedTasks] = useState(0);
-   const [earnedAmount, setEarnedAmount] = useState(0);
-
+   // Responsive handling
    useEffect(() => {
       if (typeof window === "undefined") return;
 
       const checkScreenSize = () => {
-         const width = window.innerWidth;
-         setIsMobileView(width <= 768);
+         setIsMobileView(window.innerWidth < 1024);
       };
 
       checkScreenSize();
@@ -60,126 +110,85 @@ export default function ProfilePage() {
       return () => window.removeEventListener("resize", checkScreenSize);
    }, []);
 
-   useEffect(() => {
-      if (userData) {
-         loadUserData();
+   const handleSectionChange = useCallback((section: ProfileSection) => {
+      setActiveSection(section);
+      setShowMobileNav(false);
+      // Update URL without navigation
+      const url = new URL(window.location.href);
+      url.searchParams.set("section", section);
+      window.history.pushState({}, "", url.toString());
+   }, []);
+
+   const handleBack = useCallback(() => {
+      if (activeSection !== "overview") {
+         handleSectionChange("overview");
+      } else {
+         router.back();
       }
-   }, [userData]);
+   }, [activeSection, handleSectionChange, router]);
 
-   const loadUserData = () => {
-      if (!userData) return;
-
-      const nameParts = userData.name ? userData.name.split(" ") : ["", ""];
-      setFirstName(nameParts[0] || "");
-      setLastName(nameParts.slice(1).join(" ") || "");
-      setEmail(userData.email || "");
-      setPhone(userData.phone || "");
-      setLocation(userData.location?.address || "");
-      // photoURL is not part of UserProfile type, keeping as empty for now
-      setPhotoURL("");
-      setRoles(userData.roles || ["both"]);
-      setUserType(
-         (userData.userType as "individual" | "business") || "individual"
-      );
-      // Extract skills list from UserProfile skills object
-      setSkills(userData.skills?.list?.map((s) => s.name) || []);
-      setRating(userData.rating || 0);
-      setTotalReviews(userData.totalReviews || 0);
-      setTotalTasks(userData.totalTasks || 0);
-      setCompletedTasks(userData.completedTasks || 0);
-      // postedTasks and earnedAmount are not part of UserProfile type, using mock values
-      setPostedTasks(0);
-      setEarnedAmount(0);
-
-      if (userData.business?.description) {
-         setDescription(userData.business.description);
-      }
+   // Mock save handlers - these would connect to your API
+   const handleSaveProfile = async (data: any) => {
+      console.log("Saving profile:", data);
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await refreshUserData();
    };
 
-   const handleSaveProfile = async () => {
-      if (!firstName || !lastName) {
-         alert("Please fill in your first and last name.");
-         return;
-      }
-
-      setSaving(true);
-      // Mock: Simulate API call
-      setTimeout(() => {
-         alert("Profile saved successfully! (Mock)");
-         setSaving(false);
-      }, 1000);
+   const handleVerify = async (type: string) => {
+      console.log("Starting verification:", type);
+      // Would navigate to verification flow
+      alert(`Starting ${type} verification...`);
    };
 
-   const handleDeleteAccount = () => {
-      if (
-         confirm(
-            "Are you sure you want to delete your account? This action cannot be undone."
-         )
-      ) {
-         alert("Account deleted successfully! (Mock)");
-         router.push("/");
-      }
+   const handleSaveNotifications = async (prefs: any) => {
+      console.log("Saving notifications:", prefs);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
    };
 
-   const handleViewPublicProfile = () => {
-      alert("Viewing your public profile... (Mock)");
+   const handleSavePreferences = async (prefs: any) => {
+      console.log("Saving preferences:", prefs);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
    };
 
-   const handleUploadPhoto = () => {
-      alert("Photo upload functionality would be implemented here.");
+   const handleChangePassword = async (
+      oldPassword: string,
+      newPassword: string
+   ) => {
+      console.log("Changing password...");
+      await new Promise((resolve) => setTimeout(resolve, 1000));
    };
 
-   const handleUploadProfileImage = () => {
-      alert("Profile image upload functionality would be implemented here.");
+   const handleRevokeSession = async (sessionId: string) => {
+      console.log("Revoking session:", sessionId);
+      await new Promise((resolve) => setTimeout(resolve, 500));
    };
 
-   const handleAddSkill = () => {
-      const skill = prompt("Enter a new skill:");
-      if (skill && skill.trim()) {
-         setSkills([...skills, skill.trim().toLowerCase()]);
-      }
+   const handleRevokeAllSessions = async () => {
+      console.log("Revoking all sessions...");
+      await new Promise((resolve) => setTimeout(resolve, 500));
    };
 
-   const handleRemoveSkill = (skillToRemove: string) => {
-      setSkills(skills.filter((skill) => skill !== skillToRemove));
+   const handleUpdatePrivacy = async (settings: any) => {
+      console.log("Updating privacy:", settings);
+      await new Promise((resolve) => setTimeout(resolve, 500));
    };
 
-   const getVerificationProgress = () => {
-      let progress = 0;
-      if (firstName && lastName) progress += 20;
-      if (email) progress += 20;
-      if (phone) progress += 20;
-      if (location) progress += 20;
-      if (photoURL) progress += 10;
-      if (skills.length > 0) progress += 10;
-      return Math.min(progress, 100);
+   const handleDeleteAccount = async () => {
+      console.log("Deleting account...");
+      router.push("/");
    };
 
-   const getPrimaryRole = () => {
-      if (!roles || roles.length === 0) return "both";
-      if (roles.includes("tasker") && !roles.includes("poster"))
-         return "tasker";
-      if (roles.includes("poster") && !roles.includes("tasker"))
-         return "poster";
-      return "both";
-   };
-
-   const isPerformer = () => {
-      return roles.includes("tasker");
-   };
-
-   const isPoster = () => {
-      return roles.includes("poster");
-   };
-
-   // Show loading if no user
-   if (authLoading || !currentUser) {
+   // Show loading if auth is loading
+   if (authLoading) {
       return (
-         <div className="flex flex-col min-h-screen bg-white items-center justify-center">
-            <LoadingSpinner size="lg" />
-            <p className="mt-4 text-gray-600">
-               Please sign in to view your profile
-            </p>
+         <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+               <LoadingSpinner size="lg" />
+               <p className="mt-4 text-gray-600 text-sm">
+                  Loading your profile...
+               </p>
+            </div>
          </div>
       );
    }
@@ -187,968 +196,313 @@ export default function ProfilePage() {
    // Mobile layout
    if (isMobileView) {
       return (
-         <div className="flex flex-col min-h-screen bg-white">
-            <NavBar title="Profile" showBackButton />
-
-            <div className="flex-1 overflow-y-auto">
-               {/* Account Section */}
-               <div className="p-5">
-                  <div className="mb-5">
-                     <h1 className="text-2xl font-bold text-black mb-2.5">
-                        Account
-                     </h1>
-
-                     {/* Role Indicator */}
-                     <div
-                        className="px-3 py-1.5 rounded-2xl self-start mb-2.5"
-                        style={{ backgroundColor: PRIMARY_BLUE }}
-                     >
-                        <span className="text-white text-xs font-semibold">
-                           {getPrimaryRole() === "tasker"
-                              ? "Tasker"
-                              : getPrimaryRole() === "poster"
-                              ? "Poster"
-                              : "Tasker & Poster"}
-                        </span>
-                     </div>
-
-                     {/* Verification Progress */}
-                     <div className="mb-4">
-                        <p className="text-xs text-gray-600 mb-2">
-                           YOUR VERIFICATIONS ARE {getVerificationProgress()}%
-                           COMPLETE
-                        </p>
-                        <div className="h-1 bg-gray-200 rounded">
-                           <div
-                              className="h-full rounded"
-                              style={{
-                                 width: `${getVerificationProgress()}%`,
-                                 backgroundColor: PRIMARY_YELLOW,
-                              }}
-                           />
-                        </div>
-                     </div>
-                  </div>
-
-                  {/* View Public Profile Button */}
+         <div className="bg-gray-50 min-h-screen">
+            {/* Mobile Header */}
+            <div className="sticky top-0 z-50 bg-white border-b border-gray-200">
+               <div className="flex items-center justify-between px-4 py-3">
                   <button
-                     onClick={handleViewPublicProfile}
-                     className="w-full bg-gray-50 py-3 px-4 rounded-lg mb-5"
+                     onClick={handleBack}
+                     className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
                   >
-                     <span
-                        className="text-sm font-medium"
-                        style={{ color: PRIMARY_YELLOW }}
-                     >
-                        View Your public profile
-                     </span>
+                     <ArrowLeft className="w-5 h-5 text-gray-600" />
                   </button>
-
-                  {/* Your Stats Section */}
-                  <div className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-gray-200">
-                     <h2 className="text-base font-semibold text-black mb-3">
-                        Your Stats
-                     </h2>
-                     <div className="grid grid-cols-2 gap-4">
-                        <div className="text-center">
-                           <p
-                              className="text-lg font-bold mb-1"
-                              style={{ color: PRIMARY_BLUE }}
-                           >
-                              {rating.toFixed(1)}
-                           </p>
-                           <p className="text-xs text-gray-600">Rating</p>
-                        </div>
-                        <div className="text-center">
-                           <p
-                              className="text-lg font-bold mb-1"
-                              style={{ color: PRIMARY_BLUE }}
-                           >
-                              {totalReviews}
-                           </p>
-                           <p className="text-xs text-gray-600">Reviews</p>
-                        </div>
-                        {isPerformer() && (
-                           <>
-                              <div className="text-center">
-                                 <p
-                                    className="text-lg font-bold mb-1"
-                                    style={{ color: PRIMARY_BLUE }}
-                                 >
-                                    {completedTasks}
-                                 </p>
-                                 <p className="text-xs text-gray-600">
-                                    Completed
-                                 </p>
-                              </div>
-                              <div className="text-center">
-                                 <p
-                                    className="text-lg font-bold mb-1"
-                                    style={{ color: PRIMARY_BLUE }}
-                                 >
-                                    ₹{earnedAmount.toLocaleString()}
-                                 </p>
-                                 <p className="text-xs text-gray-600">Earned</p>
-                              </div>
-                           </>
-                        )}
-                        {isPoster() && (
-                           <>
-                              <div className="text-center">
-                                 <p
-                                    className="text-lg font-bold mb-1"
-                                    style={{ color: PRIMARY_BLUE }}
-                                 >
-                                    {postedTasks}
-                                 </p>
-                                 <p className="text-xs text-gray-600">Posted</p>
-                              </div>
-                              <div className="text-center">
-                                 <p
-                                    className="text-lg font-bold mb-1"
-                                    style={{ color: PRIMARY_BLUE }}
-                                 >
-                                    {totalTasks}
-                                 </p>
-                                 <p className="text-xs text-gray-600">
-                                    Total Tasks
-                                 </p>
-                              </div>
-                           </>
-                        )}
-                        {getPrimaryRole() === "both" && (
-                           <>
-                              <div className="text-center">
-                                 <p
-                                    className="text-lg font-bold mb-1"
-                                    style={{ color: PRIMARY_BLUE }}
-                                 >
-                                    {totalTasks}
-                                 </p>
-                                 <p className="text-xs text-gray-600">
-                                    Total Tasks
-                                 </p>
-                              </div>
-                              <div className="text-center">
-                                 <p
-                                    className="text-lg font-bold mb-1"
-                                    style={{ color: PRIMARY_BLUE }}
-                                 >
-                                    {completedTasks}
-                                 </p>
-                                 <p className="text-xs text-gray-600">
-                                    Completed
-                                 </p>
-                              </div>
-                           </>
-                        )}
-                     </div>
-                  </div>
-
-                  {/* Profile Photo Section */}
-                  <div className="mb-5">
-                     <h2 className="text-base font-semibold text-black mb-2.5">
-                        Profile Photo
-                     </h2>
-                     <div className="flex items-center gap-2.5">
-                        {photoURL ? (
-                           <Image
-                              src={photoURL}
-                              alt="Profile"
-                              width={80}
-                              height={80}
-                              className="w-20 h-20 rounded-full object-cover"
-                           />
-                        ) : (
-                           <div
-                              className="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-bold"
-                              style={{ backgroundColor: PRIMARY_BLUE }}
-                           >
-                              {firstName
-                                 ? firstName.charAt(0).toUpperCase()
-                                 : "👤"}
-                           </div>
-                        )}
-                        <button
-                           onClick={handleUploadPhoto}
-                           className="px-4 py-2 rounded-lg text-sm font-medium"
-                           style={{
-                              backgroundColor: PRIMARY_YELLOW,
-                              color: "#000",
-                           }}
-                        >
-                           Upload photo
-                        </button>
-                     </div>
-                  </div>
-
-                  {/* Profile Image Section */}
-                  <div className="mb-5">
-                     <h2 className="text-base font-semibold text-black mb-1">
-                        Profile image
-                     </h2>
-                     <p className="text-xs text-gray-600 mb-2.5">
-                        modify your public profile
-                     </p>
-                     <div className="w-[120px] h-[120px] bg-gray-50 rounded-lg flex items-center justify-center mb-2.5">
-                        <span className="text-5xl text-gray-300">&</span>
-                     </div>
-                     <button
-                        onClick={handleUploadProfileImage}
-                        className="bg-gray-50 px-4 py-2 rounded-lg self-start"
-                     >
-                        <span
-                           className="text-sm font-medium"
-                           style={{ color: PRIMARY_YELLOW }}
-                        >
-                           upload profile image
-                        </span>
-                     </button>
-                  </div>
-
-                  {/* Form Fields */}
-                  <div className="space-y-5">
-                     <div>
-                        <label className="block text-sm font-semibold text-black mb-2">
-                           First name*
-                        </label>
-                        <input
-                           type="text"
-                           placeholder="Name"
-                           value={firstName}
-                           onChange={(e) => setFirstName(e.target.value)}
-                           className="w-full px-4 py-3 bg-gray-50 rounded-lg text-base text-black"
-                        />
-                     </div>
-
-                     <div>
-                        <label className="block text-sm font-semibold text-black mb-2">
-                           Last name*
-                        </label>
-                        <input
-                           type="text"
-                           placeholder="Name"
-                           value={lastName}
-                           onChange={(e) => setLastName(e.target.value)}
-                           className="w-full px-4 py-3 bg-gray-50 rounded-lg text-base text-black"
-                        />
-                     </div>
-
-                     <div>
-                        <label className="block text-sm font-semibold text-black mb-2">
-                           Tagline
-                        </label>
-                        <input
-                           type="text"
-                           placeholder="Mini bio"
-                           value={tagline}
-                           onChange={(e) => setTagline(e.target.value)}
-                           className="w-full px-4 py-3 bg-gray-50 rounded-lg text-base text-black"
-                        />
-                     </div>
-
-                     <div>
-                        <label className="block text-sm font-semibold text-black mb-2">
-                           Location
-                        </label>
-                        <input
-                           type="text"
-                           placeholder="Enter your Location"
-                           value={location}
-                           onChange={(e) => setLocation(e.target.value)}
-                           className="w-full px-4 py-3 bg-gray-50 rounded-lg text-base text-black"
-                        />
-                     </div>
-
-                     <div>
-                        <label className="block text-sm font-semibold text-black mb-2">
-                           Email
-                        </label>
-                        <input
-                           type="email"
-                           placeholder="Enter your mail"
-                           value={email}
-                           onChange={(e) => setEmail(e.target.value)}
-                           className="w-full px-4 py-3 bg-gray-50 rounded-lg text-base text-black"
-                        />
-                     </div>
-
-                     <div>
-                        <label className="block text-sm font-semibold text-black mb-2">
-                           Phone
-                        </label>
-                        <input
-                           type="tel"
-                           placeholder="Phone number"
-                           value={phone}
-                           onChange={(e) => setPhone(e.target.value)}
-                           className="w-full px-4 py-3 bg-gray-50 rounded-lg text-base text-black"
-                        />
-                     </div>
-
-                     <div>
-                        <label className="block text-sm font-semibold text-black mb-2">
-                           User Type
-                        </label>
-                        <div className="flex gap-3">
-                           <button
-                              onClick={() => setUserType("individual")}
-                              className={`flex-1 py-3 px-4 rounded-lg border text-center font-medium ${
-                                 userType === "individual"
-                                    ? "border-blue-500 bg-blue-500 text-white"
-                                    : "border-gray-300 bg-white text-gray-600"
-                              }`}
-                           >
-                              Individual
-                           </button>
-                           <button
-                              onClick={() => setUserType("business")}
-                              className={`flex-1 py-3 px-4 rounded-lg border text-center font-medium ${
-                                 userType === "business"
-                                    ? "border-blue-500 bg-blue-500 text-white"
-                                    : "border-gray-300 bg-white text-gray-600"
-                              }`}
-                           >
-                              Business
-                           </button>
-                        </div>
-                     </div>
-
-                     <div>
-                        <label className="block text-sm font-semibold text-black mb-2">
-                           Roles
-                        </label>
-                        <div className="space-y-3">
-                           <button
-                              onClick={() => {
-                                 if (roles.includes("poster")) {
-                                    setRoles(
-                                       roles.filter((r) => r !== "poster")
-                                    );
-                                 } else {
-                                    setRoles([...roles, "poster"]);
-                                 }
-                              }}
-                              className={`w-full flex items-center p-3 rounded-lg border ${
-                                 roles.includes("poster")
-                                    ? "border-blue-500 bg-blue-500 text-white"
-                                    : "border-gray-300 bg-white text-gray-600"
-                              }`}
-                           >
-                              <span className="ml-2 font-medium">
-                                 Post Tasks
-                              </span>
-                           </button>
-                           <button
-                              onClick={() => {
-                                 if (roles.includes("tasker")) {
-                                    setRoles(
-                                       roles.filter((r) => r !== "tasker")
-                                    );
-                                 } else {
-                                    setRoles([...roles, "tasker"]);
-                                 }
-                              }}
-                              className={`w-full flex items-center p-3 rounded-lg border ${
-                                 roles.includes("tasker")
-                                    ? "border-blue-500 bg-blue-500 text-white"
-                                    : "border-gray-300 bg-white text-gray-600"
-                              }`}
-                           >
-                              <span className="ml-2 font-medium">
-                                 Complete Tasks
-                              </span>
-                           </button>
-                        </div>
-                     </div>
-
-                     <div>
-                        <label className="block text-sm font-semibold text-black mb-2">
-                           Skills
-                        </label>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                           {skills.map((skill, index) => (
-                              <div
-                                 key={index}
-                                 className="flex items-center px-3 py-1.5 rounded-2xl"
-                                 style={{ backgroundColor: PRIMARY_BLUE }}
-                              >
-                                 <span className="text-white text-xs mr-1">
-                                    {skill}
-                                 </span>
-                                 <button
-                                    onClick={() => handleRemoveSkill(skill)}
-                                    className="text-white text-base font-bold"
-                                 >
-                                    ×
-                                 </button>
-                              </div>
-                           ))}
-                           <button
-                              onClick={handleAddSkill}
-                              className="px-3 py-1.5 rounded-2xl border border-dashed"
-                              style={{ borderColor: PRIMARY_BLUE }}
-                           >
-                              <span
-                                 className="text-xs"
-                                 style={{ color: PRIMARY_BLUE }}
-                              >
-                                 + Add Skill
-                              </span>
-                           </button>
-                        </div>
-                     </div>
-
-                     <div>
-                        <label className="block text-sm font-semibold text-black mb-2">
-                           Description
-                        </label>
-                        <textarea
-                           placeholder="Enter your description"
-                           value={description}
-                           onChange={(e) => setDescription(e.target.value)}
-                           rows={4}
-                           className="w-full px-4 py-3 bg-gray-50 rounded-lg text-base text-black min-h-[100px]"
-                        />
-                     </div>
-
-                     {/* Business Description Section */}
-                     {userType === "business" && (
-                        <div>
-                           <label className="block text-sm font-semibold text-black mb-2">
-                              Business Description
-                           </label>
-                           <textarea
-                              placeholder="Describe your business..."
-                              value={description}
-                              onChange={(e) => setDescription(e.target.value)}
-                              rows={4}
-                              className="w-full px-4 py-3 bg-gray-50 rounded-lg text-base text-black min-h-[100px]"
-                           />
-                        </div>
+                  <h1 className="text-base font-semibold text-gray-900">
+                     {getSectionTitle(activeSection)}
+                  </h1>
+                  <button
+                     onClick={() => setShowMobileNav(!showMobileNav)}
+                     className="p-2 -mr-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                     {showMobileNav ? (
+                        <X className="w-5 h-5 text-gray-600" />
+                     ) : (
+                        <Menu className="w-5 h-5 text-gray-600" />
                      )}
-
-                     {/* Action Buttons */}
-                     <div className="space-y-4 pt-5">
-                        <button
-                           onClick={handleSaveProfile}
-                           disabled={saving}
-                           className={`w-full py-4 px-5 rounded-lg text-center font-semibold text-base ${
-                              saving ? "opacity-60 cursor-not-allowed" : ""
-                           }`}
-                           style={{
-                              backgroundColor: PRIMARY_YELLOW,
-                              color: "#000",
-                           }}
-                        >
-                           {saving ? (
-                              <LoadingSpinner size="sm" />
-                           ) : (
-                              "Save profile"
-                           )}
-                        </button>
-
-                        <button
-                           onClick={handleDeleteAccount}
-                           className="w-full py-4 px-5 bg-black text-white rounded-lg text-center font-semibold text-base"
-                        >
-                           Delete my account
-                        </button>
-                     </div>
-                  </div>
+                  </button>
                </div>
             </div>
 
-            <Footer />
+            {/* Mobile Navigation Overlay */}
+            {showMobileNav && (
+               <div className="fixed inset-0 z-40 bg-white pt-14">
+                  <ProfileNavList onSectionChange={handleSectionChange} />
+               </div>
+            )}
+
+            {/* Mobile Content */}
+            <div className="px-4 py-6 pb-20">
+               {renderSection(activeSection, {
+                  user: effectiveUser,
+                  onNavigate: handleSectionChange,
+                  onSaveProfile: handleSaveProfile,
+                  onVerify: handleVerify,
+                  onSaveNotifications: handleSaveNotifications,
+                  onSavePreferences: handleSavePreferences,
+                  onChangePassword: handleChangePassword,
+                  onRevokeSession: handleRevokeSession,
+                  onRevokeAllSessions: handleRevokeAllSessions,
+                  onUpdatePrivacy: handleUpdatePrivacy,
+                  onDeleteAccount: handleDeleteAccount,
+               })}
+            </div>
          </div>
       );
    }
 
    // Desktop layout
    return (
-      <div className="flex flex-col min-h-screen bg-white">
-         {/* Header */}
-         <div className="flex items-center justify-between px-10 pt-8 pb-5 border-b border-gray-200">
-            <button
-               onClick={() => router.back()}
-               className="w-10 h-10 flex items-center justify-center"
-            >
-               <span className="text-xl text-black">←</span>
-            </button>
+      <div className="bg-gray-50 max-w-7xl mx-auto">
+         <div className="flex">
+            {/* Sidebar */}
+            <ProfileSidebar
+               activeSection={activeSection}
+               onSectionChange={handleSectionChange}
+               className="hidden lg:block sticky top-0 h-screen"
+            />
 
-            <div className="flex-1 flex justify-center">
-               <Image
-                  src="/assets/images/logo.png"
-                  alt="Extrahand Logo"
-                  width={150}
-                  height={50}
-                  className="object-contain"
-               />
-            </div>
-
-            <button
-               onClick={() => router.push("/tasks/new")}
-               className="w-15 h-10 rounded-lg flex items-center justify-center"
-               style={{ backgroundColor: PRIMARY_YELLOW, width: "60px" }}
-            >
-               <span className="text-xl text-white">+</span>
-            </button>
-         </div>
-
-         {/* Main Content */}
-         <div className="flex-1 overflow-y-auto">
-            <div className="max-w-[800px] mx-auto px-10 py-10">
-               {/* Account Section */}
-               <div>
-                  <div className="mb-5">
-                     <h1 className="text-3xl font-bold text-black mb-2.5">
-                        Account
-                     </h1>
-
-                     {/* Role Indicator */}
-                     <div
-                        className="px-4 py-2 rounded-full self-start mb-4"
-                        style={{ backgroundColor: PRIMARY_BLUE }}
-                     >
-                        <span className="text-white text-sm font-semibold">
-                           {getPrimaryRole() === "tasker"
-                              ? "Tasker"
-                              : getPrimaryRole() === "poster"
-                              ? "Poster"
-                              : "Tasker & Poster"}
-                        </span>
-                     </div>
-
-                     {/* Verification Progress */}
-                     <div className="mb-4">
-                        <p className="text-sm text-gray-600 mb-2">
-                           YOUR VERIFICATIONS ARE {getVerificationProgress()}%
-                           COMPLETE
-                        </p>
-                        <div className="h-1.5 bg-gray-200 rounded">
-                           <div
-                              className="h-full rounded"
-                              style={{
-                                 width: `${getVerificationProgress()}%`,
-                                 backgroundColor: PRIMARY_YELLOW,
-                              }}
-                           />
-                        </div>
-                     </div>
-                  </div>
-
-                  {/* View Public Profile Button */}
-                  <button
-                     onClick={handleViewPublicProfile}
-                     className="w-full bg-gray-50 py-4 px-5 rounded-lg mb-8"
-                  >
-                     <span
-                        className="text-base font-medium"
-                        style={{ color: PRIMARY_YELLOW }}
-                     >
-                        View Your public profile
-                     </span>
-                  </button>
-
-                  {/* Your Stats Section */}
-                  <div className="bg-white rounded-xl p-5 mb-8 shadow-sm border border-gray-200">
-                     <h2 className="text-lg font-semibold text-black mb-4">
-                        Your Stats
-                     </h2>
-                     <div className="grid grid-cols-4 gap-4">
-                        <div className="text-center">
-                           <p
-                              className="text-2xl font-bold mb-1.5"
-                              style={{ color: PRIMARY_BLUE }}
-                           >
-                              {rating.toFixed(1)}
-                           </p>
-                           <p className="text-sm text-gray-600">Rating</p>
-                        </div>
-                        <div className="text-center">
-                           <p
-                              className="text-2xl font-bold mb-1.5"
-                              style={{ color: PRIMARY_BLUE }}
-                           >
-                              {totalReviews}
-                           </p>
-                           <p className="text-sm text-gray-600">Reviews</p>
-                        </div>
-                        {isPerformer() && (
-                           <>
-                              <div className="text-center">
-                                 <p
-                                    className="text-2xl font-bold mb-1.5"
-                                    style={{ color: PRIMARY_BLUE }}
-                                 >
-                                    {completedTasks}
-                                 </p>
-                                 <p className="text-sm text-gray-600">
-                                    Completed
-                                 </p>
-                              </div>
-                              <div className="text-center">
-                                 <p
-                                    className="text-2xl font-bold mb-1.5"
-                                    style={{ color: PRIMARY_BLUE }}
-                                 >
-                                    ₹{earnedAmount.toLocaleString()}
-                                 </p>
-                                 <p className="text-sm text-gray-600">Earned</p>
-                              </div>
-                           </>
-                        )}
-                        {isPoster() && (
-                           <>
-                              <div className="text-center">
-                                 <p
-                                    className="text-2xl font-bold mb-1.5"
-                                    style={{ color: PRIMARY_BLUE }}
-                                 >
-                                    {postedTasks}
-                                 </p>
-                                 <p className="text-sm text-gray-600">Posted</p>
-                              </div>
-                              <div className="text-center">
-                                 <p
-                                    className="text-2xl font-bold mb-1.5"
-                                    style={{ color: PRIMARY_BLUE }}
-                                 >
-                                    {totalTasks}
-                                 </p>
-                                 <p className="text-sm text-gray-600">
-                                    Total Tasks
-                                 </p>
-                              </div>
-                           </>
-                        )}
-                        {getPrimaryRole() === "both" && (
-                           <>
-                              <div className="text-center">
-                                 <p
-                                    className="text-2xl font-bold mb-1.5"
-                                    style={{ color: PRIMARY_BLUE }}
-                                 >
-                                    {totalTasks}
-                                 </p>
-                                 <p className="text-sm text-gray-600">
-                                    Total Tasks
-                                 </p>
-                              </div>
-                              <div className="text-center">
-                                 <p
-                                    className="text-2xl font-bold mb-1.5"
-                                    style={{ color: PRIMARY_BLUE }}
-                                 >
-                                    {completedTasks}
-                                 </p>
-                                 <p className="text-sm text-gray-600">
-                                    Completed
-                                 </p>
-                              </div>
-                           </>
-                        )}
-                     </div>
-                  </div>
-
-                  {/* Upload Avatar Section */}
-                  <div className="mb-8">
-                     <h2 className="text-lg font-semibold text-black mb-4">
-                        Upload Avatar
-                     </h2>
-                     <div className="flex items-center gap-4">
-                        <span className="text-3xl">👤</span>
-                        <button
-                           onClick={handleUploadPhoto}
-                           className="px-5 py-3 rounded-lg text-base font-medium"
-                           style={{
-                              backgroundColor: PRIMARY_YELLOW,
-                              color: "#000",
-                           }}
-                        >
-                           Upload photo
-                        </button>
-                     </div>
-                  </div>
-
-                  {/* Profile Image Section */}
-                  <div className="mb-8">
-                     <h2 className="text-lg font-semibold text-black mb-1">
-                        Profile image
-                     </h2>
-                     <p className="text-sm text-gray-600 mb-4">
-                        modify your public profile
-                     </p>
-                     <div className="w-[150px] h-[150px] bg-gray-50 rounded-xl flex items-center justify-center mb-4">
-                        <span className="text-6xl text-gray-300">&</span>
-                     </div>
+            {/* Content Area */}
+            <main className="flex-1 min-h-screen">
+               <div className="max-w-4xl mx-auto px-6 py-8">
+                  {/* Breadcrumb */}
+                  {activeSection !== "overview" && (
                      <button
-                        onClick={handleUploadProfileImage}
-                        className="bg-gray-50 px-5 py-3 rounded-lg"
+                        onClick={() => handleSectionChange("overview")}
+                        className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-6 transition-colors"
                      >
-                        <span
-                           className="text-base font-medium"
-                           style={{ color: PRIMARY_YELLOW }}
-                        >
-                           upload profile image
-                        </span>
+                        <ArrowLeft className="w-4 h-4" />
+                        Back to Overview
                      </button>
-                  </div>
+                  )}
 
-                  {/* Form Fields */}
-                  <div className="space-y-6">
-                     <div>
-                        <label className="block text-base font-semibold text-black mb-2.5">
-                           First name*
-                        </label>
-                        <input
-                           type="text"
-                           placeholder="Name"
-                           value={firstName}
-                           onChange={(e) => setFirstName(e.target.value)}
-                           className="w-full px-5 py-4 bg-gray-50 rounded-lg text-base text-black"
-                        />
-                     </div>
-
-                     <div>
-                        <label className="block text-base font-semibold text-black mb-2.5">
-                           Last name*
-                        </label>
-                        <input
-                           type="text"
-                           placeholder="Name"
-                           value={lastName}
-                           onChange={(e) => setLastName(e.target.value)}
-                           className="w-full px-5 py-4 bg-gray-50 rounded-lg text-base text-black"
-                        />
-                     </div>
-
-                     <div>
-                        <label className="block text-base font-semibold text-black mb-2.5">
-                           Tagline
-                        </label>
-                        <input
-                           type="text"
-                           placeholder="Mini bio"
-                           value={tagline}
-                           onChange={(e) => setTagline(e.target.value)}
-                           className="w-full px-5 py-4 bg-gray-50 rounded-lg text-base text-black"
-                        />
-                     </div>
-
-                     <div>
-                        <label className="block text-base font-semibold text-black mb-2.5">
-                           Location
-                        </label>
-                        <input
-                           type="text"
-                           placeholder="Enter your Location"
-                           value={location}
-                           onChange={(e) => setLocation(e.target.value)}
-                           className="w-full px-5 py-4 bg-gray-50 rounded-lg text-base text-black"
-                        />
-                     </div>
-
-                     <div>
-                        <label className="block text-base font-semibold text-black mb-2.5">
-                           Email
-                        </label>
-                        <input
-                           type="email"
-                           placeholder="Enter your mail"
-                           value={email}
-                           onChange={(e) => setEmail(e.target.value)}
-                           className="w-full px-5 py-4 bg-gray-50 rounded-lg text-base text-black"
-                        />
-                     </div>
-
-                     <div>
-                        <label className="block text-base font-semibold text-black mb-2.5">
-                           Phone
-                        </label>
-                        <input
-                           type="tel"
-                           placeholder="Phone number"
-                           value={phone}
-                           onChange={(e) => setPhone(e.target.value)}
-                           className="w-full px-5 py-4 bg-gray-50 rounded-lg text-base text-black"
-                        />
-                     </div>
-
-                     <div>
-                        <label className="block text-base font-semibold text-black mb-2.5">
-                           User Type
-                        </label>
-                        <div className="flex gap-4">
-                           <button
-                              onClick={() => setUserType("individual")}
-                              className={`flex-1 py-4 px-4 rounded-lg border text-center font-medium ${
-                                 userType === "individual"
-                                    ? "border-blue-500 bg-blue-500 text-white"
-                                    : "border-gray-300 bg-white text-gray-600"
-                              }`}
-                           >
-                              Individual
-                           </button>
-                           <button
-                              onClick={() => setUserType("business")}
-                              className={`flex-1 py-4 px-4 rounded-lg border text-center font-medium ${
-                                 userType === "business"
-                                    ? "border-blue-500 bg-blue-500 text-white"
-                                    : "border-gray-300 bg-white text-gray-600"
-                              }`}
-                           >
-                              Business
-                           </button>
-                        </div>
-                     </div>
-
-                     <div>
-                        <label className="block text-base font-semibold text-black mb-2.5">
-                           Roles
-                        </label>
-                        <div className="space-y-4">
-                           <button
-                              onClick={() => {
-                                 if (roles.includes("poster")) {
-                                    setRoles(
-                                       roles.filter((r) => r !== "poster")
-                                    );
-                                 } else {
-                                    setRoles([...roles, "poster"]);
-                                 }
-                              }}
-                              className={`w-full flex items-center p-4 rounded-lg border ${
-                                 roles.includes("poster")
-                                    ? "border-blue-500 bg-blue-500 text-white"
-                                    : "border-gray-300 bg-white text-gray-600"
-                              }`}
-                           >
-                              <span className="ml-3 font-medium text-base">
-                                 Post Tasks
-                              </span>
-                           </button>
-                           <button
-                              onClick={() => {
-                                 if (roles.includes("tasker")) {
-                                    setRoles(
-                                       roles.filter((r) => r !== "tasker")
-                                    );
-                                 } else {
-                                    setRoles([...roles, "tasker"]);
-                                 }
-                              }}
-                              className={`w-full flex items-center p-4 rounded-lg border ${
-                                 roles.includes("tasker")
-                                    ? "border-blue-500 bg-blue-500 text-white"
-                                    : "border-gray-300 bg-white text-gray-600"
-                              }`}
-                           >
-                              <span className="ml-3 font-medium text-base">
-                                 Complete Tasks
-                              </span>
-                           </button>
-                        </div>
-                     </div>
-
-                     <div>
-                        <label className="block text-base font-semibold text-black mb-2.5">
-                           Skills
-                        </label>
-                        <div className="flex flex-wrap gap-3 mt-3">
-                           {skills.map((skill, index) => (
-                              <div
-                                 key={index}
-                                 className="flex items-center px-4 py-2 rounded-full"
-                                 style={{ backgroundColor: PRIMARY_BLUE }}
-                              >
-                                 <span className="text-white text-sm mr-1.5">
-                                    {skill}
-                                 </span>
-                                 <button
-                                    onClick={() => handleRemoveSkill(skill)}
-                                    className="text-white text-lg font-bold"
-                                 >
-                                    ×
-                                 </button>
-                              </div>
-                           ))}
-                           <button
-                              onClick={handleAddSkill}
-                              className="px-4 py-2 rounded-full border border-dashed"
-                              style={{ borderColor: PRIMARY_BLUE }}
-                           >
-                              <span
-                                 className="text-sm"
-                                 style={{ color: PRIMARY_BLUE }}
-                              >
-                                 + Add Skill
-                              </span>
-                           </button>
-                        </div>
-                     </div>
-
-                     <div>
-                        <label className="block text-base font-semibold text-black mb-2.5">
-                           Description
-                        </label>
-                        <textarea
-                           placeholder="Enter your description"
-                           value={description}
-                           onChange={(e) => setDescription(e.target.value)}
-                           rows={4}
-                           className="w-full px-5 py-4 bg-gray-50 rounded-lg text-base text-black min-h-[120px]"
-                        />
-                     </div>
-
-                     {/* Business Description Section */}
-                     {userType === "business" && (
-                        <div>
-                           <label className="block text-base font-semibold text-black mb-2.5">
-                              Business Description
-                           </label>
-                           <textarea
-                              placeholder="Describe your business..."
-                              value={description}
-                              onChange={(e) => setDescription(e.target.value)}
-                              rows={4}
-                              className="w-full px-5 py-4 bg-gray-50 rounded-lg text-base text-black min-h-[120px]"
-                           />
-                        </div>
-                     )}
-
-                     {/* Action Buttons */}
-                     <div className="space-y-5 pt-8">
-                        <button
-                           onClick={handleSaveProfile}
-                           disabled={saving}
-                           className={`w-full py-4 px-8 rounded-lg text-center font-semibold text-lg ${
-                              saving ? "opacity-60 cursor-not-allowed" : ""
-                           }`}
-                           style={{
-                              backgroundColor: PRIMARY_YELLOW,
-                              color: "#000",
-                           }}
-                        >
-                           {saving ? (
-                              <LoadingSpinner size="sm" />
-                           ) : (
-                              "Save profile"
-                           )}
-                        </button>
-
-                        <button
-                           onClick={handleDeleteAccount}
-                           className="w-full py-4 px-8 bg-black text-white rounded-lg text-center font-semibold text-lg"
-                        >
-                           Delete my account
-                        </button>
-                     </div>
-                  </div>
+                  {/* Section Content */}
+                  {renderSection(activeSection, {
+                     user: effectiveUser,
+                     onNavigate: handleSectionChange,
+                     onSaveProfile: handleSaveProfile,
+                     onVerify: handleVerify,
+                     onSaveNotifications: handleSaveNotifications,
+                     onSavePreferences: handleSavePreferences,
+                     onChangePassword: handleChangePassword,
+                     onRevokeSession: handleRevokeSession,
+                     onRevokeAllSessions: handleRevokeAllSessions,
+                     onUpdatePrivacy: handleUpdatePrivacy,
+                     onDeleteAccount: handleDeleteAccount,
+                  })}
                </div>
-            </div>
+            </main>
          </div>
-
-         <Footer />
       </div>
    );
+}
+
+// Wrap with Suspense for useSearchParams
+export default function ProfilePage() {
+   return (
+      <Suspense
+         fallback={
+            <div className="flex items-center justify-center py-20">
+               <LoadingSpinner size="lg" />
+            </div>
+         }
+      >
+         <ProfilePageContent />
+      </Suspense>
+   );
+}
+
+// Helper functions
+function isValidSection(section: string): section is ProfileSection {
+   const validSections: ProfileSection[] = [
+      "overview",
+      "public-profile",
+      "edit-profile",
+      "preferences",
+      "verifications",
+      "payments",
+      "notifications",
+      "security",
+      "privacy",
+   ];
+   return validSections.includes(section as ProfileSection);
+}
+
+function getSectionTitle(section: ProfileSection): string {
+   const titles: Record<ProfileSection, string> = {
+      overview: "Account",
+      "public-profile": "Public Profile",
+      "edit-profile": "Edit Profile",
+      preferences: "Preferences",
+      verifications: "Verifications",
+      payments: "Payments",
+      notifications: "Notifications",
+      security: "Security",
+      privacy: "Privacy",
+   };
+   return titles[section];
+}
+
+interface SectionProps {
+   user: any;
+   onNavigate: (section: ProfileSection) => void;
+   onSaveProfile: (data: any) => Promise<void>;
+   onVerify: (type: string) => Promise<void>;
+   onSaveNotifications: (prefs: any) => Promise<void>;
+   onSavePreferences: (prefs: any) => Promise<void>;
+   onChangePassword: (
+      oldPassword: string,
+      newPassword: string
+   ) => Promise<void>;
+   onRevokeSession: (sessionId: string) => Promise<void>;
+   onRevokeAllSessions: () => Promise<void>;
+   onUpdatePrivacy: (settings: any) => Promise<void>;
+   onDeleteAccount: () => Promise<void>;
+}
+
+function renderSection(section: ProfileSection, props: SectionProps) {
+   const {
+      user,
+      onNavigate,
+      onSaveProfile,
+      onVerify,
+      onSaveNotifications,
+      onSavePreferences,
+      onChangePassword,
+      onRevokeSession,
+      onRevokeAllSessions,
+      onUpdatePrivacy,
+      onDeleteAccount,
+   } = props;
+
+   switch (section) {
+      case "overview":
+         return <ProfileOverview user={user} onNavigate={onNavigate} />;
+
+      case "public-profile":
+         return (
+            <PublicProfile
+               user={user}
+               isOwnProfile
+               reviews={[]}
+               workHistory={[]}
+            />
+         );
+
+      case "edit-profile":
+         return (
+            <ProfileEditForm
+               user={user}
+               onSave={onSaveProfile}
+               onCancel={() => onNavigate("overview")}
+            />
+         );
+
+      case "preferences":
+         return (
+            <PreferencesSection
+               preferences={{
+                  preferredCategories: [],
+                  availability: {},
+                  serviceRadius: 10,
+                  language: "en",
+                  currency: "INR",
+                  timezone: "Asia/Kolkata",
+               }}
+               onSave={onSavePreferences}
+            />
+         );
+
+      case "verifications":
+         return <VerificationSection user={user} onVerify={onVerify} />;
+
+      case "payments":
+         return (
+            <PaymentsSection
+               paymentMethods={[]}
+               payoutMethods={[]}
+               transactions={[]}
+               onAddPaymentMethod={() => alert("Add payment method")}
+               onAddPayoutMethod={() => alert("Add payout method")}
+               onRemovePaymentMethod={(id) =>
+                  console.log("Remove payment:", id)
+               }
+               onRemovePayoutMethod={(id) => console.log("Remove payout:", id)}
+               onSetDefaultPayment={(id) =>
+                  console.log("Set default payment:", id)
+               }
+               onSetDefaultPayout={(id) =>
+                  console.log("Set default payout:", id)
+               }
+            />
+         );
+
+      case "notifications":
+         return (
+            <NotificationsSection
+               preferences={{
+                  email: {
+                     taskUpdates: true,
+                     newMessages: true,
+                     marketing: false,
+                     accountAlerts: true,
+                     weeklyDigest: true,
+                  },
+                  push: {
+                     taskUpdates: true,
+                     newMessages: true,
+                     marketing: false,
+                     accountAlerts: true,
+                  },
+                  inApp: {
+                     taskUpdates: true,
+                     newMessages: true,
+                     systemAlerts: true,
+                  },
+                  sms: {
+                     taskUpdates: false,
+                     accountAlerts: true,
+                  },
+               }}
+               onSave={onSaveNotifications}
+            />
+         );
+
+      case "security":
+      case "privacy":
+         return (
+            <SecuritySection
+               security={{
+                  passwordLastChanged: undefined,
+                  twoFactorEnabled: false,
+                  activeSessions: [
+                     {
+                        id: "current",
+                        device: "Windows",
+                        browser: "Chrome",
+                        location: "Mumbai, India",
+                        ipAddress: "192.168.1.1",
+                        lastActive: new Date(),
+                        isCurrent: true,
+                     },
+                  ],
+                  loginHistory: [],
+               }}
+               privacy={{
+                  showLastActive: true,
+                  showLocation: true,
+                  showRating: true,
+                  showCompletedTasks: true,
+                  allowMessagesFromAll: true,
+                  showOnSearch: true,
+               }}
+               onChangePassword={onChangePassword}
+               onRevokeSession={onRevokeSession}
+               onRevokeAllSessions={onRevokeAllSessions}
+               onUpdatePrivacy={onUpdatePrivacy}
+               onDeleteAccount={onDeleteAccount}
+            />
+         );
+
+      default:
+         return <ProfileOverview user={user} onNavigate={onNavigate} />;
+   }
 }

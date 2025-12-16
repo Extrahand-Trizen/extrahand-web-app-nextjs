@@ -68,17 +68,19 @@ export interface UserProfile {
     maxTaskValue?: number;
   };
   business?: {
-    name: string;
+    name?: string;
     registrationNumber?: string;
     taxId?: string;
     address?: string;
     website?: string;
     description?: string;
   };
+  photoURL?: string;
   agreeUpdates?: boolean;
   agreeTerms?: boolean;
   createdAt: Date;
   updatedAt: Date;
+  bio?: string;
 }
 
 export interface OnboardingState {
