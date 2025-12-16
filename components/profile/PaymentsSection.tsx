@@ -1,10 +1,5 @@
 "use client";
 
-/**
- * Payments Section
- * Payment methods, payouts, and transaction history
- */
-
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -18,11 +13,9 @@ import {
   Trash2,
   CheckCircle2,
   AlertCircle,
-  ChevronRight,
   ArrowUpRight,
   ArrowDownLeft,
   Clock,
-  ExternalLink,
 } from "lucide-react";
 import { PaymentMethod, PayoutMethod, Transaction } from "@/types/profile";
 
@@ -52,20 +45,20 @@ export function PaymentsSection({
   const [activeTab, setActiveTab] = useState("payment");
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-2xl space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900">Payments</h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <h2 className="text-base sm:text-lg font-semibold text-gray-900">Payments</h2>
+        <p className="text-xs sm:text-sm text-gray-500 mt-1">
           Manage your payment methods, payouts, and view transaction history
         </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3 bg-gray-100">
-          <TabsTrigger value="payment">Payment Methods</TabsTrigger>
-          <TabsTrigger value="payout">Payouts</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
+          <TabsTrigger value="payment" className="text-xs sm:text-sm">Payment Methods</TabsTrigger>
+          <TabsTrigger value="payout" className="text-xs sm:text-sm">Payouts</TabsTrigger>
+          <TabsTrigger value="history" className="text-xs sm:text-sm">History</TabsTrigger>
         </TabsList>
 
         {/* Payment Methods Tab */}
@@ -83,13 +76,13 @@ export function PaymentsSection({
                 ))}
               </div>
             ) : (
-              <div className="px-5 py-8 text-center">
-                <CreditCard className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm text-gray-500 mb-4">
+              <div className="px-4 py-6 sm:px-5 sm:py-8 text-center">
+                <CreditCard className="w-8 h-8 sm:w-10 sm:h-10 text-gray-300 mx-auto mb-3" />
+                <p className="text-xs sm:text-sm text-gray-500 mb-4">
                   No payment methods added yet
                 </p>
-                <Button onClick={onAddPaymentMethod} size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
+                <Button onClick={onAddPaymentMethod} size="sm" className="text-xs h-8 px-3">
+                  <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                   Add Payment Method
                 </Button>
               </div>
@@ -97,14 +90,14 @@ export function PaymentsSection({
           </div>
 
           {paymentMethods.length > 0 && (
-            <Button variant="outline" onClick={onAddPaymentMethod}>
+            <Button variant="outline" onClick={onAddPaymentMethod} size="sm" className="w-full sm:w-auto text-xs h-9">
               <Plus className="w-4 h-4 mr-2" />
               Add Payment Method
             </Button>
           )}
 
-          <div className="bg-gray-50 rounded-lg p-4">
-            <p className="text-xs text-gray-500">
+          <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+            <p className="text-[10px] sm:text-xs text-gray-500">
               Your payment information is securely encrypted. We never store your full card details.
             </p>
           </div>
@@ -125,16 +118,16 @@ export function PaymentsSection({
                 ))}
               </div>
             ) : (
-              <div className="px-5 py-8 text-center">
-                <Building2 className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm text-gray-500 mb-2">
+              <div className="px-4 py-6 sm:px-5 sm:py-8 text-center">
+                <Building2 className="w-8 h-8 sm:w-10 sm:h-10 text-gray-300 mx-auto mb-3" />
+                <p className="text-xs sm:text-sm text-gray-500 mb-2">
                   No payout method added yet
                 </p>
-                <p className="text-xs text-gray-400 mb-4">
+                <p className="text-[10px] sm:text-xs text-gray-400 mb-4">
                   Add a bank account or UPI to receive payments for completed tasks
                 </p>
-                <Button onClick={onAddPayoutMethod} size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
+                <Button onClick={onAddPayoutMethod} size="sm" className="text-xs h-8 px-3">
+                  <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                   Add Payout Method
                 </Button>
               </div>
@@ -142,15 +135,15 @@ export function PaymentsSection({
           </div>
 
           {payoutMethods.length > 0 && (
-            <Button variant="outline" onClick={onAddPayoutMethod}>
+            <Button variant="outline" onClick={onAddPayoutMethod} size="sm" className="w-full sm:w-auto text-xs h-9">
               <Plus className="w-4 h-4 mr-2" />
               Add Payout Method
             </Button>
           )}
 
-          <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-            <h4 className="text-sm font-medium text-gray-900">Payout Schedule</h4>
-            <p className="text-xs text-gray-500">
+          <div className="bg-gray-50 rounded-lg p-3 sm:p-4 space-y-2">
+            <h4 className="text-xs sm:text-sm font-medium text-gray-900">Payout Schedule</h4>
+            <p className="text-[10px] sm:text-xs text-gray-500">
               Payouts are processed within 1-2 business days after task completion.
               Bank transfers may take an additional 1-3 business days.
             </p>
@@ -167,12 +160,12 @@ export function PaymentsSection({
                 ))}
               </div>
             ) : (
-              <div className="px-5 py-8 text-center">
-                <Clock className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm text-gray-500">
+              <div className="px-4 py-6 sm:px-5 sm:py-8 text-center">
+                <Clock className="w-8 h-8 sm:w-10 sm:h-10 text-gray-300 mx-auto mb-3" />
+                <p className="text-xs sm:text-sm text-gray-500">
                   No transactions yet
                 </p>
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-[10px] sm:text-xs text-gray-400 mt-1">
                   Your payment and payout history will appear here
                 </p>
               </div>
@@ -194,27 +187,27 @@ function PaymentMethodRow({ method, onRemove, onSetDefault }: PaymentMethodRowPr
   const [showConfirm, setShowConfirm] = useState(false);
 
   return (
-    <div className="px-5 py-4">
-      <div className="flex items-center gap-4">
-        <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-          {method.type === "card" && <CreditCard className="w-5 h-5 text-gray-600" />}
-          {method.type === "upi" && <Smartphone className="w-5 h-5 text-gray-600" />}
+    <div className="px-4 py-3 sm:px-5 sm:py-4">
+      <div className="flex items-center gap-3 sm:gap-4">
+        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+          {method.type === "card" && <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />}
+          {method.type === "upi" && <Smartphone className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />}
         </div>
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-900">
+            <span className="text-xs sm:text-sm font-medium text-gray-900 truncate">
               {method.type === "card" && `${method.cardBrand?.toUpperCase() || "Card"} •••• ${method.lastFour}`}
               {method.type === "upi" && method.upiId}
             </span>
             {method.isDefault && (
-              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
+              <Badge variant="secondary" className="text-[10px] sm:text-xs bg-blue-100 text-blue-700 shrink-0">
                 Default
               </Badge>
             )}
           </div>
           {method.type === "card" && method.expiryMonth && method.expiryYear && (
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">
               Expires {method.expiryMonth}/{method.expiryYear}
             </p>
           )}
@@ -222,12 +215,12 @@ function PaymentMethodRow({ method, onRemove, onSetDefault }: PaymentMethodRowPr
 
         <div className="flex items-center gap-2">
           {!method.isDefault && (
-            <Button variant="ghost" size="sm" onClick={onSetDefault}>
+            <Button variant="ghost" size="sm" onClick={onSetDefault} className="text-xs h-8 px-2 sm:px-3 hidden sm:flex">
               Set Default
             </Button>
           )}
           {showConfirm ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               <Button
                 variant="destructive"
                 size="sm"
@@ -235,6 +228,7 @@ function PaymentMethodRow({ method, onRemove, onSetDefault }: PaymentMethodRowPr
                   onRemove();
                   setShowConfirm(false);
                 }}
+                className="text-xs h-8 px-2 sm:px-3"
               >
                 Remove
               </Button>
@@ -242,6 +236,7 @@ function PaymentMethodRow({ method, onRemove, onSetDefault }: PaymentMethodRowPr
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowConfirm(false)}
+                className="text-xs h-8 px-2 sm:px-3"
               >
                 Cancel
               </Button>
@@ -251,9 +246,9 @@ function PaymentMethodRow({ method, onRemove, onSetDefault }: PaymentMethodRowPr
               variant="ghost"
               size="icon"
               onClick={() => setShowConfirm(true)}
-              className="text-gray-400 hover:text-red-500"
+              className="text-gray-400 hover:text-red-500 h-8 w-8"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </Button>
           )}
         </div>
@@ -272,38 +267,38 @@ function PayoutMethodRow({ method, onRemove, onSetDefault }: PayoutMethodRowProp
   const [showConfirm, setShowConfirm] = useState(false);
 
   return (
-    <div className="px-5 py-4">
-      <div className="flex items-center gap-4">
-        <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-          {method.type === "bank" && <Building2 className="w-5 h-5 text-gray-600" />}
-          {method.type === "upi" && <Smartphone className="w-5 h-5 text-gray-600" />}
+    <div className="px-4 py-3 sm:px-5 sm:py-4">
+      <div className="flex items-center gap-3 sm:gap-4">
+        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+          {method.type === "bank" && <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />}
+          {method.type === "upi" && <Smartphone className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />}
         </div>
         
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-900">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs sm:text-sm font-medium text-gray-900 truncate">
               {method.type === "bank" && `${method.bankName} •••• ${method.accountNumber?.slice(-4)}`}
               {method.type === "upi" && method.upiId}
             </span>
             {method.isDefault && (
-              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
+              <Badge variant="secondary" className="text-[10px] sm:text-xs bg-blue-100 text-blue-700 shrink-0">
                 Default
               </Badge>
             )}
             {method.isVerified ? (
-              <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
-                <CheckCircle2 className="w-3 h-3 mr-1" />
+              <Badge variant="secondary" className="text-[10px] sm:text-xs bg-green-100 text-green-700 shrink-0">
+                <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1" />
                 Verified
               </Badge>
             ) : (
-              <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700">
-                <AlertCircle className="w-3 h-3 mr-1" />
+              <Badge variant="secondary" className="text-[10px] sm:text-xs bg-amber-100 text-amber-700 shrink-0">
+                <AlertCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1" />
                 Pending
               </Badge>
             )}
           </div>
           {method.type === "bank" && method.accountHolderName && (
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 truncate">
               {method.accountHolderName}
             </p>
           )}
@@ -311,12 +306,12 @@ function PayoutMethodRow({ method, onRemove, onSetDefault }: PayoutMethodRowProp
 
         <div className="flex items-center gap-2">
           {!method.isDefault && method.isVerified && (
-            <Button variant="ghost" size="sm" onClick={onSetDefault}>
+            <Button variant="ghost" size="sm" onClick={onSetDefault} className="text-xs h-8 px-2 sm:px-3 hidden sm:flex">
               Set Default
             </Button>
           )}
           {showConfirm ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               <Button
                 variant="destructive"
                 size="sm"
@@ -324,6 +319,7 @@ function PayoutMethodRow({ method, onRemove, onSetDefault }: PayoutMethodRowProp
                   onRemove();
                   setShowConfirm(false);
                 }}
+                className="text-xs h-8 px-2 sm:px-3"
               >
                 Remove
               </Button>
@@ -331,6 +327,7 @@ function PayoutMethodRow({ method, onRemove, onSetDefault }: PayoutMethodRowProp
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowConfirm(false)}
+                className="text-xs h-8 px-2 sm:px-3"
               >
                 Cancel
               </Button>
@@ -340,9 +337,9 @@ function PayoutMethodRow({ method, onRemove, onSetDefault }: PayoutMethodRowProp
               variant="ghost"
               size="icon"
               onClick={() => setShowConfirm(true)}
-              className="text-gray-400 hover:text-red-500"
+              className="text-gray-400 hover:text-red-500 h-8 w-8"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </Button>
           )}
         </div>
@@ -359,32 +356,32 @@ function TransactionRow({ transaction }: TransactionRowProps) {
   const isCredit = transaction.type === "payout" || transaction.type === "refund";
   
   return (
-    <div className="px-5 py-4">
-      <div className="flex items-center gap-4">
+    <div className="px-4 py-3 sm:px-5 sm:py-4">
+      <div className="flex items-center gap-3 sm:gap-4">
         <div className={cn(
-          "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0",
+          "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0",
           isCredit ? "bg-green-100" : "bg-gray-100"
         )}>
           {isCredit ? (
-            <ArrowDownLeft className="w-5 h-5 text-green-600" />
+            <ArrowDownLeft className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
           ) : (
-            <ArrowUpRight className="w-5 h-5 text-gray-600" />
+            <ArrowUpRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
           )}
         </div>
         
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900">
+          <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">
             {transaction.description}
           </p>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 truncate">
             {formatDate(transaction.createdAt)}
             {transaction.taskTitle && ` • ${transaction.taskTitle}`}
           </p>
         </div>
 
-        <div className="text-right">
+        <div className="text-right shrink-0">
           <p className={cn(
-            "text-sm font-semibold",
+            "text-xs sm:text-sm font-semibold",
             isCredit ? "text-green-600" : "text-gray-900"
           )}>
             {isCredit ? "+" : "-"}₹{transaction.amount.toLocaleString()}
@@ -407,7 +404,7 @@ function TransactionStatusBadge({ status }: { status: Transaction["status"] }) {
   const { label, className } = config[status];
 
   return (
-    <Badge variant="secondary" className={cn("text-xs mt-1", className)}>
+    <Badge variant="secondary" className={cn("text-[10px] sm:text-xs mt-1", className)}>
       {label}
     </Badge>
   );
@@ -421,5 +418,3 @@ function formatDate(date: Date | string): string {
     year: "numeric",
   });
 }
-
-export default PaymentsSection;

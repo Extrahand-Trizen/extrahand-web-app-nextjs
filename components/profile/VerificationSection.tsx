@@ -1,9 +1,5 @@
+// VerificationSection.tsx - Complete Mobile Responsive
 "use client";
-
-/**
- * Verifications Section
- * Clean verification status display with clear actions
- */
 
 import React from "react";
 import { cn } from "@/lib/utils";
@@ -20,7 +16,6 @@ import {
    Building2,
    Shield,
    ChevronRight,
-   ExternalLink,
 } from "lucide-react";
 import { UserProfile } from "@/types/user";
 import { VerificationStatus } from "@/types/profile";
@@ -54,7 +49,7 @@ export function VerificationSection({
          description: user.phone
             ? `+91 ${maskPhone(user.phone)}`
             : "Not provided",
-         icon: <Phone className="w-5 h-5" />,
+         icon: <Phone className="w-4 h-4 sm:w-5 sm:h-5" />,
          status: user.phone ? "verified" : "not_started",
          whyItMatters: "Required for task communications and account recovery",
          action: user.phone ? undefined : "Add Phone Number",
@@ -64,7 +59,7 @@ export function VerificationSection({
          type: "email",
          label: "Email Address",
          description: user.email ? maskEmail(user.email) : "Not provided",
-         icon: <Mail className="w-5 h-5" />,
+         icon: <Mail className="w-4 h-4 sm:w-5 sm:h-5" />,
          status: user.email ? "verified" : "not_started",
          whyItMatters: "Receive important updates and notifications",
          action: user.email ? undefined : "Add Email",
@@ -76,7 +71,7 @@ export function VerificationSection({
          description: user.isAadhaarVerified
             ? "Identity verified"
             : "Government ID verification",
-         icon: <Fingerprint className="w-5 h-5" />,
+         icon: <Fingerprint className="w-4 h-4 sm:w-5 sm:h-5" />,
          status: user.isAadhaarVerified ? "verified" : "not_started",
          verifiedAt: user.aadhaarVerifiedAt
             ? new Date(user.aadhaarVerifiedAt)
@@ -85,29 +80,23 @@ export function VerificationSection({
             "Builds trust with other users and unlocks higher task values",
          action: user.isAadhaarVerified ? undefined : "Verify Aadhaar",
       },
-      //  {
-      //    id: "pan",
-      //    type: "pan",
-      //    label: "PAN Verification",
-      //    description: user.business?.pan?.isPANVerified
-      //      ? "Tax ID verified"
-      //      : "Required for payouts above ₹50,000",
-      //    icon: <CreditCard className="w-5 h-5" />,
-      //    status: user.business?.pan?.isPANVerified ? "verified" : "not_started",
-      //    whyItMatters: "Required for receiving larger payments and tax compliance",
-      //    action: user.business?.pan?.isPANVerified ? undefined : "Verify PAN",
-      //  },
       // {
-      //   id: "bank",
-      //   type: "bank",
-      //   label: "Bank Account",
-      //   description: user.business?.bankAccount?.isVerified
-      //     ? `${user.business.bankAccount.bankName} - ****${user.business.bankAccount.accountNumber?.slice(-4)}`
-      //     : "Add bank account for payouts",
-      //   icon: <Building2 className="w-5 h-5" />,
-      //   status: user.business?.bankAccount?.isVerified ? "verified" : "not_started",
-      //   whyItMatters: "Required to receive payments for completed tasks",
-      //   action: user.business?.bankAccount?.isVerified ? undefined : "Add Bank Account",
+      //    id: "bank",
+      //    type: "bank",
+      //    label: "Bank Account",
+      //    description: user.business?.bankAccount?.isVerified
+      //       ? `${
+      //            user.business.bankAccount.bankName
+      //         } - ****${user.business.bankAccount.accountNumber?.slice(-4)}`
+      //       : "Add bank account for payouts",
+      //    icon: <Building2 className="w-4 h-4 sm:w-5 sm:h-5" />,
+      //    status: user.business?.bankAccount?.isVerified
+      //       ? "verified"
+      //       : "not_started",
+      //    whyItMatters: "Required to receive payments for completed tasks",
+      //    action: user.business?.bankAccount?.isVerified
+      //       ? undefined
+      //       : "Add Bank Account",
       // },
    ];
 
@@ -117,24 +106,24 @@ export function VerificationSection({
    const totalCount = verifications.length;
 
    return (
-      <div className="max-w-2xl space-y-6">
+      <div className="max-w-2xl space-y-4 sm:space-y-6">
          {/* Header */}
          <div>
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900">
                Verifications
             </h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">
                Verify your identity to build trust and unlock more features
             </p>
          </div>
 
          {/* Summary Card */}
-         <div className="bg-white rounded-lg border border-gray-200 p-5">
+         <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5">
             <div className="flex items-center justify-between">
-               <div className="flex items-center gap-3">
+               <div className="flex items-center gap-2 sm:gap-3">
                   <div
                      className={cn(
-                        "w-12 h-12 rounded-full flex items-center justify-center",
+                        "w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0",
                         verifiedCount === totalCount
                            ? "bg-green-100"
                            : "bg-amber-100"
@@ -142,7 +131,7 @@ export function VerificationSection({
                   >
                      <Shield
                         className={cn(
-                           "w-6 h-6",
+                           "w-5 h-5 sm:w-6 sm:h-6",
                            verifiedCount === totalCount
                               ? "text-green-600"
                               : "text-amber-600"
@@ -150,10 +139,10 @@ export function VerificationSection({
                      />
                   </div>
                   <div>
-                     <h3 className="text-sm font-medium text-gray-900">
+                     <h3 className="text-xs sm:text-sm font-medium text-gray-900">
                         Verification Status
                      </h3>
-                     <p className="text-sm text-gray-500">
+                     <p className="text-xs sm:text-sm text-gray-500">
                         {verifiedCount} of {totalCount} verifications complete
                      </p>
                   </div>
@@ -161,6 +150,7 @@ export function VerificationSection({
                <Badge
                   variant="secondary"
                   className={cn(
+                     "text-[10px] sm:text-xs flex-shrink-0",
                      verifiedCount === totalCount
                         ? "bg-green-100 text-green-700"
                         : "bg-amber-100 text-amber-700"
@@ -200,23 +190,23 @@ export function VerificationSection({
          </div>
 
          {/* Trust Info */}
-         <div className="bg-gray-50 rounded-lg p-5">
-            <h3 className="text-sm font-medium text-gray-900 mb-2">
+         <div className="bg-gray-50 rounded-lg p-4 sm:p-5">
+            <h3 className="text-xs sm:text-sm font-medium text-gray-900 mb-2">
                Why Verification Matters
             </h3>
-            <ul className="space-y-2 text-sm text-gray-600">
+            <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-gray-600">
                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 mt-0.5 flex-shrink-0" />
                   <span>Verified profiles get 3x more task offers</span>
                </li>
                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 mt-0.5 flex-shrink-0" />
                   <span>
                      Access higher value tasks with complete verification
                   </span>
                </li>
                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 mt-0.5 flex-shrink-0" />
                   <span>Build trust with task posters and taskers</span>
                </li>
             </ul>
@@ -232,11 +222,11 @@ interface VerificationRowProps {
 
 function VerificationRow({ item, onVerify }: VerificationRowProps) {
    return (
-      <div className="px-5 py-4">
-         <div className="flex items-start gap-4">
+      <div className="px-4 py-3 sm:px-5 sm:py-4">
+         <div className="flex items-start gap-3 sm:gap-4">
             <div
                className={cn(
-                  "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0",
+                  "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0",
                   item.status === "verified" ? "bg-green-100" : "bg-gray-100"
                )}
             >
@@ -252,16 +242,18 @@ function VerificationRow({ item, onVerify }: VerificationRowProps) {
             </div>
 
             <div className="flex-1 min-w-0">
-               <div className="flex items-center gap-2">
-                  <h4 className="text-sm font-medium text-gray-900">
+               <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="text-xs sm:text-sm font-medium text-gray-900 truncate">
                      {item.label}
                   </h4>
                   <StatusBadge status={item.status} />
                </div>
-               <p className="text-sm text-gray-500 mt-0.5">
+               <p className="text-xs sm:text-sm text-gray-500 mt-0.5 truncate">
                   {item.description}
                </p>
-               <p className="text-xs text-gray-400 mt-1">{item.whyItMatters}</p>
+               <p className="text-[10px] sm:text-xs text-gray-400 mt-1 line-clamp-2">
+                  {item.whyItMatters}
+               </p>
             </div>
 
             {item.action && (
@@ -269,19 +261,31 @@ function VerificationRow({ item, onVerify }: VerificationRowProps) {
                   variant="outline"
                   size="sm"
                   onClick={onVerify}
-                  className="flex-shrink-0"
+                  className="flex-shrink-0 text-xs h-8 px-2 sm:px-3 hidden sm:flex"
                >
                   {item.action}
-                  <ChevronRight className="w-4 h-4 ml-1" />
                </Button>
             )}
 
             {item.status === "verified" && item.verifiedAt && (
-               <span className="text-xs text-gray-400 flex-shrink-0">
-                  Verified {formatDate(item.verifiedAt)}
+               <span className="text-[10px] sm:text-xs text-gray-400 flex-shrink-0 hidden sm:block">
+                  {formatDate(item.verifiedAt)}
                </span>
             )}
          </div>
+
+         {/* Mobile action button */}
+         {item.action && (
+            <Button
+               variant="outline"
+               size="sm"
+               onClick={onVerify}
+               className="w-full mt-3 text-xs h-8 sm:hidden"
+            >
+               {item.action}
+               <ChevronRight className="w-3 h-3 ml-1" />
+            </Button>
+         )}
       </div>
    );
 }
@@ -293,27 +297,27 @@ interface StatusBadgeProps {
 function StatusBadge({ status }: StatusBadgeProps) {
    const config = {
       verified: {
-         icon: <CheckCircle2 className="w-3 h-3" />,
+         icon: <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" />,
          label: "Verified",
          className: "bg-green-100 text-green-700",
       },
       pending: {
-         icon: <Clock className="w-3 h-3" />,
+         icon: <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />,
          label: "Pending",
          className: "bg-amber-100 text-amber-700",
       },
       not_started: {
-         icon: <AlertCircle className="w-3 h-3" />,
+         icon: <AlertCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3" />,
          label: "Not Started",
          className: "bg-gray-100 text-gray-600",
       },
       failed: {
-         icon: <AlertCircle className="w-3 h-3" />,
+         icon: <AlertCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3" />,
          label: "Failed",
          className: "bg-red-100 text-red-700",
       },
       expired: {
-         icon: <Clock className="w-3 h-3" />,
+         icon: <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />,
          label: "Expired",
          className: "bg-red-100 text-red-700",
       },
@@ -322,7 +326,10 @@ function StatusBadge({ status }: StatusBadgeProps) {
    const { icon, label, className } = config[status];
 
    return (
-      <Badge variant="secondary" className={cn("text-xs gap-1", className)}>
+      <Badge
+         variant="secondary"
+         className={cn("text-[10px] sm:text-xs gap-1 flex-shrink-0", className)}
+      >
          {icon}
          {label}
       </Badge>

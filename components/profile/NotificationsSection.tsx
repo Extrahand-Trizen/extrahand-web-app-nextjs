@@ -1,15 +1,8 @@
 "use client";
 
-/**
- * Notifications Settings Section - Mobile Responsive
- * Grouped toggles for notification preferences
- */
-
 import React, { useState } from "react";
-import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
    Bell,
    Mail,
