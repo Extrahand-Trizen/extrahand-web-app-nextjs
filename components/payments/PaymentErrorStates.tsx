@@ -152,7 +152,7 @@ export function RefundStatus({
             <div className="flex items-center justify-between py-3 border-t border-gray-100">
                <span className="text-sm text-gray-600">Refund amount</span>
                <span className="text-base font-semibold text-gray-900">
-                  {formatCurrency(transaction.amountInRupees)}
+                  {formatCurrency(transaction.amount)}
                </span>
             </div>
 
@@ -179,8 +179,7 @@ export function RefundStatus({
             {isFailed && (
                <div className="bg-red-50 rounded-md p-3 mt-3">
                   <p className="text-xs text-red-700">
-                     {transaction.errorMessage ||
-                        "We couldn't process your refund. Please contact support for assistance."}
+                     We couldn't process your refund. Please contact support for assistance.
                   </p>
                </div>
             )}

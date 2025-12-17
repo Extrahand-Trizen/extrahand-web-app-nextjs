@@ -244,7 +244,7 @@ export function PreferencesSection({
                   className="w-full"
                />
                <p className="text-[10px] sm:text-xs text-gray-500">
-                  Tasks outside this radius won't appear in your feed
+                  Tasks outside this radius won&apos;t appear in your feed
                </p>
             </div>
          </CollapsibleSection>

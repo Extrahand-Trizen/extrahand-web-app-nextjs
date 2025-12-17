@@ -1,16 +1,11 @@
 "use client";
 
-/**
- * Profile Page - Redesigned
- * Professional, trustworthy profile and account management
- * Clean, restrained design following marketplace best practices
- */
-
 import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth/context";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ProfileSection } from "@/types/profile";
+import { UserProfile } from "@/types/user";
 import {
    ProfileSidebar,
    ProfileNavList,
@@ -26,285 +21,287 @@ import {
    PrivacySection,
 } from "@/components/profile";
 import { DEFAULT_NOTIFICATION_SETTINGS } from "@/types/consent";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Menu, X } from "lucide-react";
+import {
+   Sheet,
+   SheetContent,
+   SheetHeader,
+   SheetTitle,
+} from "@/components/ui/sheet";
+import { ArrowLeft, Menu } from "lucide-react";
+
+const MOCK_USER: UserProfile = {
+   _id: "dev-user-1",
+   uid: "dev-user-1",
+   userType: "business",
+   name: "Anita Kapoor",
+   email: "anita.kapoor@example.com",
+   phone: "+91 98765 43210",
+   photoURL:
+      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400",
+   roles: ["tasker"],
+   location: {
+      type: "Point",
+      coordinates: [72.8777, 19.076],
+      city: "Mumbai",
+      state: "Maharashtra",
+   },
+   rating: 4.8,
+   totalReviews: 122,
+   totalTasks: 150,
+   completedTasks: 142,
+   isVerified: true,
+   isAadhaarVerified: true,
+   isEmailVerified: true,
+   isBankVerified: true,
+   isPanVerified: false,
+   isPhoneVerified: true,
+   isActive: true,
+   verificationBadge: "verified",
+   skills: {
+      list: [
+         { name: "Handyman", verified: true },
+         { name: "Assembly", verified: true },
+         { name: "Delivery", verified: false },
+      ],
+   },
+   business: {
+      description:
+         "Professional home services provider with 5+ years of experience. Specializing in handyman tasks, assembly, and delivery services across Mumbai.",
+   },
+   createdAt: new Date("2023-01-15"),
+   updatedAt: new Date(),
+};
+
+const MOCK_REVIEWS = [
+   {
+      id: "1",
+      taskId: "t1",
+      taskTitle: "Furniture Assembly",
+      reviewerId: "u1",
+      reviewerName: "Raj P.",
+      rating: 5,
+      comment: "Excellent work! Very professional and quick.",
+      createdAt: new Date("2024-11-20"),
+      role: "poster" as const,
+   },
+   {
+      id: "2",
+      taskId: "t2",
+      taskTitle: "Home Repair",
+      reviewerId: "u2",
+      reviewerName: "Priya S.",
+      rating: 5,
+      comment: "Fixed everything perfectly. Highly recommend!",
+      createdAt: new Date("2024-11-15"),
+      role: "poster" as const,
+   },
+   {
+      id: "3",
+      taskId: "t3",
+      taskTitle: "Package Delivery",
+      reviewerId: "u3",
+      reviewerName: "Amit K.",
+      rating: 4,
+      comment: "Good service, on time delivery.",
+      createdAt: new Date("2024-11-10"),
+      role: "poster" as const,
+   },
+];
+
+const MOCK_WORK_HISTORY = [
+   {
+      id: "1",
+      taskId: "t1",
+      title: "Furniture Assembly",
+      category: "Home Services",
+      completedAt: new Date("2024-11-20"),
+      amount: 800,
+      rating: 5,
+      role: "tasker" as const,
+   },
+   {
+      id: "2",
+      taskId: "t2",
+      title: "Home Repair",
+      category: "Home Services",
+      completedAt: new Date("2024-11-15"),
+      amount: 1200,
+      rating: 5,
+      role: "tasker" as const,
+   },
+   {
+      id: "3",
+      taskId: "t3",
+      title: "Package Delivery",
+      category: "Delivery",
+      completedAt: new Date("2024-11-10"),
+      amount: 300,
+      rating: 4,
+      role: "tasker" as const,
+   },
+];
+
+const VALID_SECTIONS: ProfileSection[] = [
+   "overview",
+   "public-profile",
+   "edit-profile",
+   "preferences",
+   "verifications",
+   "payments",
+   "addresses",
+   "notifications",
+   "security",
+   "privacy",
+];
+const SECTION_TITLES: Record<ProfileSection, string> = {
+   overview: "Account",
+   "public-profile": "Public Profile",
+   "edit-profile": "Edit Profile",
+   preferences: "Preferences",
+   verifications: "Verifications",
+   payments: "Payments",
+   addresses: "Addresses",
+   notifications: "Notifications",
+   security: "Security",
+   privacy: "Privacy",
+};
 
 function ProfilePageContent() {
    const router = useRouter();
    const searchParams = useSearchParams();
-   const {
-      currentUser,
-      userData,
-      loading: authLoading,
-      refreshUserData,
-   } = useAuth();
+   const { userData, loading: authLoading, refreshUserData } = useAuth();
+   const user = (userData ?? MOCK_USER) as UserProfile;
+   const [isMobile, setIsMobile] = useState(false);
+   const [section, setSection] = useState<ProfileSection>("overview");
+   const [navOpen, setNavOpen] = useState(false);
 
-   // Hardcoded preview user (development only) — used when no authenticated user is present
-   const HARDCODED_USER = {
-      id: "dev-user-1",
-      userType: "business",
-      name: "Anita Kapoor",
-      displayName: "Anita K.",
-      firstName: "Anita",
-      lastName: "Kapoor",
-      email: "anita.kapoor@example.com",
-      phone: "+91 98765 43210",
-      avatarUrl:
-         "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400&auto=format&fit=crop&ixlib=rb-4.0.3&s=0a1e7d7f3d5c6b0f5f9b2c3a4d5e6f7a",
-      bio: "Friendly, reliable helper — I specialise in handyman tasks, deliveries, and event setup. I pride myself on punctuality and clear communication.",
-      location: { city: "Mumbai", state: "Maharashtra", country: "India" },
-      rating: 4.8,
-      reviewsCount: 122,
-      completedTasks: 540,
-      skills: ["Handyman", "Assembly", "Delivery"],
-      hourlyRate: 350,
-      verifications: {
-         email: false,
-         phone: true,
-         id: true,
-         address: false,
-         backgroundCheck: false,
-      },
-      paymentMethods: [],
-      payoutMethods: [],
-      preferences: {
-         preferredCategories: ["Delivery", "Home Services"],
-         availability: { monday: true, tuesday: true },
-         serviceRadius: 15,
-         language: "en",
-         currency: "INR",
-         timezone: "Asia/Kolkata",
-      },
-      notifications: {
-         email: { taskUpdates: true, newMessages: true, marketing: false },
-         push: { taskUpdates: true, newMessages: true },
-         inApp: { taskUpdates: true, newMessages: true },
-      },
-      security: { twoFactorEnabled: false },
-      createdAt: new Date().toISOString(),
-      lastActive: new Date().toISOString(),
-   };
-
-   const isPreview = !currentUser;
-   const effectiveUser = userData ?? HARDCODED_USER;
-
-   const [isMobileView, setIsMobileView] = useState(false);
-   const [activeSection, setActiveSection] =
-      useState<ProfileSection>("overview");
-   const [showMobileNav, setShowMobileNav] = useState(false);
-
-   // Handle URL-based section navigation
    useEffect(() => {
-      const section = searchParams.get("section") as ProfileSection;
-      if (section && isValidSection(section)) {
-         setActiveSection(section);
-      }
+      const s = searchParams.get("section") as ProfileSection;
+      if (s && VALID_SECTIONS.includes(s)) setSection(s);
    }, [searchParams]);
 
-   // Responsive handling
    useEffect(() => {
-      if (typeof window === "undefined") return;
-
-      const checkScreenSize = () => {
-         setIsMobileView(window.innerWidth < 1024);
-      };
-
-      checkScreenSize();
-      window.addEventListener("resize", checkScreenSize);
-      return () => window.removeEventListener("resize", checkScreenSize);
+      const check = () => setIsMobile(window.innerWidth < 1024);
+      check();
+      window.addEventListener("resize", check);
+      return () => window.removeEventListener("resize", check);
    }, []);
 
-   const handleSectionChange = useCallback((section: ProfileSection) => {
-      setActiveSection(section);
-      setShowMobileNav(false);
-      // Update URL without navigation
-      const url = new URL(window.location.href);
-      url.searchParams.set("section", section);
-      window.history.pushState({}, "", url.toString());
+   const goTo = useCallback((s: ProfileSection) => {
+      setSection(s);
+      setNavOpen(false);
+      window.history.pushState({}, "", `?section=${s}`);
    }, []);
 
-   const handleBack = useCallback(() => {
-      if (activeSection !== "overview") {
-         handleSectionChange("overview");
-      } else {
-         router.back();
-      }
-   }, [activeSection, handleSectionChange, router]);
-
-   // Mock save handlers - these would connect to your API
-   const handleSaveProfile = async (data: any) => {
-      console.log("Saving profile:", data);
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      await refreshUserData();
+   const props = {
+      user,
+      onNavigate: goTo,
+      onSaveProfile: async () => {
+         await refreshUserData();
+      },
+      onVerify: async (t: string) => {
+         router.push(
+            {
+               phone: "/profile/verify/phone",
+               email: "/profile/verify/email",
+               aadhaar: "/profile/verify/aadhaar",
+               bank: "/profile/verify/bank",
+            }[t] || "/profile/verify"
+         );
+      },
+      onSaveNotifications: async () => {},
+      onSavePreferences: async () => {},
+      onChangePassword: async () => {},
+      onRevokeSession: async () => {},
+      onRevokeAllSessions: async () => {},
+      onUpdatePrivacy: async () => {},
+      onDeleteAccount: async () => {
+         router.push("/");
+      },
    };
 
-   const handleVerify = async (type: string) => {
-      console.log("Starting verification:", type);
-      // Route to appropriate verification page
-      const verificationRoutes: Record<string, string> = {
-         phone: "/profile/verify/phone", // Might need to create or handle differently
-         email: "/profile/verify/email",
-         aadhaar: "/profile/verify/aadhaar",
-         bank: "/profile/verify/bank",
-      };
-
-      const route = verificationRoutes[type];
-      if (route) {
-         router.push(route);
-      } else {
-         // Fallback to main verifications page
-         router.push("/profile/verify");
-      }
-   };
-
-   const handleSaveNotifications = async (prefs: any) => {
-      console.log("Saving notifications:", prefs);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-   };
-
-   const handleSavePreferences = async (prefs: any) => {
-      console.log("Saving preferences:", prefs);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-   };
-
-   const handleChangePassword = async (
-      oldPassword: string,
-      newPassword: string
-   ) => {
-      console.log("Changing password...");
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-   };
-
-   const handleRevokeSession = async (sessionId: string) => {
-      console.log("Revoking session:", sessionId);
-      await new Promise((resolve) => setTimeout(resolve, 500));
-   };
-
-   const handleRevokeAllSessions = async () => {
-      console.log("Revoking all sessions...");
-      await new Promise((resolve) => setTimeout(resolve, 500));
-   };
-
-   const handleUpdatePrivacy = async (settings: any) => {
-      console.log("Updating privacy:", settings);
-      await new Promise((resolve) => setTimeout(resolve, 500));
-   };
-
-   const handleDeleteAccount = async () => {
-      console.log("Deleting account...");
-      router.push("/");
-   };
-
-   // Show loading if auth is loading
-   if (authLoading) {
+   if (authLoading)
       return (
          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-               <LoadingSpinner size="lg" />
-               <p className="mt-4 text-gray-600 text-sm">
-                  Loading your profile...
-               </p>
-            </div>
+            <LoadingSpinner size="lg" />
          </div>
       );
-   }
 
-   // Mobile layout
-   if (isMobileView) {
+   if (isMobile) {
       return (
-         <div className="bg-gray-50">
-            {/* Mobile Header */}
-            <div className="sticky top-0 z-50 bg-white border-b border-gray-200">
-               <div className="flex items-center justify-between px-4 py-3">
+         <div className="bg-gray-50 min-h-screen">
+            <Sheet open={navOpen} onOpenChange={setNavOpen}>
+               <SheetContent side="left" className="w-[300px] p-0">
+                  <SheetHeader className="border-b border-gray-200 p-4">
+                     <SheetTitle className="text-left">Account</SheetTitle>
+                     <p className="text-sm text-gray-500">
+                        Manage your profile
+                     </p>
+                  </SheetHeader>
+                  <ProfileNavList
+                     onSectionChange={(s) => {
+                        goTo(s);
+                        setNavOpen(false);
+                     }}
+                  />
+               </SheetContent>
+            </Sheet>
+            <div className="sticky top-0 z-40 bg-white border-b border-gray-200">
+               <div className="flex items-center gap-3 px-4 py-3">
                   <button
-                     onClick={handleBack}
-                     className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
+                     onClick={() =>
+                        section !== "overview"
+                           ? goTo("overview")
+                           : setNavOpen(true)
+                     }
+                     className="p-2 -ml-2 hover:bg-gray-100 rounded-lg"
                   >
-                     <ArrowLeft className="w-5 h-5 text-gray-600" />
-                  </button>
-                  <h1 className="text-base font-semibold text-gray-900">
-                     {getSectionTitle(activeSection)}
-                  </h1>
-                  <button
-                     onClick={() => setShowMobileNav(!showMobileNav)}
-                     className="p-2 -mr-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                     {showMobileNav ? (
-                        <X className="w-5 h-5 text-gray-600" />
+                     {section !== "overview" ? (
+                        <ArrowLeft className="w-5 h-5 text-gray-600" />
                      ) : (
                         <Menu className="w-5 h-5 text-gray-600" />
                      )}
                   </button>
+                  <h1 className="text-base font-semibold text-gray-900 flex-1">
+                     {SECTION_TITLES[section]}
+                  </h1>
+                  {section !== "overview" && (
+                     <button
+                        onClick={() => setNavOpen(true)}
+                        className="p-2 -mr-2 hover:bg-gray-100 rounded-lg"
+                     >
+                        <Menu className="w-5 h-5 text-gray-600" />
+                     </button>
+                  )}
                </div>
             </div>
-
-            {/* Mobile Navigation Overlay */}
-            {showMobileNav && (
-               <div className="fixed inset-0 z-40 bg-white pt-14">
-                  <ProfileNavList onSectionChange={handleSectionChange} />
-               </div>
-            )}
-
-            {/* Mobile Content */}
             <div className="px-4 py-6 pb-20">
-               {renderSection(activeSection, {
-                  user: effectiveUser,
-                  onNavigate: handleSectionChange,
-                  onSaveProfile: handleSaveProfile,
-                  onVerify: handleVerify,
-                  onSaveNotifications: handleSaveNotifications,
-                  onSavePreferences: handleSavePreferences,
-                  onChangePassword: handleChangePassword,
-                  onRevokeSession: handleRevokeSession,
-                  onRevokeAllSessions: handleRevokeAllSessions,
-                  onUpdatePrivacy: handleUpdatePrivacy,
-                  onDeleteAccount: handleDeleteAccount,
-               })}
+               {renderSection(section, props)}
             </div>
          </div>
       );
    }
 
-   // Desktop layout
    return (
       <div className="bg-gray-50 max-w-7xl mx-auto">
          <div className="flex">
-            {/* Sidebar */}
             <ProfileSidebar
-               activeSection={activeSection}
-               onSectionChange={handleSectionChange}
+               activeSection={section}
+               onSectionChange={goTo}
                className="hidden lg:block sticky top-0"
             />
-
-            {/* Content Area */}
             <main className="flex-1 min-h-screen">
                <div className="max-w-4xl mx-auto py-8">
-                  {/* Breadcrumb */}
-                  {activeSection !== "overview" && (
+                  {section !== "overview" && (
                      <button
-                        onClick={() => handleSectionChange("overview")}
-                        className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-6 transition-colors"
+                        onClick={() => goTo("overview")}
+                        className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-6"
                      >
                         <ArrowLeft className="w-4 h-4" />
                         Back to Overview
                      </button>
                   )}
-
-                  {/* Section Content */}
-                  {renderSection(activeSection, {
-                     user: effectiveUser,
-                     onNavigate: handleSectionChange,
-                     onSaveProfile: handleSaveProfile,
-                     onVerify: handleVerify,
-                     onSaveNotifications: handleSaveNotifications,
-                     onSavePreferences: handleSavePreferences,
-                     onChangePassword: handleChangePassword,
-                     onRevokeSession: handleRevokeSession,
-                     onRevokeAllSessions: handleRevokeAllSessions,
-                     onUpdatePrivacy: handleUpdatePrivacy,
-                     onDeleteAccount: handleDeleteAccount,
-                  })}
+                  {renderSection(section, props)}
                </div>
             </main>
          </div>
@@ -312,7 +309,6 @@ function ProfilePageContent() {
    );
 }
 
-// Wrap with Suspense for useSearchParams
 export default function ProfilePage() {
    return (
       <Suspense
@@ -327,94 +323,41 @@ export default function ProfilePage() {
    );
 }
 
-// Helper functions
-function isValidSection(section: string): section is ProfileSection {
-   const validSections: ProfileSection[] = [
-      "overview",
-      "public-profile",
-      "edit-profile",
-      "preferences",
-      "verifications",
-      "payments",
-      "addresses",
-      "notifications",
-      "security",
-      "privacy",
-   ];
-   return validSections.includes(section as ProfileSection);
-}
-
-function getSectionTitle(section: ProfileSection): string {
-   const titles: Record<ProfileSection, string> = {
-      overview: "Account",
-      "public-profile": "Public Profile",
-      "edit-profile": "Edit Profile",
-      preferences: "Preferences",
-      verifications: "Verifications",
-      payments: "Payments",
-      addresses: "Addresses",
-      notifications: "Notifications",
-      security: "Security",
-      privacy: "Privacy",
-   };
-   return titles[section];
-}
-
-interface SectionProps {
-   user: any;
-   onNavigate: (section: ProfileSection) => void;
-   onSaveProfile: (data: any) => Promise<void>;
-   onVerify: (type: string) => Promise<void>;
-   onSaveNotifications: (prefs: any) => Promise<void>;
-   onSavePreferences: (prefs: any) => Promise<void>;
-   onChangePassword: (
-      oldPassword: string,
-      newPassword: string
-   ) => Promise<void>;
-   onRevokeSession: (sessionId: string) => Promise<void>;
+interface Props {
+   user: UserProfile;
+   onNavigate: (s: ProfileSection) => void;
+   onSaveProfile: () => Promise<void>;
+   onVerify: (t: string) => Promise<void>;
+   onSaveNotifications: () => Promise<void>;
+   onSavePreferences: () => Promise<void>;
+   onChangePassword: () => Promise<void>;
+   onRevokeSession: () => Promise<void>;
    onRevokeAllSessions: () => Promise<void>;
-   onUpdatePrivacy: (settings: any) => Promise<void>;
+   onUpdatePrivacy: () => Promise<void>;
    onDeleteAccount: () => Promise<void>;
 }
 
-function renderSection(section: ProfileSection, props: SectionProps) {
-   const {
-      user,
-      onNavigate,
-      onSaveProfile,
-      onVerify,
-      onSaveNotifications,
-      onSavePreferences,
-      onChangePassword,
-      onRevokeSession,
-      onRevokeAllSessions,
-      onUpdatePrivacy,
-      onDeleteAccount,
-   } = props;
-
-   switch (section) {
+function renderSection(s: ProfileSection, p: Props) {
+   switch (s) {
       case "overview":
-         return <ProfileOverview user={user} onNavigate={onNavigate} />;
-
+         return <ProfileOverview user={p.user} onNavigate={p.onNavigate} />;
       case "public-profile":
          return (
             <PublicProfile
-               user={user}
+               user={p.user}
                isOwnProfile
-               reviews={[]}
-               workHistory={[]}
+               reviews={MOCK_REVIEWS}
+               workHistory={MOCK_WORK_HISTORY}
             />
          );
-
       case "edit-profile":
          return (
             <ProfileEditForm
-               user={user}
-               onSave={onSaveProfile}
-               onCancel={() => onNavigate("overview")}
+               user={p.user}
+               onSave={p.onSaveProfile}
+               onCancel={() => p.onNavigate("overview")}
             />
          );
-
       case "preferences":
          return (
             <PreferencesSection
@@ -426,44 +369,30 @@ function renderSection(section: ProfileSection, props: SectionProps) {
                   currency: "INR",
                   timezone: "Asia/Kolkata",
                }}
-               onSave={onSavePreferences}
+               onSave={p.onSavePreferences}
             />
          );
-
       case "verifications":
-         return <VerificationSection user={user} onVerify={onVerify} />;
-
+         return <VerificationSection user={p.user} onVerify={p.onVerify} />;
       case "payments":
          return (
             <PaymentsSection
-               onRemovePaymentMethod={(id) =>
-                  console.log("Remove payment:", id)
-               }
-               onRemovePayoutMethod={(id) => console.log("Remove payout:", id)}
-               onSetDefaultPayment={(id) =>
-                  console.log("Set default payment:", id)
-               }
-               onSetDefaultPayout={(id) =>
-                  console.log("Set default payout:", id)
-               }
-               onSavePaymentMethod={(data) =>
-                  console.log("Save payment method:", data)
-               }
-               onSavePayoutMethod={(data) =>
-                  console.log("Save payout method:", data)
-               }
+               onRemovePaymentMethod={console.log}
+               onRemovePayoutMethod={console.log}
+               onSetDefaultPayment={console.log}
+               onSetDefaultPayout={console.log}
+               onSavePaymentMethod={console.log}
+               onSavePayoutMethod={console.log}
             />
          );
-
       case "addresses":
          return (
             <AddressesSection
-               onDeleteAddress={(id) => console.log("Delete address:", id)}
-               onSetDefault={(id) => console.log("Set default:", id)}
-               onSaveAddress={(data) => console.log("Save address:", data)}
+               onDeleteAddress={console.log}
+               onSetDefault={console.log}
+               onSaveAddress={console.log}
             />
          );
-
       case "notifications":
          return (
             <NotificationsSection
@@ -479,10 +408,9 @@ function renderSection(section: ProfileSection, props: SectionProps) {
                   maxPerDay: 0,
                }}
                preferredChannel="push"
-               onSave={onSaveNotifications}
+               onSave={p.onSaveNotifications}
             />
          );
-
       case "security":
          return (
             <SecuritySection
@@ -494,7 +422,7 @@ function renderSection(section: ProfileSection, props: SectionProps) {
                         id: "current",
                         device: "Windows",
                         browser: "Chrome",
-                        location: "Mumbai, India",
+                        location: "Mumbai",
                         ipAddress: "192.168.1.1",
                         lastActive: new Date(),
                         isCurrent: true,
@@ -510,14 +438,13 @@ function renderSection(section: ProfileSection, props: SectionProps) {
                   allowMessagesFromAll: true,
                   showOnSearch: true,
                }}
-               onChangePassword={onChangePassword}
-               onRevokeSession={onRevokeSession}
-               onRevokeAllSessions={onRevokeAllSessions}
-               onUpdatePrivacy={onUpdatePrivacy}
-               onDeleteAccount={onDeleteAccount}
+               onChangePassword={p.onChangePassword}
+               onRevokeSession={p.onRevokeSession}
+               onRevokeAllSessions={p.onRevokeAllSessions}
+               onUpdatePrivacy={p.onUpdatePrivacy}
+               onDeleteAccount={p.onDeleteAccount}
             />
          );
-
       case "privacy":
          return (
             <PrivacySection
@@ -529,11 +456,10 @@ function renderSection(section: ProfileSection, props: SectionProps) {
                   locationSharing: true,
                   analyticsTracking: true,
                }}
-               onSave={onUpdatePrivacy}
+               onSave={p.onUpdatePrivacy}
             />
          );
-
       default:
-         return <ProfileOverview user={user} onNavigate={onNavigate} />;
+         return <ProfileOverview user={p.user} onNavigate={p.onNavigate} />;
    }
 }

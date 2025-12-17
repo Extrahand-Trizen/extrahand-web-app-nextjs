@@ -46,6 +46,10 @@ export default function UserProfilePage() {
                completedTasks: 42,
                isVerified: true,
                isAadhaarVerified: true,
+               isEmailVerified: true,
+               isBankVerified: true,
+               isPanVerified: false,
+               isPhoneVerified: true,
                isActive: true,
                verificationBadge: "verified",
                location: {
@@ -61,9 +65,10 @@ export default function UserProfilePage() {
                      { name: "Electrical", verified: true },
                   ],
                },
-               //  business: {
-               //    description: "Professional home services provider with 5+ years of experience. Specializing in deep cleaning, minor repairs, and electrical work.",
-               //  },
+               business: {
+                  description:
+                     "Professional home services provider with 5+ years of experience. Specializing in deep cleaning, minor repairs, and electrical work.",
+               },
                createdAt: new Date("2023-01-15"),
                updatedAt: new Date(),
             };
@@ -211,7 +216,6 @@ export default function UserProfilePage() {
                />
             </div>
          </main>
-
       </div>
    );
 }

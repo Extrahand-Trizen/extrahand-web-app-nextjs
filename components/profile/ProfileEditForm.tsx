@@ -217,7 +217,7 @@ export function ProfileEditForm({
                      value={formData.firstName}
                      onChange={(e) => updateField("firstName", e.target.value)}
                      className={cn(
-                        "mt-1.5 h-9 sm:h-10 text-sm",
+                        "mt-1.5 h-9 sm:h-10 text-xs md:text-sm",
                         errors.firstName &&
                            "border-red-300 focus:border-red-500"
                      )}
@@ -242,7 +242,7 @@ export function ProfileEditForm({
                      value={formData.lastName}
                      onChange={(e) => updateField("lastName", e.target.value)}
                      className={cn(
-                        "mt-1.5 h-9 sm:h-10 text-sm",
+                        "mt-1.5 h-9 sm:h-10 text-xs md:text-sm",
                         errors.lastName && "border-red-300 focus:border-red-500"
                      )}
                      placeholder="Last name"
@@ -267,7 +267,7 @@ export function ProfileEditForm({
                   id="bio"
                   value={formData.bio}
                   onChange={(e) => updateField("bio", e.target.value)}
-                  className="mt-1.5 min-h-20 sm:min-h-[100px] text-sm"
+                  className="mt-1.5 min-h-20 sm:min-h-[100px] text-xs md:text-sm"
                   placeholder="Tell others a bit about yourself..."
                   maxLength={500}
                />
@@ -296,7 +296,7 @@ export function ProfileEditForm({
                   value={formData.email}
                   onChange={(e) => updateField("email", e.target.value)}
                   className={cn(
-                     "mt-1.5 h-9 sm:h-10 text-sm",
+                     "mt-1.5 h-9 sm:h-10 text-xs md:text-sm",
                      errors.email && "border-red-300 focus:border-red-500"
                   )}
                   placeholder="your@email.com"
@@ -322,7 +322,7 @@ export function ProfileEditForm({
                   value={formData.phone}
                   onChange={(e) => updateField("phone", e.target.value)}
                   className={cn(
-                     "mt-1.5 h-9 sm:h-10 text-sm",
+                     "mt-1.5 h-9 sm:h-10 text-xs md:text-sm",
                      errors.phone && "border-red-300 focus:border-red-500"
                   )}
                   placeholder="10-digit phone number"
@@ -348,7 +348,7 @@ export function ProfileEditForm({
                      id="location"
                      value={formData.location}
                      onChange={(e) => updateField("location", e.target.value)}
-                     className="pl-8 sm:pl-9 h-9 sm:h-10 text-sm"
+                     className="pl-8 sm:pl-9 h-9 sm:h-10 text-xs md:text-sm"
                      placeholder="City or locality"
                   />
                </div>
@@ -422,7 +422,7 @@ export function ProfileEditForm({
                   value={newSkill}
                   onChange={(e) => setNewSkill(e.target.value)}
                   placeholder="Add a skill..."
-                  className="flex-1 h-9 sm:h-10 text-sm"
+                  className="flex-1 h-9 sm:h-10 text-xs md:text-sm"
                   onKeyDown={(e) =>
                      e.key === "Enter" && (e.preventDefault(), addSkill())
                   }
@@ -433,9 +433,9 @@ export function ProfileEditForm({
                   size="icon"
                   onClick={addSkill}
                   disabled={!newSkill.trim()}
-                  className="h-9 w-9 sm:h-10 sm:w-10"
+                  className="size-8 md:size-9 sm:size-10"
                >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="size-3.5 md:size-4" />
                </Button>
             </div>
             <p className="text-[10px] sm:text-xs text-gray-500 mt-2">
@@ -471,7 +471,7 @@ export function ProfileEditForm({
                <Button
                   onClick={handleSave}
                   disabled={isSaving || !hasChanges}
-                  className="min-w-20 sm:min-w-[100px]"
+                  className="min-w-20 sm:min-w-[100px] bg-primary-500 hover:bg-primary-600"
                   size="sm"
                >
                   {isSaving ? (
@@ -482,7 +482,7 @@ export function ProfileEditForm({
                      </>
                   ) : (
                      <>
-                        <Check className="w-4 h-4 mr-2" />
+                        <Check className="size-3.5 md:size-4 mr-2" />
                         Save
                      </>
                   )}

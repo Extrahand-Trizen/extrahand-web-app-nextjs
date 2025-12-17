@@ -140,17 +140,9 @@ export function AddressesSection({
       }
    };
 
-   const getTypeColor = (type: AddressType) => {
-      switch (type) {
-         case "home":
-            return "bg-blue-100 text-blue-700";
-         case "work":
-            return "bg-purple-100 text-purple-700";
-         case "billing":
-            return "bg-green-100 text-green-700";
-         default:
-            return "bg-gray-100 text-gray-700";
-      }
+   const getTypeColor = (address: SavedAddress) => {
+      if(address.isDefault) return "bg-primary-100 text-primary-700";
+      return "bg-secondary-100 text-secondary-700";
    };
 
    return (
@@ -257,7 +249,7 @@ interface AddressCardProps {
    onDelete: () => void;
    onSetDefault: () => void;
    getTypeIcon: (type: AddressType) => React.ReactNode;
-   getTypeColor: (type: AddressType) => string;
+   getTypeColor: (address: SavedAddress) => string;
 }
 
 function AddressCard({
@@ -301,7 +293,7 @@ function AddressCard({
                <div
                   className={cn(
                      "w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shrink-0",
-                     getTypeColor(address.type)
+                     getTypeColor(address)
                   )}
                >
                   {getTypeIcon(address.type)}

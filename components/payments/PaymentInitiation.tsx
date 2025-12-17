@@ -52,7 +52,7 @@ export function PaymentInitiation({
    const loading = isLoading || isPaying;
 
    return (
-      <div className={cn("max-w-2xl mx-auto", className)}>
+      <div className={cn("max-w-4xl mx-auto", className)}>
          {/* Header */}
          <div className="mb-6">
             {onBack && (

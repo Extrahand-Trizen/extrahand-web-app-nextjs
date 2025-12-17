@@ -390,7 +390,7 @@ export default function PaymentsDemoPage() {
       <div className="min-h-screen bg-gray-50">
          {/* Header */}
          <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
-            <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
+            <div className="max-w-4xl mx-auto px-4 h-14 flex items-center gap-3">
                <button
                   onClick={() => router.back()}
                   className="p-2 -ml-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
@@ -404,7 +404,7 @@ export default function PaymentsDemoPage() {
          </div>
 
          {/* Content */}
-         <div className="max-w-2xl mx-auto px-4 py-6">
+         <div className="max-w-4xl mx-auto px-4 py-6">
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
                <p className="text-sm text-amber-800">
                   <strong>🔒 Demo Mode:</strong> These are preview screens for

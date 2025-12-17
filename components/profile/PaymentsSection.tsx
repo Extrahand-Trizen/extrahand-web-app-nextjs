@@ -5,11 +5,18 @@
  * Manage payment methods, payouts, and transaction history
  */
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar } from "@/components/ui/calendar";
+import {
+   Popover,
+   PopoverContent,
+   PopoverTrigger,
+} from "@/components/ui/popover";
 import {
    CreditCard,
    Building2,
@@ -23,6 +30,10 @@ import {
    TrendingUp,
    Wallet,
    Download,
+   SlidersHorizontal,
+   X,
+   CalendarIcon,
+   IndianRupee,
 } from "lucide-react";
 import { PaymentMethod, PayoutMethod, Transaction } from "@/types/profile";
 import {
@@ -30,6 +41,8 @@ import {
    mockPayoutMethods,
    mockTransactions,
 } from "@/lib/data/payments";
+import { format } from "date-fns";
+import { DateRange } from "react-day-picker";
 
 interface PaymentsSectionProps {
    paymentMethods?: PaymentMethod[];
@@ -61,9 +74,27 @@ export function PaymentsSection({
       "all" | "outgoing" | "earnings"
    >("all");
 
+   // Range filter state
+   const [showRangeFilters, setShowRangeFilters] = useState(false);
+   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+   const [minAmount, setMinAmount] = useState<string>("");
+   const [maxAmount, setMaxAmount] = useState<string>("");
+
    // Internal modal state
    const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false);
    const [showPayoutMethodModal, setShowPayoutMethodModal] = useState(false);
+
+   // Check if any range filters are active
+   const hasActiveRangeFilters = useMemo(() => {
+      return dateRange?.from || dateRange?.to || minAmount || maxAmount;
+   }, [dateRange, minAmount, maxAmount]);
+
+   // Clear all range filters
+   const clearRangeFilters = () => {
+      setDateRange(undefined);
+      setMinAmount("");
+      setMaxAmount("");
+   };
 
    // Internal handlers
    const handleSavePaymentMethod = (data: Partial<PaymentMethod>) => {
@@ -93,11 +124,38 @@ export function PaymentsSection({
       .filter((t) => t.type === "payment" && t.status === "completed")
       .reduce((sum, t) => sum + t.amount, 0);
 
-   // Filter transactions based on selected filter
+   // Filter transactions based on selected filter + range filters
    const filteredTransactions = transactions.filter((t) => {
-      if (transactionFilter === "outgoing") return t.type === "payment";
-      if (transactionFilter === "earnings")
-         return t.type === "payout" || t.type === "refund";
+      // Type filter
+      if (transactionFilter === "outgoing" && t.type !== "payment")
+         return false;
+      if (
+         transactionFilter === "earnings" &&
+         t.type !== "payout" &&
+         t.type !== "refund"
+      )
+         return false;
+
+      // Date range filter
+      if (dateRange?.from) {
+         const txDate = new Date(t.createdAt);
+         const fromDate = new Date(dateRange.from);
+         fromDate.setHours(0, 0, 0, 0);
+         if (txDate < fromDate) return false;
+      }
+      if (dateRange?.to) {
+         const txDate = new Date(t.createdAt);
+         const toDate = new Date(dateRange.to);
+         toDate.setHours(23, 59, 59, 999);
+         if (txDate > toDate) return false;
+      }
+
+      // Amount range filter
+      const minAmountNum = parseFloat(minAmount);
+      const maxAmountNum = parseFloat(maxAmount);
+      if (!isNaN(minAmountNum) && t.amount < minAmountNum) return false;
+      if (!isNaN(maxAmountNum) && t.amount > maxAmountNum) return false;
+
       return true;
    });
 
@@ -116,25 +174,25 @@ export function PaymentsSection({
 
          {/* Quick Stats */}
          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-green-50 rounded-lg p-3 sm:p-4 border border-green-100">
+            <div className="bg-primary-50 rounded-lg p-3 sm:p-4 border border-primary-100">
                <div className="flex items-center gap-2 mb-1">
-                  <TrendingUp className="w-4 h-4 text-green-600" />
-                  <span className="text-xs text-green-700 font-medium">
+                  <TrendingUp className="w-4 h-4 text-primary-600" />
+                  <span className="text-xs text-primary-700 font-medium">
                      Total Earnings
                   </span>
                </div>
-               <p className="text-lg sm:text-xl font-bold text-green-700">
+               <p className="text-lg sm:text-xl font-bold text-primary-700">
                   ₹{totalEarnings.toLocaleString()}
                </p>
             </div>
-            <div className="bg-blue-50 rounded-lg p-3 sm:p-4 border border-blue-100">
+            <div className="bg-secondary-50 rounded-lg p-3 sm:p-4 border border-secondary-100">
                <div className="flex items-center gap-2 mb-1">
-                  <Wallet className="w-4 h-4 text-blue-600" />
-                  <span className="text-xs text-blue-700 font-medium">
+                  <Wallet className="w-4 h-4 text-secondary-600" />
+                  <span className="text-xs text-secondary-700 font-medium">
                      Total Spent
                   </span>
                </div>
-               <p className="text-lg sm:text-xl font-bold text-blue-700">
+               <p className="text-lg sm:text-xl font-bold text-secondary-700">
                   ₹{totalOutgoing.toLocaleString()}
                </p>
             </div>
@@ -270,7 +328,7 @@ export function PaymentsSection({
             {/* Transactions Tab */}
             <TabsContent value="transactions" className="space-y-4 mt-4">
                {/* Sub-filters for transactions */}
-               <div className="flex items-center gap-2">
+               <div className="flex items-center gap-2 flex-wrap">
                   <button
                      onClick={() => setTransactionFilter("all")}
                      className={cn(
@@ -287,8 +345,8 @@ export function PaymentsSection({
                      className={cn(
                         "px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1",
                         transactionFilter === "outgoing"
-                           ? "bg-blue-600 text-white"
-                           : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                           ? "bg-secondary-600 text-white"
+                           : "bg-secondary-50 text-secondary-700 hover:bg-secondary-100"
                      )}
                   >
                      <ArrowUpRight className="w-3 h-3" />
@@ -299,21 +357,214 @@ export function PaymentsSection({
                      className={cn(
                         "px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1",
                         transactionFilter === "earnings"
-                           ? "bg-green-600 text-white"
-                           : "bg-green-50 text-green-700 hover:bg-green-100"
+                           ? "bg-primary-600 text-white"
+                           : "bg-primary-50 text-primary-700 hover:bg-primary-100"
                      )}
                   >
                      <ArrowDownLeft className="w-3 h-3" />
                      Earnings
                   </button>
-                  <Button
-                     variant="ghost"
-                     size="sm"
-                     className="ml-auto h-8 px-2"
-                  >
-                     <Download className="w-4 h-4" />
-                  </Button>
+                  <div className="flex items-center gap-2 ml-auto">
+                     <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowRangeFilters(!showRangeFilters)}
+                        className={cn(
+                           "h-8 px-2.5 text-xs gap-1.5",
+                           hasActiveRangeFilters &&
+                              "border-primary-500 bg-primary-50 text-primary-700"
+                        )}
+                     >
+                        <SlidersHorizontal className="w-3.5 h-3.5" />
+                        Filters
+                        {hasActiveRangeFilters && (
+                           <span className="ml-0.5 bg-primary-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                              {
+                                 [dateRange?.from, minAmount, maxAmount].filter(
+                                    Boolean
+                                 ).length
+                              }
+                           </span>
+                        )}
+                     </Button>
+                     <Button variant="ghost" size="sm" className="h-8 px-2">
+                        <Download className="w-4 h-4" />
+                     </Button>
+                  </div>
                </div>
+
+               {/* Range Filters Panel */}
+               {showRangeFilters && (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">
+                     <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-medium text-gray-900">
+                           Filter by Range
+                        </h4>
+                        {hasActiveRangeFilters && (
+                           <button
+                              onClick={clearRangeFilters}
+                              className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                           >
+                              <X className="w-3 h-3" />
+                              Clear all
+                           </button>
+                        )}
+                     </div>
+
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Date Range Filter */}
+                        <div className="space-y-2">
+                           <label className="text-xs font-medium text-gray-600 flex items-center gap-1.5">
+                              <CalendarIcon className="w-3.5 h-3.5" />
+                              Date Range
+                           </label>
+                           <Popover>
+                              <PopoverTrigger asChild>
+                                 <Button
+                                    variant="outline"
+                                    className={cn(
+                                       "w-full justify-start text-left font-normal text-xs h-9",
+                                       !dateRange?.from && "text-gray-400"
+                                    )}
+                                 >
+                                    {dateRange?.from ? (
+                                       dateRange.to ? (
+                                          <>
+                                             {format(
+                                                dateRange.from,
+                                                "dd MMM yyyy"
+                                             )}{" "}
+                                             -{" "}
+                                             {format(
+                                                dateRange.to,
+                                                "dd MMM yyyy"
+                                             )}
+                                          </>
+                                       ) : (
+                                          format(dateRange.from, "dd MMM yyyy")
+                                       )
+                                    ) : (
+                                       "Select date range"
+                                    )}
+                                 </Button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                 className="w-auto p-0"
+                                 align="start"
+                              >
+                                 <Calendar
+                                    mode="range"
+                                    selected={dateRange}
+                                    onSelect={setDateRange}
+                                    numberOfMonths={1}
+                                    disabled={{ after: new Date() }}
+                                 />
+                                 {dateRange?.from && (
+                                    <div className="p-3 pt-0 border-t">
+                                       <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="w-full text-xs"
+                                          onClick={() =>
+                                             setDateRange(undefined)
+                                          }
+                                       >
+                                          Clear dates
+                                       </Button>
+                                    </div>
+                                 )}
+                              </PopoverContent>
+                           </Popover>
+                        </div>
+
+                        {/* Amount Range Filter */}
+                        <div className="space-y-2">
+                           <label className="text-xs font-medium text-gray-600 flex items-center gap-1.5">
+                              <IndianRupee className="w-3.5 h-3.5" />
+                              Amount Range
+                           </label>
+                           <div className="flex items-center gap-2">
+                              <div className="relative flex-1">
+                                 <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                                    ₹
+                                 </span>
+                                 <Input
+                                    type="number"
+                                    placeholder="Min"
+                                    value={minAmount}
+                                    onChange={(e) =>
+                                       setMinAmount(e.target.value)
+                                    }
+                                    className="pl-6 h-9 text-xs"
+                                    min="0"
+                                 />
+                              </div>
+                              <span className="text-gray-400 text-xs">to</span>
+                              <div className="relative flex-1">
+                                 <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                                    ₹
+                                 </span>
+                                 <Input
+                                    type="number"
+                                    placeholder="Max"
+                                    value={maxAmount}
+                                    onChange={(e) =>
+                                       setMaxAmount(e.target.value)
+                                    }
+                                    className="pl-6 h-9 text-xs"
+                                    min="0"
+                                 />
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+
+                     {/* Active filters summary */}
+                     {hasActiveRangeFilters && (
+                        <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200">
+                           {dateRange?.from && (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-gray-200 rounded-full text-xs text-gray-600">
+                                 <CalendarIcon className="w-3 h-3" />
+                                 {dateRange.to
+                                    ? `${format(
+                                         dateRange.from,
+                                         "dd MMM"
+                                      )} - ${format(dateRange.to, "dd MMM")}`
+                                    : `From ${format(
+                                         dateRange.from,
+                                         "dd MMM"
+                                      )}`}
+                                 <button
+                                    onClick={() => setDateRange(undefined)}
+                                    className="ml-1 hover:text-gray-900"
+                                 >
+                                    <X className="w-3 h-3" />
+                                 </button>
+                              </span>
+                           )}
+                           {(minAmount || maxAmount) && (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-gray-200 rounded-full text-xs text-gray-600">
+                                 <IndianRupee className="w-3 h-3" />
+                                 {minAmount && maxAmount
+                                    ? `₹${minAmount} - ₹${maxAmount}`
+                                    : minAmount
+                                    ? `Min ₹${minAmount}`
+                                    : `Max ₹${maxAmount}`}
+                                 <button
+                                    onClick={() => {
+                                       setMinAmount("");
+                                       setMaxAmount("");
+                                    }}
+                                    className="ml-1 hover:text-gray-900"
+                                 >
+                                    <X className="w-3 h-3" />
+                                 </button>
+                              </span>
+                           )}
+                        </div>
+                     )}
+                  </div>
+               )}
 
                {/* Transactions List */}
                <div className="bg-white rounded-lg border border-gray-200">
@@ -330,11 +581,24 @@ export function PaymentsSection({
                      <div className="px-4 py-6 sm:px-5 sm:py-8 text-center">
                         <Clock className="w-8 h-8 sm:w-10 sm:h-10 text-gray-300 mx-auto mb-3" />
                         <p className="text-xs sm:text-sm text-gray-500">
-                           No transactions yet
+                           {hasActiveRangeFilters
+                              ? "No transactions match your filters"
+                              : "No transactions yet"}
                         </p>
-                        <p className="text-[10px] sm:text-xs text-gray-400 mt-1">
-                           Your payment and earning history will appear here
-                        </p>
+                        {hasActiveRangeFilters ? (
+                           <Button
+                              variant="link"
+                              size="sm"
+                              onClick={clearRangeFilters}
+                              className="mt-2 text-xs"
+                           >
+                              Clear filters
+                           </Button>
+                        ) : (
+                           <p className="text-[10px] sm:text-xs text-gray-400 mt-1">
+                              Your payment and earning history will appear here
+                           </p>
+                        )}
                      </div>
                   )}
                </div>
@@ -580,13 +844,13 @@ function TransactionRow({ transaction }: TransactionRowProps) {
             <div
                className={cn(
                   "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0",
-                  isCredit ? "bg-green-100" : "bg-blue-100"
+                  isCredit ? "bg-primary-100" : "bg-secondary-100"
                )}
             >
                {isCredit ? (
-                  <ArrowDownLeft className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                  <ArrowDownLeft className="w-4 h-4 sm:w-5 sm:h-5 text-primary-600" />
                ) : (
-                  <ArrowUpRight className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                  <ArrowUpRight className="w-4 h-4 sm:w-5 sm:h-5 text-secondary-600" />
                )}
             </div>
 
