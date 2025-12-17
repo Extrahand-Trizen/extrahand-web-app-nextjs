@@ -74,7 +74,7 @@ export function PaymentFailed({
             {/* Actions */}
             <div className="space-y-2">
                {error.retryable && onRetry && (
-                  <Button onClick={onRetry} className="w-full">
+                  <Button onClick={onRetry} className="w-full bg-primary-600 hover:bg-primary-700 text-white">
                      <RefreshCcw className="w-4 h-4 mr-2" />
                      Try Again
                   </Button>

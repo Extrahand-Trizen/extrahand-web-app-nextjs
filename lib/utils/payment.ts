@@ -1,124 +1,36 @@
 /**
- * Payment Utilities
- * Helper functions for payment-related operations
+ * Payment Utility Functions
  */
-
-import {
-   EscrowStatus,
-   PaymentStatus,
-   TransactionType,
-   EscrowStatusInfo,
-   PaymentError,
-} from "@/types/payment";
 
 /**
- * Format currency amount in INR
+ * Format amount as Indian Rupees
  */
-export function formatCurrency(
-   amount: number,
-   currency: string = "INR"
-): string {
+export function formatCurrency(amount: number): string {
    return new Intl.NumberFormat("en-IN", {
       style: "currency",
-      currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
+      currency: "INR",
+      maximumFractionDigits: 0,
    }).format(amount);
 }
 
 /**
- * Format amount from paise to rupees
+ * Format date in short format
  */
-export function paiseToRupees(paise: number): number {
-   return paise / 100;
+export function formatShortDate(date: Date | string): string {
+   const d = new Date(date);
+   return d.toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+   });
 }
 
 /**
- * Format amount from rupees to paise
+ * Format date with time
  */
-export function rupeesToPaise(rupees: number): number {
-   return Math.round(rupees * 100);
-}
-
-/**
- * Get escrow status display information
- */
-export function getEscrowStatusInfo(status: EscrowStatus): EscrowStatusInfo {
-   const statusMap: Record<EscrowStatus, EscrowStatusInfo> = {
-      pending: {
-         status: "pending",
-         label: "Pending Payment",
-         description: "Awaiting payment to hold funds in escrow",
-         color: "yellow",
-         icon: "clock",
-      },
-      held: {
-         status: "held",
-         label: "Funds Held",
-         description: "Payment secured in escrow",
-         color: "blue",
-         icon: "lock",
-      },
-      released: {
-         status: "released",
-         label: "Released",
-         description: "Funds released to tasker",
-         color: "green",
-         icon: "check",
-      },
-      refunded: {
-         status: "refunded",
-         label: "Refunded",
-         description: "Funds returned to poster",
-         color: "gray",
-         icon: "refund",
-      },
-      cancelled: {
-         status: "cancelled",
-         label: "Cancelled",
-         description: "Escrow cancelled",
-         color: "red",
-         icon: "x",
-      },
-   };
-
-   return statusMap[status];
-}
-
-/**
- * Get payment status label
- */
-export function getPaymentStatusLabel(status: PaymentStatus): string {
-   const labels: Record<PaymentStatus, string> = {
-      pending: "Pending",
-      processing: "Processing",
-      completed: "Completed",
-      failed: "Failed",
-      cancelled: "Cancelled",
-   };
-   return labels[status];
-}
-
-/**
- * Get transaction type label
- */
-export function getTransactionTypeLabel(type: TransactionType): string {
-   const labels: Record<TransactionType, string> = {
-      escrow: "Escrow Payment",
-      release: "Payment Released",
-      refund: "Refund",
-      payout: "Payout",
-      direct_payment: "Direct Payment",
-   };
-   return labels[type];
-}
-
-/**
- * Format date for display
- */
-export function formatPaymentDate(dateString: string): string {
-   const date = new Date(dateString);
-   return date.toLocaleDateString("en-IN", {
+export function formatDateTime(date: Date | string): string {
+   const d = new Date(date);
+   return d.toLocaleDateString("en-IN", {
       day: "numeric",
       month: "short",
       year: "numeric",
@@ -128,139 +40,60 @@ export function formatPaymentDate(dateString: string): string {
 }
 
 /**
- * Format date for short display
+ * Calculate service fee (percentage-based)
  */
-export function formatShortDate(dateString: string): string {
-   const date = new Date(dateString);
-   return date.toLocaleDateString("en-IN", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-   });
+export function calculateServiceFee(amount: number, percentage: number = 5): number {
+   return Math.round(amount * (percentage / 100));
 }
 
 /**
- * Calculate days until auto-release
+ * Calculate platform fee
  */
-export function getDaysUntilAutoRelease(autoReleaseDate: string): number {
-   const releaseDate = new Date(autoReleaseDate);
-   const now = new Date();
-   const diffTime = releaseDate.getTime() - now.getTime();
-   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-   return Math.max(0, diffDays);
+export function calculatePlatformFee(amount: number): number {
+   // Example: Fixed fee + percentage
+   const fixedFee = 10;
+   const percentageFee = Math.round(amount * 0.02);
+   return fixedFee + percentageFee;
 }
 
 /**
- * Parse Razorpay error to user-friendly message
+ * Calculate total amount including fees
  */
-export function parsePaymentError(error: unknown): PaymentError {
-   // Default error
-   const defaultError: PaymentError = {
-      code: "UNKNOWN_ERROR",
-      message: "An unexpected error occurred",
-      userMessage:
-         "Something went wrong with your payment. Please try again or contact support.",
-      retryable: true,
+export function calculateTotalAmount(taskAmount: number): {
+   taskAmount: number;
+   serviceFee: number;
+   platformFee: number;
+   totalAmount: number;
+} {
+   const serviceFee = calculateServiceFee(taskAmount);
+   const platformFee = calculatePlatformFee(taskAmount);
+   return {
+      taskAmount,
+      serviceFee,
+      platformFee,
+      totalAmount: taskAmount + serviceFee + platformFee,
    };
-
-   if (!error) return defaultError;
-
-   // Handle Razorpay specific errors
-   if (typeof error === "object" && error !== null) {
-      const err = error as Record<string, unknown>;
-      const errError = err.error as Record<string, unknown> | undefined;
-
-      const code =
-         (err.code as string) || (errError?.code as string) || "UNKNOWN_ERROR";
-      const message =
-         (err.message as string) ||
-         (errError?.description as string) ||
-         defaultError.message;
-
-      const errorMap: Record<
-         string,
-         { userMessage: string; retryable: boolean }
-      > = {
-         BAD_REQUEST_ERROR: {
-            userMessage:
-               "There was an issue with the payment request. Please try again.",
-            retryable: true,
-         },
-         GATEWAY_ERROR: {
-            userMessage:
-               "Payment gateway is temporarily unavailable. Please try again in a few minutes.",
-            retryable: true,
-         },
-         SERVER_ERROR: {
-            userMessage: "Our servers encountered an issue. Please try again.",
-            retryable: true,
-         },
-         PAYMENT_FAILED: {
-            userMessage:
-               "Your payment could not be processed. Please check your payment details and try again.",
-            retryable: true,
-         },
-         PAYMENT_CANCELLED: {
-            userMessage: "Payment was cancelled. No amount has been charged.",
-            retryable: true,
-         },
-         INSUFFICIENT_FUNDS: {
-            userMessage:
-               "Insufficient funds in your account. Please use a different payment method.",
-            retryable: true,
-         },
-         CARD_DECLINED: {
-            userMessage:
-               "Your card was declined. Please try a different card or payment method.",
-            retryable: true,
-         },
-      };
-
-      const errorInfo = errorMap[code] || {
-         userMessage: defaultError.userMessage,
-         retryable: true,
-      };
-
-      return {
-         code,
-         message,
-         ...errorInfo,
-      };
-   }
-
-   return defaultError;
 }
 
 /**
- * Generate a transaction reference ID for display
+ * Mask card number
  */
-export function formatTransactionId(transactionId: string): string {
-   if (!transactionId) return "-";
-   // Show first 4 and last 4 characters
-   if (transactionId.length <= 12) return transactionId;
-   return `${transactionId.slice(0, 4)}...${transactionId.slice(-4)}`;
+export function maskCardNumber(cardNumber: string): string {
+   if (cardNumber.length < 4) return cardNumber;
+   return `•••• •••• •••• ${cardNumber.slice(-4)}`;
 }
 
 /**
- * Calculate platform fee (example: 10%)
+ * Get card brand from number
  */
-export function calculatePlatformFee(
-   amount: number,
-   feePercentage: number = 10
-): number {
-   return Math.round((amount * feePercentage) / 100);
-}
-
-/**
- * Check if escrow can be released
- */
-export function canReleaseEscrow(status: EscrowStatus): boolean {
-   return status === "held";
-}
-
-/**
- * Check if escrow can be refunded
- */
-export function canRefundEscrow(status: EscrowStatus): boolean {
-   return status === "held";
+export function getCardBrand(cardNumber: string): string {
+   const firstDigit = cardNumber.charAt(0);
+   const firstTwo = cardNumber.substring(0, 2);
+   
+   if (firstDigit === "4") return "visa";
+   if (["51", "52", "53", "54", "55"].includes(firstTwo)) return "mastercard";
+   if (firstTwo === "60" || firstTwo === "65") return "rupay";
+   if (["34", "37"].includes(firstTwo)) return "amex";
+   
+   return "unknown";
 }

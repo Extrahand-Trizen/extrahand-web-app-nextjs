@@ -18,6 +18,7 @@ import {
    Bell,
    Lock,
    ChevronRight,
+   MapPin,
 } from "lucide-react";
 import { ProfileSection } from "@/types/profile";
 
@@ -70,6 +71,12 @@ const navItems: ProfileNavItem[] = [
       label: "Payments",
       icon: <CreditCard className="w-5 h-5" />,
       description: "Cards & payouts",
+   },
+   {
+      id: "addresses",
+      label: "Addresses",
+      icon: <MapPin className="w-5 h-5" />,
+      description: "Saved locations",
    },
    {
       id: "notifications",
@@ -135,7 +142,7 @@ export function ProfileSidebar({
                      </p>
                   </div>
                   {activeSection === item.id && (
-                     <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                     <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
                   )}
                </button>
             ))}
@@ -188,7 +195,7 @@ export function ProfileNavList({ onSectionChange }: ProfileNavListProps) {
                onClick={() => onSectionChange(item.id)}
                className="w-full flex items-center gap-4 px-4 py-4 hover:bg-gray-50 transition-colors"
             >
-               <span className="text-gray-400 flex-shrink-0">{item.icon}</span>
+               <span className="text-gray-400 shrink-0">{item.icon}</span>
                <div className="flex-1 text-left">
                   <p className="text-sm font-medium text-gray-900">
                      {item.label}
@@ -199,7 +206,7 @@ export function ProfileNavList({ onSectionChange }: ProfileNavListProps) {
                      </p>
                   )}
                </div>
-               <ChevronRight className="w-5 h-5 text-gray-300 flex-shrink-0" />
+               <ChevronRight className="w-5 h-5 text-gray-300 shrink-0" />
             </button>
          ))}
       </div>

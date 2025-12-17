@@ -17,6 +17,8 @@ import {
    Shield,
    ChevronRight,
    ExternalLink,
+   FileText,
+   Briefcase,
 } from "lucide-react";
 import { UserProfile } from "@/types/user";
 import { VerificationStatus } from "@/types/profile";
@@ -45,18 +47,25 @@ export function VerificationSection({
 }: VerificationSectionProps) {
    const router = useRouter();
 
-   const verifications: VerificationItem[] = [
+   // Base verifications for all users
+   const baseVerifications: VerificationItem[] = [
       {
          id: "phone",
          type: "phone",
          label: "Phone Number",
-         description: user.phone
-            ? `+91 ${maskPhone(user.phone)}`
+         description: user.isPhoneVerified
+            ? `+91 ${maskPhone(user.phone || "")}`
+            : user.phone
+            ? "Verification pending"
             : "Not provided",
          icon: <Phone className="w-4 h-4 sm:w-5 sm:h-5" />,
-         status: user.phone ? "verified" : "not_started",
+         status: user.isPhoneVerified ? "verified" : "not_started",
+         verifiedAt: user.phoneVerifiedAt
+            ? new Date(user.phoneVerifiedAt)
+            : undefined,
          whyItMatters: "Required for task communications and account recovery",
-         action: user.phone ? undefined : "Add Phone Number",
+         action: user.isPhoneVerified ? undefined : "Verify Phone",
+         route: "/profile/verify/phone",
       },
       {
          id: "email",
@@ -111,6 +120,28 @@ export function VerificationSection({
          route: "/profile/verify/bank",
       },
    ];
+
+   // PAN verification for business accounts
+   const panVerification: VerificationItem = {
+      id: "pan",
+      type: "pan",
+      label: "PAN Verification",
+      description: user.isPanVerified
+         ? user.maskedPan || "PAN verified"
+         : "Required for business accounts",
+      icon: <FileText className="w-4 h-4 sm:w-5 sm:h-5" />,
+      status: user.isPanVerified ? "verified" : "not_started",
+      verifiedAt: user.panVerifiedAt ? new Date(user.panVerifiedAt) : undefined,
+      whyItMatters: "Required for tax compliance and business transactions",
+      action: user.isPanVerified ? undefined : "Verify PAN",
+      route: "/profile/verify/pan",
+   };
+
+   // Include PAN verification only for business accounts
+   const verifications: VerificationItem[] =
+      user.userType === "business"
+         ? [...baseVerifications, panVerification]
+         : baseVerifications;
 
    const verifiedCount = verifications.filter(
       (v) => v.status === "verified"

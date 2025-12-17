@@ -1,7 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
+/**
+ * Payments Section
+ * Manage payment methods, payouts, and transaction history
+ */
+
+import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,59 +17,89 @@ import {
    Plus,
    Trash2,
    CheckCircle2,
-   AlertCircle,
    ArrowUpRight,
    ArrowDownLeft,
    Clock,
-   Shield,
-   ExternalLink,
-   Loader2,
+   TrendingUp,
+   Wallet,
+   Download,
 } from "lucide-react";
 import { PaymentMethod, PayoutMethod, Transaction } from "@/types/profile";
-import { EscrowWithDetails } from "@/types/payment";
-import { EscrowStatusBadge } from "@/components/payments";
-import { formatCurrency, getDaysUntilAutoRelease } from "@/lib/utils/payment";
-import { getActiveEscrows } from "@/lib/services/payment";
+import {
+   mockPaymentMethods,
+   mockPayoutMethods,
+   mockTransactions,
+} from "@/lib/data/payments";
 
 interface PaymentsSectionProps {
-   paymentMethods: PaymentMethod[];
-   payoutMethods: PayoutMethod[];
-   transactions: Transaction[];
+   paymentMethods?: PaymentMethod[];
+   payoutMethods?: PayoutMethod[];
+   transactions?: Transaction[];
    userId?: string;
-   onAddPaymentMethod: () => void;
-   onAddPayoutMethod: () => void;
-   onRemovePaymentMethod: (id: string) => void;
-   onRemovePayoutMethod: (id: string) => void;
-   onSetDefaultPayment: (id: string) => void;
-   onSetDefaultPayout: (id: string) => void;
+   onRemovePaymentMethod?: (id: string) => void;
+   onRemovePayoutMethod?: (id: string) => void;
+   onSetDefaultPayment?: (id: string) => void;
+   onSetDefaultPayout?: (id: string) => void;
+   onSavePaymentMethod?: (data: Partial<PaymentMethod>) => void;
+   onSavePayoutMethod?: (data: Partial<PayoutMethod>) => void;
 }
 
 export function PaymentsSection({
-   paymentMethods = [],
-   payoutMethods = [],
-   transactions = [],
+   paymentMethods = mockPaymentMethods,
+   payoutMethods = mockPayoutMethods,
+   transactions = mockTransactions,
    userId,
-   onAddPaymentMethod,
-   onAddPayoutMethod,
    onRemovePaymentMethod,
    onRemovePayoutMethod,
    onSetDefaultPayment,
    onSetDefaultPayout,
+   onSavePaymentMethod,
+   onSavePayoutMethod,
 }: PaymentsSectionProps) {
-   const [activeTab, setActiveTab] = useState("payment");
-   const [activeEscrows, setActiveEscrows] = useState<EscrowWithDetails[]>([]);
-   const [escrowsLoading, setEscrowsLoading] = useState(false);
+   const [activeTab, setActiveTab] = useState("methods");
+   const [transactionFilter, setTransactionFilter] = useState<
+      "all" | "outgoing" | "earnings"
+   >("all");
 
-   // Fetch active escrows when escrow tab is selected
-   useEffect(() => {
-      if (activeTab === "escrow" && userId) {
-         setEscrowsLoading(true);
-         getActiveEscrows(userId)
-            .then(setActiveEscrows)
-            .catch(console.error)
-            .finally(() => setEscrowsLoading(false));
+   // Internal modal state
+   const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false);
+   const [showPayoutMethodModal, setShowPayoutMethodModal] = useState(false);
+
+   // Internal handlers
+   const handleSavePaymentMethod = (data: Partial<PaymentMethod>) => {
+      if (onSavePaymentMethod) {
+         onSavePaymentMethod(data);
+      } else {
+         console.log("Payment method saved:", data);
       }
-   }, [activeTab, userId]);
+      setShowPaymentMethodModal(false);
+   };
+
+   const handleSavePayoutMethod = (data: Partial<PayoutMethod>) => {
+      if (onSavePayoutMethod) {
+         onSavePayoutMethod(data);
+      } else {
+         console.log("Payout method saved:", data);
+      }
+      setShowPayoutMethodModal(false);
+   };
+
+   // Calculate totals
+   const totalEarnings = transactions
+      .filter((t) => t.type === "payout" && t.status === "completed")
+      .reduce((sum, t) => sum + t.amount, 0);
+
+   const totalOutgoing = transactions
+      .filter((t) => t.type === "payment" && t.status === "completed")
+      .reduce((sum, t) => sum + t.amount, 0);
+
+   // Filter transactions based on selected filter
+   const filteredTransactions = transactions.filter((t) => {
+      if (transactionFilter === "outgoing") return t.type === "payment";
+      if (transactionFilter === "earnings")
+         return t.type === "payout" || t.type === "refund";
+      return true;
+   });
 
    return (
       <div className="max-w-4xl space-y-4 sm:space-y-6">
@@ -80,24 +114,47 @@ export function PaymentsSection({
             </p>
          </div>
 
+         {/* Quick Stats */}
+         <div className="grid grid-cols-2 gap-3">
+            <div className="bg-green-50 rounded-lg p-3 sm:p-4 border border-green-100">
+               <div className="flex items-center gap-2 mb-1">
+                  <TrendingUp className="w-4 h-4 text-green-600" />
+                  <span className="text-xs text-green-700 font-medium">
+                     Total Earnings
+                  </span>
+               </div>
+               <p className="text-lg sm:text-xl font-bold text-green-700">
+                  ₹{totalEarnings.toLocaleString()}
+               </p>
+            </div>
+            <div className="bg-blue-50 rounded-lg p-3 sm:p-4 border border-blue-100">
+               <div className="flex items-center gap-2 mb-1">
+                  <Wallet className="w-4 h-4 text-blue-600" />
+                  <span className="text-xs text-blue-700 font-medium">
+                     Total Spent
+                  </span>
+               </div>
+               <p className="text-lg sm:text-xl font-bold text-blue-700">
+                  ₹{totalOutgoing.toLocaleString()}
+               </p>
+            </div>
+         </div>
+
          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4 bg-gray-100">
-               <TabsTrigger value="payment" className="text-xs sm:text-sm">
-                  Methods
+            <TabsList className="grid w-full grid-cols-3 bg-gray-100">
+               <TabsTrigger value="methods" className="text-xs sm:text-sm">
+                  Payment Methods
                </TabsTrigger>
-               <TabsTrigger value="payout" className="text-xs sm:text-sm">
+               <TabsTrigger value="payouts" className="text-xs sm:text-sm">
                   Payouts
                </TabsTrigger>
-               <TabsTrigger value="escrow" className="text-xs sm:text-sm">
-                  Escrow
-               </TabsTrigger>
-               <TabsTrigger value="history" className="text-xs sm:text-sm">
-                  History
+               <TabsTrigger value="transactions" className="text-xs sm:text-sm">
+                  Transactions
                </TabsTrigger>
             </TabsList>
 
             {/* Payment Methods Tab */}
-            <TabsContent value="payment" className="space-y-4 mt-4">
+            <TabsContent value="methods" className="space-y-4 mt-4">
                <div className="bg-white rounded-lg border border-gray-200">
                   {paymentMethods.length > 0 ? (
                      <div className="divide-y divide-gray-100">
@@ -119,9 +176,9 @@ export function PaymentsSection({
                            No payment methods added yet
                         </p>
                         <Button
-                           onClick={onAddPaymentMethod}
+                           onClick={() => setShowPaymentMethodModal(true)}
                            size="sm"
-                           className="text-xs h-8 px-3 bg-primary-700"
+                           className="text-xs h-8 px-3 bg-primary-600 hover:bg-primary-700"
                         >
                            <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                            Add Payment Method
@@ -133,9 +190,9 @@ export function PaymentsSection({
                {paymentMethods.length > 0 && (
                   <Button
                      variant="outline"
-                     onClick={onAddPaymentMethod}
+                     onClick={() => setShowPaymentMethodModal(true)}
                      size="sm"
-                     className="w-full sm:w-auto text-xs h-9 bg-primary-700"
+                     className="w-full sm:w-auto text-xs h-9"
                   >
                      <Plus className="w-4 h-4 mr-2" />
                      Add Payment Method
@@ -151,7 +208,7 @@ export function PaymentsSection({
             </TabsContent>
 
             {/* Payout Methods Tab */}
-            <TabsContent value="payout" className="space-y-4 mt-4">
+            <TabsContent value="payouts" className="space-y-4 mt-4">
                <div className="bg-white rounded-lg border border-gray-200">
                   {payoutMethods.length > 0 ? (
                      <div className="divide-y divide-gray-100">
@@ -175,9 +232,9 @@ export function PaymentsSection({
                            completed tasks
                         </p>
                         <Button
-                           onClick={onAddPayoutMethod}
+                           onClick={() => setShowPayoutMethodModal(true)}
                            size="sm"
-                           className="text-xs h-8 px-3 bg-primary-700"
+                           className="text-xs h-8 px-3 bg-primary-600 hover:bg-primary-700"
                         >
                            <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                            Add Payout Method
@@ -189,7 +246,7 @@ export function PaymentsSection({
                {payoutMethods.length > 0 && (
                   <Button
                      variant="outline"
-                     onClick={onAddPayoutMethod}
+                     onClick={() => setShowPayoutMethodModal(true)}
                      size="sm"
                      className="w-full sm:w-auto text-xs h-9"
                   >
@@ -210,12 +267,59 @@ export function PaymentsSection({
                </div>
             </TabsContent>
 
-            {/* Transaction History Tab */}
-            <TabsContent value="history" className="space-y-4 mt-4">
+            {/* Transactions Tab */}
+            <TabsContent value="transactions" className="space-y-4 mt-4">
+               {/* Sub-filters for transactions */}
+               <div className="flex items-center gap-2">
+                  <button
+                     onClick={() => setTransactionFilter("all")}
+                     className={cn(
+                        "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
+                        transactionFilter === "all"
+                           ? "bg-gray-900 text-white"
+                           : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                     )}
+                  >
+                     All
+                  </button>
+                  <button
+                     onClick={() => setTransactionFilter("outgoing")}
+                     className={cn(
+                        "px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1",
+                        transactionFilter === "outgoing"
+                           ? "bg-blue-600 text-white"
+                           : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                     )}
+                  >
+                     <ArrowUpRight className="w-3 h-3" />
+                     Outgoing
+                  </button>
+                  <button
+                     onClick={() => setTransactionFilter("earnings")}
+                     className={cn(
+                        "px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1",
+                        transactionFilter === "earnings"
+                           ? "bg-green-600 text-white"
+                           : "bg-green-50 text-green-700 hover:bg-green-100"
+                     )}
+                  >
+                     <ArrowDownLeft className="w-3 h-3" />
+                     Earnings
+                  </button>
+                  <Button
+                     variant="ghost"
+                     size="sm"
+                     className="ml-auto h-8 px-2"
+                  >
+                     <Download className="w-4 h-4" />
+                  </Button>
+               </div>
+
+               {/* Transactions List */}
                <div className="bg-white rounded-lg border border-gray-200">
-                  {transactions.length > 0 ? (
+                  {filteredTransactions.length > 0 ? (
                      <div className="divide-y divide-gray-100">
-                        {transactions.map((transaction) => (
+                        {filteredTransactions.map((transaction) => (
                            <TransactionRow
                               key={transaction.id}
                               transaction={transaction}
@@ -229,80 +333,34 @@ export function PaymentsSection({
                            No transactions yet
                         </p>
                         <p className="text-[10px] sm:text-xs text-gray-400 mt-1">
-                           Your payment and payout history will appear here
+                           Your payment and earning history will appear here
                         </p>
                      </div>
                   )}
                </div>
-
-               {/* View All Link */}
-               <Link
-                  href="/profile/payments"
-                  className="inline-flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-700 font-medium"
-               >
-                  View all transactions & escrows
-                  <ExternalLink className="w-3 h-3" />
-               </Link>
-            </TabsContent>
-
-            {/* Escrow Tab */}
-            <TabsContent value="escrow" className="space-y-4 mt-4">
-               <div className="bg-white rounded-lg border border-gray-200">
-                  {escrowsLoading ? (
-                     <div className="px-4 py-8 text-center">
-                        <Loader2 className="w-6 h-6 text-gray-400 mx-auto animate-spin" />
-                        <p className="text-xs text-gray-500 mt-2">
-                           Loading escrows...
-                        </p>
-                     </div>
-                  ) : activeEscrows.length > 0 ? (
-                     <div className="divide-y divide-gray-100">
-                        {activeEscrows.map((escrow) => (
-                           <EscrowRow key={escrow._id} escrow={escrow} />
-                        ))}
-                     </div>
-                  ) : (
-                     <div className="px-4 py-6 sm:px-5 sm:py-8 text-center">
-                        <Shield className="w-8 h-8 sm:w-10 sm:h-10 text-gray-300 mx-auto mb-3" />
-                        <p className="text-xs sm:text-sm text-gray-500">
-                           No active escrows
-                        </p>
-                        <p className="text-[10px] sm:text-xs text-gray-400 mt-1">
-                           Payment protection for your tasks will appear here
-                        </p>
-                     </div>
-                  )}
-               </div>
-
-               {/* Info Box */}
-               <div className="bg-primary-50 rounded-lg p-3 sm:p-4">
-                  <div className="flex gap-2">
-                     <Shield className="w-4 h-4 text-primary-600 shrink-0 mt-0.5" />
-                     <div>
-                        <p className="text-xs sm:text-sm font-medium text-primary-900">
-                           Escrow Protection
-                        </p>
-                        <p className="text-[10px] sm:text-xs text-primary-700 mt-0.5">
-                           Funds are securely held until tasks are completed.
-                           Auto-release occurs after 7 days if not disputed.
-                        </p>
-                     </div>
-                  </div>
-               </div>
-
-               {/* View All Link */}
-               <Link
-                  href="/profile/payments"
-                  className="inline-flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-700 font-medium"
-               >
-                  View detailed transactions & history
-                  <ExternalLink className="w-3 h-3" />
-               </Link>
             </TabsContent>
          </Tabs>
+
+         {/* Payment Method Form Modal */}
+         <PaymentMethodForm
+            isOpen={showPaymentMethodModal}
+            onClose={() => setShowPaymentMethodModal(false)}
+            onSave={handleSavePaymentMethod}
+         />
+
+         {/* Payout Method Form Modal */}
+         <PayoutMethodForm
+            isOpen={showPayoutMethodModal}
+            onClose={() => setShowPayoutMethodModal(false)}
+            onSave={handleSavePayoutMethod}
+         />
       </div>
    );
 }
+
+// ============================================================================
+// SUB-COMPONENTS
+// ============================================================================
 
 interface PaymentMethodRowProps {
    method: PaymentMethod;
@@ -341,7 +399,7 @@ function PaymentMethodRow({
                   {method.isDefault && (
                      <Badge
                         variant="secondary"
-                        className="text-[10px] sm:text-xs bg-blue-100 text-blue-700 shrink-0"
+                        className="text-[10px] bg-primary-100 text-primary-700"
                      >
                         Default
                      </Badge>
@@ -351,24 +409,25 @@ function PaymentMethodRow({
                   method.expiryMonth &&
                   method.expiryYear && (
                      <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">
-                        Expires {method.expiryMonth}/{method.expiryYear}
+                        Expires {String(method.expiryMonth).padStart(2, "0")}/
+                        {method.expiryYear}
                      </p>
                   )}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                {!method.isDefault && (
                   <Button
                      variant="ghost"
                      size="sm"
                      onClick={onSetDefault}
-                     className="text-xs h-8 px-2 sm:px-3 hidden sm:flex"
+                     className="text-xs h-8 px-2 text-gray-600 hover:text-primary-600"
                   >
-                     Set Default
+                     Set default
                   </Button>
                )}
                {showConfirm ? (
-                  <div className="flex items-center gap-1 sm:gap-2">
+                  <div className="flex items-center gap-1">
                      <Button
                         variant="destructive"
                         size="sm"
@@ -431,38 +490,24 @@ function PayoutMethodRow({
             </div>
 
             <div className="flex-1 min-w-0">
-               <div className="flex items-center gap-2 flex-wrap">
+               <div className="flex items-center gap-2">
                   <span className="text-xs sm:text-sm font-medium text-gray-900 truncate">
                      {method.type === "bank" &&
-                        `${method.bankName} •••• ${method.accountNumber?.slice(
-                           -4
-                        )}`}
+                        `${method.bankName} •••• ${
+                           method.accountNumber?.slice(-4) || "****"
+                        }`}
                      {method.type === "upi" && method.upiId}
                   </span>
                   {method.isDefault && (
                      <Badge
                         variant="secondary"
-                        className="text-[10px] sm:text-xs bg-blue-100 text-blue-700 shrink-0"
+                        className="text-[10px] bg-primary-100 text-primary-700"
                      >
                         Default
                      </Badge>
                   )}
-                  {method.isVerified ? (
-                     <Badge
-                        variant="secondary"
-                        className="text-[10px] sm:text-xs bg-green-100 text-green-700 shrink-0"
-                     >
-                        <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1" />
-                        Verified
-                     </Badge>
-                  ) : (
-                     <Badge
-                        variant="secondary"
-                        className="text-[10px] sm:text-xs bg-amber-100 text-amber-700 shrink-0"
-                     >
-                        <AlertCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1" />
-                        Pending
-                     </Badge>
+                  {method.isVerified && (
+                     <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
                   )}
                </div>
                {method.type === "bank" && method.accountHolderName && (
@@ -472,19 +517,19 @@ function PayoutMethodRow({
                )}
             </div>
 
-            <div className="flex items-center gap-2">
-               {!method.isDefault && method.isVerified && (
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+               {!method.isDefault && (
                   <Button
                      variant="ghost"
                      size="sm"
                      onClick={onSetDefault}
-                     className="text-xs h-8 px-2 sm:px-3 hidden sm:flex"
+                     className="text-xs h-8 px-2 text-gray-600 hover:text-primary-600"
                   >
-                     Set Default
+                     Set default
                   </Button>
                )}
                {showConfirm ? (
-                  <div className="flex items-center gap-1 sm:gap-2">
+                  <div className="flex items-center gap-1">
                      <Button
                         variant="destructive"
                         size="sm"
@@ -530,18 +575,18 @@ function TransactionRow({ transaction }: TransactionRowProps) {
       transaction.type === "payout" || transaction.type === "refund";
 
    return (
-      <div className="px-4 py-3 sm:px-5 sm:py-4">
+      <div className="px-4 py-3 sm:px-5 sm:py-4 hover:bg-gray-50 transition-colors">
          <div className="flex items-center gap-3 sm:gap-4">
             <div
                className={cn(
                   "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0",
-                  isCredit ? "bg-green-100" : "bg-gray-100"
+                  isCredit ? "bg-green-100" : "bg-blue-100"
                )}
             >
                {isCredit ? (
                   <ArrowDownLeft className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
                ) : (
-                  <ArrowUpRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                  <ArrowUpRight className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                )}
             </div>
 
@@ -603,48 +648,747 @@ function formatDate(date: Date | string): string {
    });
 }
 
-// Escrow row component for the escrow tab
-interface EscrowRowProps {
-   escrow: EscrowWithDetails;
+// ============================================================================
+// FORM COMPONENTS
+// ============================================================================
+
+interface PaymentMethodFormProps {
+   isOpen: boolean;
+   onClose: () => void;
+   onSave: (data: Partial<PaymentMethod>) => void;
 }
 
-function EscrowRow({ escrow }: EscrowRowProps) {
-   const daysUntilRelease = getDaysUntilAutoRelease(escrow.autoReleaseDate);
+export function PaymentMethodForm({
+   isOpen,
+   onClose,
+   onSave,
+}: PaymentMethodFormProps) {
+   const [methodType, setMethodType] = useState<"card" | "upi">("card");
+   const [formData, setFormData] = useState({
+      cardNumber: "",
+      cardHolder: "",
+      expiryMonth: "",
+      expiryYear: "",
+      cvv: "",
+      upiId: "",
+   });
+   const [errors, setErrors] = useState<Record<string, string>>({});
+
+   if (!isOpen) return null;
+
+   const handleSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      const newErrors: Record<string, string> = {};
+
+      if (methodType === "card") {
+         if (!formData.cardNumber || formData.cardNumber.length < 16) {
+            newErrors.cardNumber = "Enter a valid card number";
+         }
+         if (!formData.cardHolder) {
+            newErrors.cardHolder = "Cardholder name is required";
+         }
+         if (!formData.expiryMonth || !formData.expiryYear) {
+            newErrors.expiry = "Expiry date is required";
+         }
+         if (!formData.cvv || formData.cvv.length < 3) {
+            newErrors.cvv = "Enter a valid CVV";
+         }
+      } else {
+         if (!formData.upiId || !formData.upiId.includes("@")) {
+            newErrors.upiId = "Enter a valid UPI ID";
+         }
+      }
+
+      if (Object.keys(newErrors).length > 0) {
+         setErrors(newErrors);
+         return;
+      }
+
+      if (methodType === "card") {
+         const cardNum = formData.cardNumber.replace(/\s/g, "");
+         let cardBrand: "visa" | "mastercard" | "rupay" | "amex" = "visa";
+         if (cardNum.startsWith("5")) cardBrand = "mastercard";
+         else if (cardNum.startsWith("6")) cardBrand = "rupay";
+         else if (cardNum.startsWith("3")) cardBrand = "amex";
+
+         onSave({
+            type: "card",
+            cardBrand,
+            lastFour: cardNum.slice(-4),
+            expiryMonth: parseInt(formData.expiryMonth),
+            expiryYear: parseInt(formData.expiryYear),
+            cardHolderName: formData.cardHolder.toUpperCase(),
+         });
+      } else {
+         onSave({
+            type: "upi",
+            upiId: formData.upiId,
+         });
+      }
+
+      // Reset form
+      setFormData({
+         cardNumber: "",
+         cardHolder: "",
+         expiryMonth: "",
+         expiryYear: "",
+         cvv: "",
+         upiId: "",
+      });
+      setErrors({});
+   };
+
+   const formatCardNumber = (value: string) => {
+      const v = value.replace(/\D/g, "").slice(0, 16);
+      const parts = [];
+      for (let i = 0; i < v.length; i += 4) {
+         parts.push(v.slice(i, i + 4));
+      }
+      return parts.join(" ");
+   };
 
    return (
-      <Link
-         href={`/tasks/${escrow.taskId}`}
-         className="block px-4 py-3 sm:px-5 sm:py-4 hover:bg-gray-50 transition-colors"
-      >
-         <div className="flex items-center gap-3 sm:gap-4">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-               <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+         <div className="bg-white rounded-xl w-full max-w-md shadow-xl">
+            {/* Header */}
+            <div className="border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+               <h3 className="text-base font-semibold text-gray-900">
+                  Add Payment Method
+               </h3>
+               <button
+                  onClick={onClose}
+                  className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+               >
+                  <svg
+                     className="w-5 h-5 text-gray-500"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor"
+                  >
+                     <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                     />
+                  </svg>
+               </button>
             </div>
 
-            <div className="flex-1 min-w-0">
-               <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">
-                  {escrow.taskTitle || `Task #${escrow.taskId}`}
-               </p>
-               <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">
-                  {escrow.performerName
-                     ? `Tasker: ${escrow.performerName}`
-                     : "Awaiting assignment"}
-                  {daysUntilRelease !== null && escrow.status === "held" && (
-                     <span className="ml-2 text-blue-600">
-                        • Auto-release in {daysUntilRelease} day
-                        {daysUntilRelease !== 1 ? "s" : ""}
-                     </span>
-                  )}
-               </p>
-            </div>
+            <form onSubmit={handleSubmit} className="p-4 space-y-4">
+               {/* Method Type Toggle */}
+               <div className="flex gap-2">
+                  <button
+                     type="button"
+                     onClick={() => setMethodType("card")}
+                     className={cn(
+                        "flex-1 py-2.5 px-4 rounded-lg text-sm font-medium border transition-colors flex items-center justify-center gap-2",
+                        methodType === "card"
+                           ? "border-primary-500 bg-primary-50 text-primary-700"
+                           : "border-gray-200 text-gray-600 hover:border-gray-300"
+                     )}
+                  >
+                     <CreditCard className="w-4 h-4" />
+                     Card
+                  </button>
+                  <button
+                     type="button"
+                     onClick={() => setMethodType("upi")}
+                     className={cn(
+                        "flex-1 py-2.5 px-4 rounded-lg text-sm font-medium border transition-colors flex items-center justify-center gap-2",
+                        methodType === "upi"
+                           ? "border-primary-500 bg-primary-50 text-primary-700"
+                           : "border-gray-200 text-gray-600 hover:border-gray-300"
+                     )}
+                  >
+                     <Smartphone className="w-4 h-4" />
+                     UPI
+                  </button>
+               </div>
 
-            <div className="text-right shrink-0">
-               <p className="text-xs sm:text-sm font-semibold text-gray-900">
-                  {formatCurrency(escrow.amountInRupees)}
-               </p>
-               <EscrowStatusBadge status={escrow.status} size="sm" />
-            </div>
+               {methodType === "card" ? (
+                  <>
+                     {/* Card Number */}
+                     <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                           Card Number
+                        </label>
+                        <input
+                           type="text"
+                           value={formData.cardNumber}
+                           onChange={(e) =>
+                              setFormData({
+                                 ...formData,
+                                 cardNumber: formatCardNumber(e.target.value),
+                              })
+                           }
+                           placeholder="1234 5678 9012 3456"
+                           className={cn(
+                              "w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500",
+                              errors.cardNumber
+                                 ? "border-red-300"
+                                 : "border-gray-300"
+                           )}
+                        />
+                        {errors.cardNumber && (
+                           <p className="text-xs text-red-500 mt-1">
+                              {errors.cardNumber}
+                           </p>
+                        )}
+                     </div>
+
+                     {/* Cardholder Name */}
+                     <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                           Cardholder Name
+                        </label>
+                        <input
+                           type="text"
+                           value={formData.cardHolder}
+                           onChange={(e) =>
+                              setFormData({
+                                 ...formData,
+                                 cardHolder: e.target.value,
+                              })
+                           }
+                           placeholder="Name on card"
+                           className={cn(
+                              "w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500",
+                              errors.cardHolder
+                                 ? "border-red-300"
+                                 : "border-gray-300"
+                           )}
+                        />
+                        {errors.cardHolder && (
+                           <p className="text-xs text-red-500 mt-1">
+                              {errors.cardHolder}
+                           </p>
+                        )}
+                     </div>
+
+                     {/* Expiry & CVV */}
+                     <div className="grid grid-cols-3 gap-3">
+                        <div>
+                           <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                              Month
+                           </label>
+                           <select
+                              value={formData.expiryMonth}
+                              onChange={(e) =>
+                                 setFormData({
+                                    ...formData,
+                                    expiryMonth: e.target.value,
+                                 })
+                              }
+                              className={cn(
+                                 "w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500",
+                                 errors.expiry
+                                    ? "border-red-300"
+                                    : "border-gray-300"
+                              )}
+                           >
+                              <option value="">MM</option>
+                              {Array.from({ length: 12 }, (_, i) => (
+                                 <option
+                                    key={i + 1}
+                                    value={String(i + 1).padStart(2, "0")}
+                                 >
+                                    {String(i + 1).padStart(2, "0")}
+                                 </option>
+                              ))}
+                           </select>
+                        </div>
+                        <div>
+                           <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                              Year
+                           </label>
+                           <select
+                              value={formData.expiryYear}
+                              onChange={(e) =>
+                                 setFormData({
+                                    ...formData,
+                                    expiryYear: e.target.value,
+                                 })
+                              }
+                              className={cn(
+                                 "w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500",
+                                 errors.expiry
+                                    ? "border-red-300"
+                                    : "border-gray-300"
+                              )}
+                           >
+                              <option value="">YY</option>
+                              {Array.from({ length: 10 }, (_, i) => {
+                                 const year = new Date().getFullYear() + i;
+                                 return (
+                                    <option key={year} value={year}>
+                                       {year}
+                                    </option>
+                                 );
+                              })}
+                           </select>
+                        </div>
+                        <div>
+                           <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                              CVV
+                           </label>
+                           <input
+                              type="password"
+                              value={formData.cvv}
+                              onChange={(e) =>
+                                 setFormData({
+                                    ...formData,
+                                    cvv: e.target.value
+                                       .replace(/\D/g, "")
+                                       .slice(0, 4),
+                                 })
+                              }
+                              placeholder="•••"
+                              maxLength={4}
+                              className={cn(
+                                 "w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500",
+                                 errors.cvv
+                                    ? "border-red-300"
+                                    : "border-gray-300"
+                              )}
+                           />
+                        </div>
+                     </div>
+                     {(errors.expiry || errors.cvv) && (
+                        <p className="text-xs text-red-500">
+                           {errors.expiry || errors.cvv}
+                        </p>
+                     )}
+                  </>
+               ) : (
+                  /* UPI ID */
+                  <div>
+                     <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                        UPI ID
+                     </label>
+                     <input
+                        type="text"
+                        value={formData.upiId}
+                        onChange={(e) =>
+                           setFormData({ ...formData, upiId: e.target.value })
+                        }
+                        placeholder="yourname@upi"
+                        className={cn(
+                           "w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500",
+                           errors.upiId ? "border-red-300" : "border-gray-300"
+                        )}
+                     />
+                     {errors.upiId && (
+                        <p className="text-xs text-red-500 mt-1">
+                           {errors.upiId}
+                        </p>
+                     )}
+                     <p className="text-xs text-gray-500 mt-2">
+                        Enter your UPI ID linked to any UPI app like Google Pay,
+                        PhonePe, Paytm, etc.
+                     </p>
+                  </div>
+               )}
+
+               {/* Security Note */}
+               <div className="bg-gray-50 rounded-lg p-3 flex items-start gap-2">
+                  <svg
+                     className="w-4 h-4 text-gray-500 mt-0.5 shrink-0"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor"
+                  >
+                     <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                     />
+                  </svg>
+                  <p className="text-xs text-gray-600">
+                     Your payment information is encrypted and securely stored.
+                     We comply with PCI DSS standards.
+                  </p>
+               </div>
+
+               {/* Actions */}
+               <div className="flex gap-3 pt-2">
+                  <Button
+                     type="button"
+                     variant="outline"
+                     onClick={onClose}
+                     className="flex-1"
+                  >
+                     Cancel
+                  </Button>
+                  <Button
+                     type="submit"
+                     className="flex-1 bg-primary-600 hover:bg-primary-700"
+                  >
+                     Add {methodType === "card" ? "Card" : "UPI"}
+                  </Button>
+               </div>
+            </form>
          </div>
-      </Link>
+      </div>
+   );
+}
+
+interface PayoutMethodFormProps {
+   isOpen: boolean;
+   onClose: () => void;
+   onSave: (data: Partial<PayoutMethod>) => void;
+}
+
+export function PayoutMethodForm({
+   isOpen,
+   onClose,
+   onSave,
+}: PayoutMethodFormProps) {
+   const [methodType, setMethodType] = useState<"bank" | "upi">("bank");
+   const [formData, setFormData] = useState({
+      accountNumber: "",
+      confirmAccountNumber: "",
+      ifscCode: "",
+      accountHolderName: "",
+      bankName: "",
+      upiId: "",
+   });
+   const [errors, setErrors] = useState<Record<string, string>>({});
+
+   if (!isOpen) return null;
+
+   const handleSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      const newErrors: Record<string, string> = {};
+
+      if (methodType === "bank") {
+         if (!formData.accountNumber || formData.accountNumber.length < 9) {
+            newErrors.accountNumber = "Enter a valid account number";
+         }
+         if (formData.accountNumber !== formData.confirmAccountNumber) {
+            newErrors.confirmAccountNumber = "Account numbers don't match";
+         }
+         if (!formData.ifscCode || formData.ifscCode.length !== 11) {
+            newErrors.ifscCode = "Enter a valid 11-character IFSC code";
+         }
+         if (!formData.accountHolderName) {
+            newErrors.accountHolderName = "Account holder name is required";
+         }
+      } else {
+         if (!formData.upiId || !formData.upiId.includes("@")) {
+            newErrors.upiId = "Enter a valid UPI ID";
+         }
+      }
+
+      if (Object.keys(newErrors).length > 0) {
+         setErrors(newErrors);
+         return;
+      }
+
+      if (methodType === "bank") {
+         onSave({
+            type: "bank",
+            bankName: formData.bankName || "Bank",
+            accountNumber: `XXXX XXXX ${formData.accountNumber.slice(-4)}`,
+            ifscCode: formData.ifscCode.toUpperCase(),
+            accountHolderName: formData.accountHolderName,
+         });
+      } else {
+         onSave({
+            type: "upi",
+            upiId: formData.upiId,
+         });
+      }
+
+      // Reset form
+      setFormData({
+         accountNumber: "",
+         confirmAccountNumber: "",
+         ifscCode: "",
+         accountHolderName: "",
+         bankName: "",
+         upiId: "",
+      });
+      setErrors({});
+   };
+
+   return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+         <div className="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-xl">
+            {/* Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+               <h3 className="text-base font-semibold text-gray-900">
+                  Add Payout Method
+               </h3>
+               <button
+                  onClick={onClose}
+                  className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+               >
+                  <svg
+                     className="w-5 h-5 text-gray-500"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor"
+                  >
+                     <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                     />
+                  </svg>
+               </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-4 space-y-4">
+               {/* Method Type Toggle */}
+               <div className="flex gap-2">
+                  <button
+                     type="button"
+                     onClick={() => setMethodType("bank")}
+                     className={cn(
+                        "flex-1 py-2.5 px-4 rounded-lg text-sm font-medium border transition-colors flex items-center justify-center gap-2",
+                        methodType === "bank"
+                           ? "border-primary-500 bg-primary-50 text-primary-700"
+                           : "border-gray-200 text-gray-600 hover:border-gray-300"
+                     )}
+                  >
+                     <Building2 className="w-4 h-4" />
+                     Bank Account
+                  </button>
+                  <button
+                     type="button"
+                     onClick={() => setMethodType("upi")}
+                     className={cn(
+                        "flex-1 py-2.5 px-4 rounded-lg text-sm font-medium border transition-colors flex items-center justify-center gap-2",
+                        methodType === "upi"
+                           ? "border-primary-500 bg-primary-50 text-primary-700"
+                           : "border-gray-200 text-gray-600 hover:border-gray-300"
+                     )}
+                  >
+                     <Smartphone className="w-4 h-4" />
+                     UPI
+                  </button>
+               </div>
+
+               {methodType === "bank" ? (
+                  <>
+                     {/* Account Holder Name */}
+                     <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                           Account Holder Name *
+                        </label>
+                        <input
+                           type="text"
+                           value={formData.accountHolderName}
+                           onChange={(e) =>
+                              setFormData({
+                                 ...formData,
+                                 accountHolderName: e.target.value,
+                              })
+                           }
+                           placeholder="Name as per bank records"
+                           className={cn(
+                              "w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500",
+                              errors.accountHolderName
+                                 ? "border-red-300"
+                                 : "border-gray-300"
+                           )}
+                        />
+                        {errors.accountHolderName && (
+                           <p className="text-xs text-red-500 mt-1">
+                              {errors.accountHolderName}
+                           </p>
+                        )}
+                     </div>
+
+                     {/* Account Number */}
+                     <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                           Account Number *
+                        </label>
+                        <input
+                           type="text"
+                           value={formData.accountNumber}
+                           onChange={(e) =>
+                              setFormData({
+                                 ...formData,
+                                 accountNumber: e.target.value.replace(
+                                    /\D/g,
+                                    ""
+                                 ),
+                              })
+                           }
+                           placeholder="Enter account number"
+                           className={cn(
+                              "w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500",
+                              errors.accountNumber
+                                 ? "border-red-300"
+                                 : "border-gray-300"
+                           )}
+                        />
+                        {errors.accountNumber && (
+                           <p className="text-xs text-red-500 mt-1">
+                              {errors.accountNumber}
+                           </p>
+                        )}
+                     </div>
+
+                     {/* Confirm Account Number */}
+                     <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                           Confirm Account Number *
+                        </label>
+                        <input
+                           type="text"
+                           value={formData.confirmAccountNumber}
+                           onChange={(e) =>
+                              setFormData({
+                                 ...formData,
+                                 confirmAccountNumber: e.target.value.replace(
+                                    /\D/g,
+                                    ""
+                                 ),
+                              })
+                           }
+                           placeholder="Re-enter account number"
+                           className={cn(
+                              "w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500",
+                              errors.confirmAccountNumber
+                                 ? "border-red-300"
+                                 : "border-gray-300"
+                           )}
+                        />
+                        {errors.confirmAccountNumber && (
+                           <p className="text-xs text-red-500 mt-1">
+                              {errors.confirmAccountNumber}
+                           </p>
+                        )}
+                     </div>
+
+                     {/* IFSC Code */}
+                     <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                           IFSC Code *
+                        </label>
+                        <input
+                           type="text"
+                           value={formData.ifscCode}
+                           onChange={(e) =>
+                              setFormData({
+                                 ...formData,
+                                 ifscCode: e.target.value
+                                    .toUpperCase()
+                                    .slice(0, 11),
+                              })
+                           }
+                           placeholder="e.g., HDFC0001234"
+                           maxLength={11}
+                           className={cn(
+                              "w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 uppercase",
+                              errors.ifscCode
+                                 ? "border-red-300"
+                                 : "border-gray-300"
+                           )}
+                        />
+                        {errors.ifscCode && (
+                           <p className="text-xs text-red-500 mt-1">
+                              {errors.ifscCode}
+                           </p>
+                        )}
+                     </div>
+
+                     {/* Bank Name (Optional) */}
+                     <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                           Bank Name
+                        </label>
+                        <input
+                           type="text"
+                           value={formData.bankName}
+                           onChange={(e) =>
+                              setFormData({
+                                 ...formData,
+                                 bankName: e.target.value,
+                              })
+                           }
+                           placeholder="e.g., HDFC Bank"
+                           className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        />
+                     </div>
+                  </>
+               ) : (
+                  /* UPI ID */
+                  <div>
+                     <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                        UPI ID *
+                     </label>
+                     <input
+                        type="text"
+                        value={formData.upiId}
+                        onChange={(e) =>
+                           setFormData({ ...formData, upiId: e.target.value })
+                        }
+                        placeholder="yourname@upi"
+                        className={cn(
+                           "w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500",
+                           errors.upiId ? "border-red-300" : "border-gray-300"
+                        )}
+                     />
+                     {errors.upiId && (
+                        <p className="text-xs text-red-500 mt-1">
+                           {errors.upiId}
+                        </p>
+                     )}
+                     <p className="text-xs text-gray-500 mt-2">
+                        Payouts will be sent directly to your UPI-linked bank
+                        account.
+                     </p>
+                  </div>
+               )}
+
+               {/* Info Note */}
+               <div className="bg-blue-50 rounded-lg p-3 flex items-start gap-2">
+                  <svg
+                     className="w-4 h-4 text-blue-600 mt-0.5 shrink-0"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor"
+                  >
+                     <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                     />
+                  </svg>
+                  <p className="text-xs text-blue-700">
+                     {methodType === "bank"
+                        ? "Bank account verification may take 1-2 business days. A small test deposit will be made for verification."
+                        : "UPI payouts are instant once verified. Make sure the UPI ID is active and linked to your bank account."}
+                  </p>
+               </div>
+
+               {/* Actions */}
+               <div className="flex gap-3 pt-2">
+                  <Button
+                     type="button"
+                     variant="outline"
+                     onClick={onClose}
+                     className="flex-1"
+                  >
+                     Cancel
+                  </Button>
+                  <Button
+                     type="submit"
+                     className="flex-1 bg-primary-600 hover:bg-primary-700"
+                  >
+                     Add {methodType === "bank" ? "Bank Account" : "UPI"}
+                  </Button>
+               </div>
+            </form>
+         </div>
+      </div>
    );
 }

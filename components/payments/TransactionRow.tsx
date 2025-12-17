@@ -10,18 +10,8 @@ import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-   TransactionWithDetails,
-   TransactionType,
-   PaymentStatus,
-} from "@/types/payment";
-import {
-   formatCurrency,
-   formatPaymentDate,
-   formatTransactionId,
-   getTransactionTypeLabel,
-   getPaymentStatusLabel,
-} from "@/lib/utils/payment";
+import { PaymentTransaction } from "@/types/payment";
+import { formatCurrency, formatShortDate } from "@/lib/utils/payment";
 import {
    ChevronDown,
    ChevronUp,
@@ -36,29 +26,45 @@ import {
 } from "lucide-react";
 
 interface TransactionRowProps {
-   transaction: TransactionWithDetails;
+   transaction: PaymentTransaction;
    currentUserUid: string;
    onViewTask?: (taskId: string) => void;
    className?: string;
 }
 
+type TransactionType = "payment" | "payout" | "refund" | "fee";
+
 const typeIcons: Record<
    TransactionType,
    React.ComponentType<{ className?: string }>
 > = {
-   escrow: ArrowUpRight,
-   release: ArrowDownLeft,
-   refund: RefreshCcw,
+   payment: ArrowUpRight,
    payout: ArrowDownLeft,
-   direct_payment: ArrowUpRight,
+   refund: RefreshCcw,
+   fee: ArrowUpRight,
 };
 
-const statusColors: Record<PaymentStatus, string> = {
+const typeLabels: Record<TransactionType, string> = {
+   payment: "Payment",
+   payout: "Earnings",
+   refund: "Refund",
+   fee: "Fee",
+};
+
+const statusColors: Record<string, string> = {
    pending: "bg-yellow-100 text-yellow-700 border-yellow-200",
    processing: "bg-blue-100 text-blue-700 border-blue-200",
    completed: "bg-green-100 text-green-700 border-green-200",
    failed: "bg-red-100 text-red-700 border-red-200",
    cancelled: "bg-gray-100 text-gray-700 border-gray-200",
+};
+
+const statusLabels: Record<string, string> = {
+   pending: "Pending",
+   processing: "Processing",
+   completed: "Completed",
+   failed: "Failed",
+   cancelled: "Cancelled",
 };
 
 const paymentMethodIcons = {
@@ -77,19 +83,13 @@ export function TransactionRow({
 }: TransactionRowProps) {
    const [isExpanded, setIsExpanded] = useState(false);
 
-   const TypeIcon = typeIcons[transaction.type];
+   const TypeIcon = typeIcons[transaction.type] || ArrowUpRight;
    const isOutgoing =
-      transaction.posterUid === currentUserUid &&
-      (transaction.type === "escrow" || transaction.type === "direct_payment");
-   const isIncoming =
-      transaction.performerUid === currentUserUid &&
-      (transaction.type === "release" || transaction.type === "payout");
-   const isRefund =
-      transaction.type === "refund" && transaction.posterUid === currentUserUid;
+      transaction.type === "payment" || transaction.type === "fee";
+   const isIncoming = transaction.type === "payout";
+   const isRefund = transaction.type === "refund";
 
-   const PaymentMethodIcon = transaction.paymentMethod
-      ? paymentMethodIcons[transaction.paymentMethod]
-      : CreditCard;
+   const PaymentMethodIcon = CreditCard;
 
    return (
       <div
@@ -128,11 +128,10 @@ export function TransactionRow({
                {/* Transaction Info */}
                <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">
-                     {getTransactionTypeLabel(transaction.type)}
+                     {typeLabels[transaction.type] || transaction.type}
                   </p>
                   <p className="text-xs text-gray-500 truncate">
-                     {transaction.taskTitle ||
-                        `Task #${transaction.taskId.slice(-6)}`}
+                     {transaction.taskTitle || transaction.description}
                   </p>
                </div>
             </div>
@@ -153,10 +152,10 @@ export function TransactionRow({
                      )}
                   >
                      {isOutgoing ? "-" : isIncoming || isRefund ? "+" : ""}
-                     {formatCurrency(transaction.amountInRupees)}
+                     {formatCurrency(transaction.amount)}
                   </p>
                   <p className="text-xs text-gray-400">
-                     {formatPaymentDate(transaction.createdAt).split(",")[0]}
+                     {formatShortDate(transaction.createdAt)}
                   </p>
                </div>
                <ChevronDown
@@ -181,7 +180,7 @@ export function TransactionRow({
                            statusColors[transaction.status]
                         )}
                      >
-                        {getPaymentStatusLabel(transaction.status)}
+                        {statusLabels[transaction.status] || transaction.status}
                      </span>
                   </div>
 
@@ -191,29 +190,15 @@ export function TransactionRow({
                         Transaction ID
                      </span>
                      <span className="text-xs text-gray-700 font-mono">
-                        {formatTransactionId(transaction.transactionId)}
+                        {transaction.id}
                      </span>
                   </div>
-
-                  {/* Payment Method */}
-                  {transaction.paymentMethod && (
-                     <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-500">
-                           Payment Method
-                        </span>
-                        <span className="text-xs text-gray-700 flex items-center gap-1">
-                           <PaymentMethodIcon className="w-3.5 h-3.5" />
-                           {transaction.paymentMethod.charAt(0).toUpperCase() +
-                              transaction.paymentMethod.slice(1)}
-                        </span>
-                     </div>
-                  )}
 
                   {/* Date */}
                   <div className="flex items-center justify-between">
                      <span className="text-xs text-gray-500">Date</span>
                      <span className="text-xs text-gray-700">
-                        {formatPaymentDate(transaction.createdAt)}
+                        {formatShortDate(transaction.createdAt)}
                      </span>
                   </div>
 
@@ -222,13 +207,13 @@ export function TransactionRow({
                      <div className="flex items-center justify-between">
                         <span className="text-xs text-gray-500">Completed</span>
                         <span className="text-xs text-gray-700">
-                           {formatPaymentDate(transaction.completedAt)}
+                           {formatShortDate(transaction.completedAt)}
                         </span>
                      </div>
                   )}
 
                   {/* View Task Link */}
-                  {onViewTask && (
+                  {onViewTask && transaction.taskId && (
                      <Button
                         onClick={() => onViewTask(transaction.taskId)}
                         variant="ghost"

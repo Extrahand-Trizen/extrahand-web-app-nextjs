@@ -2,8 +2,8 @@
 
 /**
  * Payment Initiation Screen
- * Full-page or section for initiating escrow payment
- * Shows payment summary, escrow explanation, and checkout button
+ * Full-page or section for initiating payment
+ * Shows payment summary and checkout button
  */
 
 import React, { useState } from "react";
@@ -52,7 +52,7 @@ export function PaymentInitiation({
    const loading = isLoading || isPaying;
 
    return (
-      <div className={cn("max-w-md mx-auto", className)}>
+      <div className={cn("max-w-2xl mx-auto", className)}>
          {/* Header */}
          <div className="mb-6">
             {onBack && (
@@ -69,7 +69,7 @@ export function PaymentInitiation({
                Complete Payment
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-               Secure your task with escrow protection
+               Secure payment via Razorpay
             </p>
          </div>
 
@@ -108,7 +108,7 @@ export function PaymentInitiation({
             <div className="flex items-start gap-2.5">
                <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
                <p className="text-xs text-gray-600">
-                  Funds held until you confirm task completion
+                  Payment released to tasker after completion
                </p>
             </div>
             <div className="flex items-start gap-2.5">
@@ -123,14 +123,14 @@ export function PaymentInitiation({
          <Button
             onClick={handlePay}
             disabled={loading}
-            className="w-full h-12 text-base font-medium bg-blue-600 hover:bg-blue-700"
+            className="w-full h-12 text-base font-medium bg-primary-600 hover:bg-primary-700"
          >
             {loading ? (
                <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
                <>
                   <Lock className="w-4 h-4 mr-2" />
-                  Pay & Hold in Escrow
+                  Pay Securely
                </>
             )}
          </Button>

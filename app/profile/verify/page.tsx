@@ -18,6 +18,7 @@ import {
    ChevronRight,
    CheckCircle2,
    ArrowLeft,
+   Phone,
 } from "lucide-react";
 import {
    VerificationStatusBadge,
@@ -100,7 +101,7 @@ function maskEmail(email: string): string {
 
 interface VerificationItemData {
    id: string;
-   type: "aadhaar" | "email" | "bank";
+   type: "aadhaar" | "email" | "bank" | "phone";
    title: string;
    description: string;
    verifiedDescription: string;
@@ -131,6 +132,16 @@ const verificationItems: VerificationItemData[] = [
       priority: 2,
    },
    {
+      id: "phone",
+      type: "phone",
+      title: "Phone Number",
+      description: "Add and verify your phone number",
+      verifiedDescription: "Phone number verified",
+      icon: <Phone className="w-5 h-5" />,
+      route: "/profile/verify/phone",
+      priority: 3,
+   },
+   {
       id: "bank",
       type: "bank",
       title: "Bank Account",
@@ -138,7 +149,7 @@ const verificationItems: VerificationItemData[] = [
       verifiedDescription: "Bank account verified",
       icon: <Building2 className="w-5 h-5" />,
       route: "/profile/verify/bank",
-      priority: 3,
+      priority: 4,
    },
 ];
 

@@ -70,6 +70,15 @@ export interface UserProfile {
       accountHolderName?: string;
    };
 
+   // PAN verification (required for business accounts)
+   isPanVerified: boolean;
+   panVerifiedAt?: Date;
+   maskedPan?: string; // Format: XXXXX1234X
+
+   // Phone verification
+   isPhoneVerified: boolean;
+   phoneVerifiedAt?: Date;
+
    isActive: boolean;
    onboardingStatus?: {
       isCompleted: boolean;

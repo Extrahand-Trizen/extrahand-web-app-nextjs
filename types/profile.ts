@@ -136,7 +136,34 @@ export interface Transaction {
    completedAt?: Date;
 }
 
-// Billing address
+// Address types
+export type AddressType = "home" | "work" | "billing" | "other";
+
+export interface SavedAddress {
+   id: string;
+   type: AddressType;
+   label: string;
+   name: string;
+   addressLine1: string;
+   addressLine2?: string;
+   landmark?: string;
+   city: string;
+   state: string;
+   pinCode: string;
+   country: string;
+   phone?: string;
+   alternatePhone?: string;
+   isDefault: boolean;
+   isVerified?: boolean;
+   coordinates?: {
+      lat: number;
+      lng: number;
+   };
+   createdAt: Date;
+   updatedAt?: Date;
+}
+
+// Billing address (for backwards compatibility)
 export interface BillingAddress {
    id: string;
    label: string;
@@ -241,6 +268,7 @@ export type ProfileSection =
    | "preferences"
    | "verifications"
    | "payments"
+   | "addresses"
    | "notifications"
    | "security"
    | "privacy";

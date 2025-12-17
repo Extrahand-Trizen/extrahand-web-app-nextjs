@@ -2,7 +2,7 @@
 
 /**
  * Payment Summary Card
- * Shows payment breakdown before initiating escrow payment
+ * Shows payment breakdown before checkout
  * Used when poster accepts an offer
  */
 
@@ -53,7 +53,7 @@ export function PaymentSummaryCard({
             <div className="flex items-center justify-between text-sm">
                <span className="text-gray-600">Task amount</span>
                <span className="text-gray-900 font-medium">
-                  {formatCurrency(summary.amount)}
+                  {formatCurrency(summary.totalAmount)}
                </span>
             </div>
 
@@ -74,27 +74,16 @@ export function PaymentSummaryCard({
                   </span>
                </div>
             )}
-
-            <div className="border-t border-gray-100 pt-3">
-               <div className="flex items-center justify-between">
-                  <span className="text-gray-900 font-medium">
-                     Total payable
-                  </span>
-                  <span className="text-lg font-semibold text-gray-900">
-                     {formatCurrency(summary.totalPayable)}
-                  </span>
-               </div>
-            </div>
          </div>
 
-         {/* Escrow Explanation */}
+         {/* Secure Payment Note */}
          <div className="px-4 pb-4">
-            <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+            <div className="bg-primary-50 border border-primary-100 rounded-lg p-3">
                <div className="flex items-start gap-2.5">
-                  <Shield className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
-                  <p className="text-xs text-blue-700 leading-relaxed">
-                     Your payment will be held securely and released only after
-                     you confirm the task is completed.
+                  <Shield className="w-4 h-4 text-primary-600 mt-0.5 shrink-0" />
+                  <p className="text-xs text-primary-700 leading-relaxed">
+                     Secure payment via Razorpay. Payment released to tasker
+                     after task completion.
                   </p>
                </div>
             </div>

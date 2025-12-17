@@ -19,6 +19,7 @@ import {
    ProfileEditForm,
    VerificationSection,
    PaymentsSection,
+   AddressesSection,
    NotificationsSection,
    SecuritySection,
    PreferencesSection,
@@ -41,6 +42,7 @@ function ProfilePageContent() {
    // Hardcoded preview user (development only) — used when no authenticated user is present
    const HARDCODED_USER = {
       id: "dev-user-1",
+      userType: "business",
       name: "Anita Kapoor",
       displayName: "Anita K.",
       firstName: "Anita",
@@ -334,6 +336,7 @@ function isValidSection(section: string): section is ProfileSection {
       "preferences",
       "verifications",
       "payments",
+      "addresses",
       "notifications",
       "security",
       "privacy",
@@ -349,6 +352,7 @@ function getSectionTitle(section: ProfileSection): string {
       preferences: "Preferences",
       verifications: "Verifications",
       payments: "Payments",
+      addresses: "Addresses",
       notifications: "Notifications",
       security: "Security",
       privacy: "Privacy",
@@ -432,11 +436,6 @@ function renderSection(section: ProfileSection, props: SectionProps) {
       case "payments":
          return (
             <PaymentsSection
-               paymentMethods={[]}
-               payoutMethods={[]}
-               transactions={[]}
-               onAddPaymentMethod={() => alert("Add payment method")}
-               onAddPayoutMethod={() => alert("Add payout method")}
                onRemovePaymentMethod={(id) =>
                   console.log("Remove payment:", id)
                }
@@ -447,6 +446,21 @@ function renderSection(section: ProfileSection, props: SectionProps) {
                onSetDefaultPayout={(id) =>
                   console.log("Set default payout:", id)
                }
+               onSavePaymentMethod={(data) =>
+                  console.log("Save payment method:", data)
+               }
+               onSavePayoutMethod={(data) =>
+                  console.log("Save payout method:", data)
+               }
+            />
+         );
+
+      case "addresses":
+         return (
+            <AddressesSection
+               onDeleteAddress={(id) => console.log("Delete address:", id)}
+               onSetDefault={(id) => console.log("Set default:", id)}
+               onSaveAddress={(data) => console.log("Save address:", data)}
             />
          );
 
