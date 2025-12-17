@@ -118,7 +118,7 @@ export function VerificationSection({
    const totalCount = verifications.length;
 
    return (
-      <div className="max-w-2xl space-y-4 sm:space-y-6">
+      <div className="max-w-4xl space-y-4 sm:space-y-6">
          {/* Header */}
          <div>
             <h2 className="text-base sm:text-lg font-semibold text-gray-900">

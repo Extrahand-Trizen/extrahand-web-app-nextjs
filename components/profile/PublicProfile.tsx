@@ -37,7 +37,7 @@ export function PublicProfile({
   isOwnProfile = false,
 }: PublicProfileProps) {
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
       {/* Preview Banner (only for own profile) */}
       {isOwnProfile && (
         <div className="bg-primary-50 border border-primary-100 rounded-lg px-4 py-3">
