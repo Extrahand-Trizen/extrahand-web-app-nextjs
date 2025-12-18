@@ -118,11 +118,11 @@ function FirstTimeCard() {
 
    return (
       <div className="bg-primary-50 rounded-xl p-6 sm:p-8">
-         <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center shrink-0">
+         <div className="flex flex-col items-center text-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center">
                <Sparkles className="w-6 h-6 text-primary-600" />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 max-w-2xl">
                <h3 className="text-lg sm:text-xl font-bold text-secondary-900 mb-2">
                   Welcome to ExtraHand!
                </h3>
@@ -130,7 +130,7 @@ function FirstTimeCard() {
                   Get started by posting your first task or browse available
                   opportunities to start earning. It only takes a few minutes.
                </p>
-               <div className="flex flex-col sm:flex-row gap-3">
+               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button
                      onClick={() => router.push("/tasks/new")}
                      className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold shadow-sm"
@@ -180,12 +180,12 @@ function IncompleteSetupCard({
    })[0];
 
    return (
-      <div className="bg-blue-50 rounded-xl p-6 sm:p-8">
-         <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
-               <Shield className="w-6 h-6 text-blue-600" />
+      <div className="bg-primary-50 rounded-xl p-6 sm:p-8">
+         <div className="flex flex-col items-center text-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center">
+               <Shield className="w-6 h-6 text-primary-600" />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 max-w-2xl">
                <h3 className="text-lg sm:text-xl font-bold text-secondary-900 mb-2">
                   Complete Your Account Setup
                </h3>
@@ -206,24 +206,26 @@ function IncompleteSetupCard({
                   </div>
                   <div className="w-full h-2 bg-secondary-100 rounded-full overflow-hidden">
                      <div
-                        className="h-full bg-blue-500 rounded-full transition-all"
+                        className="h-full bg-primary-500 rounded-full transition-all"
                         style={{ width: `${progress}%` }}
                      />
                   </div>
                </div>
 
-               <div className="flex items-center gap-2 text-xs text-secondary-500 mb-4">
+               <div className="flex items-center justify-center gap-2 text-xs text-secondary-500 mb-4">
                   <Clock className="w-3.5 h-3.5" />
                   <span>Takes about 5 minutes • Secure & encrypted</span>
                </div>
 
-               <Button
-                  onClick={() => router.push(priorityNudge.actionRoute)}
-                  className="bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow-sm"
-               >
-                  {priorityNudge.actionLabel || "Continue Setup"}
-                  <ArrowRight className="w-4 h-4 ml-2" />
-               </Button>
+               <div className="flex justify-center">
+                  <Button
+                     onClick={() => router.push(priorityNudge.actionRoute)}
+                     className="bg-primary-500 hover:bg-primary-600 text-white font-semibold shadow-sm"
+                  >
+                     {priorityNudge.actionLabel || "Continue Setup"}
+                     <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+               </div>
             </div>
          </div>
       </div>
@@ -253,7 +255,7 @@ function PendingActionCard({ data }: { data: DashboardData }) {
          description: `Complete payment for "${pendingPayment.taskTitle}"`,
          route: pendingPayment.actionRoute,
          label: "Release Payment",
-         color: "green",
+         color: "primary",
       };
    } else if (pendingOffer) {
       action = {
@@ -275,7 +277,7 @@ function PendingActionCard({ data }: { data: DashboardData }) {
          description: `From ${unreadChat.otherPartyName} about "${unreadChat.taskTitle}"`,
          route: `/chat?id=${unreadChat.id}`,
          label: "Open Chat",
-         color: "purple",
+         color: "primary",
       };
    } else if (activeTask) {
       action = {
@@ -284,7 +286,7 @@ function PendingActionCard({ data }: { data: DashboardData }) {
          description: `"${activeTask.title}" - ${activeTask.otherPartyName}`,
          route: activeTask.nextActionRoute,
          label: activeTask.nextAction,
-         color: "blue",
+         color: "primary",
       };
    }
 
@@ -295,26 +297,28 @@ function PendingActionCard({ data }: { data: DashboardData }) {
 
    return (
       <div className={`${classes.card} rounded-xl p-6 sm:p-8`}>
-         <div className="flex items-start gap-4">
+         <div className="flex flex-col items-center text-center gap-4">
             <div
-               className={`w-12 h-12 rounded-xl ${classes.iconBg} flex items-center justify-center shrink-0`}
+               className={`w-12 h-12 rounded-xl ${classes.iconBg} flex items-center justify-center`}
             >
                <Icon className={`w-6 h-6 ${classes.iconColor}`} />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 max-w-2xl">
                <h3 className="text-lg sm:text-xl font-bold text-secondary-900 mb-2">
                   {action.title}
                </h3>
                <p className="text-sm sm:text-base text-secondary-600 mb-4">
                   {action.description}
                </p>
-               <Button
-                  onClick={() => router.push(action.route)}
-                  className={`${classes.button} text-white font-semibold shadow-sm`}
-               >
-                  {action.label}
-                  <ArrowRight className="w-4 h-4 ml-2" />
-               </Button>
+               <div className="flex justify-center">
+                  <Button
+                     onClick={() => router.push(action.route)}
+                     className={`${classes.button} text-white font-semibold shadow-sm`}
+                  >
+                     {action.label}
+                     <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+               </div>
             </div>
          </div>
       </div>
@@ -325,12 +329,12 @@ function VerificationPendingCard() {
    const router = useRouter();
 
    return (
-      <div className="bg-gradient-to-br from-amber-50 via-white to-amber-50/30 rounded-xl border border-amber-200 p-6 sm:p-8 shadow-sm">
-         <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+      <div className="bg-amber-50 rounded-xl p-6 sm:p-8">
+         <div className="flex flex-col items-center text-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
                <Hourglass className="w-6 h-6 text-amber-600" />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 max-w-2xl">
                <h3 className="text-lg sm:text-xl font-bold text-secondary-900 mb-2">
                   Verification Under Review
                </h3>
@@ -339,13 +343,15 @@ function VerificationPendingCard() {
                   takes 24-48 hours. We&apos;ll notify you once it&apos;s
                   complete.
                </p>
-               <Button
-                  onClick={() => router.push("/profile/verify")}
-                  className="bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-sm"
-               >
-                  Check Status
-                  <ArrowRight className="w-4 h-4 ml-2" />
-               </Button>
+               <div className="flex justify-center">
+                  <Button
+                     onClick={() => router.push("/profile/verify")}
+                     className="bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-sm"
+                  >
+                     Check Status
+                     <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+               </div>
             </div>
          </div>
       </div>
@@ -359,12 +365,12 @@ function PaymentPendingCard({ data }: { data: DashboardData }) {
    if (!pendingPayment) return null;
 
    return (
-      <div className="bg-green-50 rounded-xl p-6 sm:p-8">
-         <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
-               <CreditCard className="w-6 h-6 text-green-600" />
+      <div className="bg-primary-50 rounded-xl p-6 sm:p-8">
+         <div className="flex flex-col items-center text-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center">
+               <CreditCard className="w-6 h-6 text-primary-600" />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 max-w-2xl">
                <h3 className="text-lg sm:text-xl font-bold text-secondary-900 mb-2">
                   Payment Ready to Release
                </h3>
@@ -373,17 +379,19 @@ function PaymentPendingCard({ data }: { data: DashboardData }) {
                   ready to release for &quot;{pendingPayment.taskTitle}&quot;.
                   Complete the payment to finalize the task.
                </p>
-               <div className="flex items-center gap-2 text-xs text-secondary-500 mb-4">
+               <div className="flex items-center justify-center gap-2 text-xs text-secondary-500 mb-4">
                   <AlertCircle className="w-3.5 h-3.5" />
                   <span>Payment will be processed securely</span>
                </div>
-               <Button
-                  onClick={() => router.push(pendingPayment.actionRoute)}
-                  className="bg-green-500 hover:bg-green-600 text-white font-semibold shadow-sm"
-               >
-                  Release Payment
-                  <ArrowRight className="w-4 h-4 ml-2" />
-               </Button>
+               <div className="flex justify-center">
+                  <Button
+                     onClick={() => router.push(pendingPayment.actionRoute)}
+                     className="bg-primary-500 hover:bg-primary-600 text-white font-semibold shadow-sm"
+                  >
+                     Release Payment
+                     <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+               </div>
             </div>
          </div>
       </div>
@@ -394,12 +402,12 @@ function ProfileIncompleteCard() {
    const router = useRouter();
 
    return (
-      <div className="bg-purple-50 rounded-xl p-6 sm:p-8">
-         <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
-               <User className="w-6 h-6 text-purple-600" />
+      <div className="bg-primary-50 rounded-xl p-6 sm:p-8">
+         <div className="flex flex-col items-center text-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center">
+               <User className="w-6 h-6 text-primary-600" />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 max-w-2xl">
                <h3 className="text-lg sm:text-xl font-bold text-secondary-900 mb-2">
                   Complete Your Profile
                </h3>
@@ -408,13 +416,15 @@ function ProfileIncompleteCard() {
                   posters. Profiles with complete information get 3x more
                   offers.
                </p>
-               <Button
-                  onClick={() => router.push("/profile")}
-                  className="bg-purple-500 hover:bg-purple-600 text-white font-semibold shadow-sm"
-               >
-                  Complete Profile
-                  <ArrowRight className="w-4 h-4 ml-2" />
-               </Button>
+               <div className="flex justify-center">
+                  <Button
+                     onClick={() => router.push("/profile")}
+                     className="bg-primary-500 hover:bg-primary-600 text-white font-semibold shadow-sm"
+                  >
+                     Complete Profile
+                     <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+               </div>
             </div>
          </div>
       </div>
@@ -427,12 +437,12 @@ function LowActivityCard() {
    const daysSinceLastActivity = 7; // Mock data
 
    return (
-      <div className="bg-orange-50 rounded-xl p-6 sm:p-8">
-         <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
-               <TrendingDown className="w-6 h-6 text-orange-600" />
+      <div className="bg-primary-50 rounded-xl p-6 sm:p-8">
+         <div className="flex flex-col items-center text-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center">
+               <TrendingDown className="w-6 h-6 text-primary-600" />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 max-w-2xl">
                <h3 className="text-lg sm:text-xl font-bold text-secondary-900 mb-2">
                   Get Back in the Game
                </h3>
@@ -441,10 +451,10 @@ function LowActivityCard() {
                   activity. Browse new tasks or post one to stay active and
                   maintain your visibility.
                </p>
-               <div className="flex flex-col sm:flex-row gap-3">
+               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button
                      onClick={() => router.push("/tasks")}
-                     className="bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-sm"
+                     className="bg-primary-500 hover:bg-primary-600 text-white font-semibold shadow-sm"
                   >
                      Browse Tasks
                      <ArrowRight className="w-4 h-4 ml-2" />
@@ -452,7 +462,7 @@ function LowActivityCard() {
                   <Button
                      variant="outline"
                      onClick={() => router.push("/tasks/new")}
-                     className="border-secondary-300 hover:border-orange-300"
+                     className="border-secondary-300 hover:border-primary-300"
                   >
                      Post a Task
                   </Button>
@@ -473,12 +483,12 @@ function AchievementUnlockedCard({ data }: { data: DashboardData }) {
          : "First task completed";
 
    return (
-      <div className="bg-gradient-to-br from-yellow-50 via-white to-yellow-50/30 rounded-xl border border-yellow-200 p-6 sm:p-8 shadow-sm">
-         <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center shrink-0">
+      <div className="bg-yellow-50 rounded-xl p-6 sm:p-8">
+         <div className="flex flex-col items-center text-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center">
                <Trophy className="w-6 h-6 text-yellow-600" />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 max-w-2xl">
                <h3 className="text-lg sm:text-xl font-bold text-secondary-900 mb-2">
                   🎉 Achievement Unlocked!
                </h3>
@@ -486,17 +496,19 @@ function AchievementUnlockedCard({ data }: { data: DashboardData }) {
                   Congratulations! You&apos;ve earned the &quot;{achievement}
                   &quot; badge for {milestone}. Keep up the great work!
                </p>
-               <div className="flex items-center gap-2 text-xs text-secondary-500 mb-4">
+               <div className="flex items-center justify-center gap-2 text-xs text-secondary-500 mb-4">
                   <Trophy className="w-3.5 h-3.5" />
                   <span>View all achievements in your profile</span>
                </div>
-               <Button
-                  onClick={() => router.push("/profile")}
-                  className="bg-yellow-500 hover:bg-yellow-600 text-secondary-900 font-semibold shadow-sm"
-               >
-                  View Profile
-                  <ArrowRight className="w-4 h-4 ml-2" />
-               </Button>
+               <div className="flex justify-center">
+                  <Button
+                     onClick={() => router.push("/profile")}
+                     className="bg-yellow-500 hover:bg-yellow-600 text-secondary-900 font-semibold shadow-sm"
+                  >
+                     View Profile
+                     <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+               </div>
             </div>
          </div>
       </div>
@@ -534,12 +546,12 @@ function ReturningUserCard({ data }: { data: DashboardData }) {
    }
 
    return (
-      <div className="bg-secondary-50 rounded-xl p-6 sm:p-8">
-         <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-secondary-100 flex items-center justify-center shrink-0">
-               <CheckCircle2 className="w-6 h-6 text-secondary-600" />
+      <div className="bg-primary-50 rounded-xl p-6 sm:p-8">
+         <div className="flex flex-col items-center text-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center">
+               <CheckCircle2 className="w-6 h-6 text-primary-600" />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 max-w-2xl">
                <h3 className="text-lg sm:text-xl font-bold text-secondary-900 mb-2">
                   {message}
                </h3>
@@ -547,7 +559,7 @@ function ReturningUserCard({ data }: { data: DashboardData }) {
                   {highlight}. Continue building your reputation and exploring
                   new opportunities.
                </p>
-               <div className="flex flex-col sm:flex-row gap-3">
+               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button
                      onClick={() => router.push("/tasks/new")}
                      className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold shadow-sm"

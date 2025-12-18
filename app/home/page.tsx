@@ -13,6 +13,7 @@ import {
    NotificationCenter,
    QuickSearch,
    DynamicActionCard,
+   RecommendedTasks,
 } from "@/components/home";
 import { mockDashboardData, mockUser } from "@/lib/data/mockDashboard";
 import type { DashboardData } from "@/types/dashboard";
@@ -72,7 +73,7 @@ export default function HomePage() {
 
    return (
       <>
-         <div className="min-h-screen bg-secondary-50">
+         <div className="bg-secondary-50">
             {/* Header Actions - Top Right */}
             <div className="fixed top-20 right-4 z-50 flex items-center gap-2">
                <QuickSearch tasks={data.taskSnapshots} />
@@ -205,19 +206,24 @@ export default function HomePage() {
                      </div>
                   </div>
 
-                  {/* Dynamic Action Card Section - Seamless */}
-                  <div className="mx-auto pb-8 sm:pb-12 md:pb-16 -mt-4">
-                     <DynamicActionCard
-                        data={data}
-                        user={user}
-                        overrideState={
-                           selectedCardState === "auto"
-                              ? undefined
-                              : selectedCardState
-                        }
-                     />
+                  {/* Dynamic Action Card Section - Full Width, Centered Content */}
+                  <div >
+                     <div className="w-full mx-auto">
+                        <DynamicActionCard
+                           data={data}
+                           user={user}
+                           overrideState={
+                              selectedCardState === "auto"
+                                 ? undefined
+                                 : selectedCardState
+                           }
+                        />
+                     </div>
                   </div>
                </div>
+
+               {/* Recommended Tasks Carousel */}
+               <RecommendedTasks />
             </div>
          </div>
       </>

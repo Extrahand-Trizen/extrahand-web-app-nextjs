@@ -20,8 +20,6 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/context";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { LandingHeader } from "@/components/layout/LandingHeader";
-import { LandingFooter } from "@/components/layout/LandingFooter";
 import {
    HeroSection,
    SocialProofBar,
@@ -62,19 +60,16 @@ export default function LandingPage() {
    }
 
    // Show landing page for unauthenticated users
+   // Header and Footer are already in the layout
    return (
       <>
-         <LandingHeader />
-         <main>
-            <HeroSection />
-            <SocialProofBar />
-            <HowItWorksSection />
-            <CategoriesExplorer />
-            <TrustSection />
-            <TestimonialsSection />
-            <FinalCTASection />
-         </main>
-         <LandingFooter />
+         <HeroSection />
+         <SocialProofBar />
+         <HowItWorksSection />
+         <CategoriesExplorer />
+         <TrustSection />
+         <TestimonialsSection />
+         <FinalCTASection />
       </>
    );
 }

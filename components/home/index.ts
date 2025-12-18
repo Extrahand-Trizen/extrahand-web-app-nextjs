@@ -13,3 +13,4 @@ export { NotificationCenter } from "./NotificationCenter";
 export { LocationHint } from "./LocationHint";
 export { QuickSearch } from "./QuickSearch";
 export { DynamicActionCard } from "./DynamicActionCard";
+export { RecommendedTasks } from "./RecommendedTasks";
