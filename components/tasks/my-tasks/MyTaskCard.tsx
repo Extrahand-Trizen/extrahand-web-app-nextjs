@@ -115,7 +115,7 @@ export function MyTaskCard({
 
          {/* Description */}
          {task.description && (
-            <p className="text-xs md:text-sm text-secondary-600 mb-3 line-clamp-2">
+            <p className="text-xs md:text-sm text-secondary-600 mb-3 line-clamp-1">
                {task.description}
             </p>
          )}

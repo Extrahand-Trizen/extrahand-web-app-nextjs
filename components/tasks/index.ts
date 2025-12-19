@@ -20,3 +20,7 @@ export { TaskDetailsMain } from "./TaskDetailsMain";
 export { TaskDetailsSidebar } from "./TaskDetailsSidebar";
 export { TaskQuestionsSection } from "./TaskQuestionsSection";
 export { TaskOffersSection } from "./TaskOffersSection";
+
+// Offer/Application Components
+export { MakeOfferModal } from "./offers/MakeOfferModal";
+export { AcceptOfferModal } from "./offers/AcceptOfferModal";

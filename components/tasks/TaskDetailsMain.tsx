@@ -65,6 +65,7 @@ export function TaskDetailsMain({ task }: TaskDetailsMainProps) {
                         key={index}
                         className="aspect-square rounded-lg lg:rounded-xl overflow-hidden bg-secondary-100 shadow-sm"
                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                            src={image.url}
                            alt={`Task image ${index + 1}`}

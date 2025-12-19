@@ -22,6 +22,7 @@ import { TaskDetailsMain } from "@/components/tasks/TaskDetailsMain";
 import { TaskDetailsSidebar } from "@/components/tasks/TaskDetailsSidebar";
 import { TaskQuestionsSection } from "@/components/tasks/TaskQuestionsSection";
 import { TaskOffersSection } from "@/components/tasks/TaskOffersSection";
+import { MakeOfferModal } from "@/components/tasks/offers/MakeOfferModal";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const formatDate = (date: Date | string | undefined) => {
@@ -42,6 +43,10 @@ export default function TaskDetailsPage() {
    const taskId = params.id as string;
    const [activeTab, setActiveTab] = useState<"offers" | "questions">("offers");
    const [showFixedCTA, setShowFixedCTA] = useState(false);
+   const [showMakeOfferModal, setShowMakeOfferModal] = useState(false);
+   const [applicationsCount, setApplicationsCount] = useState<number | null>(
+      null
+   );
    const [scrollY, setScrollY] = useState(0);
    const isMobile = useIsMobile();
 
@@ -68,7 +73,8 @@ export default function TaskDetailsPage() {
                   Task not found
                </h1>
                <p className="text-secondary-600 mb-6">
-                  The task you&apos;re looking for doesn&apos;t exist or has been removed.
+                  The task you&apos;re looking for doesn&apos;t exist or has
+                  been removed.
                </p>
                <Button onClick={() => router.push("/tasks")}>
                   Browse all tasks
@@ -136,7 +142,10 @@ export default function TaskDetailsPage() {
                      {/* Tab Content */}
                      <div>
                         {activeTab === "offers" ? (
-                           <TaskOffersSection taskId={taskId} />
+                           <TaskOffersSection
+                              taskId={taskId}
+                              onApplicationsCountChange={setApplicationsCount}
+                           />
                         ) : (
                            <TaskQuestionsSection taskId={taskId} />
                         )}
@@ -152,15 +161,34 @@ export default function TaskDetailsPage() {
          </div>
 
          {/* Fixed Bottom CTA - Mobile */}
-         {showFixedCTA && (
+         {showFixedCTA && task && task.status === "open" && (
             <div className="fixed bottom-0 left-0 right-0 lg:hidden bg-white border-t border-secondary-200 shadow-xl animate-in slide-in-from-bottom-0 duration-300">
                <div className="max-w-7xl mx-auto px-4 py-3">
-                  <Button className="w-full bg-primary-600 hover:bg-primary-700 text-white h-10 font-semibold rounded-xl flex items-center justify-center gap-2">
+                  <Button
+                     onClick={() => setShowMakeOfferModal(true)}
+                     className="w-full bg-primary-600 hover:bg-primary-700 text-white h-10 font-semibold rounded-xl flex items-center justify-center gap-2"
+                  >
                      Make an Offer
                      <ArrowRight className="w-4 h-4" />
                   </Button>
                </div>
             </div>
+         )}
+
+         {/* Make Offer Modal */}
+         {task && (
+            <MakeOfferModal
+               task={task}
+               open={showMakeOfferModal}
+               onOpenChange={setShowMakeOfferModal}
+               onSuccess={() => {
+                  // Refresh applications count by triggering a reload
+                  // The TaskOffersSection will update the count via callback
+                  setApplicationsCount((prev) =>
+                     prev !== null ? prev + 1 : null
+                  );
+               }}
+            />
          )}
       </div>
    );

@@ -1,68 +1,142 @@
 "use client";
 
-import { useState } from "react";
-import { MessageSquare, ThumbsUp, ChevronDown } from "lucide-react";
+import { useState, useEffect } from "react";
+import { MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-interface Question {
-   id: string;
-   author: string;
-   authorAvatar?: string;
-   question: string;
-   answer?: string;
-   answeredBy?: string;
-   timestamp: string;
-   likes: number;
-}
+import type { TaskQuestion } from "@/types/question";
+import {
+   mockQuestionsData,
+   mockQuestionUserData,
+} from "@/lib/data/mockQuestions";
+import { AskQuestionForm } from "./questions/AskQuestionForm";
+import { AnswerQuestionForm } from "./questions/AnswerQuestionForm";
+import type { CreateQuestionFormData } from "@/lib/validations/question";
 
 interface TaskQuestionsSectionProps {
    taskId: string;
 }
 
-// Mock questions data
-const mockQuestions: Question[] = [
-   {
-      id: "q1",
-      author: "Rajesh Kumar",
-      question:
-         "Do you need me to bring my own cleaning supplies, or will you provide them?",
-      answer:
-         "I can provide basic supplies, but if you have professional-grade products, please bring those.",
-      answeredBy: "Task Poster",
-      timestamp: "2 hours ago",
-      likes: 3,
-   },
-   {
-      id: "q2",
-      author: "Priya Sharma",
-      question: "How many rooms need to be cleaned? Is parking available?",
-      answer:
-         "It's a 3BHK apartment. Yes, parking is available in the basement.",
-      answeredBy: "Task Poster",
-      timestamp: "5 hours ago",
-      likes: 1,
-   },
-];
+const getTimeAgo = (date: Date | string | undefined): string => {
+   if (!date) return "Recently";
+   const now = new Date();
+   const taskDate = typeof date === "string" ? new Date(date) : date;
+   const diffMs = now.getTime() - taskDate.getTime();
+   const diffMins = Math.floor(diffMs / 60000);
+   const diffHours = Math.floor(diffMs / 3600000);
+   const diffDays = Math.floor(diffMs / 86400000);
+
+   if (diffMins < 1) return "Just now";
+   if (diffMins < 60) return `${diffMins} min ago`;
+   if (diffHours < 24)
+      return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+   if (diffDays === 1) return "Yesterday";
+   return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+};
 
 export function TaskQuestionsSection({ taskId }: TaskQuestionsSectionProps) {
-   const [questions, setQuestions] = useState<Question[]>(mockQuestions);
-   const [newQuestion, setNewQuestion] = useState("");
+   const [questions, setQuestions] = useState<TaskQuestion[]>([]);
+   const [loading, setLoading] = useState(true);
    const [showQuestionForm, setShowQuestionForm] = useState(false);
+   const [answeringQuestionId, setAnsweringQuestionId] = useState<
+      string | null
+   >(null);
+   const [isSubmitting, setIsSubmitting] = useState(false);
 
-   const handleAskQuestion = () => {
-      if (newQuestion.trim()) {
-         const question: Question = {
-            id: `q${questions.length + 1}`,
-            author: "You",
-            question: newQuestion,
-            timestamp: "Just now",
-            likes: 0,
+   useEffect(() => {
+      const loadQuestions = async () => {
+         try {
+            setLoading(true);
+            // TODO: Replace with actual API call
+            // const response = await questionsApi.getTaskQuestions(taskId);
+            // setQuestions(response.questions);
+            const filtered = mockQuestionsData.filter(
+               (q) => q.taskId === taskId && q.isPublic
+            );
+            setQuestions(filtered);
+         } catch (error) {
+            console.error("Error loading questions:", error);
+         } finally {
+            setLoading(false);
+         }
+      };
+
+      if (taskId) {
+         loadQuestions();
+      }
+   }, [taskId]);
+
+   const handleAskQuestion = async (data: CreateQuestionFormData) => {
+      if (isSubmitting) return;
+
+      setIsSubmitting(true);
+
+      try {
+         // TODO: Replace with actual API call
+         // const newQuestion = await questionsApi.createQuestion(data);
+         const newQuestion: TaskQuestion = {
+            _id: `q${Date.now()}`,
+            taskId: data.taskId,
+            askedByUid: "currentUser", // Would come from auth context
+            question: data.question,
+            isPublic: data.isPublic,
+            createdAt: new Date(),
+            updatedAt: new Date(),
          };
-         setQuestions([question, ...questions]);
-         setNewQuestion("");
+
+         setQuestions([newQuestion, ...questions]);
          setShowQuestionForm(false);
+      } catch (error) {
+         console.error("Error asking question:", error);
+      } finally {
+         setIsSubmitting(false);
       }
    };
+
+   const handleAnswerQuestion = async (
+      questionId: string,
+      data: { answer: string }
+   ) => {
+      if (isSubmitting) return;
+
+      setIsSubmitting(true);
+
+      try {
+         // TODO: Replace with actual API call
+         // await questionsApi.answerQuestion(questionId, data);
+         setQuestions((prev) =>
+            prev.map((q) =>
+               q._id === questionId
+                  ? {
+                       ...q,
+                       answer: data.answer,
+                       answeredByUid: "currentUser", // Would come from auth context
+                       answeredAt: new Date(),
+                       updatedAt: new Date(),
+                    }
+                  : q
+            )
+         );
+         setAnsweringQuestionId(null);
+      } catch (error) {
+         console.error("Error answering question:", error);
+      } finally {
+         setIsSubmitting(false);
+      }
+   };
+
+   if (loading) {
+      return (
+         <div className="p-4 md:p-8 flex items-center justify-center py-16">
+            <div className="text-center">
+               <div className="w-12 h-12 border-4 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+               <p className="text-sm text-secondary-600">
+                  Loading questions...
+               </p>
+            </div>
+         </div>
+      );
+   }
 
    return (
       <div className="p-4 md:p-8">
@@ -82,37 +156,14 @@ export function TaskQuestionsSection({ taskId }: TaskQuestionsSectionProps) {
             )}
          </div>
 
-         {/* Question Form */}
+         {/* Ask Question Form */}
          {showQuestionForm && (
-            <div className="mb-8">
-               <textarea
-                  value={newQuestion}
-                  onChange={(e) => setNewQuestion(e.target.value)}
-                  placeholder="What would you like to know about this task?"
-                  className="w-full px-4 py-3 text-xs md:text-sm border border-secondary-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
-                  rows={3}
-               />
-               <div className="flex gap-3 mt-2 md:mt-4">
-                  <Button
-                     onClick={handleAskQuestion}
-                     size="sm"
-                     className="bg-primary-600 hover:bg-primary-700 text-white rounded-lg px-3 md:px-5"
-                  >
-                     Post Question
-                  </Button>
-                  <Button
-                     onClick={() => {
-                        setShowQuestionForm(false);
-                        setNewQuestion("");
-                     }}
-                     size="sm"
-                     variant="ghost"
-                     className="text-secondary-600 hover:bg-secondary-50 rounded-lg"
-                  >
-                     Cancel
-                  </Button>
-               </div>
-            </div>
+            <AskQuestionForm
+               taskId={taskId}
+               onSubmit={handleAskQuestion}
+               onCancel={() => setShowQuestionForm(false)}
+               isSubmitting={isSubmitting}
+            />
          )}
 
          {/* Questions List */}
@@ -130,68 +181,99 @@ export function TaskQuestionsSection({ taskId }: TaskQuestionsSectionProps) {
             </div>
          ) : (
             <div className="space-y-3">
-               {questions.map((q) => (
-                  <div key={q.id} className="pb-5 sm:pb-6 last:pb-0">
-                     {/* Question */}
-                     <div className="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
-                        <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-primary-500 flex items-center justify-center text-white text-sm sm:text-base font-bold shrink-0 shadow-sm">
-                           {q.author.charAt(0)}
-                        </div>
+               {questions.map((q) => {
+                  const asker = mockQuestionUserData[q.askedByUid] || {
+                     name: "Tasker",
+                  };
+                  const answerer = q.answeredByUid
+                     ? mockQuestionUserData[q.answeredByUid] || {
+                          name: "Task Poster",
+                       }
+                     : null;
 
-                        <div className="flex-1 min-w-0">
-                           <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                              <span className="font-bold text-secondary-900 text-sm sm:text-base">
-                                 {q.author}
-                              </span>
-                              <span className="text-xs text-secondary-300">
-                                 •
-                              </span>
-                              <span className="text-xs text-secondary-500">
-                                 {q.timestamp}
-                              </span>
+                  return (
+                     <div
+                        key={q._id}
+                        className="pb-5 sm:pb-6 last:pb-0 border-b border-secondary-100 last:border-b-0"
+                     >
+                        {/* Question */}
+                        <div className="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
+                           <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-primary-500 flex items-center justify-center text-white text-sm sm:text-base font-bold shrink-0 shadow-sm">
+                              {asker.name.charAt(0)}
                            </div>
 
-                           <p className="text-xs md:text-sm text-secondary-700 leading-relaxed">
-                              {q.question}
-                           </p>
-                        </div>
-                     </div>
+                           <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                                 <span className="font-bold text-secondary-900 text-sm sm:text-base">
+                                    {asker.name}
+                                 </span>
+                                 <span className="text-xs text-secondary-300">
+                                    •
+                                 </span>
+                                 <span className="text-xs text-secondary-500">
+                                    {getTimeAgo(q.createdAt)}
+                                 </span>
+                              </div>
 
-                     {/* Answer */}
-                     {q.answer && (
-                        <div className="mt-3 sm:ml-12 sm:pl-5 sm:border-l-2 border-primary-300 bg-primary-50/40 py-3 sm:py-4 px-4 sm:px-5 rounded-xl sm:rounded-r-2xl">
-                           <div className="flex items-center gap-2 mb-2">
-                              <span className="text-xs font-bold text-primary-700 uppercase tracking-wide">
-                                 {q.answeredBy}
-                              </span>
-                              <span className="text-xs text-primary-600">
-                                 replied
-                              </span>
+                              <p className="text-xs md:text-sm text-secondary-700 leading-relaxed">
+                                 {q.question}
+                              </p>
                            </div>
-
-                           <p className="text-xs md:text-sm text-secondary-800 leading-relaxed">
-                              {q.answer}
-                           </p>
                         </div>
-                     )}
 
-                     {/* Actions */}
-                     <div className="mt-3 sm:mt-4 flex items-center gap-4 sm:ml-12">
-                        <button className="flex items-center gap-2 text-xs sm:text-sm text-secondary-500 hover:text-primary-600 transition-colors             font-semibold">
-                           <ThumbsUp className="w-4 h-4" />
-                           <span>
-                              {q.likes > 0 ? `${q.likes} helpful` : "Helpful"}
-                           </span>
-                        </button>
+                        {/* Answer */}
+                        {q.answer ? (
+                           <div className="mt-3 sm:ml-12 sm:pl-5 sm:border-l-2 border-primary-300 bg-primary-50/40 py-3 sm:py-4 px-4 sm:px-5 rounded-xl sm:rounded-r-2xl">
+                              <div className="flex items-center gap-2 mb-2">
+                                 <span className="text-xs font-bold text-primary-700 uppercase tracking-wide">
+                                    {answerer?.name || "Task Poster"}
+                                 </span>
+                                 <span className="text-xs text-primary-600">
+                                    replied
+                                 </span>
+                                 {q.answeredAt && (
+                                    <>
+                                       <span className="text-xs text-secondary-300">
+                                          •
+                                       </span>
+                                       <span className="text-xs text-secondary-500">
+                                          {getTimeAgo(q.answeredAt)}
+                                       </span>
+                                    </>
+                                 )}
+                              </div>
 
-                        {!q.answer && (
-                           <button className="text-xs sm:text-sm text-secondary-500 hover:text-primary-600 transition-colors font-semibold">
-                              Reply
-                           </button>
+                              <p className="text-xs md:text-sm text-secondary-800 leading-relaxed">
+                                 {q.answer}
+                              </p>
+                           </div>
+                        ) : // Answer Form (for task poster)
+                        answeringQuestionId === q._id ? (
+                           <div className="mt-3 sm:ml-12">
+                              <AnswerQuestionForm
+                                 questionId={q._id}
+                                 onSubmit={(data) =>
+                                    handleAnswerQuestion(q._id, data)
+                                 }
+                                 onCancel={() => setAnsweringQuestionId(null)}
+                                 isSubmitting={isSubmitting}
+                              />
+                           </div>
+                        ) : (
+                           <div className="mt-3 sm:ml-12">
+                              <Button
+                                 size="sm"
+                                 variant="outline"
+                                 onClick={() => setAnsweringQuestionId(q._id)}
+                                 className="text-xs text-secondary-600 hover:text-primary-600 border-secondary-200 hover:border-primary-300"
+                              >
+                                 Reply
+                              </Button>
+                           </div>
                         )}
                      </div>
-                  </div>
-               ))}
+                  );
+               })}
             </div>
          )}
       </div>

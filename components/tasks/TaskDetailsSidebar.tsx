@@ -1,33 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { MapPin, Shield, Clock, CheckCircle, User, Star } from "lucide-react";
+import { Shield, CheckCircle, Star } from "lucide-react";
 import type { Task } from "@/types/task";
+import { MakeOfferModal } from "./offers/MakeOfferModal";
+import Link from "next/link";
 
 interface TaskDetailsSidebarProps {
    task: Task;
 }
 
 export function TaskDetailsSidebar({ task }: TaskDetailsSidebarProps) {
+   const [showMakeOfferModal, setShowMakeOfferModal] = useState(false);
    const budgetAmount =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
-
-   const getTimeAgo = (date: Date | string | undefined) => {
-      if (!date) return "Recently";
-      const now = new Date();
-      const taskDate = new Date(date);
-      const diffMs = now.getTime() - taskDate.getTime();
-      const diffMins = Math.floor(diffMs / 60000);
-      const diffHours = Math.floor(diffMs / 3600000);
-      const diffDays = Math.floor(diffMs / 86400000);
-
-      if (diffMins < 1) return "Just now";
-      if (diffMins < 60) return `${diffMins} min ago`;
-      if (diffHours < 24)
-         return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
-      if (diffDays === 1) return "Yesterday";
-      return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
-   };
 
    return (
       <div className="space-y-4 sticky top-24">
@@ -51,7 +38,10 @@ export function TaskDetailsSidebar({ task }: TaskDetailsSidebarProps) {
 
             {task.status === "open" && (
                <div className="space-y-2">
-                  <Button className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold h-12 rounded-xl shadow-sm hover:shadow-md transition-all">
+                  <Button
+                     onClick={() => setShowMakeOfferModal(true)}
+                     className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold h-12 rounded-xl shadow-sm hover:shadow-md transition-all"
+                  >
                      Make an Offer
                   </Button>
                   <Button
@@ -119,12 +109,14 @@ export function TaskDetailsSidebar({ task }: TaskDetailsSidebarProps) {
                   </div>
                </div>
             </div>
-            <Button
-               variant="outline"
-               className="w-full mt-4 border-secondary-300 text-secondary-700 hover:bg-secondary-50 text-sm font-medium rounded-xl h-10"
-            >
-               View Profile
-            </Button>
+            <Link href={`/profile/${task.requesterId}`}>
+               <Button
+                  variant="outline"
+                  className="w-full mt-4 border-secondary-300 text-secondary-700 hover:bg-secondary-50 text-sm font-medium rounded-xl h-10"
+               >
+                  View Profile
+               </Button>
+            </Link>
          </div>
 
          {/* Trust & Safety Info */}
@@ -157,6 +149,13 @@ export function TaskDetailsSidebar({ task }: TaskDetailsSidebarProps) {
                </div>
             </div>
          </div>
+
+         {/* Make Offer Modal */}
+         <MakeOfferModal
+            task={task}
+            open={showMakeOfferModal}
+            onOpenChange={setShowMakeOfferModal}
+         />
       </div>
    );
 }
