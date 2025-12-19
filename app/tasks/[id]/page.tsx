@@ -68,7 +68,7 @@ export default function TaskDetailsPage() {
                   Task not found
                </h1>
                <p className="text-secondary-600 mb-6">
-                  The task you're looking for doesn't exist or has been removed.
+                  The task you&apos;re looking for doesn&apos;t exist or has been removed.
                </p>
                <Button onClick={() => router.push("/tasks")}>
                   Browse all tasks

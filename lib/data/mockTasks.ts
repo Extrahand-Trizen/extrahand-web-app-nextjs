@@ -5,7 +5,7 @@ export const mockTasksData: Task[] = [
       _id: "1",
       title: "Sofa Deep Cleaning - 5 Seater",
       description:
-         "Need professional deep cleaning for my 5-seater sofa. Has some stains that need attention.",
+         "Need professional deep cleaning for my 5-seater sofa. Has some stains that need attention. The sofa is made of fabric material and requires special care. There are visible stains on the cushions and some areas need spot treatment. Please use eco-friendly cleaning products. The sofa is located in the living room on the ground floor. Access is easy and parking is available nearby.",
       category: "cleaning",
       budget: 1500,
       budgetType: "fixed",
@@ -30,6 +30,26 @@ export const mockTasksData: Task[] = [
       scheduledDate: new Date(Date.now() + 86400000),
       scheduledTime: "Morning",
       flexibility: "flexible",
+      attachments: [
+         {
+            type: "image",
+            url: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&h=600&fit=crop",
+            filename: "sofa-front.jpg",
+            uploadedAt: new Date(Date.now() - 7200000),
+         },
+         {
+            type: "image",
+            url: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&h=600&fit=crop",
+            filename: "sofa-stains.jpg",
+            uploadedAt: new Date(Date.now() - 7200000),
+         },
+         {
+            type: "image",
+            url: "https://images.unsplash.com/photo-1631889993957-41b9fc1a1c8b?w=800&h=600&fit=crop",
+            filename: "sofa-detail.jpg",
+            uploadedAt: new Date(Date.now() - 7200000),
+         },
+      ],
       isUrgent: false,
       isFeatured: false,
       views: 24,
@@ -79,7 +99,7 @@ export const mockTasksData: Task[] = [
       _id: "3",
       title: "Ceiling Fan Installation",
       description:
-         "Need help installing a new ceiling fan in the bedroom. All materials provided.",
+         "Need help installing a new ceiling fan in the bedroom. All materials provided including the fan, mounting bracket, and necessary screws. The room is on the second floor and has standard ceiling height. Electrical wiring is already in place from previous fixture. Need someone with experience in electrical work and ceiling fan installation. The installation should be done safely with proper grounding. Please bring your own tools if needed.",
       category: "handyperson",
       budget: 500,
       budgetType: "fixed",
@@ -104,6 +124,20 @@ export const mockTasksData: Task[] = [
       scheduledDate: new Date(),
       scheduledTime: "Flexible",
       flexibility: "flexible",
+      attachments: [
+         {
+            type: "image",
+            url: "https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=800&h=600&fit=crop",
+            filename: "ceiling-fan-box.jpg",
+            uploadedAt: new Date(Date.now() - 345600000),
+         },
+         {
+            type: "image",
+            url: "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=800&h=600&fit=crop",
+            filename: "bedroom-ceiling.jpg",
+            uploadedAt: new Date(Date.now() - 345600000),
+         },
+      ],
       isUrgent: true,
       isFeatured: false,
       views: 32,

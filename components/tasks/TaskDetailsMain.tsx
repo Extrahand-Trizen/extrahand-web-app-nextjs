@@ -17,11 +17,12 @@ export function TaskDetailsMain({ task }: TaskDetailsMainProps) {
    const [showFullDescription, setShowFullDescription] = useState(false);
 
    const description = task.description || "";
-   const isLongDescription = description.length > 70;
+   const TRUNCATE_LENGTH = 300;
+   const isLongDescription = description.length > TRUNCATE_LENGTH;
    const displayDescription =
       showFullDescription || !isLongDescription
          ? description
-         : description.substring(0, 300) + "...";
+         : description.substring(0, TRUNCATE_LENGTH) + "...";
 
    return (
       <div className="space-y-4 lg:space-y-6">
@@ -54,7 +55,7 @@ export function TaskDetailsMain({ task }: TaskDetailsMainProps) {
          {/* Images Section */}
          {task.attachments && task.attachments.length > 0 && (
             <div className="bg-white/70 backdrop-blur-sm rounded-xl lg:rounded-2xl p-5 lg:p-8 shadow-sm border border-secondary-100/50">
-               <h2 className="text-lg lg:text-xl font-bold text-secondary-900 mb-3 lg:mb-4 flex items-center gap-2">
+               <h2 className="md:text-lg font-bold text-secondary-900 mb-3 lg:mb-4 flex items-center gap-2">
                   <ImageIcon className="w-5 h-5" />
                   Photos ({task.attachments.length})
                </h2>
