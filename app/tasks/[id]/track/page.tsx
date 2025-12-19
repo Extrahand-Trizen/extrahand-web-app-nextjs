@@ -25,10 +25,25 @@ import {
    TaskDetailsCard,
    StatusUpdateSection,
    ProofOfWorkSection,
+   ReviewSection,
+   ReportForm,
 } from "@/components/tasks/tracking";
 import { EmbeddedChat } from "@/components/tasks/tracking/EmbeddedChat";
+import {
+   Dialog,
+   DialogContent,
+   DialogHeader,
+   DialogTitle,
+} from "@/components/ui/dialog";
 import type { Task } from "@/types/task";
-import type { UserRole, ProofOfWork } from "@/types/tracking";
+import type {
+   UserRole,
+   ProofOfWork,
+   Review,
+   TaskReportSubmission,
+   ReviewRatings,
+   ReportReason,
+} from "@/types/tracking";
 import type { Message } from "@/types/chat";
 import { mockTasksData } from "@/lib/data/mockTasks";
 
@@ -67,6 +82,11 @@ export default function TaskTrackingPage() {
 
    const [task, setTask] = useState<Task | null>(null);
    const [proofs, setProofs] = useState<ProofOfWork[]>(mockProofs);
+   const [reviews, setReviews] = useState<Review[]>([]);
+   const [existingReport, setExistingReport] = useState<
+      TaskReportSubmission | undefined
+   >();
+   const [showReportModal, setShowReportModal] = useState(false);
    const [isLoading, setIsLoading] = useState(true);
    const [activeTab, setActiveTab] = useState("overview");
    const [overrideRole, setOverrideRole] = useState<UserRole | null>(null);
@@ -254,6 +274,135 @@ export default function TaskTrackingPage() {
       setChatMessages([...chatMessages, newMessage]);
    };
 
+   // Handle create review
+   const handleCreateReview = async (data: {
+      rating: number;
+      title?: string;
+      comment?: string;
+      ratings?: ReviewRatings;
+   }) => {
+      if (!task || !reviewedUserId) return;
+
+      // For mock data: use currentUser if available, otherwise use mock ID
+      const reviewerUid =
+         currentUser?.uid ||
+         (userRole === "poster" ? task.creatorUid : task.assigneeUid) ||
+         "mock_user";
+
+      // TODO: Replace with actual API call
+      // await api.createReview({
+      //    taskId: task._id,
+      //    reviewedUid: reviewedUserId,
+      //    ...data
+      // });
+
+      // Mock: Add review to local state
+      const now = new Date();
+      const timestamp = now.getTime();
+      const reviewId = `review_${task._id}_${reviewerUid}_${timestamp}`;
+      const newReview: Review = {
+         _id: reviewId,
+         taskId: task._id,
+         reviewerUid,
+         reviewedUid: reviewedUserId,
+         reviewerName: "You",
+         rating: data.rating,
+         title: data.title,
+         comment: data.comment,
+         ratings: data.ratings,
+         isPublic: true,
+         isVerified: false,
+         helpful: 0,
+         notHelpful: 0,
+         createdAt: now,
+         updatedAt: now,
+      };
+
+      setReviews([...reviews, newReview]);
+   };
+
+   // Handle helpful vote
+   const handleHelpful = async (reviewId: string, helpful: boolean) => {
+      // TODO: Replace with actual API call
+      // await api.voteHelpful(reviewId, helpful);
+
+      // Mock: Update review in local state
+      setReviews(
+         reviews.map((r) =>
+            r._id === reviewId
+               ? {
+                    ...r,
+                    helpful: helpful ? r.helpful + 1 : r.helpful,
+                    notHelpful: !helpful ? r.notHelpful + 1 : r.notHelpful,
+                 }
+               : r
+         )
+      );
+   };
+
+   // Handle submit report
+   const handleSubmitReport = async (data: {
+      reason: string;
+      description?: string;
+   }) => {
+      if (!task || !currentUser) return;
+
+      // TODO: Replace with actual API call
+      // await api.submitReport({ taskId: task._id, userId: currentUser.uid, ...data });
+
+      // Mock: Add report to local state
+      const newReport: TaskReportSubmission = {
+         _id: `report_${Date.now()}`,
+         userId: currentUser.uid,
+         taskId: task._id,
+         reason: data.reason as ReportReason,
+         description: data.description,
+         status: "pending",
+         createdAt: new Date(),
+         updatedAt: new Date(),
+      };
+
+      setExistingReport(newReport);
+      setShowReportModal(false);
+   };
+
+   // Determine if user can review (production-ready)
+   // Only poster can review tasker - tasker cannot review themselves
+   const canReview = useMemo(() => {
+      if (!task || userRole !== "poster") return false; // Only poster can review
+
+      // For mock data testing: allow reviews even without currentUser
+      // In production, this should require: if (!currentUser) return false;
+      const mockUserId = currentUser?.uid || task.creatorUid || "mock_user";
+
+      // Poster reviews the tasker
+      const reviewedUid = task.assigneeUid;
+
+      // Must have a tasker to review
+      if (!reviewedUid) return false;
+
+      // Check if poster has already reviewed
+      const hasReviewed = reviews.some(
+         (r) => r.reviewerUid === mockUserId && r.reviewedUid === reviewedUid
+      );
+
+      if (hasReviewed) return false; // Already reviewed
+
+      // Production: Only allow reviews when task is completed or in review status
+      return task.status === "completed" || task.status === "review";
+   }, [task, currentUser, userRole, reviews]);
+
+   // Get reviewed user info (only for poster reviewing tasker)
+   const reviewedUserId =
+      task && userRole === "poster"
+         ? task.assigneeUid || "mock_tasker_123"
+         : undefined;
+
+   const reviewedUserName =
+      task && userRole === "poster"
+         ? task.assignedToName || "Tasker"
+         : undefined;
+
    if (isLoading || authLoading) {
       return (
          <div className="min-h-screen flex items-center justify-center bg-secondary-50">
@@ -321,7 +470,11 @@ export default function TaskTrackingPage() {
          </div>
 
          {/* Header */}
-         <TaskTrackingHeader task={task} userRole={userRole} />
+         <TaskTrackingHeader
+            task={task}
+            userRole={userRole}
+            onReportClick={() => setShowReportModal(true)}
+         />
 
          {/* Main Content */}
          <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
@@ -373,10 +526,31 @@ export default function TaskTrackingPage() {
                      onValueChange={setActiveTab}
                      className="w-full"
                   >
-                     <TabsList className="grid w-full grid-cols-3 mb-6">
-                        <TabsTrigger value="overview">Overview</TabsTrigger>
-                        <TabsTrigger value="proof">Proof of Work</TabsTrigger>
-                        <TabsTrigger value="details">Details</TabsTrigger>
+                     <TabsList className="grid w-full grid-cols-4 mb-6 overflow-x-auto">
+                        <TabsTrigger
+                           value="overview"
+                           className="text-xs md:text-sm"
+                        >
+                           Overview
+                        </TabsTrigger>
+                        <TabsTrigger
+                           value="proof"
+                           className="text-xs md:text-sm"
+                        >
+                           Proof
+                        </TabsTrigger>
+                        <TabsTrigger
+                           value="reviews"
+                           className="text-xs md:text-sm"
+                        >
+                           Reviews
+                        </TabsTrigger>
+                        <TabsTrigger
+                           value="details"
+                           className="text-xs md:text-sm"
+                        >
+                           Details
+                        </TabsTrigger>
                      </TabsList>
 
                      <TabsContent value="overview" className="space-y-6">
@@ -391,6 +565,20 @@ export default function TaskTrackingPage() {
                            userRole={userRole}
                            onProofUpload={handleProofUpload}
                            currentUserId={currentUser?.uid}
+                        />
+                     </TabsContent>
+
+                     <TabsContent value="reviews" className="space-y-6">
+                        <ReviewSection
+                           taskId={task._id}
+                           reviews={reviews}
+                           userRole={userRole}
+                           currentUserId={currentUser?.uid}
+                           reviewedUserId={reviewedUserId}
+                           reviewedUserName={reviewedUserName}
+                           canReview={canReview}
+                           onCreateReview={handleCreateReview}
+                           onHelpful={handleHelpful}
                         />
                      </TabsContent>
 
@@ -483,6 +671,77 @@ export default function TaskTrackingPage() {
                </div>
             </div>
          </div>
+
+         {/* Report Modal */}
+         <Dialog open={showReportModal} onOpenChange={setShowReportModal}>
+            <DialogContent className="max-w-[95vw] md:max-w-2xl max-h-[90vh] overflow-y-auto">
+               <DialogHeader>
+                  <DialogTitle className="text-base md:text-lg">
+                     Report Task
+                  </DialogTitle>
+               </DialogHeader>
+               <div className="mt-4">
+                  {existingReport ? (
+                     <div className="space-y-4">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                           <p className="text-sm font-semibold text-blue-900 mb-2">
+                              Report Already Submitted
+                           </p>
+                           <div className="space-y-1.5 text-xs md:text-sm text-blue-700">
+                              <p>
+                                 <span className="font-medium">Status:</span>{" "}
+                                 {existingReport.status}
+                              </p>
+                              <p>
+                                 <span className="font-medium">Reason:</span>{" "}
+                                 {existingReport.reason.replace("_", " ")}
+                              </p>
+                              {existingReport.description && (
+                                 <p>
+                                    <span className="font-medium">
+                                       Details:
+                                    </span>{" "}
+                                    {existingReport.description}
+                                 </p>
+                              )}
+                              {existingReport.reviewedAt && (
+                                 <p>
+                                    <span className="font-medium">
+                                       Reviewed:
+                                    </span>{" "}
+                                    {new Date(
+                                       existingReport.reviewedAt
+                                    ).toLocaleDateString()}
+                                 </p>
+                              )}
+                              {existingReport.resolutionNotes && (
+                                 <div className="mt-2 pt-2 border-t border-blue-200">
+                                    <p className="font-medium mb-1">
+                                       Resolution Notes:
+                                    </p>
+                                    <p>{existingReport.resolutionNotes}</p>
+                                 </div>
+                              )}
+                           </div>
+                        </div>
+                        {existingReport.status === "pending" && (
+                           <ReportForm
+                              onSubmit={handleSubmitReport}
+                              onCancel={() => setShowReportModal(false)}
+                              isSubmitting={false}
+                           />
+                        )}
+                     </div>
+                  ) : (
+                     <ReportForm
+                        onSubmit={handleSubmitReport}
+                        onCancel={() => setShowReportModal(false)}
+                        isSubmitting={false}
+                     />
+                  )}
+               </div>
+            </DialogContent>
+         </Dialog>
       </div>
    );
 }

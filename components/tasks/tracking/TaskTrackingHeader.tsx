@@ -7,18 +7,21 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, User } from "lucide-react";
+import { ChevronLeft, User, Flag } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { TaskStatusBadge } from "@/components/tasks/TaskStatusBadge";
 import type { Task } from "@/types/task";
 
 interface TaskTrackingHeaderProps {
    task: Task;
    userRole: "poster" | "tasker" | "viewer";
+   onReportClick?: () => void;
 }
 
 export function TaskTrackingHeader({
    task,
    userRole,
+   onReportClick,
 }: TaskTrackingHeaderProps) {
    const router = useRouter();
 
@@ -37,7 +40,7 @@ export function TaskTrackingHeader({
       <div className="bg-white/95 backdrop-blur-sm border-b border-secondary-100 sticky top-0 z-10">
          <div className="max-w-7xl mx-auto px-4 sm:px-6">
             {/* Back Button Row */}
-            <div className="flex items-center h-12 md:h-14">
+            <div className="flex items-center justify-between h-12 md:h-14">
                <button
                   onClick={() => router.back()}
                   className="flex items-center gap-1.5 text-secondary-500 hover:text-secondary-900 transition-colors -ml-2 px-2 py-1.5 rounded-md hover:bg-secondary-50"
@@ -48,6 +51,17 @@ export function TaskTrackingHeader({
                      Back
                   </span>
                </button>
+               {onReportClick && (
+                  <Button
+                     variant="ghost"
+                     size="sm"
+                     onClick={onReportClick}
+                     className="text-xs md:text-sm text-secondary-600 hover:text-red-600"
+                  >
+                     <Flag className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5" />
+                     Report
+                  </Button>
+               )}
             </div>
 
             {/* Title & Meta Row */}

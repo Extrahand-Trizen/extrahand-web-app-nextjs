@@ -80,3 +80,58 @@ export interface ProofUpload {
    files: File[];
    caption?: string;
 }
+
+export interface ReviewRatings {
+   communication?: number;
+   quality?: number;
+   timeliness?: number;
+   professionalism?: number;
+   value?: number;
+}
+
+export interface Review {
+   _id: string;
+   taskId: string;
+   reviewerUid: string;
+   reviewedUid: string;
+   reviewerName?: string;
+   reviewerAvatar?: string;
+   rating: number;
+   title?: string;
+   comment?: string;
+   ratings?: ReviewRatings;
+   isPublic: boolean;
+   isVerified: boolean;
+   helpful: number;
+   notHelpful: number;
+   response?: {
+      comment: string;
+      timestamp: Date;
+   };
+   createdAt: Date;
+   updatedAt: Date;
+}
+
+export type ReportReason =
+   | "spam"
+   | "inappropriate_content"
+   | "fraudulent"
+   | "duplicate"
+   | "wrong_category"
+   | "other";
+
+export type ReportStatus = "pending" | "reviewed" | "resolved" | "dismissed";
+
+export interface TaskReportSubmission {
+   _id?: string;
+   userId: string;
+   taskId: string;
+   reason: ReportReason;
+   description?: string;
+   status?: ReportStatus;
+   reviewedBy?: string;
+   reviewedAt?: Date;
+   resolutionNotes?: string;
+   createdAt?: Date;
+   updatedAt?: Date;
+}
