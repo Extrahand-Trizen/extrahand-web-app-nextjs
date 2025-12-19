@@ -38,7 +38,7 @@ export function MessageBubble({
    return (
       <div
          className={cn(
-            "flex gap-2 mb-3",
+            "flex gap-2",
             isCurrentUser ? "flex-row-reverse" : "flex-row"
          )}
       >
@@ -48,27 +48,27 @@ export function MessageBubble({
                {message.senderName[0].toUpperCase()}
             </div>
          ) : (
-            <div className="w-7 shrink-0" />
+            <div className="w-0 shrink-0" />
          )}
 
          {/* Message Content */}
          <div
             className={cn(
-               "flex flex-col gap-1 max-w-[70%] md:max-w-[55%]",
+               "flex flex-col gap-1 max-w-[75%] md:max-w-[60%]",
                isCurrentUser ? "items-end" : "items-start"
             )}
          >
             {/* Message Bubble */}
             <div
                className={cn(
-                  "px-3 py-2 rounded-lg",
+                  "px-4 py-2.5 rounded-2xl shadow-sm",
                   isCurrentUser
-                     ? "bg-primary-600 text-white"
-                     : "bg-gray-100 text-gray-900",
+                     ? "bg-primary-600 text-white rounded-tr-sm"
+                     : "bg-white text-secondary-900 border border-secondary-200 rounded-tl-sm",
                   message.status === "failed" && "opacity-60"
                )}
             >
-               <p className="text-xs md:text-sm leading-relaxed whitespace-pre-wrap wrap-break-word">
+               <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
                   {message.text}
                </p>
             </div>

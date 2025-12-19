@@ -1,426 +1,487 @@
 "use client";
 
 /**
- * Task Tracking Page
- * Shows task progress, status timeline, and allows status updates
- * Matches: web-apps/extrahand-web-app/src/screens/TaskTrackingScreen.tsx
- * NO API CALLS - Just UI with mock data
+ * Task Tracking Page - Single source of truth for task tracking
+ * Shows task progress, status updates, proof of work, and related features
+ * Role-based views for poster and tasker
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+   Select,
+   SelectContent,
+   SelectItem,
+   SelectTrigger,
+   SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { MessageSquare } from "lucide-react";
+import { useAuth } from "@/lib/auth/context";
+import {
+   TaskTrackingHeader,
+   TaskStatusTimeline,
+   TaskDetailsCard,
+   StatusUpdateSection,
+   ProofOfWorkSection,
+} from "@/components/tasks/tracking";
+import { EmbeddedChat } from "@/components/tasks/tracking/EmbeddedChat";
+import type { Task } from "@/types/task";
+import type { UserRole, ProofOfWork } from "@/types/tracking";
+import type { Message } from "@/types/chat";
+import { mockTasksData } from "@/lib/data/mockTasks";
 
-// Mock task data
-const mockTask = {
-   _id: "1",
-   title: "Home Deep Cleaning",
-   description:
-      "Complete deep cleaning for 3BHK apartment including kitchen and bathrooms. Need professional service with eco-friendly products.",
-   budget: { amount: 1500, currency: "INR" },
-   category: "Cleaning",
-   location: { address: "Hitech City, Hyderabad", city: "Hyderabad" },
-   status: "in_progress",
-   requesterId: "owner1",
-   assigneeUid: "performer1",
-   requesterName: "John Doe",
-   assignedToName: "Jane Smith",
-   createdAt: new Date().toISOString(),
-};
-
-const getStatusInfo = (status: string) => {
-   switch (status) {
-      case "assigned":
-         return {
-            color: "#2196F3",
-            text: "ASSIGNED",
-            description: "Performer has been assigned to this task",
-         };
-      case "started":
-         return {
-            color: "#FF9800",
-            text: "STARTED",
-            description: "Work has begun on this task",
-         };
-      case "in_progress":
-         return {
-            color: "#FF5722",
-            text: "IN PROGRESS",
-            description: "Task is actively being worked on",
-         };
-      case "review":
-         return {
-            color: "#9C27B0",
-            text: "UNDER REVIEW",
-            description: "Work completed, awaiting approval",
-         };
-      case "completed":
-         return {
-            color: "#4CAF50",
-            text: "COMPLETED",
-            description: "Task successfully completed",
-         };
-      case "cancelled":
-         return {
-            color: "#F44336",
-            text: "CANCELLED",
-            description: "Task was cancelled",
-         };
-      default:
-         return {
-            color: "#9E9E9E",
-            text: status.toUpperCase(),
-            description: "Status unknown",
-         };
-   }
-};
+// Mock proof of work data
+const mockProofs: ProofOfWork[] = [
+   {
+      _id: "proof1",
+      taskId: "1",
+      uploadedBy: "performer1",
+      uploadedByName: "Rajesh Kumar",
+      files: [
+         {
+            url: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&h=600&fit=crop",
+            filename: "work-progress-1.jpg",
+            type: "image/jpeg",
+            size: 245000,
+         },
+         {
+            url: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&h=600&fit=crop",
+            filename: "work-progress-2.jpg",
+            type: "image/jpeg",
+            size: 312000,
+         },
+      ],
+      caption:
+         "Initial cleaning started. Applied eco-friendly cleaning solution.",
+      uploadedAt: new Date(Date.now() - 3600000),
+   },
+];
 
 export default function TaskTrackingPage() {
    const router = useRouter();
    const params = useParams();
+   const { currentUser, loading: authLoading } = useAuth();
    const taskId = params.id as string;
 
-   const [task] = useState(mockTask);
-   const [updatingStatus, setUpdatingStatus] = useState(false);
-   const [startingChat, setStartingChat] = useState(false);
-   const [isTaskOwner] = useState(true); // Mock: Would check against current user
-   const [isAssignedPerformer] = useState(false); // Mock: Would check against current user
+   const [task, setTask] = useState<Task | null>(null);
+   const [proofs, setProofs] = useState<ProofOfWork[]>(mockProofs);
+   const [isLoading, setIsLoading] = useState(true);
+   const [activeTab, setActiveTab] = useState("overview");
+   const [overrideRole, setOverrideRole] = useState<UserRole | null>(null);
+   const [chatMessages, setChatMessages] = useState<Message[]>([]);
+   const [isLoadingChat, setIsLoadingChat] = useState(false);
 
-   const statusInfo = getStatusInfo(task.status);
+   // Determine user role (with override for testing)
+   const computedRole: UserRole = useMemo(() => {
+      if (!task || !currentUser) return "viewer";
+      if (task.creatorUid === currentUser.uid) return "poster";
+      if (task.assigneeUid === currentUser.uid) return "tasker";
+      return "viewer";
+   }, [task, currentUser]);
 
-   const statuses = [
-      { key: "assigned", label: "Assigned" },
-      { key: "started", label: "Started" },
-      { key: "in_progress", label: "In Progress" },
-      { key: "review", label: "Review" },
-      { key: "completed", label: "Completed" },
-   ];
+   // Use override role if set, otherwise use computed role
+   const userRole: UserRole = overrideRole || computedRole;
 
-   const currentStatusIndex = statuses.findIndex((s) => s.key === task.status);
+   // Fetch task data (mock for now)
+   useEffect(() => {
+      const fetchTask = async () => {
+         setIsLoading(true);
+         // TODO: Replace with actual API call
+         // const taskData = await api.getTask(taskId);
 
-   const getAvailableActions = () => {
-      const actions: Array<{ status: string; label: string; color: string }> =
-         [];
-      const isOwner = isTaskOwner;
-      const isPerformer = isAssignedPerformer;
+         // Mock: Find task in mock data
+         const foundTask = mockTasksData.find((t) => t._id === taskId);
 
-      switch (task.status) {
-         case "assigned":
-            if (isPerformer) {
-               actions.push({
-                  status: "started",
-                  label: "Mark as Started",
-                  color: "#FF9800",
-               });
-            }
-            if (isOwner) {
-               actions.push({
-                  status: "cancelled",
-                  label: "Cancel Task",
-                  color: "#F44336",
-               });
-            }
-            break;
-         case "started":
-            if (isPerformer) {
-               actions.push({
-                  status: "in_progress",
-                  label: "Mark In Progress",
-                  color: "#FF5722",
-               });
-            }
-            if (isOwner) {
-               actions.push({
-                  status: "cancelled",
-                  label: "Cancel Task",
-                  color: "#F44336",
-               });
-            }
-            break;
-         case "in_progress":
-            if (isPerformer) {
-               actions.push({
-                  status: "review",
-                  label: "Submit for Review",
-                  color: "#9C27B0",
-               });
-            }
-            if (isOwner) {
-               actions.push({
-                  status: "cancelled",
-                  label: "Cancel Task",
-                  color: "#F44336",
-               });
-            }
-            break;
-         case "review":
-            if (isOwner) {
-               actions.push({
-                  status: "completed",
-                  label: "Approve & Complete",
-                  color: "#4CAF50",
-               });
-               actions.push({
-                  status: "in_progress",
-                  label: "Request Changes",
-                  color: "#FF5722",
-               });
-            }
-            if (isPerformer) {
-               actions.push({
-                  status: "in_progress",
-                  label: "Make Changes",
-                  color: "#FF5722",
-               });
-            }
-            break;
+         if (foundTask) {
+            setTask(foundTask as Task);
+         }
+
+         setIsLoading(false);
+      };
+
+      if (taskId) {
+         fetchTask();
       }
-      return actions;
+   }, [taskId]);
+
+   // Handle status update
+   const handleStatusUpdate = async (
+      newStatus: Task["status"],
+      reason?: string
+   ) => {
+      if (!task) return;
+
+      // TODO: Replace with actual API call
+      // await api.updateTaskStatus(task._id, { status: newStatus, reason });
+
+      // Mock: Update local state
+      setTask({
+         ...task,
+         status: newStatus,
+         ...(reason && { cancellationReason: reason }),
+         updatedAt: new Date(),
+      });
    };
 
-   const updateTaskStatus = async (newStatus: string) => {
-      setUpdatingStatus(true);
-      // Mock: Simulate API call
-      setTimeout(() => {
-         alert(`Task status updated to ${newStatus.replace("_", " ")} (Mock)`);
-         setUpdatingStatus(false);
-      }, 1000);
+   // Handle proof upload
+   const handleProofUpload = async (
+      proofData: Omit<ProofOfWork, "_id" | "uploadedAt">
+   ) => {
+      // TODO: Replace with actual API call
+      // const newProof = await api.uploadProofOfWork(proofData);
+
+      // Mock: Add to local state
+      const newProof: ProofOfWork = {
+         ...proofData,
+         _id: `proof-${Date.now()}`,
+         uploadedAt: new Date(),
+      };
+
+      setProofs([...proofs, newProof]);
    };
 
-   const handleStartChat = async () => {
-      setStartingChat(true);
-      // Mock: Simulate API call
-      setTimeout(() => {
-         const otherUserId = isTaskOwner ? task.assigneeUid : task.requesterId;
-         router.push(
-            `/chat?taskId=${task._id}&taskTitle=${encodeURIComponent(
-               task.title
-            )}&otherUserId=${otherUserId}`
-         );
-         setStartingChat(false);
-      }, 500);
+   // Load chat messages - Same conversation, but perspective flips based on role
+   useEffect(() => {
+      if (!task) return;
+
+      const loadChat = async () => {
+         setIsLoadingChat(true);
+         // TODO: Replace with actual API call
+         // const chat = await api.getChatByTaskId(task._id);
+         // const messages = await api.getChatMessages(chat.chatId);
+
+         // Fixed conversation - same messages, but sender flips based on role
+         const taskerUserId = task.assigneeUid || "mock_tasker_123";
+         const taskerUserName = task.assignedToName || "Tasker";
+         const posterUserId = task.creatorUid || "mock_poster_123";
+         const posterUserName = task.requesterName || "Task Owner";
+         const currentUserId = currentUser?.uid || "current_user";
+
+         // Base conversation structure - same messages regardless of role
+         const baseConversation: Array<{
+            _id: string;
+            text: string;
+            fromTasker: boolean; // true = originally from tasker, false = from poster
+            createdAt: number;
+         }> = [
+            {
+               _id: "msg1",
+               text: "Hello! I'm ready to start working on this task.",
+               fromTasker: true, // Tasker says this
+               createdAt: Date.now() - 3600000,
+            },
+            {
+               _id: "msg2",
+               text: "Great! Let me know if you have any questions.",
+               fromTasker: false, // Poster says this
+               createdAt: Date.now() - 3300000,
+            },
+            {
+               _id: "msg3",
+               text: "I'll keep you updated on the progress.",
+               fromTasker: true, // Tasker says this
+               createdAt: Date.now() - 1800000,
+            },
+            {
+               _id: "msg4",
+               text: "Perfect! Looking forward to seeing the results.",
+               fromTasker: false, // Poster says this
+               createdAt: Date.now() - 900000,
+            },
+         ];
+
+         // Map messages - flip perspective based on current role
+         const mockMessages: Message[] = baseConversation.map((baseMsg) => {
+            // Determine if this message is from current user based on role
+            // If viewing as poster: poster messages = "You", tasker messages = "other"
+            // If viewing as tasker: tasker messages = "You", poster messages = "other"
+            const isFromCurrentUser =
+               (userRole === "poster" && !baseMsg.fromTasker) ||
+               (userRole === "tasker" && baseMsg.fromTasker);
+
+            return {
+               _id: baseMsg._id,
+               chatId: `task_${task._id}_chat`,
+               taskId: task._id,
+               text: baseMsg.text,
+               senderId: isFromCurrentUser
+                  ? currentUserId
+                  : baseMsg.fromTasker
+                  ? taskerUserId
+                  : posterUserId,
+               senderName: isFromCurrentUser
+                  ? "You"
+                  : baseMsg.fromTasker
+                  ? taskerUserName
+                  : posterUserName,
+               type: "text",
+               status: "read",
+               createdAt: new Date(baseMsg.createdAt),
+               readBy: [],
+            };
+         });
+
+         setChatMessages(mockMessages);
+         setIsLoadingChat(false);
+      };
+
+      loadChat();
+   }, [task, userRole, currentUser]);
+
+   // Handle send message
+   const handleSendMessage = async (text: string) => {
+      if (!task) return;
+
+      // TODO: Replace with actual API call
+      // await api.sendMessage(chatId, text);
+
+      // Mock: Add message to local state
+      const newMessage: Message = {
+         _id: `msg_${Date.now()}`,
+         chatId: `task_${task._id}_chat`,
+         taskId: task._id,
+         text,
+         senderId: currentUser?.uid || "current_user",
+         senderName: "You",
+         type: "text",
+         status: "sent",
+         createdAt: new Date(),
+         readBy: [],
+      };
+
+      setChatMessages([...chatMessages, newMessage]);
    };
 
-   const getUserRole = () => {
-      if (isTaskOwner) return "Task Owner";
-      if (isAssignedPerformer) return "Assigned Performer";
-      return "Viewer";
-   };
+   if (isLoading || authLoading) {
+      return (
+         <div className="min-h-screen flex items-center justify-center bg-secondary-50">
+            <div className="text-center">
+               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+               <p className="text-secondary-600">Loading task details...</p>
+            </div>
+         </div>
+      );
+   }
 
-   const availableActions = getAvailableActions();
-   const userRole = getUserRole();
+   if (!task) {
+      return (
+         <div className="min-h-screen flex items-center justify-center bg-secondary-50">
+            <div className="text-center max-w-md px-4">
+               <h1 className="text-2xl font-bold text-secondary-900 mb-2">
+                  Task not found
+               </h1>
+               <p className="text-secondary-600 mb-6">
+                  The task you&apos;re looking for doesn&apos;t exist or has
+                  been removed.
+               </p>
+               <Button onClick={() => router.push("/tasks")}>
+                  Browse all tasks
+               </Button>
+            </div>
+         </div>
+      );
+   }
 
    return (
-      <div className="flex flex-col min-h-screen bg-gray-50">
-         {/* Header */}
-         <div className="flex items-center px-4 py-4 bg-white border-b border-gray-200">
-            <button onClick={() => router.back()} className="mr-4">
-               <span className="text-base text-blue-500 font-semibold">
-                  ← Back
+      <div className="min-h-screen bg-secondary-50">
+         {/* Temporary Role Switcher - For Testing */}
+         <div className="bg-yellow-50 border-b border-yellow-200 px-4 md:px-6 py-2">
+            <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+               <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-yellow-800">
+                     🧪 Testing Mode:
+                  </span>
+                  <Select
+                     value={overrideRole || "auto"}
+                     onValueChange={(value) =>
+                        setOverrideRole(
+                           value === "auto" ? null : (value as UserRole)
+                        )
+                     }
+                  >
+                     <SelectTrigger className="h-7 w-[140px] text-xs border-yellow-300 bg-white">
+                        <SelectValue />
+                     </SelectTrigger>
+                     <SelectContent>
+                        <SelectItem value="auto">
+                           Auto ({computedRole})
+                        </SelectItem>
+                        <SelectItem value="poster">Poster</SelectItem>
+                        <SelectItem value="tasker">Tasker</SelectItem>
+                        <SelectItem value="viewer">Viewer</SelectItem>
+                     </SelectContent>
+                  </Select>
+               </div>
+               <span className="text-xs text-yellow-700">
+                  Current: <strong>{userRole}</strong>
                </span>
-            </button>
-            <div className="flex-1">
-               <h1 className="text-xl font-bold text-gray-900 mb-1">
-                  Task Tracking
-               </h1>
-               <p className="text-sm text-gray-600 line-clamp-2">
-                  {task.title}
-               </p>
-               <p className="text-xs text-blue-500 font-semibold mt-1">
-                  You are: {userRole}
-               </p>
             </div>
          </div>
 
-         <div className="flex-1 overflow-y-auto">
-            {/* Current Status */}
-            <div className="bg-white px-5 py-5 mb-4 text-center">
-               <div
-                  className="inline-block px-5 py-2.5 rounded-full mb-3"
-                  style={{ backgroundColor: statusInfo.color }}
-               >
-                  <span className="text-white text-base font-bold">
-                     {statusInfo.text}
-                  </span>
-               </div>
-               <p className="text-sm text-gray-600">{statusInfo.description}</p>
-            </div>
+         {/* Header */}
+         <TaskTrackingHeader task={task} userRole={userRole} />
 
-            {/* Timeline */}
-            {task.status !== "cancelled" && (
-               <div className="bg-white px-5 py-5 mb-4">
-                  <h2 className="text-lg font-bold text-gray-900 mb-4 text-center">
-                     Task Progress
-                  </h2>
-                  <div className="flex items-center justify-between relative">
-                     {statuses.map((statusItem, index) => {
-                        const isActive = index <= currentStatusIndex;
-                        const isCurrent = statusItem.key === task.status;
+         {/* Main Content */}
+         <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+               {/* Left Column - Main Content */}
+               <div className="lg:col-span-2 space-y-6">
+                  {/* Status Timeline */}
+                  <TaskStatusTimeline task={task} />
 
-                        return (
-                           <div
-                              key={statusItem.key}
-                              className="flex flex-col items-center flex-1 relative"
+                  {/* Quick Actions - Mobile Only (at top) */}
+                  {userRole !== "viewer" && (
+                     <div className="lg:hidden space-y-4">
+                        <StatusUpdateSection
+                           task={task}
+                           userRole={userRole}
+                           onStatusUpdate={handleStatusUpdate}
+                        />
+                        {/* Chat Button in Actions Section - Mobile */}
+                        <div className="bg-white rounded-xl shadow-sm border border-secondary-200 p-4 md:p-6">
+                           <h2 className="text-base md:text-lg font-semibold md:font-bold text-secondary-900 mb-3 md:mb-4">
+                              Communication
+                           </h2>
+                           <Button
+                              onClick={() => {
+                                 const otherUserId =
+                                    userRole === "poster"
+                                       ? task.assigneeUid || "mock_tasker_123"
+                                       : task.creatorUid || "mock_poster_123";
+                                 const taskTitle = encodeURIComponent(
+                                    task.title
+                                 );
+                                 router.push(
+                                    `/chat?taskId=${task._id}&taskTitle=${taskTitle}&otherUserId=${otherUserId}`
+                                 );
+                              }}
+                              className="w-full justify-start gap-2 text-sm md:text-base font-medium md:font-semibold"
+                              variant="outline"
                            >
-                              <div
-                                 className={`w-5 h-5 rounded-full mb-2 flex items-center justify-center ${
-                                    isActive
-                                       ? isCurrent
-                                          ? "bg-green-500"
-                                          : "bg-blue-500"
-                                       : "bg-gray-300"
-                                 }`}
-                              >
-                                 {isCurrent && (
-                                    <div className="w-2 h-2 rounded-full bg-white" />
-                                 )}
-                              </div>
-                              <span
-                                 className={`text-xs text-center font-medium ${
-                                    isActive
-                                       ? isCurrent
-                                          ? "text-green-500 font-bold"
-                                          : "text-blue-500 font-semibold"
-                                       : "text-gray-400"
-                                 }`}
-                              >
-                                 {statusItem.label}
-                              </span>
-                              {index < statuses.length - 1 && (
-                                 <div
-                                    className={`absolute top-2.5 left-1/2 w-full h-0.5 ${
-                                       isActive ? "bg-blue-500" : "bg-gray-300"
-                                    }`}
-                                    style={{ zIndex: -1 }}
-                                 />
-                              )}
-                           </div>
-                        );
-                     })}
-                  </div>
+                              <MessageSquare className="w-4 h-4" />
+                              Open Chat
+                           </Button>
+                        </div>
+                     </div>
+                  )}
+
+                  {/* Tabs */}
+                  <Tabs
+                     value={activeTab}
+                     onValueChange={setActiveTab}
+                     className="w-full"
+                  >
+                     <TabsList className="grid w-full grid-cols-3 mb-6">
+                        <TabsTrigger value="overview">Overview</TabsTrigger>
+                        <TabsTrigger value="proof">Proof of Work</TabsTrigger>
+                        <TabsTrigger value="details">Details</TabsTrigger>
+                     </TabsList>
+
+                     <TabsContent value="overview" className="space-y-6">
+                        {/* Task Details Card */}
+                        <TaskDetailsCard task={task} />
+                     </TabsContent>
+
+                     <TabsContent value="proof" className="space-y-6">
+                        <ProofOfWorkSection
+                           taskId={task._id}
+                           proofs={proofs}
+                           userRole={userRole}
+                           onProofUpload={handleProofUpload}
+                           currentUserId={currentUser?.uid}
+                        />
+                     </TabsContent>
+
+                     <TabsContent value="details" className="space-y-6">
+                        <TaskDetailsCard task={task} />
+                     </TabsContent>
+                  </Tabs>
                </div>
-            )}
 
-            {/* Task Details */}
-            <div className="mb-4">
-               <h2 className="text-lg font-bold text-gray-900 mb-3 px-5">
-                  Task Details
-               </h2>
-               <div className="bg-white mx-4 rounded-xl p-5 shadow-sm">
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">
-                     {task.title}
-                  </h3>
-                  <p className="text-sm text-gray-600 leading-5 mb-4">
-                     {task.description}
-                  </p>
+               {/* Right Sidebar - Desktop Only */}
+               <div className="hidden lg:block space-y-6">
+                  {/* Status Update Section */}
+                  {userRole !== "viewer" && (
+                     <StatusUpdateSection
+                        task={task}
+                        userRole={userRole}
+                        onStatusUpdate={handleStatusUpdate}
+                     />
+                  )}
 
-                  <div className="border-t border-gray-100 pt-4 space-y-2">
-                     <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600 font-medium">
-                           Budget:
-                        </span>
-                        <span className="text-gray-900 font-semibold">
-                           ₹
-                           {typeof task.budget === "object"
-                              ? task.budget.amount
-                              : task.budget}
-                        </span>
+                  {/* Embedded Chat - Desktop - Only for poster and tasker */}
+                  {userRole !== "viewer" && (
+                     <div className="bg-white rounded-xl shadow-sm border border-secondary-200 overflow-hidden">
+                        <div className="h-[500px] flex flex-col">
+                           <EmbeddedChat
+                              taskId={task._id}
+                              otherUserId={
+                                 userRole === "poster"
+                                    ? task.assigneeUid || "mock_tasker_123"
+                                    : task.creatorUid || "mock_poster_123"
+                              }
+                              otherUserName={
+                                 userRole === "poster"
+                                    ? task.assignedToName || "Tasker"
+                                    : task.requesterName || "Task Owner"
+                              }
+                              currentUserId={currentUser?.uid || "current_user"}
+                              messages={chatMessages}
+                              onSendMessage={handleSendMessage}
+                              isLoading={isLoadingChat}
+                           />
+                        </div>
                      </div>
-                     <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600 font-medium">
-                           Category:
-                        </span>
-                        <span className="text-gray-900 font-semibold">
-                           {task.category}
-                        </span>
-                     </div>
-                     <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600 font-medium">
-                           Location:
-                        </span>
-                        <span className="text-gray-900 font-semibold">
-                           {task.location?.address || "Not specified"}
-                        </span>
+                  )}
+
+                  {/* Task Summary Card */}
+                  <div className="bg-white rounded-xl shadow-sm border border-secondary-200 p-6">
+                     <h3 className="text-base font-bold text-secondary-900 mb-4">
+                        Task Summary
+                     </h3>
+                     <div className="space-y-3 text-sm">
+                        <div className="flex justify-between">
+                           <span className="text-secondary-600">Status:</span>
+                           <span className="font-semibold text-secondary-900">
+                              {task.status.replace("_", " ").toUpperCase()}
+                           </span>
+                        </div>
+                        <div className="flex justify-between">
+                           <span className="text-secondary-600">Created:</span>
+                           <span className="font-semibold text-secondary-900">
+                              {new Date(task.createdAt).toLocaleDateString()}
+                           </span>
+                        </div>
+                        {task.assignedAt && (
+                           <div className="flex justify-between">
+                              <span className="text-secondary-600">
+                                 Assigned:
+                              </span>
+                              <span className="font-semibold text-secondary-900">
+                                 {new Date(
+                                    task.assignedAt
+                                 ).toLocaleDateString()}
+                              </span>
+                           </div>
+                        )}
+                        {task.completedAt && (
+                           <div className="flex justify-between">
+                              <span className="text-secondary-600">
+                                 Completed:
+                              </span>
+                              <span className="font-semibold text-secondary-900">
+                                 {new Date(
+                                    task.completedAt
+                                 ).toLocaleDateString()}
+                              </span>
+                           </div>
+                        )}
                      </div>
                   </div>
                </div>
             </div>
-
-            {/* Available Actions */}
-            {availableActions.length > 0 && (
-               <div className="mb-4">
-                  <h2 className="text-lg font-bold text-gray-900 mb-3 px-5">
-                     Available Actions
-                  </h2>
-                  <div className="px-4 space-y-3">
-                     {availableActions.map((action) => (
-                        <button
-                           key={action.status}
-                           onClick={() => updateTaskStatus(action.status)}
-                           disabled={updatingStatus}
-                           className={`w-full py-3.5 px-5 rounded-lg text-base font-semibold text-white ${
-                              updatingStatus
-                                 ? "opacity-50 cursor-not-allowed"
-                                 : ""
-                           }`}
-                           style={{ backgroundColor: action.color }}
-                        >
-                           {updatingStatus ? (
-                              <LoadingSpinner size="sm" />
-                           ) : (
-                              action.label
-                           )}
-                        </button>
-                     ))}
-                  </div>
-               </div>
-            )}
-
-            {/* Communication Section */}
-            {task.status !== "open" &&
-               task.status !== "cancelled" &&
-               (isTaskOwner || isAssignedPerformer) && (
-                  <div className="mb-5">
-                     <h2 className="text-lg font-bold text-gray-900 mb-3 px-5">
-                        Communication
-                     </h2>
-                     <div className="bg-white mx-4 rounded-xl p-5 shadow-sm text-center">
-                        <p className="text-xs text-gray-600 mb-1">
-                           {isTaskOwner ? "Assigned Performer" : "Task Owner"}
-                        </p>
-                        <p className="text-base font-bold text-gray-900 mb-1">
-                           {isTaskOwner
-                              ? task.assignedToName || "Performer"
-                              : task.requesterName || "Task Owner"}
-                        </p>
-                        <p className="text-xs text-gray-600 mb-4 leading-4">
-                           Coordinate task details, ask questions, and share
-                           updates
-                        </p>
-                        <button
-                           onClick={handleStartChat}
-                           disabled={startingChat}
-                           className={`w-full py-3 px-6 rounded-lg text-sm font-semibold text-white mb-2 ${
-                              startingChat
-                                 ? "opacity-50 cursor-not-allowed"
-                                 : ""
-                           }`}
-                           style={{ backgroundColor: "#4CAF50" }}
-                        >
-                           {startingChat ? (
-                              <LoadingSpinner size="sm" />
-                           ) : (
-                              "💬 Send Message"
-                           )}
-                        </button>
-                        <p className="text-xs text-gray-500 italic">
-                           {isTaskOwner
-                              ? "Chat with your assigned performer"
-                              : "Chat with the task owner"}
-                        </p>
-                     </div>
-                  </div>
-               )}
          </div>
       </div>
    );
