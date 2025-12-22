@@ -71,3 +71,4 @@ export default async function ServicesPage() {
 
    return <CategoriesClient categories={categories} viewType="services" />;
 }
+

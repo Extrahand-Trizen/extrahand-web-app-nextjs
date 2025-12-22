@@ -71,3 +71,4 @@ export default async function JobsPage() {
 
    return <CategoriesClient categories={categories} viewType="jobs" />;
 }
+

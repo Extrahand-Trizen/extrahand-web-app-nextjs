@@ -94,22 +94,22 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
       }
    };
 
-   const handleGoogleSignup = async () => {
-      setIsSubmitting(true);
-      try {
-         await new Promise((resolve) => setTimeout(resolve, 500));
-         toast.success("Signed up with Google!", {
-            description: "Redirecting...",
-         });
-         router.push("/onboarding/choose-location-method");
-      } catch {
-         toast.error("Google sign-up failed", {
-            description: "Please try again.",
-         });
-      } finally {
-         setIsSubmitting(false);
-      }
-   };
+   // const handleGoogleSignup = async () => {
+   //    setIsSubmitting(true);
+   //    try {
+   //       await new Promise((resolve) => setTimeout(resolve, 500));
+   //       toast.success("Signed up with Google!", {
+   //          description: "Redirecting...",
+   //       });
+   //       router.push("/onboarding/choose-location-method");
+   //    } catch {
+   //       toast.error("Google sign-up failed", {
+   //          description: "Please try again.",
+   //       });
+   //    } finally {
+   //       setIsSubmitting(false);
+   //    }
+   // };
 
    return (
       <div className="min-h-screen bg-linear-to-b from-white to-secondary-50 flex flex-col">
@@ -223,6 +223,7 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
                                           <Input
                                              placeholder="976543210"
                                              className="pl-10"
+                                             maxLength={10}
                                              {...field}
                                           />
                                        </div>
@@ -241,6 +242,7 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
                                        <Checkbox
                                           checked={field.value}
                                           onCheckedChange={field.onChange}
+                                          className="[&[data-state=checked]]:bg-primary-500 [&[data-state=checked]]:border-primary-500"
                                        />
                                     </FormControl>
                                     <div className="space-y-1">
@@ -269,7 +271,7 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
                            <Button
                               type="submit"
                               size="lg"
-                              className="w-full"
+                              className="w-full bg-primary-500 hover:bg-primary-600"
                               disabled={isSubmitting}
                            >
                               {isSubmitting ? (

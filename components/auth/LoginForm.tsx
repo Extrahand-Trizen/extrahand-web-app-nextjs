@@ -79,22 +79,22 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       }
    };
 
-   const handleGoogleLogin = async () => {
-      setIsSubmitting(true);
-      try {
-         await new Promise((resolve) => setTimeout(resolve, 500));
-         toast.success("Signed in with Google!", {
-            description: "Redirecting...",
-         });
-         router.push("/onboarding/choose-location-method");
-      } catch {
-         toast.error("Google sign-in failed", {
-            description: "Please try again.",
-         });
-      } finally {
-         setIsSubmitting(false);
-      }
-   };
+   // const handleGoogleLogin = async () => {
+   //    setIsSubmitting(true);
+   //    try {
+   //       await new Promise((resolve) => setTimeout(resolve, 500));
+   //       toast.success("Signed in with Google!", {
+   //          description: "Redirecting...",
+   //       });
+   //       router.push("/onboarding/choose-location-method");
+   //    } catch {
+   //       toast.error("Google sign-in failed", {
+   //          description: "Please try again.",
+   //       });
+   //    } finally {
+   //       setIsSubmitting(false);
+   //    }
+   // };
 
    return (
       <div className="min-h-screen bg-linear-to-b from-white to-secondary-50 flex flex-col">
@@ -154,6 +154,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
                                           placeholder="976543210"
                                           className="pl-10"
                                           autoComplete="tel"
+                                          maxLength={10}
                                           {...field}
                                        />
                                     </div>
@@ -166,7 +167,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
                         <Button
                            type="submit"
                            size="lg"
-                           className="w-full"
+                           className="w-full bg-primary-500 hover:bg-primary-600"
                            disabled={isSubmitting}
                         >
                            {isSubmitting ? (
@@ -180,7 +181,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
                         </Button>
 
                         <p className="text-center text-sm text-gray-600">
-                           Don't have an account?{" "}
+                           Don&apos;t have an account?{" "}
                            <Link
                               href="/signup"
                               className="text-primary-500 hover:underline font-medium"

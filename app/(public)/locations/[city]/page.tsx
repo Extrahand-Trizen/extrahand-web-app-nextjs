@@ -3,8 +3,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { getCityBySlug } from "@/lib/data/cities";
 import { getFeaturedCategories } from "@/lib/data/categories";
-import { LandingHeader } from "@/components/layout/LandingHeader";
-import { LandingFooter } from "@/components/layout/LandingFooter";
 import { CityHero } from "@/components/locations/CityHero";
 import { ServiceCategoriesGrid } from "@/components/locations/ServiceCategoriesGrid";
 import { NeighborhoodsGrid } from "@/components/locations/NeighborhoodsGrid";
@@ -94,3 +92,4 @@ export default async function CityPage({ params }: PageProps) {
       </>
    );
 }
+
