@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * My Tasks Page
+ * My Tasks Content Component
  * Displays all tasks created by the current user
- * Modular, mobile-responsive design with consistent theme
+ * Used within the Tasks page tabs
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -17,11 +17,15 @@ import type { Task, TaskListResponse } from "@/types/task";
 import type { TaskQueryParams } from "@/types/api";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
 import { mockTasksData } from "@/lib/data/mockTasks";
-import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type TaskStatus = Task["status"];
 
-export default function MyTasksPage() {
+interface MyTasksContentProps {
+   onCountChange?: (count: number) => void;
+}
+
+export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
    const router = useRouter();
 
    // State
@@ -131,18 +135,21 @@ export default function MyTasksPage() {
 
          // Update state with filtered tasks
          setTasks([...filtered]);
+         const total = filtered.length;
          setPagination({
             page: 1,
             limit: 10,
-            total: filtered.length,
-            pages: Math.ceil(filtered.length / 10),
+            total,
+            pages: Math.ceil(total / 10),
          });
+         // Notify parent of count change
+         onCountChange?.(total);
       } catch (err) {
          setError(err instanceof Error ? err.message : "Failed to load tasks");
       } finally {
          setLoading(false);
       }
-   }, [searchQuery, statusFilter, sortBy, page]);
+   }, [searchQuery, statusFilter, sortBy, page, onCountChange]);
 
    // Fetch on mount and when filters change
    useEffect(() => {
@@ -164,7 +171,11 @@ export default function MyTasksPage() {
          // TODO: Replace with actual API call when backend is ready
          // await tasksApi.deleteTask(taskId);
          await new Promise((resolve) => setTimeout(resolve, 1000));
-         setTasks((prev) => prev.filter((task) => task._id !== taskId));
+         setTasks((prev) => {
+            const updated = prev.filter((task) => task._id !== taskId);
+            onCountChange?.(updated.length);
+            return updated;
+         });
       } catch (err) {
          alert(
             err instanceof Error
@@ -201,14 +212,12 @@ export default function MyTasksPage() {
    // Loading state
    if (loading && tasks.length === 0) {
       return (
-         <div className="min-h-screen bg-secondary-50 flex flex-col">
-            <div className="flex-1 flex items-center justify-center py-20">
-               <div className="text-center">
-                  <LoadingSpinner size="lg" />
-                  <p className="mt-4 text-base text-secondary-600">
-                     Loading your tasks...
-                  </p>
-               </div>
+         <div className="flex-1 flex items-center justify-center py-20">
+            <div className="text-center">
+               <LoadingSpinner size="lg" />
+               <p className="mt-4 text-base text-secondary-600">
+                  Loading your tasks...
+               </p>
             </div>
          </div>
       );
@@ -217,47 +226,20 @@ export default function MyTasksPage() {
    // Error state
    if (error && tasks.length === 0) {
       return (
-         <div className="min-h-screen bg-secondary-50 flex flex-col">
-            <div className="flex-1 flex items-center justify-center py-20 px-4">
-               <div className="text-center max-w-md">
-                  <p className="text-lg font-semibold text-red-600 mb-2">
-                     Error loading tasks
-                  </p>
-                  <p className="text-sm text-secondary-600 mb-4">{error}</p>
-                  <Button onClick={fetchTasks}>Try Again</Button>
-               </div>
+         <div className="flex-1 flex items-center justify-center py-20 px-4">
+            <div className="text-center max-w-md">
+               <p className="text-lg font-semibold text-red-600 mb-2">
+                  Error loading tasks
+               </p>
+               <p className="text-sm text-secondary-600 mb-4">{error}</p>
+               <Button onClick={fetchTasks}>Try Again</Button>
             </div>
          </div>
       );
    }
 
    return (
-      <div className="min-h-screen bg-secondary-50 flex flex-col">
-         {/* Header Section */}
-         <div className="bg-white border-b border-secondary-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div>
-                     <h1 className="text-2xl sm:text-3xl font-bold text-secondary-900">
-                        My Tasks
-                     </h1>
-                     <p className="text-sm sm:text-base text-secondary-600 mt-1">
-                        {pagination.total} task
-                        {pagination.total !== 1 ? "s" : ""}{" "}
-                        {statusFilter !== "all" && `(${statusFilter})`}
-                     </p>
-                  </div>
-                  <Button
-                     onClick={() => router.push("/tasks/new")}
-                     className="bg-primary-600 hover:bg-primary-700 w-full sm:w-auto"
-                  >
-                     <Plus className="w-4 h-4 mr-2" />
-                     Post New Task
-                  </Button>
-               </div>
-            </div>
-         </div>
-
+      <div className="flex flex-col flex-1">
          {/* Filters Section */}
          <MyTasksFilters
             searchQuery={searchQuery}

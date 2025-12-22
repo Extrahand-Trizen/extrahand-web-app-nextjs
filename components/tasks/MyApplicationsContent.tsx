@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * My Applications Page
+ * My Applications Content Component
  * Displays all applications/offers made by the current user
- * Modular, mobile-responsive design with consistent theme
+ * Used within the Tasks page tabs
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -22,7 +22,13 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type ApplicationStatus = TaskApplication["status"];
 
-export default function MyApplicationsPage() {
+interface MyApplicationsContentProps {
+   onCountChange?: (count: number) => void;
+}
+
+export function MyApplicationsContent({
+   onCountChange,
+}: MyApplicationsContentProps) {
    const router = useRouter();
 
    // State
@@ -135,13 +141,15 @@ export default function MyApplicationsPage() {
          });
 
          setApplications(filtered);
+         // Notify parent of count change
+         onCountChange?.(filtered.length);
       } catch (err) {
          console.error("Error fetching applications:", err);
          setError("Failed to load applications. Please try again.");
       } finally {
          setLoading(false);
       }
-   }, [searchQuery, statusFilter, sortBy, page]);
+   }, [searchQuery, statusFilter, sortBy, page, onCountChange]);
 
    useEffect(() => {
       fetchApplications();
@@ -164,13 +172,15 @@ export default function MyApplicationsPage() {
          // Mock withdrawal
          await new Promise((resolve) => setTimeout(resolve, 1000));
 
-         setApplications((prev) =>
-            prev.map((app) =>
+         setApplications((prev) => {
+            const updated = prev.map((app) =>
                app._id === applicationId
                   ? { ...app, status: "withdrawn" as const }
                   : app
-            )
-         );
+            );
+            onCountChange?.(updated.length);
+            return updated;
+         });
 
          toast.success("Application withdrawn successfully");
       } catch (err) {
@@ -184,23 +194,7 @@ export default function MyApplicationsPage() {
    const hasFilters = searchQuery.trim() !== "" || statusFilter !== "all";
 
    return (
-      <div className="min-h-screen bg-secondary-50 flex flex-col">
-         {/* Header */}
-         <div className="bg-white border-b border-secondary-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-               <div className="flex items-center justify-between">
-                  <div>
-                     <h1 className="text-2xl sm:text-3xl font-bold text-secondary-900">
-                        My Applications
-                     </h1>
-                     <p className="text-sm sm:text-base text-secondary-600 mt-1">
-                        Track all your task applications and their status
-                     </p>
-                  </div>
-               </div>
-            </div>
-         </div>
-
+      <div className="flex flex-col flex-1">
          {/* Filters */}
          <MyApplicationsFilters
             searchQuery={searchQuery}

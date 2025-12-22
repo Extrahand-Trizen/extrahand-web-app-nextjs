@@ -45,7 +45,7 @@ export function MyApplicationsEmptyState({
             Start applying to tasks to see your applications here. Browse
             available tasks and submit your offers!
          </p>
-         <Link href="/tasks">
+         <Link href="/discover">
             <Button className="bg-primary-600 hover:bg-primary-700 text-white">
                Browse Tasks
             </Button>
@@ -53,3 +53,6 @@ export function MyApplicationsEmptyState({
       </div>
    );
 }
+
+
+

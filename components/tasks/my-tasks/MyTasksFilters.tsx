@@ -56,9 +56,9 @@ export function MyTasksFilters({
    onSortChange,
 }: MyTasksFiltersProps) {
    return (
-      <div className="bg-white border-b border-secondary-200 sticky top-0 z-10">
-         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+      <div className="bg-white border-b border-secondary-200 sticky top-0 z-[9] w-screen">
+         <div className="w-full px-4 sm:px-6 lg:px-8 py-4 max-w-7xl mx-auto">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full">
                {/* Search */}
                <div className="flex-1">
                   <div className="relative">

@@ -271,7 +271,7 @@ function TaskSnapshotEmpty() {
                </Button>
                <Button
                   variant="outline"
-                  onClick={() => router.push("/tasks")}
+                  onClick={() => router.push("/discover")}
                   className="border-secondary-300 hover:border-primary-300"
                >
                   <Search className="w-4 h-4 mr-2" />

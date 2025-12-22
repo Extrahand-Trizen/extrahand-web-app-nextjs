@@ -36,7 +36,7 @@ const footerColumns = [
     title: 'Members',
     links: [
       { label: 'Post a Task', href: '/tasks/new' },
-      { label: 'Browse Tasks', href: '/tasks' },
+      { label: 'Browse Tasks', href: '/discover' },
       { label: 'Login', href: '/login' },
       { label: 'Support Centre', href: '#' },
       { label: 'Become a Tasker', href: '/signup' },

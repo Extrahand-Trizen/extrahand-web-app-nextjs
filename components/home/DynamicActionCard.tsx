@@ -140,7 +140,7 @@ function FirstTimeCard() {
                   </Button>
                   <Button
                      variant="outline"
-                     onClick={() => router.push("/tasks")}
+                     onClick={() => router.push("/discover")}
                      className="border-secondary-300 hover:border-primary-300"
                   >
                      Browse Tasks
@@ -453,7 +453,7 @@ function LowActivityCard() {
                </p>
                <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button
-                     onClick={() => router.push("/tasks")}
+                     onClick={() => router.push("/discover")}
                      className="bg-primary-500 hover:bg-primary-600 text-white font-semibold shadow-sm"
                   >
                      Browse Tasks
@@ -568,7 +568,7 @@ function ReturningUserCard({ data }: { data: DashboardData }) {
                   </Button>
                   <Button
                      variant="outline"
-                     onClick={() => router.push("/tasks")}
+                     onClick={() => router.push("/discover")}
                      className="border-secondary-300 hover:border-primary-300"
                   >
                      Browse Tasks

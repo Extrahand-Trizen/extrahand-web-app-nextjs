@@ -113,7 +113,7 @@ const taskTypes: string[][] = [
 
 const navItems = [
    { label: "Categories", href: "#categories", hasDropdown: true },
-   { label: "Browse tasks", href: "/tasks" },
+   { label: "Browse tasks", href: "/discover" },
    { label: "How it works", href: "#how-it-works" },
 ];
 
@@ -283,7 +283,7 @@ export const LandingHeader: React.FC = () => {
                                                       As a Tasker
                                                    </span>
                                                    <p className="text-xs text-secondary-600 mt-0.5">
-                                                      I'm looking for work in
+                                                      I&apos;m looking for work in
                                                       ...
                                                    </p>
                                                 </button>
@@ -303,7 +303,7 @@ export const LandingHeader: React.FC = () => {
                                                       As a Poster
                                                    </span>
                                                    <p className="text-xs text-secondary-600 mt-0.5">
-                                                      I'm looking to hire
+                                                      I&apos;m looking to hire
                                                       someone for ...
                                                    </p>
                                                 </button>
@@ -525,7 +525,7 @@ export const LandingHeader: React.FC = () => {
                                     As a Tasker
                                  </span>
                                  <p className="text-[10px] text-secondary-600 mt-0.5">
-                                    I'm looking for work
+                                    I&apos;m looking for work
                                  </p>
                               </button>
                               <button
@@ -542,7 +542,7 @@ export const LandingHeader: React.FC = () => {
                                     As a Poster
                                  </span>
                                  <p className="text-[10px] text-secondary-600 mt-0.5">
-                                    I'm looking to hire someone
+                                    I&apos;m looking to hire someone
                                  </p>
                               </button>
                            </div>
