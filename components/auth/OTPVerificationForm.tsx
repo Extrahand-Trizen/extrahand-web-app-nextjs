@@ -223,58 +223,43 @@ export function OTPVerificationForm({
 
    return (
       <div className="min-h-screen bg-linear-to-b from-white to-secondary-50 flex flex-col">
-         {/* Header */}
-         <header className="px-4 py-4 lg:px-8">
-            <Link
-               href={authType === "signup" ? "/signup" : "/login"}
-               className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-            >
-               <ArrowLeft className="h-4 w-4" />
-               Back
-            </Link>
-         </header>
-
          {/* Main Content */}
-         <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
-            {/* Logo */}
-            <div className="flex justify-center">
-               <div className="flex items-center gap-2 mb-5">
-                  <Image
-                     src="/assets/images/logo.png"
-                     alt="Extrahand"
-                     width={35}
-                     height={35}
-                  />
-                  <span className="text-lg font-bold text-gray-900">
-                     ExtraHand
-                  </span>
-               </div>
-            </div>
-            <Card className="w-full max-w-md shadow-xl">
-               <CardHeader className="space-y-4 text-center">
-                  <div className="mx-auto w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center">
-                     {isVerified ? (
-                        <CheckCircle2 className="h-8 w-8 text-primary-600 animate-scale-in" />
-                     ) : (
-                        <Smartphone className="h-8 w-8 text-primary-600" />
-                     )}
+         <div className="flex-1 flex flex-col items-center justify-center px-0 py-8 lg:px-4">
+            <Card className="w-full lg:max-w-md shadow-none border-0 bg-transparent">
+               <CardHeader className="space-y-4 px-4 lg:px-6">
+                  {/* Back button and Logo */}
+                  <div className="relative flex items-center justify-center mb-4">
+                     <Link
+                        href={authType === "signup" ? "/signup" : "/login"}
+                        className="absolute left-0 inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                     >
+                        <ArrowLeft className="h-4 w-4" />
+                     </Link>
+                     <Image
+                        src="/assets/images/logo.png"
+                        alt="Extrahand"
+                        width={55}
+                        height={55}
+                     />
                   </div>
-                  <div>
-                     <CardTitle className="text-2xl">
-                        {isVerified ? "Verified!" : "Verify your phone"}
-                     </CardTitle>
-                     <CardDescription className="mt-2">
-                        {isVerified
-                           ? "Your phone number has been verified"
-                           : `Enter the 6-digit code sent to ${maskPhone(
-                                phone
-                             )}`}
-                     </CardDescription>
+                  <div className="text-center">
+                     <div>
+                        <CardTitle className="text-2xl">
+                           {isVerified ? "Verified!" : "Verify your phone"}
+                        </CardTitle>
+                        <CardDescription className="mt-2">
+                           {isVerified
+                              ? "Your phone number has been verified"
+                              : `Enter the 6-digit code sent to ${maskPhone(
+                                   phone
+                                )}`}
+                        </CardDescription>
+                     </div>
                   </div>
                </CardHeader>
 
                {!isVerified && (
-                  <CardContent className="space-y-6">
+                  <CardContent className="space-y-6 px-4 lg:px-6">
                      {/* OTP Input */}
                      <div className="space-y-4">
                         <div

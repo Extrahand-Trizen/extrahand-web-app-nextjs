@@ -113,19 +113,8 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
 
    return (
       <div className="min-h-screen bg-linear-to-b from-white to-secondary-50 flex flex-col">
-         {/* Header */}
-         <header className="px-4 py-4 lg:px-8">
-            <Link
-               href="/"
-               className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-            >
-               <ArrowLeft className="h-4 w-4" />
-               Back to home
-            </Link>
-         </header>
-
          {/* Main Content */}
-         <div className="flex-1 flex items-center justify-center px-4 py-8 lg:py-12">
+         <div className="flex-1 flex items-center justify-center px-0 py-8 lg:px-4 lg:py-12">
             <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
                {/* Value Proposition - Hidden on mobile */}
                <div className="hidden lg:block space-y-6">
@@ -161,22 +150,23 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
                </div>
 
                {/* Signup Form */}
-               <Card className="shadow-xl">
-                  <CardHeader className="space-y-4">
-                     <div className="flex justify-center">
-                        <div className="flex items-center gap-2">
-                           <Image
-                              src="/assets/images/logo.png"
-                              alt="Extrahand"
-                              width={35}
-                              height={35}
-                           />
-                           <span className="text-lg font-bold text-gray-900">
-                              ExtraHand
-                           </span>
-                        </div>
+               <Card className="w-full shadow-none border-0 bg-transparent lg:bg-card lg:shadow-sm lg:border lg:rounded-xl">
+                  <CardHeader className="space-y-4 px-4 lg:px-6">
+                     {/* Back button and Logo */}
+                     <div className="relative flex items-center justify-center mb-2">
+                        <Link
+                           href="/"
+                           className="absolute left-0 inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                        >
+                           <ArrowLeft className="h-4 w-4" />
+                        </Link>
+                        <Image
+                           src="/assets/images/logo.png"
+                           alt="Extrahand"
+                           width={55}
+                           height={55}
+                        />
                      </div>
-                     {/* Logo */}
                      <div className="space-y-2 text-center">
                         <CardTitle className="text-2xl">
                            Create your account
@@ -187,7 +177,7 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
                      </div>
                   </CardHeader>
 
-                  <CardContent className="space-y-6">
+                  <CardContent className="space-y-6 px-4 lg:px-6">
                      {/* Form */}
                      <Form {...form}>
                         <form

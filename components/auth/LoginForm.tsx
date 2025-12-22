@@ -98,43 +98,33 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 
    return (
       <div className="min-h-screen bg-linear-to-b from-white to-secondary-50 flex flex-col">
-         {/* Header */}
-         <header className="px-4 py-4 lg:px-8">
-            <Link
-               href="/"
-               className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-            >
-               <ArrowLeft className="h-4 w-4" />
-               Back to home
-            </Link>
-         </header>
-
          {/* Main Content */}
-         <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
-            {/* Logo */}
-            <div className="flex justify-center mb-5">
-               <div className="flex items-center gap-2">
-                  <Image
-                     src="/assets/images/logo.png"
-                     alt="Extrahand"
-                     width={35}
-                     height={35}
-                  />
-                  <span className="text-lg font-bold text-gray-900">
-                     ExtraHand
-                  </span>
-               </div>
-            </div>
-            <Card className="w-full max-w-md shadow-xl">
-               <CardHeader className="space-y-4">
+         <div className="flex-1 flex flex-col items-center justify-center px-0 py-8 lg:px-4">
+            <Card className="w-full lg:max-w-md shadow-none border-0 md:border md:shadow-sm bg-transparent">
+               <CardHeader className="space-y-4 px-4 lg:px-6">
+                  {/* Back button and Logo */}
+                  <div className="relative flex items-center justify-center mb-2">
+                     <Link
+                        href="/"
+                        className="absolute left-0 inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                     >
+                        <ArrowLeft className="h-4 w-4" />
+                     </Link>
+                     <Image
+                        src="/assets/images/logo.png"
+                        alt="Extrahand"
+                        width={55}
+                        height={55}
+                     />
+                  </div>
                   <div className="space-y-2 text-center">
                      <CardTitle className="text-2xl">Welcome back</CardTitle>
                      <CardDescription>
                         Sign in to your ExtraHand account
                      </CardDescription>
                   </div>
-               </CardHeader>{" "}
-               <CardContent className="space-y-6">
+               </CardHeader>
+               <CardContent className="space-y-6 px-4 lg:px-6">
                   {/* Form */}
                   <Form {...form}>
                      <form
