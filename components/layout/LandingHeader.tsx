@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth/context";
 
 // Mega-menu task types organized into columns
 const taskTypes: string[][] = [
@@ -120,6 +121,7 @@ const navItems = [
 export const LandingHeader: React.FC = () => {
    const router = useRouter();
    const [isScrolled, setIsScrolled] = useState(false);
+   const { currentUser, userData, logout } = useAuth();
    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
    const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
    const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false);
@@ -127,8 +129,27 @@ export const LandingHeader: React.FC = () => {
    const [mobileActiveRole, setMobileActiveRole] = useState<
       "poster" | "tasker"
    >("poster");
+   const [showUserMenu, setShowUserMenu] = useState(false);
    const categoriesRef = useRef<HTMLDivElement>(null);
    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+   const userMenuRef = useRef<HTMLDivElement>(null);
+
+   const isAuthenticated = Boolean(currentUser);
+   const displayName =
+      userData?.fullName ?? currentUser?.displayName ?? "Your Account";
+   const initials = displayName
+      .split(" ")
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+
+   const userMenuItems = [
+      { label: "Dashboard", route: "/home" },
+      { label: "Profile", route: "/profile" },
+      { label: "Post a Task", route: "/tasks/new" },
+   ];
 
    // Handle scroll for sticky header styling
    useEffect(() => {
@@ -174,6 +195,22 @@ export const LandingHeader: React.FC = () => {
       };
    }, [isMobileMenuOpen]);
 
+   useEffect(() => {
+      if (!showUserMenu) return;
+
+      const handleClickOutside = (event: MouseEvent) => {
+         if (
+            userMenuRef.current &&
+            !userMenuRef.current.contains(event.target as Node)
+         ) {
+            setShowUserMenu(false);
+         }
+      };
+
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+   }, [showUserMenu]);
+
    const handleNavClick = (href: string, hasDropdown?: boolean) => {
       if (hasDropdown) {
          setIsMobileCategoriesOpen(true);
@@ -189,6 +226,24 @@ export const LandingHeader: React.FC = () => {
          }
       } else {
          router.push(href);
+      }
+   };
+
+   const handleUserMenuAction = async (route?: string) => {
+      setShowUserMenu(false);
+      setIsMobileMenuOpen(false);
+
+      if (route) {
+         router.push(route);
+         return;
+      }
+
+      try {
+        await logout();
+      } catch (error) {
+        console.error("Logout failed", error);
+      } finally {
+        router.push("/");
       }
    };
 
@@ -283,8 +338,8 @@ export const LandingHeader: React.FC = () => {
                                                       As a Tasker
                                                    </span>
                                                    <p className="text-xs text-secondary-600 mt-0.5">
-                                                      I&apos;m looking for work in
-                                                      ...
+                                                      I&apos;m looking for work
+                                                      in ...
                                                    </p>
                                                 </button>
                                                 <button
@@ -387,33 +442,77 @@ export const LandingHeader: React.FC = () => {
 
                   {/* Desktop CTA Group */}
                   <div className="hidden lg:flex items-center gap-2">
-                     <Link href="/login">
-                        <Button
-                           size="sm"
-                           variant="ghost"
-                           className="text-secondary-700 font-medium"
-                        >
-                           Log in
-                        </Button>
-                     </Link>
-                     <Link href="/signup">
-                        <Button
-                           size="sm"
-                           variant="ghost"
-                           className="border-secondary-300 text-secondary-700 font-medium"
-                        >
-                           Signup
-                        </Button>
-                     </Link>
-                     <Link href="/earn-money">
-                        <Button
-                           size="sm"
-                           variant="outline"
-                           className="border-secondary-300 text-secondary-700 font-medium"
-                        >
-                           Become a Tasker
-                        </Button>
-                     </Link>
+                     {!isAuthenticated ? (
+                        <>
+                           <Link href="/login">
+                              <Button
+                                 size="sm"
+                                 variant="ghost"
+                                 className="text-secondary-700 font-medium"
+                              >
+                                 Log in
+                              </Button>
+                           </Link>
+                           <Link href="/signup">
+                              <Button
+                                 size="sm"
+                                 variant="ghost"
+                                 className="border-secondary-300 text-secondary-700 font-medium"
+                              >
+                                 Signup
+                              </Button>
+                           </Link>
+                           <Link href="/earn-money">
+                              <Button
+                                 size="sm"
+                                 variant="outline"
+                                 className="border-secondary-300 text-secondary-700 font-medium"
+                              >
+                                 Become a Tasker
+                              </Button>
+                           </Link>
+                        </>
+                     ) : (
+                        <div className="relative" ref={userMenuRef}>
+                           <button
+                              onClick={() => setShowUserMenu((prev) => !prev)}
+                              className="flex items-center gap-3 rounded-full border border-secondary-200 bg-white pl-1 pr-4 py-1.5 shadow-sm"
+                           >
+                              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary-900 text-base font-semibold text-white">
+                                 {initials}
+                              </span>
+                              <span className="hidden xl:flex flex-col text-left">
+                                 <span className="text-xs text-secondary-500">
+                                    Welcome back
+                                 </span>
+                                 <span className="text-sm font-semibold text-secondary-900">
+                                    {displayName}
+                                 </span>
+                              </span>
+                              <ChevronDown className="h-4 w-4 text-secondary-500" />
+                           </button>
+                           {showUserMenu && (
+                              <div className="absolute right-0 mt-3 w-64 rounded-2xl border border-secondary-100 bg-white p-2 shadow-xl">
+                                 {userMenuItems.map((item) => (
+                                    <button
+                                       key={item.label}
+                                       onClick={() => handleUserMenuAction(item.route)}
+                                       className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium text-secondary-800 hover:bg-secondary-50"
+                                    >
+                                       {item.label}
+                                    </button>
+                                 ))}
+                                 <div className="my-1 border-t border-secondary-100" />
+                                 <button
+                                    onClick={() => handleUserMenuAction()}
+                                    className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium text-red-600 hover:bg-secondary-50"
+                                 >
+                                    Logout
+                                 </button>
+                              </div>
+                           )}
+                        </div>
+                     )}
                   </div>
 
                   {/* Mobile Menu Button */}
@@ -476,23 +575,61 @@ export const LandingHeader: React.FC = () => {
                                  Become a Tasker
                               </Button>
                            </Link>
-                           <Link href="/signup" className="w-full">
-                              <Button
-                                 variant="ghost"
-                                 className="w-full text-secondary-700 font-medium py-5"
-                              >
-                                 Signup
-                              </Button>
-                           </Link>
-                           <Link href="/login" className="w-full">
-                              <Button
-                                 variant="ghost"
-                                 className="w-full text-secondary-700 font-medium py-5"
-                              >
-                                 Log in
-                              </Button>
-                           </Link>
+                           {!isAuthenticated && (
+                              <>
+                                 <Link href="/signup" className="w-full">
+                                    <Button
+                                       variant="ghost"
+                                       className="w-full text-secondary-700 font-medium py-5"
+                                    >
+                                       Signup
+                                    </Button>
+                                 </Link>
+                                 <Link href="/login" className="w-full">
+                                    <Button
+                                       variant="ghost"
+                                       className="w-full text-secondary-700 font-medium py-5"
+                                    >
+                                       Log in
+                                    </Button>
+                                 </Link>
+                              </>
+                           )}
                         </div>
+                        {isAuthenticated && (
+                           <div className="px-4 pb-6">
+                              <div className="mb-4 flex items-center gap-4 rounded-2xl border border-secondary-100 bg-secondary-50 p-4">
+                                 <span className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary-900 text-lg font-semibold text-white">
+                                    {initials}
+                                 </span>
+                                 <div>
+                                    <p className="text-xs uppercase text-secondary-500">
+                                       Signed in as
+                                    </p>
+                                    <p className="text-base font-semibold text-secondary-900">
+                                       {displayName}
+                                    </p>
+                                 </div>
+                              </div>
+                              <div className="flex flex-col gap-2">
+                                 {userMenuItems.map((item) => (
+                                    <button
+                                       key={item.label}
+                                       onClick={() => handleUserMenuAction(item.route)}
+                                       className="w-full rounded-xl border border-secondary-100 px-4 py-3 text-left text-secondary-800"
+                                    >
+                                       {item.label}
+                                    </button>
+                                 ))}
+                                 <button
+                                    onClick={() => handleUserMenuAction()}
+                                    className="w-full rounded-xl border border-red-100 px-4 py-3 text-left font-semibold text-red-600"
+                                 >
+                                    Logout
+                                 </button>
+                              </div>
+                           </div>
+                        )}
                      </nav>
                   ) : (
                      <div className="p-4">

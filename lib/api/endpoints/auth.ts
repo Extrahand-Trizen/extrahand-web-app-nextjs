@@ -1,3 +1,4 @@
+import type { CompleteOTPResponse } from "@/types/api";
 
 export const authApi = {
    /**
@@ -39,7 +40,7 @@ export const authApi = {
       mode: "login" | "signup",
       phone: string,
       name?: string
-   ): Promise<{ success: boolean; profile?: any; user?: any; error?: string }> {
+   ): Promise<CompleteOTPResponse> {
       // This is a public endpoint (no auth header needed, but requires ID token in body)
       const { getApiBaseUrl } = await import("@/lib/config");
       const baseUrl = getApiBaseUrl().replace(/\/$/, "");
@@ -50,7 +51,13 @@ export const authApi = {
          headers: {
             "Content-Type": "application/json",
          },
-         body: JSON.stringify({ idToken, mode, phone, name }),
+         body: JSON.stringify({
+            idToken,
+            mode,
+            phone,
+            name,
+            clientType: "web",
+         }),
       });
 
       if (!response.ok) {

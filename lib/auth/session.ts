@@ -11,6 +11,11 @@ export interface SessionData {
   lastRoute: string;
   lastRouteParams: any;
   lastActivity: number;
+  accessToken: string | null;
+  accessTokenExpiresAt: number | null;
+  refreshToken: string | null;
+  refreshTokenExpiresAt: number | null;
+  sessionId: string | null;
 }
 
 class SessionManager {
@@ -24,9 +29,14 @@ class SessionManager {
       if (typeof window === 'undefined') return;
       
       const existing = this.getSession();
+      const shouldForceAuth =
+        data.isAuthenticated === undefined &&
+        (typeof data.accessToken === 'string' || typeof data.refreshToken === 'string');
+
       const sessionData: SessionData = {
         ...existing,
         ...data,
+        isAuthenticated: shouldForceAuth ? true : (data.isAuthenticated ?? existing.isAuthenticated),
         lastActivity: Date.now()
       };
       localStorage.setItem(this.SESSION_KEY, JSON.stringify(sessionData));
@@ -44,7 +54,17 @@ class SessionManager {
       }
       
       const data = localStorage.getItem(this.SESSION_KEY);
-      return data ? JSON.parse(data) : this.getDefaultSession();
+      const parsed = data ? JSON.parse(data) : {};
+      const session: SessionData = {
+        ...this.getDefaultSession(),
+        ...parsed
+      };
+
+      if (!session.isAuthenticated && session.accessToken) {
+        session.isAuthenticated = true;
+      }
+
+      return session;
     } catch (error) {
       console.warn('Failed to get session:', error);
       return this.getDefaultSession();
@@ -266,7 +286,12 @@ class SessionManager {
       onboardingState: null,
       lastRoute: 'Landing',
       lastRouteParams: {},
-      lastActivity: Date.now()
+      lastActivity: Date.now(),
+      accessToken: null,
+      accessTokenExpiresAt: null,
+      refreshToken: null,
+      refreshTokenExpiresAt: null,
+      sessionId: null
     };
   }
 }

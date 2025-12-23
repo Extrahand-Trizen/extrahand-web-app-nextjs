@@ -9,8 +9,10 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { auth } from './firebase';
 import { api } from '@/lib/api';
+import { sessionsApi } from '@/lib/api/endpoints/sessions';
 import { sessionManager } from './session';
 import { UserProfile } from '@/types/user';
+import { useUserStore } from '@/lib/state/userStore';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -36,13 +38,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [sessionRestored, setSessionRestored] = useState(false);
   const prevUserRef = useRef<string | null>(null);
+  const storeLogin = useUserStore((state) => state.login);
+  const storeLogout = useUserStore((state) => state.logout);
+  const hydrateFromSession = useUserStore((state) => state.hydrateFromSession);
+
+  const resetLocalSession = useCallback(async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.warn('signOut skipped', error);
+    }
+    sessionManager.clearSession();
+    storeLogout();
+    setCurrentUser(null);
+    setUserData(null);
+    prevUserRef.current = null;
+  }, [storeLogout]);
+
+  const hasBackendSession = useCallback(() => {
+    const session = sessionManager.getSession();
+    return Boolean(session.accessToken || session.refreshToken);
+  }, []);
 
   const refreshUserData = useCallback(async () => {
-    if (currentUser) {
+    if (currentUser && hasBackendSession()) {
       try {
         console.log('🔄 Refreshing user data from backend API...');
         const userData = await api.me();
         setUserData(userData);
+        storeLogin({ user: userData });
         
         // Save session data
         sessionManager.saveSession({
@@ -53,20 +77,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('✅ User data refreshed successfully:', userData);
       } catch (error: any) {
         console.warn('❌ Failed to refresh user data:', error.message);
+        if (error?.status === 401) {
+          resetLocalSession();
+        }
       }
     }
-  }, [currentUser]);
+  }, [currentUser, hasBackendSession, resetLocalSession, storeLogin]);
 
   const logout = useCallback(async () => {
     try {
       console.log('🚪 Logging out user...');
       
-      // Sign out from Firebase
-      await signOut(auth);
+      await Promise.allSettled([
+        sessionsApi.logout(),
+        signOut(auth),
+      ]);
       
       // Clear session data
       sessionManager.clearSession();
-      
+      storeLogout();
+
       // Clear user state
       setCurrentUser(null);
       setUserData(null);
@@ -76,10 +106,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('❌ Logout error:', error);
       // Even if Firebase signOut fails, clear local session
       sessionManager.clearSession();
+      storeLogout();
       setCurrentUser(null);
       setUserData(null);
     }
-  }, []);
+  }, [storeLogout]);
+
+  useEffect(() => {
+    hydrateFromSession();
+  }, [hydrateFromSession]);
 
   // Restore session on app start (client-side only)
   useEffect(() => {
@@ -94,7 +129,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const session = sessionManager.getSession();
         console.log('🔍 Restoring session:', session);
 
-        if (session.isAuthenticated && sessionManager.isSessionValid()) {
+        if (
+          session.isAuthenticated &&
+          sessionManager.isSessionValid() &&
+          (session.accessToken || session.refreshToken)
+        ) {
           console.log('✅ Valid session found, restoring...');
           
           // Check if user is still authenticated with Firebase
@@ -108,18 +147,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } catch (error: any) {
               console.warn('❌ Failed to restore user data:', error.message);
               setUserData(null);
+              if (error?.status === 401) {
+                await resetLocalSession();
+              }
             }
           } else {
             console.log('❌ Firebase user not found, clearing session');
-            sessionManager.clearSession();
+            await resetLocalSession();
           }
         } else {
           console.log('❌ No valid session found');
-          sessionManager.clearSession();
+          await resetLocalSession();
         }
       } catch (error) {
         console.warn('❌ Error restoring session:', error);
-        sessionManager.clearSession();
+        await resetLocalSession();
       } finally {
         setSessionRestored(true);
         setLoading(false);
@@ -127,7 +169,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     restoreSession();
-  }, []);
+  }, [resetLocalSession]);
 
   useEffect(() => {
     if (!sessionRestored) return;
@@ -141,6 +183,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         prevUserRef.current = currentUserId;
         
         if (user) {
+          if (!hasBackendSession()) {
+            console.warn('Backend session missing; signing user out to keep UI consistent');
+            await resetLocalSession();
+            return;
+          }
+          
           setCurrentUser(user);
           
           // Only save session if user changed (not on every auth state change)
@@ -156,10 +204,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Fetch user data from backend API
             const userData = await api.me();
             setUserData(userData);
+            storeLogin({ user: userData });
           } catch (error: any) {
             // If API call fails, continue with auth user only
             console.warn('Backend API offline; proceeding without profile data:', error.message);
             setUserData(null);
+            if (error?.status === 401) {
+              await resetLocalSession();
+              return;
+            }
           }
         } else {
           setCurrentUser(null);
@@ -168,13 +221,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           // Clear session when user logs out
           sessionManager.clearSession();
+          storeLogout();
         }
       }
       setLoading(false);
     });
 
     return unsubscribe;
-  }, [sessionRestored]);
+  }, [hasBackendSession, resetLocalSession, sessionRestored, storeLogin, storeLogout]);
 
   // Memoize context value to prevent unnecessary re-renders
   const value: AuthContextType = useMemo(() => ({

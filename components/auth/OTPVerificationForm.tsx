@@ -27,6 +27,8 @@ import Image from "next/image";
 import { useOTP } from "@/hooks/useOTP";
 import { authApi } from "@/lib/api/endpoints/auth";
 import { useAuth } from "@/lib/auth/context";
+import { sessionManager } from "@/lib/auth/session";
+import { useUserStore } from "@/lib/state/userStore";
 import { formatPhoneNumber } from "@/lib/utils/phone";
 
 const OTP_LENGTH = 6;
@@ -58,8 +60,9 @@ export function OTPVerificationForm({
 }: OTPVerificationFormProps) {
    const router = useRouter();
    const { refreshUserData } = useAuth();
+   const loginToStore = useUserStore((state) => state.login);
    const hasAttemptedInitialSend = useRef(false);
-   
+
    // Use the useOTP hook for state management
    const {
       otp,
@@ -173,19 +176,25 @@ export function OTPVerificationForm({
       } catch (error: any) {
          const errorMessage = error?.message || "Failed to send OTP";
          const errorCode = error?.code || "";
-         
+
          if (errorMessage === "USER_NOT_REGISTERED") {
             toast.error("User not registered", {
-               description: "This phone number is not registered. Please sign up.",
+               description:
+                  "This phone number is not registered. Please sign up.",
             });
             router.push(`/signup?phone=${encodeURIComponent(phoneInput)}`);
          } else if (errorMessage === "PHONE_CHECK_FAILED") {
             toast.error("Connection error", {
-               description: "Could not verify your phone number. Please check your internet connection.",
+               description:
+                  "Could not verify your phone number. Please check your internet connection.",
             });
-         } else if (errorCode === "auth/invalid-app-credential" || errorMessage.includes("reCAPTCHA")) {
+         } else if (
+            errorCode === "auth/invalid-app-credential" ||
+            errorMessage.includes("reCAPTCHA")
+         ) {
             toast.error("reCAPTCHA Configuration Error", {
-               description: "Please check Firebase console settings. Phone authentication may not be properly configured.",
+               description:
+                  "Please check Firebase console settings. Phone authentication may not be properly configured.",
                duration: 10000,
             });
          } else {
@@ -213,7 +222,8 @@ export function OTPVerificationForm({
                firebaseResult.code === "auth/session-restoration-failed"
             ) {
                toast.error("Session expired", {
-                  description: "Your verification session has expired. Please request a new code.",
+                  description:
+                     "Your verification session has expired. Please request a new code.",
                   action: {
                      label: "Resend OTP",
                      onClick: () => handleSendOtp(phone),
@@ -221,7 +231,9 @@ export function OTPVerificationForm({
                });
             } else {
                toast.error("Invalid OTP", {
-                  description: firebaseResult.error || "The code entered is invalid. Please try again.",
+                  description:
+                     firebaseResult.error ||
+                     "The code entered is invalid. Please try again.",
                });
                setOtp(Array(OTP_LENGTH).fill(""));
                focusInput(0);
@@ -247,8 +259,40 @@ export function OTPVerificationForm({
          );
 
          if (!backendResult.success) {
-            throw new Error(backendResult.error || "Failed to complete authentication");
+            throw new Error(
+               backendResult.error || "Failed to complete authentication"
+            );
          }
+
+         const tokens = backendResult.tokens;
+         if (!tokens?.accessToken) {
+            throw new Error(
+               "Authentication succeeded but session tokens are missing"
+            );
+         }
+
+         const accessTokenExpiry = tokens.accessTokenExpiresAt
+            ? new Date(tokens.accessTokenExpiresAt).getTime()
+            : null;
+         const refreshTokenExpiry = tokens.refreshTokenExpiresAt
+            ? new Date(tokens.refreshTokenExpiresAt).getTime()
+            : null;
+
+         sessionManager.saveSession({
+            isAuthenticated: true,
+            accessToken: tokens.accessToken,
+            accessTokenExpiresAt: accessTokenExpiry,
+            refreshToken: tokens.refreshToken ?? null,
+            refreshTokenExpiresAt: refreshTokenExpiry,
+            sessionId: tokens.sessionId ?? null,
+         });
+
+         loginToStore({
+            user: backendResult.profile ?? undefined,
+            token: tokens.accessToken,
+            tokenExpiresAt: accessTokenExpiry,
+            sessionId: tokens.sessionId ?? null,
+         });
 
          // 4. Refresh user data in AuthContext
          await refreshUserData();
@@ -277,7 +321,8 @@ export function OTPVerificationForm({
          console.error("OTP verification error:", error);
          setHasError(true);
          toast.error("Verification failed", {
-            description: error.message || "Something went wrong. Please try again.",
+            description:
+               error.message || "Something went wrong. Please try again.",
          });
          setOtp(Array(OTP_LENGTH).fill(""));
          focusInput(0);
@@ -286,7 +331,7 @@ export function OTPVerificationForm({
 
    const handleResend = async () => {
       if (timer > 0) return; // Can't resend if timer is still running
-      
+
       setOtp(Array(OTP_LENGTH).fill(""));
       setHasError(false);
       await handleSendOtp(phone);

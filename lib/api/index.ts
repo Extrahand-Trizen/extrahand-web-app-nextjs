@@ -9,6 +9,7 @@ import { applicationsApi } from "./endpoints/applications";
 import { chatsApi } from "./endpoints/chats";
 import { reviewsApi } from "./endpoints/reviews";
 import { authApi } from "./endpoints/auth";
+import { sessionsApi } from "./endpoints/sessions";
 
 export const api = {
    // Profile management
@@ -28,6 +29,7 @@ export const api = {
 
    // Auth management
    ...authApi,
+   ...sessionsApi,
 
    // Utility functions
    async uploadImage(_file: File): Promise<string> {
