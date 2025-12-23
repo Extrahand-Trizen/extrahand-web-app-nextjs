@@ -208,7 +208,8 @@ export const LandingHeader: React.FC = () => {
       };
 
       document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+      return () =>
+         document.removeEventListener("mousedown", handleClickOutside);
    }, [showUserMenu]);
 
    const handleNavClick = (href: string, hasDropdown?: boolean) => {
@@ -239,11 +240,11 @@ export const LandingHeader: React.FC = () => {
       }
 
       try {
-        await logout();
+         await logout();
       } catch (error) {
-        console.error("Logout failed", error);
+         console.error("Logout failed", error);
       } finally {
-        router.push("/");
+         router.push("/");
       }
    };
 
@@ -496,7 +497,9 @@ export const LandingHeader: React.FC = () => {
                                  {userMenuItems.map((item) => (
                                     <button
                                        key={item.label}
-                                       onClick={() => handleUserMenuAction(item.route)}
+                                       onClick={() =>
+                                          handleUserMenuAction(item.route)
+                                       }
                                        className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium text-secondary-800 hover:bg-secondary-50"
                                     >
                                        {item.label}
@@ -615,7 +618,9 @@ export const LandingHeader: React.FC = () => {
                                  {userMenuItems.map((item) => (
                                     <button
                                        key={item.label}
-                                       onClick={() => handleUserMenuAction(item.route)}
+                                       onClick={() =>
+                                          handleUserMenuAction(item.route)
+                                       }
                                        className="w-full rounded-xl border border-secondary-100 px-4 py-3 text-left text-secondary-800"
                                     >
                                        {item.label}
