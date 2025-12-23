@@ -162,8 +162,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                      }
                   }
                } else {
-                  console.log("❌ Firebase user not found, clearing session");
-                  await resetLocalSession();
+                  console.log(
+                     "⏳ Firebase auth not ready yet; waiting for onAuthStateChanged before mutating session"
+                  );
                }
             } else {
                console.log("❌ No valid session found");
