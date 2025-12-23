@@ -95,3 +95,35 @@ export function displayPhoneNumber(phone: string): string {
   return formatted;
 }
 
+/**
+ * Parse phone number with country code
+ * Similar to mobile app's parsePhoneWithCountryCode
+ * @param phone - Phone number input
+ * @returns Object with fullNumber (E.164 format) and other parsed data
+ */
+export function parsePhoneWithCountryCode(phone: string): {
+  fullNumber: string;
+  countryCode: string;
+  number: string;
+} {
+  const formatted = formatPhoneNumber(phone);
+  
+  if (formatted.startsWith('+91')) {
+    return {
+      fullNumber: formatted,
+      countryCode: '+91',
+      number: formatted.substring(3),
+    };
+  }
+  
+  // Default to +91 for Indian numbers
+  const digits = phone.replace(/\D/g, '');
+  const last10 = digits.length >= 10 ? digits.slice(-10) : digits;
+  
+  return {
+    fullNumber: `+91${last10}`,
+    countryCode: '+91',
+    number: last10,
+  };
+}
+

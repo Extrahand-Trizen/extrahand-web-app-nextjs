@@ -24,9 +24,12 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { useOTP } from "@/hooks/useOTP";
+import { authApi } from "@/lib/api/endpoints/auth";
+import { useAuth } from "@/lib/auth/context";
+import { formatPhoneNumber } from "@/lib/utils/phone";
 
 const OTP_LENGTH = 6;
-const RESEND_TIMER = 30;
 
 interface OTPVerificationFormProps {
    phone: string;
@@ -54,30 +57,44 @@ export function OTPVerificationForm({
    onSkip,
 }: OTPVerificationFormProps) {
    const router = useRouter();
-   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
-   const [timer, setTimer] = useState(RESEND_TIMER);
-   const [isResending, setIsResending] = useState(false);
-   const [isVerifying, setIsVerifying] = useState(false);
+   const { refreshUserData } = useAuth();
+   const hasAttemptedInitialSend = useRef(false);
+   
+   // Use the useOTP hook for state management
+   const {
+      otp,
+      setOtp,
+      timer,
+      sending,
+      verifying,
+      verifyOTP: verifyOTPWithFirebase,
+      sendOtp,
+      resetTimer,
+      clearSession,
+   } = useOTP(phone, authType);
+
    const [isVerified, setIsVerified] = useState(false);
    const [hasError, setHasError] = useState(false);
 
    const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-   // Countdown timer
+   // Initial auto-send OTP
    useEffect(() => {
-      if (timer > 0 && !isVerified) {
-         const interval = setInterval(() => setTimer((t) => t - 1), 1000);
-         return () => clearInterval(interval);
+      if (phone && !hasAttemptedInitialSend.current) {
+         hasAttemptedInitialSend.current = true;
+         handleSendOtp(phone);
       }
-   }, [timer, isVerified]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+   }, [phone]);
 
    // Auto-verify when OTP is complete
    useEffect(() => {
       const code = otp.join("");
-      if (code.length === OTP_LENGTH && !isVerifying && !isVerified) {
+      if (code.length === OTP_LENGTH && !verifying && !isVerified) {
          handleVerify();
       }
-   }, [otp]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+   }, [otp, verifying, isVerified]);
 
    const focusInput = useCallback((idx: number) => {
       if (idx >= 0 && idx < OTP_LENGTH) {
@@ -146,78 +163,140 @@ export function OTPVerificationForm({
       focusInput(Math.min(otpArray.length - 1, OTP_LENGTH - 1));
    };
 
+   const handleSendOtp = async (phoneInput: string) => {
+      try {
+         await sendOtp(phoneInput);
+         resetTimer();
+         toast.success("OTP sent!", {
+            description: `Verification code sent to ${maskPhone(phoneInput)}`,
+         });
+      } catch (error: any) {
+         const errorMessage = error?.message || "Failed to send OTP";
+         const errorCode = error?.code || "";
+         
+         if (errorMessage === "USER_NOT_REGISTERED") {
+            toast.error("User not registered", {
+               description: "This phone number is not registered. Please sign up.",
+            });
+            router.push(`/signup?phone=${encodeURIComponent(phoneInput)}`);
+         } else if (errorMessage === "PHONE_CHECK_FAILED") {
+            toast.error("Connection error", {
+               description: "Could not verify your phone number. Please check your internet connection.",
+            });
+         } else if (errorCode === "auth/invalid-app-credential" || errorMessage.includes("reCAPTCHA")) {
+            toast.error("reCAPTCHA Configuration Error", {
+               description: "Please check Firebase console settings. Phone authentication may not be properly configured.",
+               duration: 10000,
+            });
+         } else {
+            toast.error("Failed to send OTP", {
+               description: errorMessage || "Please try again.",
+            });
+         }
+      }
+   };
+
    const handleVerify = async () => {
       const code = otp.join("");
       if (code.length !== OTP_LENGTH) return;
 
-      setIsVerifying(true);
       setHasError(false);
 
       try {
-         await new Promise((resolve) => setTimeout(resolve, 1500));
+         // 1. Verify OTP with Firebase (client-side)
+         const firebaseResult = await verifyOTPWithFirebase();
 
-         // Simulate validation (replace with actual API call)
-         if (code === "123456") {
-            setIsVerified(true);
-            const welcomeMessage =
-               authType === "signup"
-                  ? `Welcome to ExtraHand${userName ? `, ${userName}` : ""}!`
-                  : "Welcome back!";
-
-            toast.success(welcomeMessage, {
-               description: "Phone verified successfully. Redirecting...",
-            });
-
-            setTimeout(() => {
-               if (onSuccess) {
-                  onSuccess();
-               } else {
-                  router.push("/onboarding/role-selection");
-               }
-            }, 1000);
-         } else {
-            setHasError(true);
-            toast.error("Invalid OTP", {
-               description: "Please check the code and try again.",
-            });
-            setOtp(Array(OTP_LENGTH).fill(""));
-            focusInput(0);
+         if (!firebaseResult.success) {
+            // Handle Firebase verification errors
+            if (
+               firebaseResult.code === "auth/no-session" ||
+               firebaseResult.code === "auth/session-restoration-failed"
+            ) {
+               toast.error("Session expired", {
+                  description: "Your verification session has expired. Please request a new code.",
+                  action: {
+                     label: "Resend OTP",
+                     onClick: () => handleSendOtp(phone),
+                  },
+               });
+            } else {
+               toast.error("Invalid OTP", {
+                  description: firebaseResult.error || "The code entered is invalid. Please try again.",
+               });
+               setOtp(Array(OTP_LENGTH).fill(""));
+               focusInput(0);
+            }
+            return;
          }
-      } catch {
+
+         // 2. Get ID token from Firebase user
+         const firebaseUser = firebaseResult.user;
+         if (!firebaseUser) {
+            throw new Error("Firebase user not found");
+         }
+
+         const idToken = await firebaseUser.getIdToken();
+         const formattedPhone = formatPhoneNumber(phone);
+
+         // 3. Call backend to complete OTP authentication
+         const backendResult = await authApi.completeOTP(
+            idToken,
+            authType,
+            formattedPhone,
+            userName || undefined
+         );
+
+         if (!backendResult.success) {
+            throw new Error(backendResult.error || "Failed to complete authentication");
+         }
+
+         // 4. Refresh user data in AuthContext
+         await refreshUserData();
+
+         // 5. Success!
+         setIsVerified(true);
+         clearSession();
+
+         const welcomeMessage =
+            authType === "signup"
+               ? `Welcome to ExtraHand${userName ? `, ${userName}` : ""}!`
+               : "Welcome back!";
+
+         toast.success(welcomeMessage, {
+            description: "Phone verified successfully. Redirecting...",
+         });
+
+         setTimeout(() => {
+            if (onSuccess) {
+               onSuccess();
+            } else {
+               router.push("/home");
+            }
+         }, 1000);
+      } catch (error: any) {
+         console.error("OTP verification error:", error);
          setHasError(true);
          toast.error("Verification failed", {
-            description: "Something went wrong. Please try again.",
+            description: error.message || "Something went wrong. Please try again.",
          });
-      } finally {
-         setIsVerifying(false);
+         setOtp(Array(OTP_LENGTH).fill(""));
+         focusInput(0);
       }
    };
 
    const handleResend = async () => {
-      setIsResending(true);
+      if (timer > 0) return; // Can't resend if timer is still running
+      
       setOtp(Array(OTP_LENGTH).fill(""));
       setHasError(false);
-
-      try {
-         await new Promise((resolve) => setTimeout(resolve, 500));
-         toast.success("OTP sent!", {
-            description: `New code sent to ${maskPhone(phone)}`,
-         });
-         setTimer(RESEND_TIMER);
-      } catch {
-         toast.error("Failed to resend", {
-            description: "Please try again.",
-         });
-      } finally {
-         setIsResending(false);
-      }
+      await handleSendOtp(phone);
    };
 
    const handleSkip = () => {
       if (onSkip) {
          onSkip();
       } else {
-         router.push("/onboarding/role-selection");
+         router.push("/home");
       }
    };
 
@@ -298,10 +377,10 @@ export function OTPVerificationForm({
                            size="lg"
                            className="w-full"
                            disabled={
-                              isVerifying || otp.join("").length !== OTP_LENGTH
+                              verifying || otp.join("").length !== OTP_LENGTH
                            }
                         >
-                           {isVerifying ? (
+                           {verifying ? (
                               <>
                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                  Verifying...
@@ -325,10 +404,10 @@ export function OTPVerificationForm({
                            <Button
                               variant="ghost"
                               onClick={handleResend}
-                              disabled={isResending}
+                              disabled={sending}
                               className="text-primary-600 hover:text-primary-700"
                            >
-                              {isResending ? (
+                              {sending ? (
                                  <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     Sending...
