@@ -70,5 +70,37 @@ export const authApi = {
 
       return response.json();
    },
-};
 
+   /**
+    * Sync authenticated user profile with backend (requires HttpOnly cookies)
+    * POST /api/v1/auth/sync
+    */
+   async syncProfile(data: {
+      name?: string;
+      phone?: string;
+   }): Promise<{ success: boolean; data?: any; error?: string }> {
+      const { getApiBaseUrl } = await import("@/lib/config");
+      const baseUrl = getApiBaseUrl().replace(/\/$/, "");
+      const url = `${baseUrl}/api/v1/auth/sync`;
+
+      const response = await fetch(url, {
+         method: "POST",
+         headers: {
+            "Content-Type": "application/json",
+         },
+         credentials: "include",
+         body: JSON.stringify(data),
+      });
+
+      // If cookies are missing/expired this will 401; caller will handle re-auth
+      const payload = await response.json().catch(() => ({ success: false }));
+      if (!response.ok) {
+         return {
+            success: false,
+            error: (payload as any)?.error || "Failed to sync profile",
+         };
+      }
+
+      return payload;
+   },
+};

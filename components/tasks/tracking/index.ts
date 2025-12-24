@@ -11,6 +11,7 @@ export { ProofOfWorkSection } from "./ProofOfWorkSection";
 export { ProofUploadForm } from "./ProofUploadForm";
 export { ProofGallery } from "./ProofGallery";
 export { EmbeddedChat } from "./EmbeddedChat";
+export { FloatingChatWidget } from "./FloatingChatWidget";
 export { ReviewSection } from "./ReviewSection";
 export { ReviewCard } from "./ReviewCard";
 export { ReviewForm } from "./ReviewForm";

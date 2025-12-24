@@ -24,109 +24,14 @@ import {
    Menu,
    X,
    ChevronDown,
-   Bell,
    Settings,
-   AlertCircle,
-   CreditCard,
-   MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/context";
 import { UserMenu } from "./UserMenu";
-
-// Mega-menu task types organized into columns
-const taskTypes: string[][] = [
-   [
-      "Accountant",
-      "Admin Assistant",
-      "Appliance Repair",
-      "Architect",
-      "Auto Electrician",
-      "AV Specialist",
-      "Barista",
-      "Bartender",
-      "Bricklayer",
-      "Cabinet Maker",
-      "Car Wash",
-      "Carpenter",
-      "Carpet Cleaner",
-      "Caterer",
-      "Chef",
-      "Cleaner",
-      "Clothing Alteration",
-      "Commercial Cleaner",
-      "Concreter",
-      "Cooking",
-      "Copywriter",
-      "Courier Services",
-   ],
-   [
-      "Data Entry Specialist",
-      "Decking",
-      "Delivery",
-      "Designer",
-      "Digital Design",
-      "Drafting",
-      "Driving",
-      "End Of Lease Cleaner",
-      "Engraving",
-      "Entertainment",
-      "Events Staff",
-      "Fencing",
-      "Flooring",
-      "Food Delivery",
-      "Furniture Assembler",
-      "Gardener",
-      "General Labour",
-      "Graffiti Artist",
-      "Grocery Delivery",
-      "Handyman",
-      "HIIT Trainer",
-   ],
-   [
-      "House Cleaner",
-      "Housekeeper",
-      "Interior Designer",
-      "IT Support",
-      "Landscaper",
-      "Locksmith",
-      "Logo Designer",
-      "Makeup Artist",
-      "Marketing",
-      "Mechanic",
-      "Mobile Bike Repair",
-      "Office Cleaner",
-      "Painter",
-      "Paver",
-      "Pest Controller",
-      "Pet Groomer",
-      "Pet Minder",
-      "Pilates Instructor",
-      "Plasterer",
-      "Project Management",
-      "Proofreader",
-   ],
-   [
-      "Property Maintenance",
-      "Receptionist",
-      "Removalist",
-      "Research Assistant",
-      "Resume Writer",
-      "Roofing",
-      "Rubbish Removal",
-      "Tradesman",
-      "Translator",
-      "Turf Laying",
-      "Tutor",
-      "Virtual Assistant",
-      "Wait Staff",
-      "Waterproofing",
-      "Web Design & Developer",
-      "Wedding Services",
-      "Window Cleaner",
-      "Yoga Instructor",
-   ],
-];
+import { NotificationCenter } from "@/components/home";
+import { mockDashboardData } from "@/lib/data/mockDashboard";
+import { taskTypes } from "@/lib/constants";
 
 const USER_MENU_ITEMS = [
    { label: "Home", route: "/home" },
@@ -140,203 +45,6 @@ const navItems = [
    { label: "Browse tasks", href: "/discover" },
    { label: "How it works", href: "#how-it-works" },
 ];
-
-type NotificationItem = {
-   id: string;
-   title: string;
-   description: string;
-   route: string;
-   timestamp: Date;
-};
-
-type NotificationGroup = {
-   type: "messages" | "offers" | "payments";
-   label: string;
-   icon: React.ElementType;
-   items: NotificationItem[];
-};
-
-type HeaderNotificationsProps = {
-   onNavigate: (route: string) => void;
-};
-
-const HeaderNotifications: React.FC<HeaderNotificationsProps> = ({
-   onNavigate,
-}) => {
-   const [isOpen, setIsOpen] = useState(false);
-   const notifRef = useRef<HTMLDivElement>(null);
-
-   const mockUnread = {
-      messages: 2,
-      offers: 1,
-      payments: 0,
-   };
-
-   const totalUnread =
-      mockUnread.messages + mockUnread.offers + mockUnread.payments;
-
-   useEffect(() => {
-      function handleClickOutside(event: MouseEvent) {
-         if (
-            notifRef.current &&
-            !notifRef.current.contains(event.target as Node)
-         ) {
-            setIsOpen(false);
-         }
-      }
-
-      if (isOpen) {
-         document.addEventListener("mousedown", handleClickOutside);
-      }
-
-      return () => {
-         document.removeEventListener("mousedown", handleClickOutside);
-      };
-   }, [isOpen]);
-
-   const groups: NotificationGroup[] = useMemo(() => {
-      const result: NotificationGroup[] = [];
-      if (mockUnread.messages > 0) {
-         result.push({
-            type: "messages",
-            label: "Messages",
-            icon: MessageSquare,
-            items: [
-               {
-                  id: "1",
-                  title: `${mockUnread.messages} new messages`,
-                  description: "View all conversations",
-                  route: "/chat",
-                  timestamp: new Date(),
-               },
-            ],
-         });
-      }
-      if (mockUnread.offers > 0) {
-         result.push({
-            type: "offers",
-            label: "Offers",
-            icon: AlertCircle,
-            items: [
-               {
-                  id: "2",
-                  title: `${mockUnread.offers} new offer(s)`,
-                  description: "Review pending offers",
-                  route: "/tasks?tab=offers",
-                  timestamp: new Date(),
-               },
-            ],
-         });
-      }
-      if (mockUnread.payments > 0) {
-         result.push({
-            type: "payments",
-            label: "Payments",
-            icon: CreditCard,
-            items: [
-               {
-                  id: "3",
-                  title: `Payment ready`,
-                  description: "Withdraw your earnings",
-                  route: "/payments",
-                  timestamp: new Date(),
-               },
-            ],
-         });
-      }
-      return result;
-   }, []);
-
-   const handleNotificationClick = (route: string) => {
-      onNavigate(route);
-      setIsOpen(false);
-   };
-
-   return (
-      <div className="relative" ref={notifRef}>
-         <button
-            onClick={() => setIsOpen((prev) => !prev)}
-            aria-label="Notifications"
-            className="relative flex h-11 w-11 items-center justify-center rounded-full border border-secondary-200 bg-white text-secondary-600 shadow-sm transition hover:text-primary-600 hover:border-primary-300"
-         >
-            <Bell className="h-5 w-5" />
-            {totalUnread > 0 && (
-               <span className="absolute top-1 right-1 w-2 h-2 bg-primary-500 rounded-full" />
-            )}
-         </button>
-
-         {isOpen && (
-            <div className="absolute right-0 mt-2 w-80 rounded-lg border border-secondary-100 bg-white shadow-xl z-50">
-               <div className="border-b border-secondary-100 px-4 py-3">
-                  <h3 className="text-sm font-semibold text-secondary-900">
-                     Notifications
-                     {totalUnread > 0 && (
-                        <span className="ml-2 text-xs text-secondary-500">
-                           ({totalUnread})
-                        </span>
-                     )}
-                  </h3>
-               </div>
-
-               <div className="max-h-[320px] overflow-y-auto divide-y divide-secondary-100">
-                  {groups.length === 0 ? (
-                     <div className="px-4 py-6 text-center">
-                        <p className="text-sm text-secondary-500">
-                           No notifications
-                        </p>
-                     </div>
-                  ) : (
-                     groups.map((group) =>
-                        group.items.map((item) => {
-                           const GroupIcon = group.icon;
-                           return (
-                              <button
-                                 key={item.id}
-                                 onClick={() =>
-                                    handleNotificationClick(item.route)
-                                 }
-                                 className="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-secondary-50 transition"
-                              >
-                                 <GroupIcon className="h-5 w-5 text-primary-600 mt-0.5 shrink-0" />
-                                 <div>
-                                    <p className="text-sm font-medium text-secondary-900">
-                                       {item.title}
-                                    </p>
-                                    <p className="text-xs text-secondary-500">
-                                       {item.description}
-                                    </p>
-                                 </div>
-                              </button>
-                           );
-                        })
-                     )
-                  )}
-               </div>
-            </div>
-         )}
-      </div>
-   );
-};
-
-type HeaderSettingsProps = {
-   isOpen: boolean;
-   onToggle: () => void;
-};
-
-const HeaderSettings: React.FC<HeaderSettingsProps> = ({
-   isOpen,
-   onToggle,
-}) => {
-   return (
-      <button
-         onClick={onToggle}
-         aria-label="Settings"
-         className="flex h-11 w-11 items-center justify-center rounded-full border border-secondary-200 bg-white text-secondary-600 shadow-sm transition hover:text-primary-600 hover:border-primary-300"
-      >
-         <Settings className="h-5 w-5" />
-      </button>
-   );
-};
 
 const GuestCtaButtons = () => (
    <>
@@ -385,7 +93,8 @@ export const LandingHeader: React.FC = () => {
    const categoriesRef = useRef<HTMLDivElement>(null);
    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
    const isAuthenticated = Boolean(currentUser);
-   const displayName = currentUser?.displayName ?? "Your Account";
+   const displayName =
+      userData?.name ?? currentUser?.displayName ?? "Your Account";
    const initials = displayName
       .split(" ")
       .map((part) => part[0])
@@ -671,13 +380,17 @@ export const LandingHeader: React.FC = () => {
                         <GuestCtaButtons />
                      ) : (
                         <>
-                           <HeaderNotifications
-                              onNavigate={handleRouteChange}
+                           <NotificationCenter
+                              status={mockDashboardData.currentStatus}
                            />
-                           <HeaderSettings
-                              isOpen={showSettings}
-                              onToggle={() => setShowSettings(!showSettings)}
-                           />
+                           <button
+                              onClick={() => setShowSettings(!showSettings)}
+                              className="p-2 text-secondary-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors bg-white shadow-sm"
+                              title="Settings"
+                              aria-label="Settings"
+                           >
+                              <Settings className="w-5 h-5" />
+                           </button>
                            <UserMenu
                               displayName={displayName}
                               initials={initials}
@@ -703,6 +416,28 @@ export const LandingHeader: React.FC = () => {
                </div>
             </div>
          </header>
+
+         {/* Settings Panel - Fixed on Right Side (Dev Only) */}
+         {showSettings && isAuthenticated && (
+            <div className="fixed right-0 top-20 h-1/2 w-64 bg-white border-l border-secondary-200 shadow-xl z-40 overflow-y-auto">
+               <div className="p-4 border-b border-secondary-200 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-secondary-900">
+                     Settings (Dev)
+                  </h3>
+                  <button
+                     onClick={() => setShowSettings(false)}
+                     className="p-1 text-secondary-400 hover:text-secondary-600"
+                  >
+                     <X className="w-4 h-4" />
+                  </button>
+               </div>
+               <div className="p-4">
+                  <p className="text-xs text-secondary-500">
+                     Developer settings panel
+                  </p>
+               </div>
+            </div>
+         )}
 
          {/* Mobile Menu Overlay */}
          {isMobileMenuOpen && (

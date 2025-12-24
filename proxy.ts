@@ -13,6 +13,7 @@ const authRoutes = ["/login", "/signup", "/otp-verification"];
 const protectedRoutes = [
    "/home",
    "/profile",
+   "/tasks",
    "/tasks/new",
    "/chat",
    "/applications",

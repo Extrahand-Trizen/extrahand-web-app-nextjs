@@ -17,7 +17,6 @@ import {
    SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { MessageSquare } from "lucide-react";
 import { useAuth } from "@/lib/auth/context";
 import {
    TaskTrackingHeader,
@@ -28,7 +27,7 @@ import {
    ReviewSection,
    ReportForm,
 } from "@/components/tasks/tracking";
-import { EmbeddedChat } from "@/components/tasks/tracking/EmbeddedChat";
+import { FloatingChatWidget } from "@/components/tasks/tracking/FloatingChatWidget";
 import {
    Dialog,
    DialogContent,
@@ -492,31 +491,6 @@ export default function TaskTrackingPage() {
                            userRole={userRole}
                            onStatusUpdate={handleStatusUpdate}
                         />
-                        {/* Chat Button in Actions Section - Mobile */}
-                        <div className="bg-white rounded-xl shadow-sm border border-secondary-200 p-4 md:p-6">
-                           <h2 className="text-base md:text-lg font-semibold md:font-bold text-secondary-900 mb-3 md:mb-4">
-                              Communication
-                           </h2>
-                           <Button
-                              onClick={() => {
-                                 const otherUserId =
-                                    userRole === "poster"
-                                       ? task.assigneeUid || "mock_tasker_123"
-                                       : task.creatorUid || "mock_poster_123";
-                                 const taskTitle = encodeURIComponent(
-                                    task.title
-                                 );
-                                 router.push(
-                                    `/chat?taskId=${task._id}&taskTitle=${taskTitle}&otherUserId=${otherUserId}`
-                                 );
-                              }}
-                              className="w-full justify-start gap-2 text-sm md:text-base font-medium md:font-semibold"
-                              variant="outline"
-                           >
-                              <MessageSquare className="w-4 h-4" />
-                              Open Chat
-                           </Button>
-                        </div>
                      </div>
                   )}
 
@@ -599,31 +573,6 @@ export default function TaskTrackingPage() {
                      />
                   )}
 
-                  {/* Embedded Chat - Desktop - Only for poster and tasker */}
-                  {userRole !== "viewer" && (
-                     <div className="bg-white rounded-xl shadow-sm border border-secondary-200 overflow-hidden">
-                        <div className="h-[500px] flex flex-col">
-                           <EmbeddedChat
-                              taskId={task._id}
-                              otherUserId={
-                                 userRole === "poster"
-                                    ? task.assigneeUid || "mock_tasker_123"
-                                    : task.creatorUid || "mock_poster_123"
-                              }
-                              otherUserName={
-                                 userRole === "poster"
-                                    ? task.assignedToName || "Tasker"
-                                    : task.requesterName || "Task Owner"
-                              }
-                              currentUserId={currentUser?.uid || "current_user"}
-                              messages={chatMessages}
-                              onSendMessage={handleSendMessage}
-                              isLoading={isLoadingChat}
-                           />
-                        </div>
-                     </div>
-                  )}
-
                   {/* Task Summary Card */}
                   <div className="bg-white rounded-xl shadow-sm border border-secondary-200 p-6">
                      <h3 className="text-base font-bold text-secondary-900 mb-4">
@@ -671,6 +620,27 @@ export default function TaskTrackingPage() {
                </div>
             </div>
          </div>
+
+         {/* Floating Chat Widget - Available for poster and tasker */}
+         {userRole !== "viewer" && (
+            <FloatingChatWidget
+               taskId={task._id}
+               otherUserId={
+                  userRole === "poster"
+                     ? task.assigneeUid || "mock_tasker_123"
+                     : task.creatorUid || "mock_poster_123"
+               }
+               otherUserName={
+                  userRole === "poster"
+                     ? task.assignedToName || "Tasker"
+                     : task.requesterName || "Task Owner"
+               }
+               currentUserId={currentUser?.uid || "current_user"}
+               messages={chatMessages}
+               onSendMessage={handleSendMessage}
+               isLoading={isLoadingChat}
+            />
+         )}
 
          {/* Report Modal */}
          <Dialog open={showReportModal} onOpenChange={setShowReportModal}>

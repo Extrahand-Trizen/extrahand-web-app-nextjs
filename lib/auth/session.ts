@@ -11,10 +11,16 @@ export interface SessionData {
    lastRoute: string;
    lastRouteParams: any;
    lastActivity: number;
-   accessToken: string | null;
-   accessTokenExpiresAt: number | null;
-   refreshToken: string | null;
-   refreshTokenExpiresAt: number | null;
+   // =========================================================================
+   // REDUNDANT FIELDS - Commented out since app uses httpOnly cookies
+   // With httpOnly cookies, JavaScript cannot access tokens - they're managed
+   // by the browser automatically. These fields are never populated.
+   // =========================================================================
+   // accessToken: string | null;
+   // accessTokenExpiresAt: number | null;
+   // refreshToken: string | null;
+   // refreshTokenExpiresAt: number | null;
+   // =========================================================================
    sessionId: string | null;
 }
 
@@ -29,17 +35,13 @@ class SessionManager {
          if (typeof window === "undefined") return;
 
          const existing = this.getSession();
-         const shouldForceAuth =
-            data.isAuthenticated === undefined &&
-            (typeof data.accessToken === "string" ||
-               typeof data.refreshToken === "string");
+         // Note: With httpOnly cookies, we can't check for tokens in JS
+         // Authentication state is determined by successful API calls
 
          const sessionData: SessionData = {
             ...existing,
             ...data,
-            isAuthenticated: shouldForceAuth
-               ? true
-               : data.isAuthenticated ?? existing.isAuthenticated,
+            isAuthenticated: data.isAuthenticated ?? existing.isAuthenticated,
             lastActivity: Date.now(),
          };
          localStorage.setItem(this.SESSION_KEY, JSON.stringify(sessionData));
@@ -63,9 +65,8 @@ class SessionManager {
             ...parsed,
          };
 
-         if (!session.isAuthenticated && session.accessToken) {
-            session.isAuthenticated = true;
-         }
+         // Note: With httpOnly cookies, we can't check for tokens in JS
+         // isAuthenticated is set explicitly after successful API calls
 
          return session;
       } catch (error) {
@@ -311,10 +312,7 @@ class SessionManager {
          lastRoute: "Landing",
          lastRouteParams: {},
          lastActivity: Date.now(),
-         accessToken: null,
-         accessTokenExpiresAt: null,
-         refreshToken: null,
-         refreshTokenExpiresAt: null,
+         // Token fields removed - using httpOnly cookies
          sessionId: null,
       };
    }

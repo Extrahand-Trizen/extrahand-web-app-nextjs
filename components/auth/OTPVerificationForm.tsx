@@ -273,6 +273,16 @@ export function OTPVerificationForm({
             // NOTE: tokens are now HttpOnly cookies; not storing in state
          });
 
+         // Ensure Mongo profile is synced/bound to the authenticated session
+         const syncResult = await authApi.syncProfile({
+            name: userName || undefined,
+            phone: formattedPhone,
+         });
+
+         if (!syncResult.success) {
+            console.warn("Profile sync failed; continuing", syncResult.error);
+         }
+
          // 4. Refresh user data in AuthContext
          await refreshUserData();
 

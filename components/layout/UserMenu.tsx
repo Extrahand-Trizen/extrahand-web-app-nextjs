@@ -56,7 +56,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
          <button
             onClick={() => setOpen((prev) => !prev)}
             aria-label="Open user menu"
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-secondary-200 bg-white text-secondary-900 shadow-sm transition hover:border-secondary-400"
+            className="p-2 text-secondary-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors bg-white shadow-sm"
          >
             <UserRound className="h-5 w-5" />
          </button>

@@ -74,29 +74,6 @@ export default function HomePage() {
    return (
       <>
          <div className="bg-secondary-50">
-            {/* Header Actions - Top Right */}
-            <div className="fixed top-20 right-4 z-50 flex items-center gap-2">
-               <QuickSearch tasks={data.taskSnapshots} />
-               <NotificationCenter status={data.currentStatus} />
-               <button
-                  onClick={handleRefresh}
-                  disabled={isRefreshing}
-                  className="p-2 text-secondary-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors bg-white shadow-sm"
-                  title="Refresh"
-               >
-                  <RefreshCw
-                     className={`w-5 h-5 ${isRefreshing ? "animate-spin" : ""}`}
-                  />
-               </button>
-               <button
-                  onClick={() => setShowSettingsPanel(!showSettingsPanel)}
-                  className="p-2 text-secondary-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors bg-white shadow-sm"
-                  title="Card Settings (Dev)"
-               >
-                  <Settings />
-               </button>
-            </div>
-
             {/* Settings Panel - Fixed on Right Side */}
             {showSettingsPanel && (
                <div className="fixed right-0 top-30 h-1/2 w-64 bg-white border-l border-secondary-200 shadow-xl z-40 overflow-y-auto">
@@ -207,7 +184,7 @@ export default function HomePage() {
                   </div>
 
                   {/* Dynamic Action Card Section - Full Width, Centered Content */}
-                  <div >
+                  <div>
                      <div className="w-full mx-auto">
                         <DynamicActionCard
                            data={data}

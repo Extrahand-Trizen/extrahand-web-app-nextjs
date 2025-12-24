@@ -43,10 +43,8 @@ export const sessionsApi = {
       const payload: Record<string, any> = {
          clientType: "web",
       };
-
-      if (session.refreshToken) {
-         payload.refreshToken = session.refreshToken;
-      }
+      // Access/refresh tokens are carried in HttpOnly cookies; we avoid
+      // sending stored tokens to keep a single source of truth (sessionId-bound cookies).
 
       return request<SessionResponse>("sessions/refresh", {
          body: JSON.stringify(payload),
@@ -58,10 +56,7 @@ export const sessionsApi = {
       const payload: Record<string, any> = {
          clientType: "web",
       };
-
-      if (session.refreshToken) {
-         payload.refreshToken = session.refreshToken;
-      }
+      // Rely on HttpOnly cookies for logout; body tokens are intentionally omitted.
 
       return request<{ success: boolean; message?: string }>(
          "sessions/logout",
