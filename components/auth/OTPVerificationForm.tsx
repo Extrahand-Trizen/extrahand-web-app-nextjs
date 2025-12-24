@@ -251,6 +251,7 @@ export function OTPVerificationForm({
          const formattedPhone = formatPhoneNumber(phone);
 
          // 3. Call backend to complete OTP authentication
+         // For web: tokens are set as HttpOnly cookies by the backend
          const backendResult = await authApi.completeOTP(
             idToken,
             authType,
@@ -264,34 +265,12 @@ export function OTPVerificationForm({
             );
          }
 
-         const tokens = backendResult.tokens;
-         if (!tokens?.accessToken) {
-            throw new Error(
-               "Authentication succeeded but session tokens are missing"
-            );
-         }
-
-         const accessTokenExpiry = tokens.accessTokenExpiresAt
-            ? new Date(tokens.accessTokenExpiresAt).getTime()
-            : null;
-         const refreshTokenExpiry = tokens.refreshTokenExpiresAt
-            ? new Date(tokens.refreshTokenExpiresAt).getTime()
-            : null;
-
-         sessionManager.saveSession({
-            isAuthenticated: true,
-            accessToken: tokens.accessToken,
-            accessTokenExpiresAt: accessTokenExpiry,
-            refreshToken: tokens.refreshToken ?? null,
-            refreshTokenExpiresAt: refreshTokenExpiry,
-            sessionId: tokens.sessionId ?? null,
-         });
-
+         // For web clients, tokens are in HttpOnly cookies (not in response body)
+         // sessionManager no longer needed for token storage
+         // Just update the user store with profile data
          loginToStore({
             user: backendResult.profile ?? undefined,
-            token: tokens.accessToken,
-            tokenExpiresAt: accessTokenExpiry,
-            sessionId: tokens.sessionId ?? null,
+            // NOTE: tokens are now HttpOnly cookies; not storing in state
          });
 
          // 4. Refresh user data in AuthContext

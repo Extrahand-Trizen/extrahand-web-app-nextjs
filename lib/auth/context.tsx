@@ -65,13 +65,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       prevUserRef.current = null;
    }, [storeLogout]);
 
-   const hasBackendSession = useCallback(() => {
-      const session = sessionManager.getSession();
-      return Boolean(session.accessToken || session.refreshToken);
-   }, []);
+   // With HttpOnly cookies, we can't inspect tokens in JS. Assume backend session
+   // exists after login and let API calls prove otherwise.
+   const hasBackendSession = useCallback(() => true, []);
 
    const refreshUserData = useCallback(async () => {
-      if (currentUser && hasBackendSession()) {
+      if (currentUser) {
          try {
             console.log("🔄 Refreshing user data from backend API...");
             const userData = await api.me();
@@ -136,39 +135,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             const session = sessionManager.getSession();
             console.log("🔍 Restoring session:", session);
 
-            if (
-               session.isAuthenticated &&
-               sessionManager.isSessionValid() &&
-               (session.accessToken || session.refreshToken)
-            ) {
-               console.log("✅ Valid session found, restoring...");
-
-               // Check if user is still authenticated with Firebase
-               const user = auth.currentUser;
-               if (user) {
-                  setCurrentUser(user);
-                  try {
-                     const userData = await api.me();
-                     setUserData(userData);
-                     console.log("✅ Session restored successfully");
-                  } catch (error: any) {
-                     console.warn(
-                        "❌ Failed to restore user data:",
-                        error.message
-                     );
-                     setUserData(null);
-                     if (error?.status === 401) {
-                        await resetLocalSession();
-                     }
-                  }
-               } else {
-                  console.log(
-                     "⏳ Firebase auth not ready yet; waiting for onAuthStateChanged before mutating session"
+            // Attempt to use Firebase auth state; API calls will validate cookies
+            const user = auth.currentUser;
+            if (user) {
+               setCurrentUser(user);
+               try {
+                  const userData = await api.me();
+                  setUserData(userData);
+                  storeLogin({ user: userData });
+                  console.log("✅ Session restored successfully");
+               } catch (error: any) {
+                  console.warn(
+                     "❌ Failed to restore user data:",
+                     error.message
                   );
+                  setUserData(null);
+                  if (error?.status === 401) {
+                     await resetLocalSession();
+                  }
                }
             } else {
-               console.log("❌ No valid session found");
-               await resetLocalSession();
+               console.log(
+                  "⏳ Firebase auth not ready yet; waiting for onAuthStateChanged"
+               );
             }
          } catch (error) {
             console.warn("❌ Error restoring session:", error);
@@ -194,17 +183,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             prevUserRef.current = currentUserId;
 
             if (user) {
-               if (!hasBackendSession()) {
-                  console.warn(
-                     "Backend session missing; signing user out to keep UI consistent"
-                  );
-                  await resetLocalSession();
-                  return;
-               }
-
                setCurrentUser(user);
 
-               // Only save session if user changed (not on every auth state change)
                const existingSession = sessionManager.getSession();
                if (
                   !existingSession.isAuthenticated ||
@@ -218,12 +198,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                }
 
                try {
-                  // Fetch user data from backend API
                   const userData = await api.me();
                   setUserData(userData);
                   storeLogin({ user: userData });
                } catch (error: any) {
-                  // If API call fails, continue with auth user only
                   console.warn(
                      "Backend API offline; proceeding without profile data:",
                      error.message
@@ -239,7 +217,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                setUserData(null);
                prevUserRef.current = null;
 
-               // Clear session when user logs out
                sessionManager.clearSession();
                storeLogout();
             }

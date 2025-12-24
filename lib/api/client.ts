@@ -1,12 +1,13 @@
 /**
- * API Client - Base fetch wrapper with authentication
+ * API Client - Base fetch wrapper with authentication via HttpOnly cookies
  * Connects to task-connect-relay backend
+ * 
+ * SECURITY: Tokens are stored in HttpOnly cookies, not accessed by JavaScript.
+ * The browser automatically sends cookies with credentials: 'include'.
  */
 
-import { sessionManager } from "@/lib/auth/session";
-import { sessionsApi } from "@/lib/api/endpoints/sessions";
 import { getApiBaseUrl, CORS_CONFIG, isDevelopment } from "@/lib/config";
-import type { ApiError, SessionTokens } from "@/types/api";
+import type { ApiError } from "@/types/api";
 
 // Custom error interface for API errors
 interface APIError extends Error {
@@ -14,54 +15,7 @@ interface APIError extends Error {
    data?: any;
 }
 
-const ACCESS_TOKEN_BUFFER_MS = 30_000; // Refresh ~30s before expiry to avoid race conditions
-let refreshPromise: Promise<string | null> | null = null;
-
-function storeSessionTokens(tokens?: SessionTokens | null): string | null {
-   if (!tokens?.accessToken) {
-      return null;
-   }
-
-   const expiresAt = tokens.accessTokenExpiresAt
-      ? new Date(tokens.accessTokenExpiresAt).getTime()
-      : null;
-   const refreshExpiresAt = tokens.refreshTokenExpiresAt
-      ? new Date(tokens.refreshTokenExpiresAt).getTime()
-      : null;
-
-   sessionManager.saveSession({
-      isAuthenticated: true,
-      accessToken: tokens.accessToken,
-      accessTokenExpiresAt: Number.isFinite(expiresAt) ? expiresAt : null,
-      refreshToken: tokens.refreshToken ?? null,
-      refreshTokenExpiresAt: Number.isFinite(refreshExpiresAt)
-         ? refreshExpiresAt
-         : null,
-      sessionId: tokens.sessionId ?? null,
-   });
-
-   return tokens.accessToken;
-}
-
-async function refreshAccessToken(): Promise<string | null> {
-   if (!refreshPromise) {
-      refreshPromise = sessionsApi
-         .refresh()
-         .then((response) => storeSessionTokens(response?.tokens))
-         .catch((error: any) => {
-            console.warn("⚠️ Failed to refresh access token:", error);
-            if (error?.status === 401) {
-               sessionManager.clearSession();
-            }
-            return null;
-         })
-         .finally(() => {
-            refreshPromise = null;
-         });
-   }
-
-   return refreshPromise;
-}
+const ACCESS_TOKEN_BUFFER_MS = 30_000;
 
 function redactHeaders(headers: Headers): Record<string, string> {
    const safeEntries = Array.from(headers.entries()).map(([key, value]) =>
@@ -70,34 +24,9 @@ function redactHeaders(headers: Headers): Record<string, string> {
    return Object.fromEntries(safeEntries);
 }
 
-async function getValidAccessToken(): Promise<string | null> {
-   const session = sessionManager.getSession();
-   const hasRefreshToken = Boolean(session.refreshToken);
-
-   if (!session.isAuthenticated) {
-      if (hasRefreshToken) {
-         sessionManager.saveSession({ isAuthenticated: true });
-      } else {
-         return null;
-      }
-   }
-
-   if (session.accessToken && session.accessTokenExpiresAt) {
-      const expiresIn = session.accessTokenExpiresAt - Date.now();
-      if (expiresIn > ACCESS_TOKEN_BUFFER_MS) {
-         return session.accessToken;
-      }
-   }
-
-   if (session.accessToken && !session.accessTokenExpiresAt) {
-      return session.accessToken;
-   }
-
-   return hasRefreshToken ? refreshAccessToken() : null;
-}
-
 /**
- * Base fetch function with authentication
+ * Base fetch function with authentication via HttpOnly cookies
+ * Tokens are NOT injected by this client; browser sends them automatically.
  */
 async function fetchWithAuth(
    path: string,
@@ -116,74 +45,52 @@ async function fetchWithAuth(
          isDevelopment ? "development" : "production"
       );
 
-      let attemptedRefresh = false;
-
       const corsConfig =
          CORS_CONFIG[isDevelopment ? "development" : "production"];
 
-      while (true) {
-         const headers = new Headers(init.headers || {});
-         if (!headers.has("Content-Type")) {
-            headers.set("Content-Type", "application/json");
-         }
-
-         const token = await getValidAccessToken().catch((err) => {
-            console.warn("⚠️ Failed to obtain access token:", err);
-            return null;
-         });
-
-         if (token) {
-            headers.set("Authorization", `Bearer ${token}`);
-         } else {
-            headers.delete("Authorization");
-            console.log("👤 Proceeding without backend access token");
-         }
-
-         console.log("🔧 Making fetch request to:", fullUrl);
-         console.log("🔧 Headers:", redactHeaders(headers));
-
-         const res = await fetch(fullUrl, {
-            ...init,
-            headers,
-            ...corsConfig,
-         });
-
-         console.log("🔧 Response status:", res.status);
-
-         if (res.status === 401 && token && !attemptedRefresh) {
-            attemptedRefresh = true;
-            const refreshedToken = await refreshAccessToken();
-            if (refreshedToken) {
-               console.log("🔄 Retrying request after token refresh");
-               continue;
-            }
-         }
-
-         if (!res.ok) {
-            const text = await res.text().catch(() => "");
-            let errorData;
-
-            try {
-               errorData = JSON.parse(text);
-            } catch (e) {
-               errorData = { error: text || `HTTP ${res.status}` };
-            }
-
-            // Create a more informative error
-            const error: APIError = new Error(
-               errorData.message || errorData.error || `HTTP ${res.status}`
-            );
-            error.status = res.status;
-            error.data = errorData;
-
-            console.error(`❌ API Error ${res.status}:`, errorData);
-            throw error;
-         }
-
-         const data = await res.json();
-         console.log(`✅ API Success: ${path}`, data);
-         return data;
+      const headers = new Headers(init.headers || {});
+      if (!headers.has("Content-Type")) {
+         headers.set("Content-Type", "application/json");
       }
+
+      console.log("🔧 Making fetch request to:", fullUrl);
+      console.log("🔧 Headers:", redactHeaders(headers));
+      console.log(
+         "🔧 HttpOnly cookies will be sent automatically with credentials: 'include'"
+      );
+
+      const res = await fetch(fullUrl, {
+         ...init,
+         headers,
+         ...corsConfig,
+      });
+
+      console.log("🔧 Response status:", res.status);
+
+      if (!res.ok) {
+         const text = await res.text().catch(() => "");
+         let errorData;
+
+         try {
+            errorData = JSON.parse(text);
+         } catch (e) {
+            errorData = { error: text || `HTTP ${res.status}` };
+         }
+
+         // Create a more informative error
+         const error: APIError = new Error(
+            errorData.message || errorData.error || `HTTP ${res.status}`
+         );
+         error.status = res.status;
+         error.data = errorData;
+
+         console.error(`❌ API Error ${res.status}:`, errorData);
+         throw error;
+      }
+
+      const data = await res.json();
+      console.log(`✅ API Success: ${path}`, data);
+      return data;
    } catch (error) {
       console.error("🚨 API Error:", error);
 
