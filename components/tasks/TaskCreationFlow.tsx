@@ -5,12 +5,12 @@
  * Production-ready with React Hook Form + Zod validation
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
@@ -27,7 +27,148 @@ import {
    type CompleteTaskFormData,
 } from "@/lib/validations/task";
 
+import { api } from "@/lib/api";
+
 export type TaskFormData = CompleteTaskFormData;
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+const TOTAL_STEPS = 4;
+const MAX_RETRY_ATTEMPTS = 3;
+const RETRY_DELAY_MS = 1000;
+const DRAFT_KEY = "taskDraft";
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+/**
+ * Map frontend urgency values to backend enum
+ */
+const mapUrgencyToBackend = (
+   urgency: string
+): "low" | "medium" | "high" | "urgent" => {
+   const urgencyMap: Record<string, "low" | "medium" | "high" | "urgent"> = {
+      standard: "medium",
+      soon: "high",
+      urgent: "urgent",
+   };
+   return urgencyMap[urgency] || "medium";
+};
+
+/**
+ * Map frontend flexibility to backend values
+ */
+const mapFlexibilityToBackend = (
+   flexibility: string
+): "strict" | "flexible" | "anytime" => {
+   if (flexibility === "very_flexible") return "anytime";
+   if (flexibility === "exact") return "strict";
+   return "flexible";
+};
+
+/**
+ * Format Date object to time string (e.g., "10:00 AM")
+ */
+const formatTimeToString = (date: Date | null | undefined): string | undefined => {
+   if (!date) return undefined;
+   try {
+      return date.toLocaleTimeString("en-US", {
+         hour: "2-digit",
+         minute: "2-digit",
+         hour12: true,
+      });
+   } catch {
+      return undefined;
+   }
+};
+
+/**
+ * Transform frontend form data to backend Task schema
+ * Using Record type for flexibility as the backend accepts additional fields
+ */
+const transformFormDataToTask = (
+   formData: TaskFormData
+): Record<string, unknown> => {
+   // Ensure coordinates are a proper tuple
+   const coords = formData.location.coordinates;
+   const coordinates: [number, number] = [coords?.[0] ?? 0, coords?.[1] ?? 0];
+
+   // Budget is required in backend schema - default to 0 for negotiable
+   const budget =
+      formData.budgetType === "negotiable"
+         ? 0
+         : formData.budget ?? 0;
+
+   return {
+      title: formData.title,
+      description: formData.description,
+      category: formData.category,
+      subcategory: formData.subcategory || undefined,
+      requirements: formData.requirements,
+      estimatedDuration: formData.estimatedDuration || undefined,
+      tags: formData.tags,
+      priority: formData.priority,
+      // Transform attachments to images array for backend
+      images: formData.attachments?.map((a) => a.url) || [],
+      // Location
+      location: {
+         type: "Point",
+         coordinates,
+         address: formData.location.address,
+         city: formData.location.city,
+         state: formData.location.state,
+         pinCode: formData.location.pinCode,
+         country: formData.location.country || "India",
+      },
+      // Schedule - convert Date objects to time strings for backend
+      scheduledDate: formData.scheduledDate || undefined,
+      scheduledTimeStart: formatTimeToString(formData.scheduledTimeStart),
+      scheduledTimeEnd: formatTimeToString(formData.scheduledTimeEnd),
+      flexibility: mapFlexibilityToBackend(formData.flexibility),
+      // Budget - required field, must be a number
+      budgetType: formData.budgetType,
+      budget,
+      urgency: mapUrgencyToBackend(formData.urgency),
+   };
+};
+
+/**
+ * Sleep utility for retry delays
+ */
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Get user-friendly error message
+ */
+const getErrorMessage = (error: unknown): string => {
+   if (error instanceof Error) {
+      // Network errors
+      if (error.message.includes("Failed to fetch")) {
+         return "Unable to connect to the server. Please check your internet connection.";
+      }
+      // Timeout errors
+      if (error.message.includes("timeout")) {
+         return "The request took too long. Please try again.";
+      }
+      // Auth errors
+      if (error.message.includes("401") || error.message.includes("Unauthorized")) {
+         return "Your session has expired. Please log in again.";
+      }
+      // Validation errors
+      if (error.message.includes("400") || error.message.includes("validation")) {
+         return "Please check your task details and try again.";
+      }
+      return error.message;
+   }
+   return "An unexpected error occurred. Please try again.";
+};
+
+// ============================================================================
+// Initial Form Data
+// ============================================================================
 
 const INITIAL_FORM_DATA: TaskFormData = {
    title: "",
@@ -65,11 +206,16 @@ const INITIAL_FORM_DATA: TaskFormData = {
    agreedToGuidelines: false,
 };
 
+// ============================================================================
+// Component
+// ============================================================================
+
 export function TaskCreationFlow() {
    const router = useRouter();
    const [currentStep, setCurrentStep] = useState(1);
    const [isSubmitting, setIsSubmitting] = useState(false);
    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+   const [retryCount, setRetryCount] = useState(0);
 
    const form = useForm({
       resolver: zodResolver(completeTaskSchema),
@@ -77,8 +223,11 @@ export function TaskCreationFlow() {
       defaultValues: INITIAL_FORM_DATA,
    }) as UseFormReturn<TaskFormData>;
 
-   const totalSteps = 4;
-   const progress = (currentStep / totalSteps) * 100;
+   // Memoized progress calculation
+   const progress = useMemo(
+      () => (currentStep / TOTAL_STEPS) * 100,
+      [currentStep]
+   );
 
    // Track unsaved changes
    useEffect(() => {
@@ -98,32 +247,38 @@ export function TaskCreationFlow() {
       };
 
       window.addEventListener("beforeunload", handleBeforeUnload);
-      return () =>
-         window.removeEventListener("beforeunload", handleBeforeUnload);
+      return () => window.removeEventListener("beforeunload", handleBeforeUnload);
    }, [hasUnsavedChanges, isSubmitting]);
 
    // Load draft on mount
    useEffect(() => {
-      const draft = localStorage.getItem("taskDraft");
+      const draft = localStorage.getItem(DRAFT_KEY);
       if (draft) {
          try {
             const parsedDraft = JSON.parse(draft);
             form.reset(parsedDraft);
             toast.info("Draft restored", {
                description: "Your previous progress has been loaded.",
+               action: {
+                  label: "Clear",
+                  onClick: () => {
+                     localStorage.removeItem(DRAFT_KEY);
+                     form.reset(INITIAL_FORM_DATA);
+                     toast.success("Draft cleared");
+                  },
+               },
             });
          } catch (error) {
             console.error("Failed to load draft:", error);
+            localStorage.removeItem(DRAFT_KEY);
          }
       }
    }, [form]);
 
-   const handleNext = async () => {
-      let isValid = false;
-
-      // Validate current step
-      if (currentStep === 1) {
-         isValid = await form.trigger([
+   // Memoized step validation fields
+   const stepValidationFields = useMemo(
+      () => ({
+         1: [
             "title",
             "description",
             "category",
@@ -133,76 +288,149 @@ export function TaskCreationFlow() {
             "tags",
             "priority",
             "attachments",
-         ]);
-      } else if (currentStep === 2) {
-         isValid = await form.trigger([
+         ] as const,
+         2: [
             "location",
             "scheduledDate",
             "scheduledTimeStart",
             "scheduledTimeEnd",
             "flexibility",
-         ]);
-      } else if (currentStep === 3) {
-         isValid = await form.trigger(["budgetType", "budget", "urgency"]);
+         ] as const,
+         3: ["budgetType", "budget", "urgency"] as const,
+      }),
+      []
+   );
+
+   // Handle navigation between steps
+   const handleNext = useCallback(async () => {
+      const fieldsToValidate =
+         stepValidationFields[currentStep as keyof typeof stepValidationFields];
+
+      if (fieldsToValidate) {
+         const isValid = await form.trigger(fieldsToValidate as any);
+         if (!isValid) {
+            toast.error("Please fix the errors before continuing");
+            return;
+         }
       }
 
-      if (isValid && currentStep < totalSteps) {
+      if (currentStep < TOTAL_STEPS) {
          setCurrentStep((prev) => prev + 1);
          window.scrollTo({ top: 0, behavior: "smooth" });
       }
-   };
+   }, [currentStep, form, stepValidationFields]);
 
-   const handleBack = () => {
+   const handleBack = useCallback(() => {
       if (currentStep > 1) {
          setCurrentStep((prev) => prev - 1);
          window.scrollTo({ top: 0, behavior: "smooth" });
       }
-   };
+   }, [currentStep]);
 
-   const onSubmit = async (data: TaskFormData) => {
-      // Prevent duplicate submissions
-      if (isSubmitting) {
-         toast.error("Please wait", {
-            description: "Your task is being submitted...",
-         });
-         return;
-      }
+   // API call with retry logic
+   const createTaskWithRetry = useCallback(
+      async (
+         payload: Record<string, unknown>,
+         attempt = 1
+      ): Promise<unknown> => {
+         try {
+            return await api.createTask(payload);
+         } catch (error) {
+            if (attempt < MAX_RETRY_ATTEMPTS) {
+               // Exponential backoff
+               const delay = RETRY_DELAY_MS * Math.pow(2, attempt - 1);
+               console.log(`Retry attempt ${attempt + 1} after ${delay}ms...`);
+               setRetryCount(attempt);
+               await sleep(delay);
+               return createTaskWithRetry(payload, attempt + 1);
+            }
+            throw error;
+         }
+      },
+      []
+   );
 
-      setIsSubmitting(true);
+   // Form submission handler
+   const onSubmit = useCallback(
+      async (data: TaskFormData) => {
+         // Prevent duplicate submissions
+         if (isSubmitting) {
+            return;
+         }
 
-      try {
-         // TODO: Replace with actual API call
-         await new Promise((resolve) => setTimeout(resolve, 2000));
+         setIsSubmitting(true);
+         setRetryCount(0);
 
-         // Clear draft after successful submission
-         localStorage.removeItem("taskDraft");
-         setHasUnsavedChanges(false);
+         try {
+            // Transform form data to match backend Task schema
+            const taskPayload = transformFormDataToTask(data);
 
-         toast.success("Task posted successfully!", {
-            description: "Your task has been created and is now live.",
-         });
+            // Use toast.promise for loading state
+            const response = await toast.promise(
+               createTaskWithRetry(taskPayload),
+               {
+                  loading: "Creating your task...",
+                  success: "Task posted successfully!",
+                  error: (err) => getErrorMessage(err),
+               }
+            );
 
-         router.push("/tasks/my-tasks");
-      } catch (error) {
-         console.error("Task submission error:", error);
-         toast.error("Failed to post task", {
-            description:
-               error instanceof Error
-                  ? error.message
-                  : "Please try again or contact support if the problem persists.",
-         });
-      } finally {
-         setIsSubmitting(false);
-      }
-   };
+            // Clear draft after successful submission
+            localStorage.removeItem(DRAFT_KEY);
+            setHasUnsavedChanges(false);
 
-   const handleSaveDraft = () => {
+            // Navigate to task details if we have an ID, otherwise go to my-tasks
+            const taskId =
+               (response as any)?.data?._id || (response as any)?._id;
+
+            // Delay navigation slightly for toast to be visible
+            setTimeout(() => {
+               router.push(taskId ? `/tasks/${taskId}` : "/tasks");
+            }, 500);
+         } catch (error) {
+            console.error("Task submission error:", error);
+
+            // Show retry action for network errors
+            const isNetworkError =
+               error instanceof Error &&
+               (error.message.includes("Failed to fetch") ||
+                  error.message.includes("Network"));
+
+            if (isNetworkError) {
+               toast.error("Connection failed", {
+                  description: "Please check your internet connection.",
+                  action: {
+                     label: "Retry",
+                     onClick: () => form.handleSubmit(onSubmit)(),
+                  },
+                  duration: 10000,
+               });
+            }
+         } finally {
+            setIsSubmitting(false);
+            setRetryCount(0);
+         }
+      },
+      [isSubmitting, createTaskWithRetry, router, form]
+   );
+
+   // Save draft handler
+   const handleSaveDraft = useCallback(() => {
       const values = form.getValues();
-      localStorage.setItem("taskDraft", JSON.stringify(values));
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(values));
+      setHasUnsavedChanges(false);
       toast.success("Draft saved", {
-         description: "Your progress has been saved.",
+         description: "Your progress has been saved locally.",
       });
-   };
+   }, [form]);
+
+   // Handle navigation action
+   const handleNavigateBack = useCallback(() => {
+      if (hasUnsavedChanges) {
+         handleSaveDraft();
+      }
+      router.back();
+   }, [hasUnsavedChanges, handleSaveDraft, router]);
 
    return (
       <div className="min-h-screen bg-gray-50">
@@ -213,9 +441,10 @@ export function TaskCreationFlow() {
                   <div className="flex items-center gap-4">
                      <button
                         onClick={
-                           currentStep === 1 ? () => router.back() : handleBack
+                           currentStep === 1 ? handleNavigateBack : handleBack
                         }
-                        className="text-gray-700 hover:text-gray-900 transition-colors"
+                        className="text-gray-700 hover:text-gray-900 transition-colors disabled:opacity-50"
+                        disabled={isSubmitting}
                         aria-label={
                            currentStep === 1 ? "Go back" : "Previous step"
                         }
@@ -228,7 +457,12 @@ export function TaskCreationFlow() {
                            Post a Task
                         </h1>
                         <p className="text-sm text-gray-500">
-                           Step {currentStep} of {totalSteps}
+                           Step {currentStep} of {TOTAL_STEPS}
+                           {retryCount > 0 && (
+                              <span className="ml-2 text-amber-600">
+                                 (Retrying... {retryCount}/{MAX_RETRY_ATTEMPTS})
+                              </span>
+                           )}
                         </p>
                      </div>
                   </div>
@@ -236,8 +470,12 @@ export function TaskCreationFlow() {
                   <Button
                      variant="ghost"
                      onClick={handleSaveDraft}
+                     disabled={isSubmitting}
                      className="text-primary-600 hover:text-primary-700"
                   >
+                     {isSubmitting ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                     ) : null}
                      Save Draft
                   </Button>
                </div>

@@ -6,7 +6,7 @@
  * Using React Hook Form with Zod validation
  */
 
-import React from "react";
+import React, { useEffect, useMemo } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { TaskFormData } from "../TaskCreationFlow";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,7 @@ import {
    FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { format, addDays } from "date-fns";
+import { format, addDays, startOfDay } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { InteractiveLocationPicker } from "../../shared/InteractiveLocationPicker";
@@ -48,7 +48,41 @@ export function LocationScheduleStep({
    onNext,
 }: LocationScheduleStepProps) {
    const scheduledDate = form.watch("scheduledDate");
+   const scheduledTimeStart = form.watch("scheduledTimeStart");
    const location = form.watch("location");
+
+   // Minimum date is today at midnight
+   const minDate = useMemo(() => startOfDay(new Date()), []);
+
+   // Sync scheduledDate with scheduledTimeStart date portion
+   useEffect(() => {
+      if (scheduledDate) {
+         const currentStart = form.getValues("scheduledTimeStart");
+         const currentEnd = form.getValues("scheduledTimeEnd");
+
+         // Update start time to use the selected date but keep the time
+         if (currentStart) {
+            const newStart = new Date(scheduledDate);
+            newStart.setHours(currentStart.getHours(), currentStart.getMinutes(), 0, 0);
+            
+            // Only update if day changed
+            if (startOfDay(currentStart).getTime() !== startOfDay(scheduledDate).getTime()) {
+               form.setValue("scheduledTimeStart", newStart);
+            }
+         }
+
+         // Update end time similarly
+         if (currentEnd) {
+            const newEnd = new Date(scheduledDate);
+            newEnd.setHours(currentEnd.getHours(), currentEnd.getMinutes(), 0, 0);
+            
+            // Only update if day changed
+            if (startOfDay(currentEnd).getTime() !== startOfDay(scheduledDate).getTime()) {
+               form.setValue("scheduledTimeEnd", newEnd);
+            }
+         }
+      }
+   }, [scheduledDate, form]);
 
    const handleQuickDate = (daysOffset: number) => {
       const date = addDays(new Date(), daysOffset);
@@ -198,6 +232,7 @@ export function LocationScheduleStep({
                         onChange={field.onChange}
                         placeholder="Select start date & time"
                         className="h-10"
+                        minDate={minDate}
                      />
                   </FormControl>
                   <FormDescription className="text-xs">When should the task begin?</FormDescription>
@@ -219,6 +254,7 @@ export function LocationScheduleStep({
                         onChange={field.onChange}
                         placeholder="Select end date & time"
                         className="h-10"
+                        minDate={scheduledTimeStart || minDate}
                      />
                   </FormControl>
                   <FormDescription className="text-xs">

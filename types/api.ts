@@ -66,6 +66,7 @@ export interface TaskQueryParams extends PaginationParams {
    skills?: string[];
    sortBy?: string;
    status?: string;
+   search?: string;
    creatorUid?: string;
    assignedTo?: string;
 }

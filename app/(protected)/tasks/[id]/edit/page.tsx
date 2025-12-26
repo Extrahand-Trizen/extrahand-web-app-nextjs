@@ -23,7 +23,6 @@ import { LocationScheduleStep } from "@/components/tasks/steps/LocationScheduleS
 import { BudgetStep } from "@/components/tasks/steps/BudgetStep";
 
 import { editTaskSchema, type EditTaskFormData } from "@/lib/validations/task";
-import { mockTasksData } from "@/lib/data/mockTasks";
 import type { Task } from "@/types/task";
 import type { TaskFormData } from "@/components/tasks/TaskCreationFlow";
 
@@ -118,18 +117,21 @@ export default function EditTaskPage() {
       defaultValues: {} as Partial<EditTaskFormData>,
    }) as UseFormReturn<Partial<EditTaskFormData>>;
 
-   // Load task data
+   // Load task data from API
    useEffect(() => {
       const loadTask = async () => {
          try {
             setLoading(true);
-            // TODO: Replace with actual API call
-            // const taskData = await tasksApi.getTask(taskId);
-            const taskData = mockTasksData.find((t) => t._id === taskId);
+            // Fetch real task data
+            const { tasksApi } = await import("@/lib/api/endpoints/tasks");
+            const response = await tasksApi.getTask(taskId);
+            
+            // Handle different response structures
+            const taskData = ((response as any)?.data || response) as Task;
 
             if (!taskData) {
                toast.error("Task not found");
-               router.push("/tasks/my-tasks");
+               router.push("/tasks");
                return;
             }
 
@@ -141,7 +143,7 @@ export default function EditTaskPage() {
             toast.error("Failed to load task", {
                description: "Please try again later.",
             });
-            router.push("/tasks/my-tasks");
+            router.push("/tasks");
          } finally {
             setLoading(false);
          }
@@ -288,9 +290,9 @@ export default function EditTaskPage() {
             updateData.urgency = urgencyMap[data.urgency] || task.urgency;
          }
 
-         // TODO: Replace with actual API call
-         // await tasksApi.updateTask(taskId, updateData);
-         await new Promise((resolve) => setTimeout(resolve, 1500));
+         // Update task via real API
+         const { tasksApi } = await import("@/lib/api/endpoints/tasks");
+         await tasksApi.updateTask(taskId, updateData);
 
          toast.success("Task updated successfully!", {
             description: "Your changes have been saved.",

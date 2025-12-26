@@ -24,6 +24,8 @@ interface DateTimePickerProps {
    placeholder?: string;
    disabled?: boolean;
    className?: string;
+   /** Minimum selectable date (dates before this are disabled) */
+   minDate?: Date;
 }
 
 export function DateTimePicker({
@@ -32,6 +34,7 @@ export function DateTimePicker({
    placeholder = "Select date & time",
    disabled = false,
    className,
+   minDate,
 }: DateTimePickerProps) {
    const handleDateSelect = (date: Date | undefined) => {
       if (date) {
@@ -88,6 +91,9 @@ export function DateTimePicker({
       onChange(newDate);
    };
 
+   // Calculate the minimum date for calendar (default to today at midnight)
+   const calendarMinDate = minDate || new Date(new Date().setHours(0, 0, 0, 0));
+
    return (
       <Popover>
          <PopoverTrigger asChild>
@@ -115,6 +121,7 @@ export function DateTimePicker({
                   mode="single"
                   selected={value}
                   onSelect={handleDateSelect}
+                  disabled={(date) => date < calendarMinDate}
                   initialFocus
                />
 

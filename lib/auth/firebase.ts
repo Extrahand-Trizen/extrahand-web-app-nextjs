@@ -136,6 +136,7 @@ export const signInWithPhone = async (
          phoneNumber,
          projectId: FIREBASE_CONFIG.projectId,
          authDomain: FIREBASE_CONFIG.authDomain,
+         currentOrigin: typeof window !== "undefined" ? window.location.origin : "unknown",
       });
 
       const confirmationResult = await signInWithPhoneNumber(
@@ -154,6 +155,16 @@ export const signInWithPhone = async (
          message: errorMessage,
          error: error,
       });
+
+      // Provide helpful error message for invalid-app-credential
+      if (errorCode === "auth/invalid-app-credential") {
+         const origin = typeof window !== "undefined" ? window.location.origin : "unknown";
+         return {
+            error: `Authentication failed: ${origin} is not authorized in Firebase Console.\n\nTo fix:\n1. Go to Firebase Console → Authentication → Settings → Authorized domains\n2. Add: localhost, 127.0.0.1\n\nOR use Firebase test phone numbers for development.`,
+            code: errorCode,
+            success: false,
+         };
+      }
 
       return {
          error: errorMessage,

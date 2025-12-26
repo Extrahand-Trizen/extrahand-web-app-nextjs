@@ -16,7 +16,6 @@ import {
    CheckCircle,
    Shield,
 } from "lucide-react";
-import { mockTasksData } from "@/lib/data/mockTasks";
 import { TaskDetailsHeader } from "@/components/tasks/TaskDetailsHeader";
 import { TaskDetailsMain } from "@/components/tasks/TaskDetailsMain";
 import { TaskDetailsSidebar } from "@/components/tasks/TaskDetailsSidebar";
@@ -24,6 +23,8 @@ import { TaskQuestionsSection } from "@/components/tasks/TaskQuestionsSection";
 import { TaskOffersSection } from "@/components/tasks/TaskOffersSection";
 import { MakeOfferModal } from "@/components/tasks/offers/MakeOfferModal";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import type { Task } from "@/types/task";
 
 const formatDate = (date: Date | string | undefined) => {
    if (!date) return "Flexible";
@@ -41,6 +42,8 @@ export default function TaskDetailsPage() {
    const params = useParams();
    const router = useRouter();
    const taskId = params.id as string;
+   const [task, setTask] = useState<Task | null>(null);
+   const [loading, setLoading] = useState(true);
    const [activeTab, setActiveTab] = useState<"offers" | "questions">("offers");
    const [showFixedCTA, setShowFixedCTA] = useState(false);
    const [showMakeOfferModal, setShowMakeOfferModal] = useState(false);
@@ -50,7 +53,33 @@ export default function TaskDetailsPage() {
    const [scrollY, setScrollY] = useState(0);
    const isMobile = useIsMobile();
 
-   const task = mockTasksData.find((t) => t._id === taskId);
+   // Fetch task data from API
+   useEffect(() => {
+      const fetchTask = async () => {
+         setLoading(true);
+         try {
+            const { tasksApi } = await import("@/lib/api/endpoints/tasks");
+            const response = await tasksApi.getTask(taskId);
+            
+            console.log("✅ Task details response:", response);
+            
+            // Handle different response structures
+            const taskData = (response as any)?.data || response;
+            
+            if (taskData) {
+               setTask(taskData as Task);
+            }
+         } catch (error) {
+            console.error("❌ Failed to fetch task:", error);
+         } finally {
+            setLoading(false);
+         }
+      };
+
+      if (taskId) {
+         fetchTask();
+      }
+   }, [taskId]);
 
    useEffect(() => {
       const handleScroll = () => {
@@ -63,6 +92,17 @@ export default function TaskDetailsPage() {
       window.addEventListener("scroll", handleScroll);
       return () => window.removeEventListener("scroll", handleScroll);
    }, []);
+
+   if (loading) {
+      return (
+         <div className="min-h-screen flex items-center justify-center">
+            <div className="text-center">
+               <LoadingSpinner size="lg" />
+               <p className="mt-4 text-secondary-600">Loading task details...</p>
+            </div>
+         </div>
+      );
+   }
 
    if (!task) {
       return (

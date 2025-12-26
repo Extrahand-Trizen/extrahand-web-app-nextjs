@@ -3,10 +3,10 @@
 /**
  * My Tasks Content Component
  * Displays all tasks created by the current user
- * Used within the Tasks page tabs
+ * Uses real API data from tasksApi.getMyTasks()
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -16,8 +16,8 @@ import { MyTasksEmptyState } from "@/components/tasks/my-tasks/MyTasksEmptyState
 import type { Task, TaskListResponse } from "@/types/task";
 import type { TaskQueryParams } from "@/types/api";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
-import { mockTasksData } from "@/lib/data/mockTasks";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
 
 type TaskStatus = Task["status"];
 
@@ -29,127 +29,128 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
    const router = useRouter();
 
    // State
-   const [tasks, setTasks] = useState<Task[]>([]);
+   const [allTasks, setAllTasks] = useState<Task[]>([]); // All tasks from API
    const [loading, setLoading] = useState(true);
    const [error, setError] = useState<string | null>(null);
    const [searchQuery, setSearchQuery] = useState("");
    const [statusFilter, setStatusFilter] = useState<TaskStatus | "all">("all");
    const [sortBy, setSortBy] = useState("recent");
    const [page, setPage] = useState(1);
-   const [pagination, setPagination] = useState<TaskListResponse["pagination"]>(
-      {
-         page: 1,
-         limit: 10,
-         total: 0,
-         pages: 0,
-      }
-   );
    const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
 
-   // Fetch tasks
+   // Client-side filtering, searching, and sorting
+   const filteredTasks = useMemo(() => {
+      let result = [...allTasks];
+
+      // Status filter
+      if (statusFilter !== "all") {
+         result = result.filter((task) => task.status === statusFilter);
+      }
+
+      // Search filter
+      if (searchQuery.trim()) {
+         const query = searchQuery.toLowerCase();
+         result = result.filter(
+            (task) =>
+               task.title.toLowerCase().includes(query) ||
+               task.description.toLowerCase().includes(query) ||
+               task.category.toLowerCase().includes(query) ||
+               (task.location?.city?.toLowerCase().includes(query) ?? false)
+         );
+      }
+
+      // Sort
+      result.sort((a, b) => {
+         switch (sortBy) {
+            case "oldest":
+               return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+            case "budget-high":
+               const budgetA = typeof a.budget === "number" ? a.budget : a.budget?.amount ?? 0;
+               const budgetB = typeof b.budget === "number" ? b.budget : b.budget?.amount ?? 0;
+               return budgetB - budgetA;
+            case "budget-low":
+               const budgetALow = typeof a.budget === "number" ? a.budget : a.budget?.amount ?? 0;
+               const budgetBLow = typeof b.budget === "number" ? b.budget : b.budget?.amount ?? 0;
+               return budgetALow - budgetBLow;
+            case "applications":
+               return (b.applications ?? 0) - (a.applications ?? 0);
+            case "recent":
+            default:
+               return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+         }
+      });
+
+      return result;
+   }, [allTasks, searchQuery, statusFilter, sortBy]);
+
+   // Pagination computed from filtered tasks
+   const pagination = useMemo(() => {
+      const total = filteredTasks.length;
+      const limit = 10;
+      const pages = Math.ceil(total / limit) || 1;
+      return { page, limit, total, pages };
+   }, [filteredTasks.length, page]);
+
+   // Paginated tasks for display
+   const tasks = useMemo(() => {
+      const start = (page - 1) * 10;
+      return filteredTasks.slice(start, start + 10);
+   }, [filteredTasks, page]);
+
+   // Notify parent of count change
+   useEffect(() => {
+      onCountChange?.(filteredTasks.length);
+   }, [filteredTasks.length, onCountChange]);
+
+   // Fetch tasks from API (no filters - we filter client-side)
    const fetchTasks = useCallback(async () => {
       setLoading(true);
       setError(null);
 
       try {
-         // TODO: Replace with actual API call when backend is ready
-         // const params: TaskQueryParams = {
-         //    page,
-         //    limit: 10,
-         //    status: statusFilter !== "all" ? statusFilter : undefined,
-         //    sortBy,
-         // };
-         // const response = await tasksApi.getMyTasks(params);
-         // setTasks(response.tasks);
-         // setPagination(response.pagination);
+         console.log("📤 Fetching my tasks...");
 
-         // Mock data for now
-         await new Promise((resolve) => setTimeout(resolve, 500));
+         // Call the real API - fetch all tasks, filter client-side
+         const response = await tasksApi.getMyTasks({ limit: 100 });
 
-         // Filter mock tasks to show only tasks created by current user
-         const currentUserId = "user1"; // TODO: Get from auth context
-         let mockTasks = mockTasksData.filter(
-            (task) => task.creatorUid === currentUserId
-         );
+         console.log("✅ My tasks response:", response);
 
-         // If no tasks found for this user, use first few tasks as example
-         if (mockTasks.length === 0) {
-            mockTasks = mockTasksData.slice(0, 4).map((task) => ({
-               ...task,
-               creatorUid: currentUserId,
-               requesterId: currentUserId,
-               requesterName: "You",
-            }));
+         // Handle different response structures
+         const responseData = response as any;
+         let tasksData: any[] = [];
+         
+         if (Array.isArray(responseData)) {
+            tasksData = responseData;
+         } else if (Array.isArray(responseData?.data)) {
+            tasksData = responseData.data;
+         } else if (Array.isArray(responseData?.data?.tasks)) {
+            tasksData = responseData.data.tasks;
+         } else if (Array.isArray(responseData?.tasks)) {
+            tasksData = responseData.tasks;
          }
+         
+         console.log("✅ Extracted tasks:", tasksData.length, "tasks");
 
-         // Apply filters
-         let filtered = [...mockTasks];
-
-         // Status filter
-         if (statusFilter !== "all") {
-            filtered = filtered.filter((task) => task.status === statusFilter);
-         }
-
-         // Search filter
-         if (searchQuery.trim()) {
-            const query = searchQuery.toLowerCase();
-            filtered = filtered.filter(
-               (task) =>
-                  task.title.toLowerCase().includes(query) ||
-                  task.description.toLowerCase().includes(query) ||
-                  task.category.toLowerCase().includes(query) ||
-                  task.location.city.toLowerCase().includes(query)
-            );
-         }
-
-         // Sort
-         filtered.sort((a, b) => {
-            switch (sortBy) {
-               case "oldest":
-                  return (
-                     new Date(a.createdAt).getTime() -
-                     new Date(b.createdAt).getTime()
-                  );
-               case "budget-high":
-                  const budgetA =
-                     typeof a.budget === "number" ? a.budget : a.budget.amount;
-                  const budgetB =
-                     typeof b.budget === "number" ? b.budget : b.budget.amount;
-                  return budgetB - budgetA;
-               case "budget-low":
-                  const budgetALow =
-                     typeof a.budget === "number" ? a.budget : a.budget.amount;
-                  const budgetBLow =
-                     typeof b.budget === "number" ? b.budget : b.budget.amount;
-                  return budgetALow - budgetBLow;
-               case "applications":
-                  return b.applications - a.applications;
-               case "recent":
-               default:
-                  return (
-                     new Date(b.createdAt).getTime() -
-                     new Date(a.createdAt).getTime()
-                  );
-            }
-         });
-
-         // Update state with filtered tasks
-         setTasks([...filtered]);
-         const total = filtered.length;
-         setPagination({
-            page: 1,
-            limit: 10,
-            total,
-            pages: Math.ceil(total / 10),
-         });
-         // Notify parent of count change
-         onCountChange?.(total);
+         setAllTasks(tasksData);
       } catch (err) {
-         setError(err instanceof Error ? err.message : "Failed to load tasks");
+         console.error("❌ Failed to fetch tasks:", err);
+         const errorMessage = err instanceof Error ? err.message : "Failed to load tasks";
+         setError(errorMessage);
+         
+         // Show toast for non-auth errors
+         if (!errorMessage.includes("401") && !errorMessage.includes("Unauthorized")) {
+            toast.error("Failed to load tasks", {
+               description: errorMessage,
+               action: {
+                  label: "Retry",
+                  onClick: () => fetchTasks(),
+               },
+            });
+         }
       } finally {
          setLoading(false);
       }
-   }, [searchQuery, statusFilter, sortBy, page, onCountChange]);
+   }, []);
 
    // Fetch on mount and when filters change
    useEffect(() => {
@@ -168,20 +169,24 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
 
       setDeletingTaskId(taskId);
       try {
-         // TODO: Replace with actual API call when backend is ready
-         // await tasksApi.deleteTask(taskId);
-         await new Promise((resolve) => setTimeout(resolve, 1000));
-         setTasks((prev) => {
+         // Call the real API to delete the task
+         await tasksApi.deleteTask(taskId);
+         
+         // Remove from local state
+         setAllTasks((prev) => {
             const updated = prev.filter((task) => task._id !== taskId);
             onCountChange?.(updated.length);
             return updated;
          });
+         
+         toast.success("Task deleted", {
+            description: `"${taskTitle}" has been deleted.`,
+         });
       } catch (err) {
-         alert(
-            err instanceof Error
-               ? err.message
-               : "Failed to delete task. Please try again."
-         );
+         const errorMessage = err instanceof Error ? err.message : "Failed to delete task";
+         toast.error("Failed to delete task", {
+            description: errorMessage,
+         });
       } finally {
          setDeletingTaskId(null);
       }

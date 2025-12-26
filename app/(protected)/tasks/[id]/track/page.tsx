@@ -103,21 +103,31 @@ export default function TaskTrackingPage() {
    // Use override role if set, otherwise use computed role
    const userRole: UserRole = overrideRole || computedRole;
 
-   // Fetch task data (mock for now)
+   // Fetch task data from API
    useEffect(() => {
       const fetchTask = async () => {
          setIsLoading(true);
-         // TODO: Replace with actual API call
-         // const taskData = await api.getTask(taskId);
-
-         // Mock: Find task in mock data
-         const foundTask = mockTasksData.find((t) => t._id === taskId);
-
-         if (foundTask) {
-            setTask(foundTask as Task);
+         try {
+            // Import the tasks API dynamically to avoid circular dependencies
+            const { tasksApi } = await import("@/lib/api/endpoints/tasks");
+            
+            // Fetch real task data
+            const response = await tasksApi.getTask(taskId);
+            
+            console.log("✅ Task details response:", response);
+            
+            // Handle different response structures
+            const taskData = (response as any)?.data || response;
+            
+            if (taskData) {
+               setTask(taskData as Task);
+            }
+         } catch (error) {
+            console.error("❌ Failed to fetch task:", error);
+            // Task not found or error - will show "Task not found" UI
+         } finally {
+            setIsLoading(false);
          }
-
-         setIsLoading(false);
       };
 
       if (taskId) {
