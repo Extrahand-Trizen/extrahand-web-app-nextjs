@@ -46,12 +46,11 @@ export function AcceptOfferModal({
       setIsSubmitting(true);
 
       try {
-         // TODO: Replace with actual API call
-         // await applicationsApi.updateApplicationStatus(application._id, {
-         //    status: "accepted",
-         //    message: message.trim() || undefined,
-         // });
-         await new Promise((resolve) => setTimeout(resolve, 1500));
+         // Call real API to accept the offer
+         await applicationsApi.updateApplicationStatus(application._id, {
+            status: "accepted" as any,
+            message: message.trim() || undefined,
+         });
 
          toast.success("Offer accepted!", {
             description: "The tasker has been notified of your acceptance.",
@@ -62,11 +61,14 @@ export function AcceptOfferModal({
          onSuccess?.();
       } catch (error) {
          console.error("Error accepting offer:", error);
+         
+         // Import and use getErrorMessage if available
+         const errorMessage = error instanceof Error 
+            ? error.message.replace(/^API call failed:\s*/i, "")
+            : "Please try again later.";
+            
          toast.error("Failed to accept offer", {
-            description:
-               error instanceof Error
-                  ? error.message
-                  : "Please try again later.",
+            description: errorMessage,
          });
       } finally {
          setIsSubmitting(false);

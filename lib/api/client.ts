@@ -69,7 +69,7 @@ async function fetchWithAuth(
 
       if (!res.ok) {
          const text = await res.text().catch(() => "");
-         let errorData;
+         let errorData: any;
 
          try {
             errorData = JSON.parse(text);
@@ -77,14 +77,31 @@ async function fetchWithAuth(
             errorData = { error: text || `HTTP ${res.status}` };
          }
 
+         // Extract error message from backend format
+         // Backend uses: { success: false, error: "message", details?: "...", context?: "..." }
+         let errorMessage = 
+            errorData.error || 
+            errorData.message || 
+            errorData.details ||
+            `HTTP ${res.status}`;
+         
+         // If there's additional context/details, append it
+         if (errorData.details && errorData.error && errorData.details !== errorData.error) {
+            errorMessage = `${errorData.error}: ${errorData.details}`;
+         }
+
          // Create a more informative error
-         const error: APIError = new Error(
-            errorData.message || errorData.error || `HTTP ${res.status}`
-         );
+         const error: APIError = new Error(errorMessage);
          error.status = res.status;
          error.data = errorData;
 
-         console.error(`❌ API Error ${res.status}:`, errorData);
+         // Only log as error for unexpected status codes (not auth errors)
+         if (res.status === 401 || res.status === 403) {
+            // Auth/permission errors are often expected, use warn
+            console.warn(`⚠️ API ${res.status}:`, errorMessage);
+         } else {
+            console.error(`❌ API Error ${res.status}:`, errorData);
+         }
          throw error;
       }
 
@@ -92,7 +109,11 @@ async function fetchWithAuth(
       console.log(`✅ API Success: ${path}`, data);
       return data;
    } catch (error) {
-      console.error("🚨 API Error:", error);
+      // Only log if it's not already an APIError we created above
+      const apiError = error as APIError;
+      if (!apiError.status) {
+         console.error("🚨 API Error:", error);
+      }
 
       // Check if it's a network error
       if (

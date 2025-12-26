@@ -15,8 +15,8 @@ import { MyApplicationsFilters } from "@/components/tasks/my-applications/MyAppl
 import { MyApplicationsEmptyState } from "@/components/tasks/my-applications/MyApplicationsEmptyState";
 import type { TaskApplication } from "@/types/application";
 import type { Task } from "@/types/task";
-import { mockMyApplicationsData } from "@/lib/data/mockApplications";
-import { mockTasksData } from "@/lib/data/mockTasks";
+import { applicationsApi } from "@/lib/api/endpoints/applications";
+import { getErrorMessage } from "@/lib/utils/errorUtils";
 import { toast } from "sonner";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -52,66 +52,60 @@ export function MyApplicationsContent({
       setError(null);
 
       try {
-         // TODO: Replace with actual API call when backend is ready
-         // const response = await applicationsApi.getMyApplications({
-         //    page,
-         //    limit: 10,
-         //    status: statusFilter !== "all" ? statusFilter : undefined,
-         //    sortBy,
-         // });
-         // setApplications(response.applications);
-
-         // Mock data for now
-         await new Promise((resolve) => setTimeout(resolve, 500));
-
-         // Filter mock applications to show only current user's applications
-         const currentUserId = "currentUser"; // TODO: Get from auth context
-         let mockApplications = mockMyApplicationsData.filter(
-            (app) => app.applicantUid === currentUserId
+         // Fetch from real API
+         const response = await applicationsApi.getMyApplications(
+            statusFilter !== "all" ? statusFilter : undefined
          );
+         
+         console.log("✅ My applications response:", response);
+         
+         // Handle response structure: { success, data: [...], meta: {...} }
+         const responseData = response as any;
+         let apps: any[] = [];
+         
+         if (Array.isArray(responseData?.data)) {
+            apps = responseData.data;
+         } else if (responseData?.data?.applications) {
+            apps = responseData.data.applications;
+         } else if (responseData?.applications) {
+            apps = responseData.applications;
+         }
+         
+         console.log("✅ Parsed applications:", apps.length);
 
-         // Load associated tasks
+         // Build tasks map from populated taskId
          const taskMap = new Map<string, Task>();
-         mockApplications.forEach((app) => {
-            const taskId =
-               typeof app.taskId === "string" ? app.taskId : app.taskId._id;
-            const task = mockTasksData.find((t) => t._id === taskId);
-            if (task) {
-               taskMap.set(taskId, task);
+         apps.forEach((app: any) => {
+            if (typeof app.taskId === "object" && app.taskId) {
+               const task = app.taskId as Task;
+               taskMap.set(task._id, task);
             }
          });
          setTasks(taskMap);
 
-         // Apply filters
-         let filtered = [...mockApplications];
+         // Apply client-side filters since API already filtered by status
+         let filtered = [...apps];
 
-         // Status filter
-         if (statusFilter !== "all") {
-            filtered = filtered.filter((app) => app.status === statusFilter);
-         }
-
-         // Search filter
+         // Search filter (client-side)
          if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
-            filtered = filtered.filter((app) => {
-               const taskId =
-                  typeof app.taskId === "string" ? app.taskId : app.taskId._id;
-               const task = taskMap.get(taskId);
+            filtered = filtered.filter((app: any) => {
+               const task = typeof app.taskId === "object" ? app.taskId : null;
                return (
-                  app.coverLetter.toLowerCase().includes(query) ||
-                  app.relevantExperience.some((exp) =>
+                  (app.coverLetter && app.coverLetter.toLowerCase().includes(query)) ||
+                  (app.relevantExperience && app.relevantExperience.some((exp: string) =>
                      exp.toLowerCase().includes(query)
-                  ) ||
+                  )) ||
                   (task &&
-                     (task.title.toLowerCase().includes(query) ||
-                        task.description.toLowerCase().includes(query) ||
-                        task.category.toLowerCase().includes(query)))
+                     ((task.title && task.title.toLowerCase().includes(query)) ||
+                        (task.description && task.description.toLowerCase().includes(query)) ||
+                        (task.category && task.category.toLowerCase().includes(query))))
                );
             });
          }
 
-         // Sort
-         filtered.sort((a, b) => {
+         // Sort (client-side)
+         filtered.sort((a: any, b: any) => {
             switch (sortBy) {
                case "recent":
                   return (
@@ -124,9 +118,9 @@ export function MyApplicationsContent({
                      new Date(b.createdAt).getTime()
                   );
                case "budget-high":
-                  return b.proposedBudget.amount - a.proposedBudget.amount;
+                  return (b.proposedBudget?.amount || 0) - (a.proposedBudget?.amount || 0);
                case "budget-low":
-                  return a.proposedBudget.amount - b.proposedBudget.amount;
+                  return (a.proposedBudget?.amount || 0) - (b.proposedBudget?.amount || 0);
                case "status":
                   const statusOrder: Record<ApplicationStatus, number> = {
                      pending: 1,
@@ -134,7 +128,7 @@ export function MyApplicationsContent({
                      rejected: 3,
                      withdrawn: 4,
                   };
-                  return statusOrder[a.status] - statusOrder[b.status];
+                  return statusOrder[a.status as ApplicationStatus] - statusOrder[b.status as ApplicationStatus];
                default:
                   return 0;
             }
@@ -145,7 +139,7 @@ export function MyApplicationsContent({
          onCountChange?.(filtered.length);
       } catch (err) {
          console.error("Error fetching applications:", err);
-         setError("Failed to load applications. Please try again.");
+         setError(getErrorMessage(err));
       } finally {
          setLoading(false);
       }
@@ -166,12 +160,12 @@ export function MyApplicationsContent({
       setWithdrawingApplicationId(applicationId);
 
       try {
-         // TODO: Replace with actual API call
-         // await applicationsApi.withdrawApplication(applicationId);
+         // Call real API to withdraw
+         await applicationsApi.updateApplicationStatus(applicationId, {
+            status: "withdrawn" as any,
+         });
 
-         // Mock withdrawal
-         await new Promise((resolve) => setTimeout(resolve, 1000));
-
+         // Update local state
          setApplications((prev) => {
             const updated = prev.map((app) =>
                app._id === applicationId
@@ -185,7 +179,9 @@ export function MyApplicationsContent({
          toast.success("Application withdrawn successfully");
       } catch (err) {
          console.error("Error withdrawing application:", err);
-         toast.error("Failed to withdraw application. Please try again.");
+         toast.error("Failed to withdraw application", {
+            description: getErrorMessage(err),
+         });
       } finally {
          setWithdrawingApplicationId(null);
       }

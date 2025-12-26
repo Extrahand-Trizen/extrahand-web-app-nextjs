@@ -12,6 +12,14 @@ export interface TaskApplication {
   // Task and applicant relationship
   taskId: string | Task;
   applicantUid: string;
+  applicantProfile: {
+    name: string;
+    rating: number;
+    completedTasks: number;
+    verified: boolean;
+    photoURL: string;
+    totalReviews: number;
+  };
   
   // Application details
   proposedBudget: {

@@ -13,12 +13,12 @@ import {
 } from "@/components/ui/select";
 
 import type { TaskApplication } from "@/types/application";
-import { mockApplicationsData } from "@/lib/data/mockApplications";
 import { applicationsApi } from "@/lib/api/endpoints/applications";
 import { AcceptOfferModal } from "./offers/AcceptOfferModal";
 
 interface TaskOffersSectionProps {
    taskId: string;
+   isOwner?: boolean;
    onApplicationsCountChange?: (count: number) => void;
 }
 
@@ -66,6 +66,7 @@ const getTimeAgo = (date: Date | string | undefined): string => {
 
 export function TaskOffersSection({
    taskId,
+   isOwner = false,
    onApplicationsCountChange,
 }: TaskOffersSectionProps) {
    const [applications, setApplications] = useState<TaskApplication[]>([]);
@@ -85,17 +86,61 @@ export function TaskOffersSection({
 
    useEffect(() => {
       const loadApplications = async () => {
+         // Only load if user is the owner
+         if (!isOwner) {
+            console.log("ℹ️ Not the task owner, skipping applications fetch");
+            setLoading(false);
+            return;
+         }
+
          try {
             setLoading(true);
-            // TODO: Replace with actual API call
-            // const response = await applicationsApi.getTaskApplications(taskId);
-            // setApplications(response.applications);
-            const filtered = mockApplicationsData.filter(
-               (app) => app.taskId === taskId && app.status === "pending"
-            );
-            setApplications(filtered);
-         } catch (error) {
+            
+            // Fetch real applications for this task
+            const response = await applicationsApi.getTaskApplications(taskId);
+            
+            console.log("✅ Task applications raw response:", response);
+            console.log("✅ Response type:", typeof response);
+            console.log("✅ Response keys:", response ? Object.keys(response) : "null");
+            
+            // Handle different response structures from API
+            const responseData = response as any;
+            let apps: any[] = [];
+            
+            // Try different paths to find the applications array
+            if (responseData?.data?.data?.applications) {
+               apps = responseData.data.data.applications;
+               console.log("✅ Found apps at data.data.applications");
+            } else if (responseData?.data?.applications) {
+               apps = responseData.data.applications;
+               console.log("✅ Found apps at data.applications");
+            } else if (responseData?.applications) {
+               apps = responseData.applications;
+               console.log("✅ Found apps at applications");
+            } else if (Array.isArray(responseData?.data)) {
+               apps = responseData.data;
+               console.log("✅ Found apps at data (array)");
+            } else if (Array.isArray(responseData)) {
+               apps = responseData;
+               console.log("✅ Found apps as direct array");
+            }
+            
+            console.log("✅ Extracted applications:", apps);
+            console.log("✅ Applications count:", apps.length);
+            
+            // Filter to only show pending applications
+            const pendingApps = apps.filter((app: any) => app.status === "pending");
+            console.log("✅ Pending applications:", pendingApps.length);
+            setApplications(pendingApps);
+         } catch (error: any) {
             console.error("Error loading applications:", error);
+            
+            // Check if it's a 403 authorization error - user is not task owner
+            const status = error?.status || error?.data?.status;
+            if (status === 403) {
+               console.log("ℹ️ User is not the task owner, cannot view applications");
+               setApplications([]);
+            }
          } finally {
             setLoading(false);
          }
@@ -104,7 +149,7 @@ export function TaskOffersSection({
       if (taskId) {
          loadApplications();
       }
-   }, [taskId]);
+   }, [taskId, isOwner]);
 
    // Notify parent of count changes in a separate effect to avoid render issues
    useEffect(() => {
@@ -218,12 +263,7 @@ export function TaskOffersSection({
             ) : (
                <div className="space-y-3">
                   {sortedApplications.map((application) => {
-                     const user = mockUserData[application.applicantUid] || {
-                        name: "Tasker",
-                        rating: 0,
-                        completedTasks: 0,
-                        verified: false,
-                     };
+                     const user = application.applicantProfile
 
                      return (
                         <div

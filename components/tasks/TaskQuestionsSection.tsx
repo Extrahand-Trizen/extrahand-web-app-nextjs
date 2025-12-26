@@ -3,18 +3,18 @@
 import { useState, useEffect } from "react";
 import { MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 import type { TaskQuestion } from "@/types/question";
-import {
-   mockQuestionsData,
-   mockQuestionUserData,
-} from "@/lib/data/mockQuestions";
+import { questionsApi } from "@/lib/api/endpoints/questions";
+import { getErrorMessage } from "@/lib/utils/errorUtils";
 import { AskQuestionForm } from "./questions/AskQuestionForm";
 import { AnswerQuestionForm } from "./questions/AnswerQuestionForm";
 import type { CreateQuestionFormData } from "@/lib/validations/question";
 
 interface TaskQuestionsSectionProps {
    taskId: string;
+   isOwner?: boolean;
 }
 
 const getTimeAgo = (date: Date | string | undefined): string => {
@@ -34,7 +34,7 @@ const getTimeAgo = (date: Date | string | undefined): string => {
    return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
 };
 
-export function TaskQuestionsSection({ taskId }: TaskQuestionsSectionProps) {
+export function TaskQuestionsSection({ taskId, isOwner }: TaskQuestionsSectionProps) {
    const [questions, setQuestions] = useState<TaskQuestion[]>([]);
    const [loading, setLoading] = useState(true);
    const [showQuestionForm, setShowQuestionForm] = useState(false);
@@ -47,15 +47,32 @@ export function TaskQuestionsSection({ taskId }: TaskQuestionsSectionProps) {
       const loadQuestions = async () => {
          try {
             setLoading(true);
-            // TODO: Replace with actual API call
-            // const response = await questionsApi.getTaskQuestions(taskId);
-            // setQuestions(response.questions);
-            const filtered = mockQuestionsData.filter(
-               (q) => q.taskId === taskId && q.isPublic
-            );
-            setQuestions(filtered);
+            
+            // Fetch questions from real API
+            const response = await questionsApi.getTaskQuestions(taskId);
+            
+            console.log("✅ Questions response:", response);
+            
+            // Handle response structure
+            const responseData = response as any;
+            let questionsData: TaskQuestion[] = [];
+            
+            if (Array.isArray(responseData?.data)) {
+               questionsData = responseData.data;
+            } else if (responseData?.data?.questions) {
+               questionsData = responseData.data.questions;
+            } else if (responseData?.questions) {
+               questionsData = responseData.questions;
+            } else if (Array.isArray(responseData)) {
+               questionsData = responseData;
+            }
+            
+            // Filter to only show public questions
+            const publicQuestions = questionsData.filter((q: any) => q.isPublic !== false);
+            setQuestions(publicQuestions);
          } catch (error) {
             console.error("Error loading questions:", error);
+            // Don't show error toast for empty results or 404
          } finally {
             setLoading(false);
          }
@@ -72,22 +89,25 @@ export function TaskQuestionsSection({ taskId }: TaskQuestionsSectionProps) {
       setIsSubmitting(true);
 
       try {
-         // TODO: Replace with actual API call
-         // const newQuestion = await questionsApi.createQuestion(data);
-         const newQuestion: TaskQuestion = {
-            _id: `q${Date.now()}`,
-            taskId: data.taskId,
-            askedByUid: "currentUser", // Would come from auth context
+         // Call real API to ask question
+         const response = await questionsApi.askQuestion(taskId, {
             question: data.question,
             isPublic: data.isPublic,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-         };
-
+         });
+         
+         console.log("✅ Question asked:", response);
+         
+         // Add new question to list
+         const newQuestion = (response as any)?.data || response;
          setQuestions([newQuestion, ...questions]);
          setShowQuestionForm(false);
+         
+         toast.success("Question submitted!");
       } catch (error) {
          console.error("Error asking question:", error);
+         toast.error("Failed to submit question", {
+            description: getErrorMessage(error),
+         });
       } finally {
          setIsSubmitting(false);
       }
@@ -102,24 +122,28 @@ export function TaskQuestionsSection({ taskId }: TaskQuestionsSectionProps) {
       setIsSubmitting(true);
 
       try {
-         // TODO: Replace with actual API call
-         // await questionsApi.answerQuestion(questionId, data);
+         // Call real API to answer question
+         const response = await questionsApi.answerQuestion(taskId, questionId, {
+            answer: data.answer,
+         });
+         
+         console.log("✅ Question answered:", response);
+         
+         // Update question in list
+         const updatedQuestion = (response as any)?.data || response;
          setQuestions((prev) =>
             prev.map((q) =>
-               q._id === questionId
-                  ? {
-                       ...q,
-                       answer: data.answer,
-                       answeredByUid: "currentUser", // Would come from auth context
-                       answeredAt: new Date(),
-                       updatedAt: new Date(),
-                    }
-                  : q
+               q._id === questionId ? { ...q, ...updatedQuestion } : q
             )
          );
          setAnsweringQuestionId(null);
+         
+         toast.success("Answer submitted!");
       } catch (error) {
          console.error("Error answering question:", error);
+         toast.error("Failed to submit answer", {
+            description: getErrorMessage(error),
+         });
       } finally {
          setIsSubmitting(false);
       }
@@ -181,14 +205,11 @@ export function TaskQuestionsSection({ taskId }: TaskQuestionsSectionProps) {
             </div>
          ) : (
             <div className="space-y-3">
-               {questions.map((q) => {
-                  const asker = mockQuestionUserData[q.askedByUid] || {
-                     name: "Tasker",
-                  };
+               {questions.map((q: any) => {
+                  // Use profile from API response or fallback
+                  const asker = q.askerProfile || { name: "User" };
                   const answerer = q.answeredByUid
-                     ? mockQuestionUserData[q.answeredByUid] || {
-                          name: "Task Poster",
-                       }
+                     ? q.answererProfile || { name: "Task Poster" }
                      : null;
 
                   return (
@@ -261,14 +282,16 @@ export function TaskQuestionsSection({ taskId }: TaskQuestionsSectionProps) {
                            </div>
                         ) : (
                            <div className="mt-3 sm:ml-12">
-                              <Button
-                                 size="sm"
-                                 variant="outline"
-                                 onClick={() => setAnsweringQuestionId(q._id)}
-                                 className="text-xs text-secondary-600 hover:text-primary-600 border-secondary-200 hover:border-primary-300"
-                              >
-                                 Reply
-                              </Button>
+                              {isOwner && (
+                                 <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setAnsweringQuestionId(q._id)}
+                                    className="text-xs text-secondary-600 hover:text-primary-600 border-secondary-200 hover:border-primary-300"
+                                 >
+                                    Reply
+                                 </Button>
+                              )}
                            </div>
                         )}
                      </div>

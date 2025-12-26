@@ -18,6 +18,7 @@ import type { TaskQueryParams } from "@/types/api";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import { getErrorMessage, isAuthError } from "@/lib/utils/errorUtils";
 
 type TaskStatus = Task["status"];
 
@@ -97,10 +98,21 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
       return filteredTasks.slice(start, start + 10);
    }, [filteredTasks, page]);
 
-   // Notify parent of count change
+   // Track previous count to avoid unnecessary parent updates
+   const prevCountRef = React.useRef<number | null>(null);
+   
+   // Notify parent of count change (only when count actually changes)
    useEffect(() => {
-      onCountChange?.(filteredTasks.length);
-   }, [filteredTasks.length, onCountChange]);
+      const count = filteredTasks.length;
+      if (prevCountRef.current !== count) {
+         prevCountRef.current = count;
+         // Use setTimeout to avoid setState during render
+         const timeoutId = setTimeout(() => {
+            onCountChange?.(count);
+         }, 0);
+         return () => clearTimeout(timeoutId);
+      }
+   }, [filteredTasks.length]); // Intentionally exclude onCountChange to prevent loops
 
    // Fetch tasks from API (no filters - we filter client-side)
    const fetchTasks = useCallback(async () => {
@@ -137,10 +149,9 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
          const errorMessage = err instanceof Error ? err.message : "Failed to load tasks";
          setError(errorMessage);
          
-         // Show toast for non-auth errors
-         if (!errorMessage.includes("401") && !errorMessage.includes("Unauthorized")) {
+         if (!isAuthError(err)) {
             toast.error("Failed to load tasks", {
-               description: errorMessage,
+               description: getErrorMessage(err),
                action: {
                   label: "Retry",
                   onClick: () => fetchTasks(),
@@ -204,7 +215,7 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
 
    // Handle view applications
    const handleViewApplications = (taskId: string) => {
-      router.push(`/tasks/${taskId}/applications`);
+      router.push(`/tasks/${taskId}`);
    };
 
    // Handle track progress

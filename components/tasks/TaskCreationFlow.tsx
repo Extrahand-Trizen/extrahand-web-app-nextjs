@@ -28,6 +28,7 @@ import {
 } from "@/lib/validations/task";
 
 import { api } from "@/lib/api";
+import { getErrorMessage, isNetworkError } from "@/lib/utils/errorUtils";
 
 export type TaskFormData = CompleteTaskFormData;
 
@@ -140,31 +141,7 @@ const transformFormDataToTask = (
  */
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/**
- * Get user-friendly error message
- */
-const getErrorMessage = (error: unknown): string => {
-   if (error instanceof Error) {
-      // Network errors
-      if (error.message.includes("Failed to fetch")) {
-         return "Unable to connect to the server. Please check your internet connection.";
-      }
-      // Timeout errors
-      if (error.message.includes("timeout")) {
-         return "The request took too long. Please try again.";
-      }
-      // Auth errors
-      if (error.message.includes("401") || error.message.includes("Unauthorized")) {
-         return "Your session has expired. Please log in again.";
-      }
-      // Validation errors
-      if (error.message.includes("400") || error.message.includes("validation")) {
-         return "Please check your task details and try again.";
-      }
-      return error.message;
-   }
-   return "An unexpected error occurred. Please try again.";
-};
+// Note: getErrorMessage and isNetworkError are imported from @/lib/utils/errorUtils
 
 // ============================================================================
 // Initial Form Data
@@ -391,12 +368,7 @@ export function TaskCreationFlow() {
             console.error("Task submission error:", error);
 
             // Show retry action for network errors
-            const isNetworkError =
-               error instanceof Error &&
-               (error.message.includes("Failed to fetch") ||
-                  error.message.includes("Network"));
-
-            if (isNetworkError) {
+            if (isNetworkError(error)) {
                toast.error("Connection failed", {
                   description: "Please check your internet connection.",
                   action: {
@@ -404,6 +376,10 @@ export function TaskCreationFlow() {
                      onClick: () => form.handleSubmit(onSubmit)(),
                   },
                   duration: 10000,
+               });
+            } else {
+               toast.error("Failed to create task", {
+                  description: getErrorMessage(error),
                });
             }
          } finally {

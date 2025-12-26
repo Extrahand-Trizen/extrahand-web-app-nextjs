@@ -44,6 +44,7 @@ import {
    type CreateApplicationFormData,
 } from "@/lib/validations/application";
 import { applicationsApi } from "@/lib/api/endpoints/applications";
+import { getErrorMessage } from "@/lib/utils/errorUtils";
 import type { Task } from "@/types/task";
 
 interface MakeOfferModalProps {
@@ -129,9 +130,25 @@ export function MakeOfferModal({
       setIsSubmitting(true);
 
       try {
-         // TODO: Replace with actual API call
-         // await applicationsApi.submitApplication(data);
-         await new Promise((resolve) => setTimeout(resolve, 1500));
+         // Build the application payload
+         const applicationPayload = {
+            taskId: task._id,
+            proposedBudget: {
+               amount: data.proposedBudget.amount,
+               currency: data.proposedBudget.currency,
+               isNegotiable: data.proposedBudget.isNegotiable,
+            },
+            proposedTime: {
+               flexible: data.proposedTime.flexible,
+               estimatedDuration: data.proposedTime.estimatedDuration,
+            },
+            coverLetter: data.coverLetter,
+            relevantExperience: data.relevantExperience,
+            portfolio: data.portfolio,
+         };
+
+         // Submit application via real API
+         await applicationsApi.submitApplication(applicationPayload);
 
          toast.success("Offer submitted successfully!", {
             description: "Your offer has been sent to the task poster.",
@@ -143,10 +160,7 @@ export function MakeOfferModal({
       } catch (error) {
          console.error("Error submitting offer:", error);
          toast.error("Failed to submit offer", {
-            description:
-               error instanceof Error
-                  ? error.message
-                  : "Please try again later.",
+            description: getErrorMessage(error),
          });
       } finally {
          setIsSubmitting(false);
