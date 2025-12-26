@@ -184,11 +184,7 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
          await tasksApi.deleteTask(taskId);
          
          // Remove from local state
-         setAllTasks((prev) => {
-            const updated = prev.filter((task) => task._id !== taskId);
-            onCountChange?.(updated.length);
-            return updated;
-         });
+         setAllTasks((prev) => prev.filter((task) => task._id !== taskId));
          
          toast.success("Task deleted", {
             description: `"${taskTitle}" has been deleted.`,

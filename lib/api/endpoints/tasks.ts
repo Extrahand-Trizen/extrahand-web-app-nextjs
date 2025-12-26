@@ -14,7 +14,8 @@ export const tasksApi = {
    */
   async getTasks(params?: TaskQueryParams): Promise<TaskListResponse> {
     const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
-    return fetchWithAuth(`tasks${queryString}`);
+    const response = await fetchWithAuth(`tasks${queryString}`);
+    return response.data || response;
   },
 
   /**
@@ -23,7 +24,8 @@ export const tasksApi = {
    */
   async getMyTasks(params?: TaskQueryParams): Promise<TaskListResponse> {
     const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
-    return fetchWithAuth(`tasks/my-tasks${queryString}`);
+    const response = await fetchWithAuth(`tasks/my-tasks${queryString}`);
+    return response.data || response;
   },
 
   /**
@@ -31,7 +33,8 @@ export const tasksApi = {
    * GET /api/v1/tasks/:id
    */
   async getTask(taskId: string): Promise<Task> {
-    return fetchWithAuth(`tasks/${taskId}`);
+    const response = await fetchWithAuth(`tasks/${taskId}`);
+    return response.data || response;
   },
 
   /**
@@ -39,10 +42,11 @@ export const tasksApi = {
    * POST /api/v1/tasks
    */
   async createTask(taskData: Partial<Task>): Promise<Task> {
-    return fetchWithAuth('tasks', {
+    const response = await fetchWithAuth('tasks', {
       method: 'POST',
       body: JSON.stringify(taskData),
     });
+    return response.data || response;
   },
 
   /**
@@ -50,10 +54,11 @@ export const tasksApi = {
    * PUT /api/v1/tasks/:id
    */
   async updateTask(taskId: string, taskData: Partial<Task>): Promise<Task> {
-    return fetchWithAuth(`tasks/${taskId}`, {
+    const response = await fetchWithAuth(`tasks/${taskId}`, {
       method: 'PUT',
       body: JSON.stringify(taskData),
     });
+    return response.data || response;
   },
 
   /**
@@ -71,10 +76,12 @@ export const tasksApi = {
    * PATCH /api/v1/tasks/:id/status
    */
   async updateTaskStatus(taskId: string, status: Task['status']): Promise<Task> {
-    return fetchWithAuth(`tasks/${taskId}/status`, {
+    const response = await fetchWithAuth(`tasks/${taskId}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     });
+    // Backend returns { success: true, data: task, message: "..." }
+    return response.data || response;
   },
 
   /**
@@ -82,9 +89,10 @@ export const tasksApi = {
    * POST /api/v1/tasks/:id/accept
    */
   async acceptTask(taskId: string): Promise<Task> {
-    return fetchWithAuth(`tasks/${taskId}/accept`, {
+    const response = await fetchWithAuth(`tasks/${taskId}/accept`, {
       method: 'POST',
     });
+    return response.data || response;
   },
 
   /**
@@ -92,10 +100,11 @@ export const tasksApi = {
    * POST /api/v1/tasks/:id/complete
    */
   async completeTask(taskId: string, body: { rating?: number; review?: string }): Promise<Task> {
-    return fetchWithAuth(`tasks/${taskId}/complete`, {
+    const response = await fetchWithAuth(`tasks/${taskId}/complete`, {
       method: 'POST',
       body: JSON.stringify(body),
     });
+    return response.data || response;
   },
 };
 

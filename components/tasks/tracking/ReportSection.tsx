@@ -131,7 +131,7 @@ export function ReportSection({
                      <div className="space-y-1.5 text-xs md:text-sm text-secondary-600">
                         <p>
                            <span className="font-medium">Reason:</span>{" "}
-                           {existingReport.reason.replace("_", " ")}
+                           {existingReport.reason?.replace("_", " ") || "N/A"}
                         </p>
                         {existingReport.description && (
                            <p>

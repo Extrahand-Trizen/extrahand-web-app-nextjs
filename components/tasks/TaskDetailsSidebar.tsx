@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Shield, CheckCircle, Star } from "lucide-react";
 import type { Task } from "@/types/task";
+import type { UserProfile } from "@/types/user";
 import { MakeOfferModal } from "./offers/MakeOfferModal";
 import Link from "next/link";
+import { profilesApi } from "@/lib/api/endpoints/profiles";
 
 interface TaskDetailsSidebarProps {
    task: Task;
@@ -13,8 +15,30 @@ interface TaskDetailsSidebarProps {
 
 export function TaskDetailsSidebar({ task }: TaskDetailsSidebarProps) {
    const [showMakeOfferModal, setShowMakeOfferModal] = useState(false);
+   const [requesterProfile, setRequesterProfile] = useState<UserProfile | null>(null);
+   const [loadingProfile, setLoadingProfile] = useState(false);
    const budgetAmount =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
+
+   // Fetch requester profile data
+   useEffect(() => {
+      const fetchRequesterProfile = async () => {
+         if (!task.requesterId) return;
+         
+         setLoadingProfile(true);
+         try {
+            const profile = await profilesApi.getProfile(task.requesterId);
+            setRequesterProfile(profile);
+         } catch (error) {
+            console.error("Failed to fetch requester profile:", error);
+            // Silently fail - component will show defaults
+         } finally {
+            setLoadingProfile(false);
+         }
+      };
+
+      fetchRequesterProfile();
+   }, [task.requesterId]);
 
    return (
       <div className="space-y-4 sticky top-24">
@@ -94,14 +118,24 @@ export function TaskDetailsSidebar({ task }: TaskDetailsSidebarProps) {
                      {task.requesterName || "Task Poster"}
                   </div>
                   <div className="flex items-center gap-2 text-xs text-secondary-600 mb-2">
-                     <div className="flex items-center gap-1">
-                        <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                        <span className="font-medium text-secondary-900">
-                           4.8
-                        </span>
-                     </div>
-                     <span>•</span>
-                     <span>12 tasks posted</span>
+                     {loadingProfile ? (
+                        <span className="text-secondary-500">Loading...</span>
+                     ) : (
+                        <>
+                           <div className="flex items-center gap-1">
+                              <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                              <span className="font-medium text-secondary-900">
+                                 {requesterProfile?.rating && requesterProfile.rating > 0
+                                    ? requesterProfile.rating.toFixed(1)
+                                    : "New"}
+                              </span>
+                           </div>
+                           <span>•</span>
+                           <span>
+                              {requesterProfile?.totalTasks || 0} tasks
+                           </span>
+                        </>
+                     )}
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-green-700 bg-green-50 px-2 py-1 rounded-full w-fit">
                      <CheckCircle className="w-3.5 h-3.5" />

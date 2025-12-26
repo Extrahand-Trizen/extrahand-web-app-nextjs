@@ -42,10 +42,11 @@ export const reviewsApi = {
       value?: number;
     };
   }): Promise<Review> {
-    return fetchWithAuth('reviews', {
+    const response = await fetchWithAuth('reviews', {
       method: 'POST',
       body: JSON.stringify(reviewData),
     });
+    return response.data || response;
   },
 
   /**
@@ -53,7 +54,8 @@ export const reviewsApi = {
    * GET /api/v1/reviews/task/:taskId
    */
   async getTaskReview(taskId: string): Promise<Review | null> {
-    return fetchWithAuth(`reviews/task/${taskId}`);
+    const response = await fetchWithAuth(`reviews/task/${taskId}`);
+    return response.data || response;
   },
 
   /**
@@ -74,7 +76,8 @@ export const reviewsApi = {
     if (options?.rating) params.append('rating', options.rating.toString());
     
     const queryString = params.toString();
-    return fetchWithAuth(`reviews/user/${userId}${queryString ? `?${queryString}` : ''}`);
+    const response = await fetchWithAuth(`reviews/user/${userId}${queryString ? `?${queryString}` : ''}`);
+    return response.data || response;
   },
 
   /**
@@ -96,10 +99,11 @@ export const reviewsApi = {
       };
     }
   ): Promise<Review> {
-    return fetchWithAuth(`reviews/${reviewId}`, {
+    const response = await fetchWithAuth(`reviews/${reviewId}`, {
       method: 'PUT',
       body: JSON.stringify(updateData),
     });
+    return response.data || response;
   },
 
   /**

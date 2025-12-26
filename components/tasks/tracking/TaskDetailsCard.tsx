@@ -87,7 +87,7 @@ export function TaskDetailsCard({ task }: TaskDetailsCardProps) {
                value={
                   <span className="text-primary-600">
                      {budgetCurrency === "INR" ? "₹" : "$"}
-                     {budgetAmount.toLocaleString()}
+                     {budgetAmount?.toLocaleString() || "0"}
                      {task.budgetType === "hourly" && " / hour"}
                   </span>
                }
@@ -99,11 +99,11 @@ export function TaskDetailsCard({ task }: TaskDetailsCardProps) {
                value={
                   <div>
                      <p className="font-medium md:font-semibold">
-                        {task.location.address}
+                        {task.location?.address || "No address provided"}
                      </p>
                      <p className="text-xs text-secondary-500 mt-0.5">
-                        {task.location.city}, {task.location.state}
-                        {task.location.pinCode && ` - ${task.location.pinCode}`}
+                        {task.location?.city || "N/A"}, {task.location?.state || "N/A"}
+                        {task.location?.pinCode && ` - ${task.location.pinCode}`}
                      </p>
                   </div>
                }
@@ -129,7 +129,7 @@ export function TaskDetailsCard({ task }: TaskDetailsCardProps) {
                <InfoRow
                   icon={User}
                   label={
-                     task.creatorUid === task.assigneeUid
+                     task.requesterId === task.assigneeUid
                         ? "Assigned To"
                         : "Tasker"
                   }

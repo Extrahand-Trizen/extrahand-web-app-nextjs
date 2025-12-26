@@ -128,10 +128,8 @@ export function TaskOffersSection({
             console.log("✅ Extracted applications:", apps);
             console.log("✅ Applications count:", apps.length);
             
-            // Filter to only show pending applications
-            const pendingApps = apps.filter((app: any) => app.status === "pending");
-            console.log("✅ Pending applications:", pendingApps.length);
-            setApplications(pendingApps);
+            // Show all applications (pending, accepted, rejected)
+            setApplications(apps);
          } catch (error: any) {
             console.error("Error loading applications:", error);
             
@@ -153,7 +151,11 @@ export function TaskOffersSection({
 
    // Notify parent of count changes in a separate effect to avoid render issues
    useEffect(() => {
-      onApplicationsCountChangeRef.current?.(applications.length);
+      // Defer the callback to avoid setState during render
+      const timeoutId = setTimeout(() => {
+         onApplicationsCountChangeRef.current?.(applications.length);
+      }, 0);
+      return () => clearTimeout(timeoutId);
    }, [applications.length]);
 
    const handleAcceptOffer = (application: TaskApplication) => {
@@ -310,9 +312,20 @@ export function TaskOffersSection({
                                        ₹
                                        {application.proposedBudget.amount.toLocaleString()}
                                     </div>
-                                    <span className="text-xs text-secondary-400 font-medium">
-                                       {getTimeAgo(application.createdAt)}
-                                    </span>
+                                    <div className="flex items-center gap-2 justify-end">
+                                       <span className="text-xs text-secondary-400 font-medium">
+                                          {getTimeAgo(application.createdAt)}
+                                       </span>
+                                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                                          application.status === "pending" 
+                                             ? "bg-yellow-100 text-yellow-800" 
+                                             : application.status === "accepted"
+                                             ? "bg-green-100 text-green-800"
+                                             : "bg-red-100 text-red-800"
+                                       }`}>
+                                          {application.status.toUpperCase()}
+                                       </span>
+                                    </div>
                                  </div>
                               </div>
 
@@ -384,15 +397,17 @@ export function TaskOffersSection({
                                     </Button>
                                  </Link>
 
-                                 <Button
-                                    size="sm"
-                                    onClick={() =>
-                                       handleAcceptOffer(application)
-                                    }
-                                    className="bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-[10px] md:text-xs font-semibold px-5"
-                                 >
-                                    Accept Offer
-                                 </Button>
+                                 {application.status === "pending" && (
+                                    <Button
+                                       size="sm"
+                                       onClick={() =>
+                                          handleAcceptOffer(application)
+                                       }
+                                       className="bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-[10px] md:text-xs font-semibold px-5"
+                                    >
+                                       Accept Offer
+                                    </Button>
+                                 )}
                               </div>
                            </div>
                         </div>

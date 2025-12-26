@@ -69,7 +69,7 @@ export function ReviewSection({
    // Calculate average rating
    const averageRating =
       reviews.length > 0
-         ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+         ? reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length
          : 0;
 
    return (
@@ -84,7 +84,7 @@ export function ReviewSection({
                   <div className="flex items-center gap-1">
                      <Star className="w-4 h-4 fill-primary-600 text-primary-600" />
                      <span className="text-sm md:text-base font-semibold text-secondary-900">
-                        {averageRating.toFixed(1)}
+                        {(averageRating || 0).toFixed(1)}
                      </span>
                   </div>
                   <span className="text-xs md:text-sm text-secondary-500">

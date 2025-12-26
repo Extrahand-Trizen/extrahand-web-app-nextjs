@@ -162,7 +162,7 @@ export function StatusUpdateSection({
       setIsUpdating(true);
       try {
          await onStatusUpdate(newStatus, reason);
-         toast.success(`Task status updated to ${newStatus.replace("_", " ")}`);
+         toast.success(`Task status updated to ${newStatus?.replace("_", " ") || "unknown"}`);
          setCancelReason("");
       } catch (error) {
          toast.error("Failed to update task status");
@@ -203,24 +203,24 @@ export function StatusUpdateSection({
                               </AlertDialogTitle>
                               <AlertDialogDescription>
                                  {action.description}
-                              </AlertDialogDescription>
-                           </AlertDialogHeader>
-                           {action.requiresReason && (
-                              <div className="space-y-2">
-                                 <Label htmlFor="cancel-reason">
-                                    Reason for cancellation
-                                 </Label>
-                                 <Textarea
-                                    id="cancel-reason"
-                                    placeholder="Please provide a reason..."
-                                    value={cancelReason}
-                                    onChange={(e) =>
-                                       setCancelReason(e.target.value)
-                                    }
-                                    rows={3}
-                                 />
-                              </div>
-                           )}
+                            </AlertDialogDescription>
+                         </AlertDialogHeader>
+                         {action.requiresReason && (
+                            <div className="space-y-2">
+                               <Label htmlFor="cancel-reason">
+                                  Reason for cancellation
+                               </Label>
+                               <Textarea
+                                  id="cancel-reason"
+                                  placeholder="Please provide a reason..."
+                                  value={cancelReason}
+                                  onChange={(e) =>
+                                     setCancelReason(e.target.value)
+                                  }
+                                  rows={3}
+                               />
+                            </div>
+                         )}
                            <AlertDialogFooter>
                               <AlertDialogCancel
                                  onClick={() => setCancelReason("")}

@@ -41,7 +41,7 @@ export function TaskStatusBadge({ status, size = "md" }: TaskStatusBadgeProps) {
    };
 
    const getStatusLabel = () => {
-      return status.replace("_", " ").toUpperCase();
+      return status?.replace("_", " ").toUpperCase() || "UNKNOWN";
    };
 
    // Use rounded for sm (to match TaskCard), rounded-full for larger sizes

@@ -9,13 +9,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-   Select,
-   SelectContent,
-   SelectItem,
-   SelectTrigger,
-   SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/context";
 import {
@@ -23,11 +16,11 @@ import {
    TaskStatusTimeline,
    TaskDetailsCard,
    StatusUpdateSection,
-   ProofOfWorkSection,
    ReviewSection,
+   FloatingChatWidget,
    ReportForm,
+   ProofUploadSection
 } from "@/components/tasks/tracking";
-import { FloatingChatWidget } from "@/components/tasks/tracking/FloatingChatWidget";
 import {
    Dialog,
    DialogContent,
@@ -44,34 +37,9 @@ import type {
    ReportReason,
 } from "@/types/tracking";
 import type { Message } from "@/types/chat";
-import { mockTasksData } from "@/lib/data/mockTasks";
-
-// Mock proof of work data
-const mockProofs: ProofOfWork[] = [
-   {
-      _id: "proof1",
-      taskId: "1",
-      uploadedBy: "performer1",
-      uploadedByName: "Rajesh Kumar",
-      files: [
-         {
-            url: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&h=600&fit=crop",
-            filename: "work-progress-1.jpg",
-            type: "image/jpeg",
-            size: 245000,
-         },
-         {
-            url: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&h=600&fit=crop",
-            filename: "work-progress-2.jpg",
-            type: "image/jpeg",
-            size: 312000,
-         },
-      ],
-      caption:
-         "Initial cleaning started. Applied eco-friendly cleaning solution.",
-      uploadedAt: new Date(Date.now() - 3600000),
-   },
-];
+import { tasksApi } from "@/lib/api/endpoints/tasks";
+import { reviewsApi } from "@/lib/api/endpoints/reviews";
+import { toast } from "sonner";
 
 export default function TaskTrackingPage() {
    const router = useRouter();
@@ -80,7 +48,6 @@ export default function TaskTrackingPage() {
    const taskId = params.id as string;
 
    const [task, setTask] = useState<Task | null>(null);
-   const [proofs, setProofs] = useState<ProofOfWork[]>(mockProofs);
    const [reviews, setReviews] = useState<Review[]>([]);
    const [existingReport, setExistingReport] = useState<
       TaskReportSubmission | undefined
@@ -88,20 +55,41 @@ export default function TaskTrackingPage() {
    const [showReportModal, setShowReportModal] = useState(false);
    const [isLoading, setIsLoading] = useState(true);
    const [activeTab, setActiveTab] = useState("overview");
-   const [overrideRole, setOverrideRole] = useState<UserRole | null>(null);
    const [chatMessages, setChatMessages] = useState<Message[]>([]);
    const [isLoadingChat, setIsLoadingChat] = useState(false);
 
-   // Determine user role (with override for testing)
-   const computedRole: UserRole = useMemo(() => {
+   // Determine user role automatically based on task relationship
+   const userRole: UserRole = useMemo(() => {
       if (!task || !currentUser) return "viewer";
-      if (task.creatorUid === currentUser.uid) return "poster";
-      if (task.assigneeUid === currentUser.uid) return "tasker";
+      
+      // Debug logging
+      console.log("🔍 Role Detection Debug:");
+      console.log("  Current User UID:", currentUser.uid);
+      console.log("  Task creator fields:", {
+         requesterId: task.requesterId,
+      });
+      console.log("  Task assignee fields:", {
+         assigneeUid: task.assigneeUid,
+         assignedToUid: (task as any).assignedToUid,
+      });
+      
+      // Check if user is the poster (task creator) - handle different field names
+      const taskCreatorId = task.requesterId;
+      if (taskCreatorId === currentUser.uid) {
+         console.log("✅ Role: POSTER");
+         return "poster";
+      }
+      
+      // Check if user is the tasker (task assignee)
+      const taskAssigneeId = task.assigneeUid || (task as any).assignedToUid;
+      if (taskAssigneeId === currentUser.uid) {
+         console.log("✅ Role: TASKER");
+         return "tasker";
+      }
+      
+      console.log("ℹ️ Role: VIEWER");
       return "viewer";
    }, [task, currentUser]);
-
-   // Use override role if set, otherwise use computed role
-   const userRole: UserRole = overrideRole || computedRole;
 
    // Fetch task data from API
    useEffect(() => {
@@ -135,6 +123,27 @@ export default function TaskTrackingPage() {
       }
    }, [taskId]);
 
+   // Fetch reviews for the task
+   useEffect(() => {
+      const fetchReviews = async () => {
+         if (!taskId) return;
+         
+         try {
+            const review = await reviewsApi.getTaskReview(taskId);
+            
+            // Backend returns a single review or null
+            if (review) {
+               setReviews([review as unknown as Review]);
+            }
+         } catch (error) {
+            console.error("Failed to fetch reviews:", error);
+            // Silently fail - reviews will be empty
+         }
+      };
+
+      fetchReviews();
+   }, [taskId]);
+
    // Handle status update
    const handleStatusUpdate = async (
       newStatus: Task["status"],
@@ -142,33 +151,80 @@ export default function TaskTrackingPage() {
    ) => {
       if (!task) return;
 
-      // TODO: Replace with actual API call
-      // await api.updateTaskStatus(task._id, { status: newStatus, reason });
-
-      // Mock: Update local state
-      setTask({
-         ...task,
-         status: newStatus,
-         ...(reason && { cancellationReason: reason }),
-         updatedAt: new Date(),
-      });
+      try {
+         
+         // Update task status via API
+         const updatedTask = await tasksApi.updateTaskStatus(task._id, newStatus);
+         
+         console.log("✅ Task status updated successfully:", updatedTask);
+         
+         // Update local state with response from server
+         setTask(updatedTask);
+      } catch (error) {
+         console.error("❌ Failed to update task status:", error);
+         // TODO: Show error toast to user
+         throw error; // Re-throw so StatusUpdateSection can handle the error
+      }
    };
 
-   // Handle proof upload
-   const handleProofUpload = async (
-      proofData: Omit<ProofOfWork, "_id" | "uploadedAt">
-   ) => {
-      // TODO: Replace with actual API call
-      // const newProof = await api.uploadProofOfWork(proofData);
+   // Handle submit completion proof
+   const handleSubmitProof = async (proofUrls: string[], notes?: string) => {
+      if (!task) return;
 
-      // Mock: Add to local state
-      const newProof: ProofOfWork = {
-         ...proofData,
-         _id: `proof-${Date.now()}`,
-         uploadedAt: new Date(),
-      };
+      try {
+         const { completionApi } = await import("@/lib/api/endpoints/completion");
+         
+         const updatedTask = await completionApi.submitCompletionProof(task._id, {
+            proofUrls,
+            notes,
+         });
+         
+         console.log("✅ Completion proof submitted:", updatedTask);
+         setTask(updatedTask);
+         toast.success("Completion proof submitted for review!");
+      } catch (error) {
+         console.error("❌ Failed to submit proof:", error);
+         toast.error("Failed to submit completion proof");
+         throw error;
+      }
+   };
 
-      setProofs([...proofs, newProof]);
+   // Handle approve completion (poster only)
+   const handleApproveCompletion = async () => {
+      if (!task) return;
+
+      try {
+         const { completionApi } = await import("@/lib/api/endpoints/completion");
+         
+         const updatedTask = await completionApi.approveCompletion(task._id);
+         
+         console.log("✅ Completion approved:", updatedTask);
+         setTask(updatedTask);
+         toast.success("Work approved! Task completed.");
+      } catch (error) {
+         console.error("❌ Failed to approve completion:", error);
+         toast.error("Failed to approve completion");
+         throw error;
+      }
+   };
+
+   // Handle reject completion (poster only)
+   const handleRejectCompletion = async (reason: string) => {
+      if (!task) return;
+
+      try {
+         const { completionApi } = await import("@/lib/api/endpoints/completion");
+         
+         const updatedTask = await completionApi.rejectCompletion(task._id, reason);
+         
+         console.log("✅ Completion rejected:", updatedTask);
+         setTask(updatedTask);
+         toast.success("Work sent back for revisions");
+      } catch (error) {
+         console.error("❌ Failed to reject completion:", error);
+         toast.error("Failed to reject completion");
+         throw error;
+      }
    };
 
    // Load chat messages - Same conversation, but perspective flips based on role
@@ -184,7 +240,7 @@ export default function TaskTrackingPage() {
          // Fixed conversation - same messages, but sender flips based on role
          const taskerUserId = task.assigneeUid || "mock_tasker_123";
          const taskerUserName = task.assignedToName || "Tasker";
-         const posterUserId = task.creatorUid || "mock_poster_123";
+         const posterUserId = task.requesterId || "mock_poster_123";
          const posterUserName = task.requesterName || "Task Owner";
          const currentUserId = currentUser?.uid || "current_user";
 
@@ -292,42 +348,26 @@ export default function TaskTrackingPage() {
    }) => {
       if (!task || !reviewedUserId) return;
 
-      // For mock data: use currentUser if available, otherwise use mock ID
-      const reviewerUid =
-         currentUser?.uid ||
-         (userRole === "poster" ? task.creatorUid : task.assigneeUid) ||
-         "mock_user";
+      try {
+         const { reviewsApi } = await import("@/lib/api/endpoints/reviews");
+         
+         const newReview = await reviewsApi.createReview({
+            taskId: task._id,
+            rating: data.rating,
+            title: data.title,
+            comment: data.comment,
+            ratings: data.ratings,
+         });
 
-      // TODO: Replace with actual API call
-      // await api.createReview({
-      //    taskId: task._id,
-      //    reviewedUid: reviewedUserId,
-      //    ...data
-      // });
-
-      // Mock: Add review to local state
-      const now = new Date();
-      const timestamp = now.getTime();
-      const reviewId = `review_${task._id}_${reviewerUid}_${timestamp}`;
-      const newReview: Review = {
-         _id: reviewId,
-         taskId: task._id,
-         reviewerUid,
-         reviewedUid: reviewedUserId,
-         reviewerName: "You",
-         rating: data.rating,
-         title: data.title,
-         comment: data.comment,
-         ratings: data.ratings,
-         isPublic: true,
-         isVerified: false,
-         helpful: 0,
-         notHelpful: 0,
-         createdAt: now,
-         updatedAt: now,
-      };
-
-      setReviews([...reviews, newReview]);
+         console.log("✅ Review created successfully:", newReview);
+         
+         // Add review to local state
+         setReviews([...reviews, newReview as unknown as Review]);
+      } catch (error) {
+         console.error("❌ Failed to create review:", error);
+         // TODO: Show error toast to user
+         throw error; // Re-throw so ReviewSection can handle the error
+      }
    };
 
    // Handle helpful vote
@@ -356,23 +396,24 @@ export default function TaskTrackingPage() {
    }) => {
       if (!task || !currentUser) return;
 
-      // TODO: Replace with actual API call
-      // await api.submitReport({ taskId: task._id, userId: currentUser.uid, ...data });
+      try {
+         const { reportsApi } = await import("@/lib/api/endpoints/reports");
+         
+         const newReport = await reportsApi.submitReport(task._id, {
+            reason: data.reason as ReportReason,
+            description: data.description,
+         });
 
-      // Mock: Add report to local state
-      const newReport: TaskReportSubmission = {
-         _id: `report_${Date.now()}`,
-         userId: currentUser.uid,
-         taskId: task._id,
-         reason: data.reason as ReportReason,
-         description: data.description,
-         status: "pending",
-         createdAt: new Date(),
-         updatedAt: new Date(),
-      };
-
-      setExistingReport(newReport);
-      setShowReportModal(false);
+         console.log("✅ Report submitted successfully:", newReport);
+         
+         // Update local state
+         setExistingReport(newReport as unknown as TaskReportSubmission);
+         setShowReportModal(false);
+      } catch (error) {
+         console.error("❌ Failed to submit report:", error);
+         // TODO: Show error toast to user
+         throw error; // Re-throw so ReportForm can handle the error
+      }
    };
 
    // Determine if user can review (production-ready)
@@ -382,7 +423,7 @@ export default function TaskTrackingPage() {
 
       // For mock data testing: allow reviews even without currentUser
       // In production, this should require: if (!currentUser) return false;
-      const mockUserId = currentUser?.uid || task.creatorUid || "mock_user";
+      const mockUserId = currentUser?.uid || task.requesterId || "mock_user";
 
       // Poster reviews the tasker
       const reviewedUid = task.assigneeUid;
@@ -444,40 +485,6 @@ export default function TaskTrackingPage() {
 
    return (
       <div className="min-h-screen bg-secondary-50">
-         {/* Temporary Role Switcher - For Testing */}
-         <div className="bg-yellow-50 border-b border-yellow-200 px-4 md:px-6 py-2">
-            <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-               <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-yellow-800">
-                     🧪 Testing Mode:
-                  </span>
-                  <Select
-                     value={overrideRole || "auto"}
-                     onValueChange={(value) =>
-                        setOverrideRole(
-                           value === "auto" ? null : (value as UserRole)
-                        )
-                     }
-                  >
-                     <SelectTrigger className="h-7 w-[140px] text-xs border-yellow-300 bg-white">
-                        <SelectValue />
-                     </SelectTrigger>
-                     <SelectContent>
-                        <SelectItem value="auto">
-                           Auto ({computedRole})
-                        </SelectItem>
-                        <SelectItem value="poster">Poster</SelectItem>
-                        <SelectItem value="tasker">Tasker</SelectItem>
-                        <SelectItem value="viewer">Viewer</SelectItem>
-                     </SelectContent>
-                  </Select>
-               </div>
-               <span className="text-xs text-yellow-700">
-                  Current: <strong>{userRole}</strong>
-               </span>
-            </div>
-         </div>
-
          {/* Header */}
          <TaskTrackingHeader
             task={task}
@@ -543,12 +550,11 @@ export default function TaskTrackingPage() {
                      </TabsContent>
 
                      <TabsContent value="proof" className="space-y-6">
-                        <ProofOfWorkSection
-                           taskId={task._id}
-                           proofs={proofs}
+                        {/* Completion Proof Upload */}
+                        <ProofUploadSection
+                           task={task}
+                           onSubmitProof={handleSubmitProof}
                            userRole={userRole}
-                           onProofUpload={handleProofUpload}
-                           currentUserId={currentUser?.uid}
                         />
                      </TabsContent>
 
@@ -592,7 +598,7 @@ export default function TaskTrackingPage() {
                         <div className="flex justify-between">
                            <span className="text-secondary-600">Status:</span>
                            <span className="font-semibold text-secondary-900">
-                              {task.status.replace("_", " ").toUpperCase()}
+                              {task.status?.replace("_", " ").toUpperCase()}
                            </span>
                         </div>
                         <div className="flex justify-between">
@@ -638,7 +644,7 @@ export default function TaskTrackingPage() {
                otherUserId={
                   userRole === "poster"
                      ? task.assigneeUid || "mock_tasker_123"
-                     : task.creatorUid || "mock_poster_123"
+                     : task.requesterId || "mock_poster_123"
                }
                otherUserName={
                   userRole === "poster"
@@ -674,7 +680,7 @@ export default function TaskTrackingPage() {
                               </p>
                               <p>
                                  <span className="font-medium">Reason:</span>{" "}
-                                 {existingReport.reason.replace("_", " ")}
+                                 {existingReport.reason?.replace("_", " ") || "N/A"}
                               </p>
                               {existingReport.description && (
                                  <p>

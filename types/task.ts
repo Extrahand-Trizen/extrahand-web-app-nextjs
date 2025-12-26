@@ -25,7 +25,6 @@ export interface Task {
   priority: 'low' | 'normal' | 'high';
   requesterId: string;
   requesterName: string;
-  creatorUid: string;
   assignedTo?: string;
   assigneeUid?: string;
   assignedToName?: string;
@@ -52,6 +51,17 @@ export interface Task {
   completedAt?: Date;
   cancelledAt?: Date;
   cancellationReason?: string;
+  completionProof?: Array<{
+    url: string;
+    filename: string;
+    uploadedAt: Date;
+    uploadedBy: string;
+  }>;
+  completionStatus?: 'pending_approval' | 'approved' | 'rejected';
+  completionNotes?: string;
+  completionRejectedReason?: string;
+  completionApprovedAt?: Date;
+  completionRejectedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }

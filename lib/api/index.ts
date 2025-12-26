@@ -8,6 +8,7 @@ import { tasksApi } from "./endpoints/tasks";
 import { applicationsApi } from "./endpoints/applications";
 import { chatsApi } from "./endpoints/chats";
 import { reviewsApi } from "./endpoints/reviews";
+import { reportsApi } from "./endpoints/reports";
 import { authApi } from "./endpoints/auth";
 import { sessionsApi } from "./endpoints/sessions";
 
@@ -26,6 +27,12 @@ export const api = {
 
    // Review management
    ...reviewsApi,
+
+   // Completion API (dynamic import)
+   ...(await import("./endpoints/completion")).completionApi,
+
+   // Report management
+   ...reportsApi,
 
    // Auth management
    ...authApi,

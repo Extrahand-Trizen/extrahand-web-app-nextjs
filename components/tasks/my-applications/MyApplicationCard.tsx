@@ -234,17 +234,30 @@ export function MyApplicationCard({
                </Button>
             )}
             {application.status === "accepted" && (
-               <Link href="/chat">
-                  <Button
-                     variant="outline"
-                     size="sm"
-                     className="flex-1 sm:flex-initial text-green-600 border-green-200 hover:bg-green-50 text-xs md:text-sm"
-                  >
-                     <MessageSquare className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
-                     <span className="hidden sm:inline">Message</span>
-                     <span className="sm:hidden">Chat</span>
-                  </Button>
-               </Link>
+               <>
+                  <Link href={`/tasks/${taskId}/track`}>
+                     <Button
+                        variant="default"
+                        size="sm"
+                        className="flex-1 sm:flex-initial bg-primary-600 hover:bg-primary-700 text-white text-xs md:text-sm"
+                     >
+                        <Eye className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+                        <span className="hidden sm:inline">Track Task</span>
+                        <span className="sm:hidden">Track</span>
+                     </Button>
+                  </Link>
+                  <Link href="/chat">
+                     <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 sm:flex-initial text-green-600 border-green-200 hover:bg-green-50 text-xs md:text-sm"
+                     >
+                        <MessageSquare className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+                        <span className="hidden sm:inline">Message</span>
+                        <span className="sm:hidden">Chat</span>
+                     </Button>
+                  </Link>
+               </>
             )}
          </div>
       </div>
