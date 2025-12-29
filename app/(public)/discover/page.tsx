@@ -143,10 +143,16 @@ export default function TasksPage() {
                params.sortBy = filters.sortBy;
             }
 
-            const response: TaskListResponse = await tasksApi.getPublicTasks(params);
+            const response: TaskListResponse = await tasksApi.getTasks(params);
 
+            // Handle both wrapped and unwrapped responses
             setTasks(response.tasks || []);
-            setPagination(response.pagination);
+            setPagination(response.pagination || {
+               page: 1,
+               limit: TASKS_PER_PAGE,
+               total: 0,
+               pages: 0,
+            });
          } catch (err: any) {
             console.error("Error fetching tasks:", err);
             setError(err.message || "Failed to load tasks. Please try again.");
@@ -301,9 +307,9 @@ export default function TasksPage() {
                                     if (filters.minBudget > 0) params.minBudget = filters.minBudget;
                                     if (filters.maxBudget < 100000) params.maxBudget = filters.maxBudget;
                                     if (filters.sortBy && filters.sortBy !== "nearest") params.sortBy = filters.sortBy;
-                                    const response: TaskListResponse = await tasksApi.getPublicTasks(params);
+                                    const response: TaskListResponse = await tasksApi.getTasks(params);
                                     setTasks(prev => [...prev, ...(response.tasks || [])]);
-                                    setPagination(response.pagination);
+                                    setPagination(response.pagination || pagination);
                                  } catch (err: any) {
                                     console.error("Error loading more tasks:", err);
                                  } finally {

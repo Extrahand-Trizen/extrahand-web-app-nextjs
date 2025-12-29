@@ -159,11 +159,12 @@ async function fetchPublic(
       }
 
       console.log("🔧 Making public fetch request to:", fullUrl);
+      console.log("🔧 Credentials:", "omit (no cookies will be sent)");
 
       const res = await fetch(fullUrl, {
          ...init,
          headers,
-         // Don't send credentials for public endpoints
+         credentials: 'omit', // Explicitly prevent sending cookies
       });
 
       console.log("🔧 Response status:", res.status);

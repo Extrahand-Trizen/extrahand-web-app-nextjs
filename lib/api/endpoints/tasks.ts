@@ -15,6 +15,21 @@ export const tasksApi = {
   async getTasks(params?: TaskQueryParams): Promise<TaskListResponse> {
     const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
     const response = await fetchWithAuth(`tasks${queryString}`);
+    
+    // Handle standardized API response format: { success, code, message, data, meta: { pagination } }
+    if (response.data && response.meta?.pagination) {
+      return {
+        tasks: response.data,
+        pagination: {
+          page: response.meta.pagination.page,
+          limit: response.meta.pagination.limit,
+          total: response.meta.pagination.total,
+          pages: response.meta.pagination.totalPages,
+        },
+      };
+    }
+    
+    // Fallback for legacy format
     return response.data || response;
   },
 

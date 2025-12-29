@@ -24,6 +24,7 @@ export interface Task {
   status: 'open' | 'assigned' | 'started' | 'in_progress' | 'review' | 'completed' | 'cancelled';
   priority: 'low' | 'normal' | 'high';
   requesterId: string;
+  creatorUid?: string; // Firebase UID of task creator
   requesterName: string;
   assignedTo?: string;
   assigneeUid?: string;
