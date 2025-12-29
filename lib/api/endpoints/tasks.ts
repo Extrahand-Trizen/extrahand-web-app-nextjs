@@ -3,18 +3,28 @@
  * Matches task-connect-relay routes/tasks.js
  */
 
-import { fetchWithAuth } from '../client';
+import { fetchWithAuth, fetchPublic } from '../client';
 import { Task, TaskListResponse } from '@/types/task';
 import { TaskQueryParams } from '@/types/api';
 
 export const tasksApi = {
   /**
-   * Get tasks with optional filters
+   * Get tasks with optional filters (requires authentication)
    * GET /api/v1/tasks
    */
   async getTasks(params?: TaskQueryParams): Promise<TaskListResponse> {
     const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
     const response = await fetchWithAuth(`tasks${queryString}`);
+    return response.data || response;
+  },
+
+  /**
+   * Get tasks with optional filters (public - no authentication required)
+   * GET /api/v1/tasks
+   */
+  async getPublicTasks(params?: TaskQueryParams): Promise<TaskListResponse> {
+    const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
+    const response = await fetchPublic(`tasks${queryString}`);
     return response.data || response;
   },
 

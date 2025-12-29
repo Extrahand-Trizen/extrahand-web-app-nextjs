@@ -182,6 +182,13 @@ export default function TaskTrackingPage() {
          console.log("✅ Completion proof submitted:", updatedTask);
          setTask(updatedTask);
          toast.success("Completion proof submitted for review!");
+         
+         // Refetch task to ensure we have latest data
+         const refreshedTask = await tasksApi.getTask(task._id);
+         const taskData = (refreshedTask as any)?.data || refreshedTask;
+         if (taskData) {
+            setTask(taskData as Task);
+         }
       } catch (error) {
          console.error("❌ Failed to submit proof:", error);
          toast.error("Failed to submit completion proof");

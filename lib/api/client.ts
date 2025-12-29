@@ -137,4 +137,92 @@ async function fetchWithAuth(
    }
 }
 
-export { fetchWithAuth };
+/**
+ * Public fetch function for endpoints that don't require authentication
+ * Does NOT send authentication cookies
+ */
+async function fetchPublic(
+   path: string,
+   init: RequestInit = {}
+): Promise<any> {
+   try {
+      const cleanApiBase = getApiBaseUrl().replace(/\/$/, "");
+      const cleanPath = path.replace(/^\//, "");
+      const fullUrl = `${cleanApiBase}/api/v1/${cleanPath}`;
+
+      console.log("🔧 fetchPublic called with path:", path);
+      console.log("🔧 Full URL:", fullUrl);
+
+      const headers = new Headers(init.headers || {});
+      if (!headers.has("Content-Type")) {
+         headers.set("Content-Type", "application/json");
+      }
+
+      console.log("🔧 Making public fetch request to:", fullUrl);
+
+      const res = await fetch(fullUrl, {
+         ...init,
+         headers,
+         // Don't send credentials for public endpoints
+      });
+
+      console.log("🔧 Response status:", res.status);
+
+      if (!res.ok) {
+         const text = await res.text().catch(() => "");
+         let errorData: any;
+
+         try {
+            errorData = JSON.parse(text);
+         } catch (e) {
+            errorData = { error: text || `HTTP ${res.status}` };
+         }
+
+         let errorMessage = 
+            errorData.error || 
+            errorData.message || 
+            errorData.details ||
+            `HTTP ${res.status}`;
+         
+         if (errorData.details && errorData.error && errorData.details !== errorData.error) {
+            errorMessage = `${errorData.error}: ${errorData.details}`;
+         }
+
+         const error: APIError = new Error(errorMessage);
+         error.status = res.status;
+         error.data = errorData;
+
+         console.error(`❌ Public API Error ${res.status}:`, errorData);
+         throw error;
+      }
+
+      const data = await res.json();
+      console.log(`✅ Public API Success: ${path}`, data);
+      return data;
+   } catch (error) {
+      const apiError = error as APIError;
+      if (!apiError.status) {
+         console.error("🚨 Public API Error:", error);
+      }
+
+      if (
+         error instanceof TypeError &&
+         error.message.includes("Failed to fetch")
+      ) {
+         console.error(
+            "🚨 Network error detected - possible CORS or connectivity issue"
+         );
+         console.error(
+            "🚨 Check if backend is running and CORS is properly configured"
+         );
+      }
+
+      if (error instanceof Error) {
+         error.message = `Public API call failed: ${error.message}`;
+      }
+
+      throw error;
+   }
+}
+
+export { fetchWithAuth, fetchPublic };

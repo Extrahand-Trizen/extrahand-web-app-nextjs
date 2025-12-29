@@ -48,9 +48,7 @@ export default function TaskDetailsPage() {
    const [activeTab, setActiveTab] = useState<"offers" | "questions">("offers");
    const [showFixedCTA, setShowFixedCTA] = useState(false);
    const [showMakeOfferModal, setShowMakeOfferModal] = useState(false);
-   const [applicationsCount, setApplicationsCount] = useState<number | null>(
-      null
-   );
+   
    const [scrollY, setScrollY] = useState(0);
    const isMobile = useIsMobile();
    const { currentUser } = useAuth();
@@ -228,7 +226,6 @@ export default function TaskDetailsPage() {
                               <TaskOffersSection
                                  taskId={taskId}
                                  isOwner={isOwner}
-                                 onApplicationsCountChange={setApplicationsCount}
                               />
                            ) : loadingMyApplication ? (
                               <div className="p-8 flex justify-center">
@@ -326,13 +323,6 @@ export default function TaskDetailsPage() {
                task={task}
                open={showMakeOfferModal}
                onOpenChange={setShowMakeOfferModal}
-               onSuccess={() => {
-                  // Refresh applications count by triggering a reload
-                  // The TaskOffersSection will update the count via callback
-                  setApplicationsCount((prev) =>
-                     prev !== null ? prev + 1 : null
-                  );
-               }}
             />
          )}
       </div>

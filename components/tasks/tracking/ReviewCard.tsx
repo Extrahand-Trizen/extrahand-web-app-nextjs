@@ -133,7 +133,9 @@ export function ReviewCard({
                   {review.response.comment}
                </p>
                <p className="text-[10px] md:text-xs text-secondary-500 mt-2">
-                  {format(new Date(review.response.timestamp), "MMM dd, yyyy")}
+                  {review.response.timestamp && !isNaN(new Date(review.response.timestamp).getTime())
+                     ? format(new Date(review.response.timestamp), "MMM dd, yyyy")
+                     : "Recent"}
                </p>
             </div>
          )}

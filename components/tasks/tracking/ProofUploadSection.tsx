@@ -40,6 +40,7 @@ export function ProofUploadSection({
   const hasExistingProof =
     task.completionProof && task.completionProof.length > 0;
   const isInReview = task.status === "review";
+  const isCompleted = task.status === "completed";
   const canUpload = userRole === "tasker" && task.status === "in_progress";
 
   // Handle file selection
@@ -84,7 +85,7 @@ export function ProofUploadSection({
       // Use proper API client pattern - construct URL same way as fetchWithAuth
       const { getApiBaseUrl, CORS_CONFIG, isDevelopment } = await import("@/lib/config");
       const cleanApiBase = getApiBaseUrl().replace(/\/$/, "");
-      const cleanPath = `uploads/completion-proof/${task._id}`;
+      const cleanPath = `uploads/completion-proof/${task._id}/multiple`;
       const uploadUrl = `${cleanApiBase}/api/v1/${cleanPath}`;
       
       console.log("🔧 Uploading to:", uploadUrl);
@@ -105,7 +106,7 @@ export function ProofUploadSection({
 
       const data = await response.json();
       // Backend returns { success: true, data: { urls: [...] } }
-      const imageUrls = data.data?.urls || data.urls || [];
+      const imageUrls = data.data?.urls || [];
 
       if (imageUrls.length > 0) {
         setUploadedImages([...uploadedImages, ...imageUrls]);
@@ -128,19 +129,20 @@ export function ProofUploadSection({
     setUploadedImages(uploadedImages.filter((_, i) => i !== indexToRemove));
   };
 
+
   // Submit proof
   const handleSubmit = async () => {
-    if (uploadedImages.length === 0) {
+    // Check if task has completion proof (images are saved to DB on upload)
+    if (!task.completionProof || task.completionProof.length === 0) {
       toast.error("Please upload at least one proof image");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await onSubmitProof(uploadedImages, notes.trim() || undefined);
-      toast.success("Completion proof submitted for review!");
-      setUploadedImages([]);
-      setNotes("");
+      // No need to pass uploadedImages - they're already in the database
+      await onSubmitProof([], notes.trim() || undefined);
+      // Don't clear notes or local state - let parent handle refresh
     } catch (error) {
       console.error("Submit proof error:", error);
       toast.error("Failed to submit proof");
@@ -149,21 +151,53 @@ export function ProofUploadSection({
     }
   };
 
-  // If proof already exists and in review, show existing proof
-  if (hasExistingProof && isInReview) {
+  // Show existing proof for review, completed, or cancelled states (read-only)
+  if (hasExistingProof && (isInReview || isCompleted || task.status === 'cancelled')) {
+    const statusConfig = {
+      review: {
+        icon: CheckCircle2,
+        iconColor: 'text-green-600',
+        title: 'Completion Proof Submitted',
+        bgColor: 'bg-green-50',
+        borderColor: 'border-green-200',
+        textColor: 'text-green-800',
+        message: 'Your work has been submitted and is awaiting approval from the task poster.'
+      },
+      completed: {
+        icon: CheckCircle2,
+        iconColor: 'text-blue-600',
+        title: 'Completed Work Proof',
+        bgColor: 'bg-blue-50',
+        borderColor: 'border-blue-200',
+        textColor: 'text-blue-800',
+        message: 'This task has been completed and approved.'
+      },
+      cancelled: {
+        icon: AlertCircle,
+        iconColor: 'text-gray-600',
+        title: 'Submitted Proof (Task Cancelled)',
+        bgColor: 'bg-gray-50',
+        borderColor: 'border-gray-200',
+        textColor: 'text-gray-700',
+        message: 'This task was cancelled.'
+      }
+    };
+
+    const config = statusConfig[task.status as keyof typeof statusConfig] || statusConfig.review;
+    const StatusIcon = config.icon;
+
     return (
       <div className="bg-white rounded-xl shadow-sm border border-secondary-200 p-4 md:p-6">
         <div className="flex items-center gap-2 mb-4">
-          <CheckCircle2 className="w-5 h-5 text-green-600" />
+          <StatusIcon className={`w-5 h-5 ${config.iconColor}`} />
           <h2 className="text-base md:text-lg font-semibold md:font-bold text-secondary-900">
-            Completion Proof Submitted
+            {config.title}
           </h2>
         </div>
 
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-          <p className="text-sm text-green-800">
-            Your work has been submitted and is awaiting approval from the task
-            poster.
+        <div className={`${config.bgColor} border ${config.borderColor} rounded-lg p-4 mb-4`}>
+          <p className={`text-sm ${config.textColor}`}>
+            {config.message}
           </p>
         </div>
 
@@ -176,7 +210,7 @@ export function ProofUploadSection({
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
               {task.completionProof?.map((proof, index) => (
                 <div
-                  key={index}
+                  key={proof.url || index}
                   className="relative aspect-square rounded-lg overflow-hidden border border-secondary-200"
                 >
                   <Image
@@ -231,8 +265,30 @@ export function ProofUploadSection({
     );
   }
 
-  // Show upload form only if tasker and status is in_progress
+  // Show empty state or upload form for taskers
   if (!canUpload) {
+    // Show empty state for tasker when task is in progress but no proof yet
+    if (userRole === "tasker" && !hasExistingProof) {
+      return (
+        <div className="bg-white rounded-xl shadow-sm border border-secondary-200 p-4 md:p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <ImageIcon className="w-5 h-5 text-secondary-600" />
+            <h2 className="text-base md:text-lg font-semibold md:font-bold text-secondary-900">
+              Completion Proof
+            </h2>
+          </div>
+          <div className="text-center py-8">
+            <ImageIcon className="w-12 h-12 text-secondary-400 mx-auto mb-3" />
+            <p className="text-sm text-secondary-600">
+              No proof of work uploaded yet
+            </p>
+            <p className="text-xs text-secondary-500 mt-1">
+              Upload proof when task is in progress
+            </p>
+          </div>
+        </div>
+      );
+    }
     return null;
   }
 
@@ -340,7 +396,7 @@ export function ProofUploadSection({
         {/* Submit Button */}
         <Button
           onClick={handleSubmit}
-          disabled={isSubmitting || uploadedImages.length === 0}
+          disabled={isSubmitting || !task.completionProof || task.completionProof.length === 0}
           className="w-full"
         >
           {isSubmitting ? (

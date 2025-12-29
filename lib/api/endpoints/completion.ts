@@ -9,16 +9,17 @@ import type { Task } from "@/types/task";
 export const completionApi = {
   /**
    * Submit completion proof
-   * Tasker submits proof images and notes when work is done
+   * Tasker submits proof for review when work is done
    * Automatically changes task status to 'review'
+   * Note: Images should already be uploaded via upload endpoint
    */
   async submitCompletionProof(
     taskId: string,
-    data: { proofUrls: string[]; notes?: string }
+    data: { proofUrls?: string[]; notes?: string }
   ): Promise<Task> {
-    const response = await fetchWithAuth(`tasks/${taskId}/completion/submit`, {
+    const response = await fetchWithAuth(`tasks/${taskId}/submit-proof`, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({ notes: data.notes }),
     });
     // Backend returns { success: true, data: task }
     return response.data || response;

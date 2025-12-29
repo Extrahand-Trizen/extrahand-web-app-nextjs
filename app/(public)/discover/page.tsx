@@ -8,12 +8,13 @@ import { TaskCard } from "@/components/tasks/TaskCard";
 import { TaskDetailCard } from "@/components/tasks/TaskDetailCard";
 import { CompactFilterBar } from "@/components/tasks/CompactFilterBar";
 import { TaskListSkeleton } from "@/components/tasks/TaskSkeleton";
-import { mockTasksData } from "@/lib/data/mockTasks";
-import type { Task } from "@/types/task";
-import { MapIcon, List, Plus } from "lucide-react";
+import { tasksApi } from "@/lib/api/endpoints/tasks";
+import type { Task, TaskListResponse } from "@/types/task";
+import { MapIcon, List, Plus, AlertCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const HYDERABAD_CENTER = { lat: 17.385, lng: 78.4867 };
+const TASKS_PER_PAGE = 20;
 
 type CompactFilterState = {
    categories: string[];
@@ -84,6 +85,15 @@ export default function TasksPage() {
    const [showTaskDetail, setShowTaskDetail] = useState(false);
    const [isLoading, setIsLoading] = useState(true);
    const [showMobileMap, setShowMobileMap] = useState(false);
+   const [tasks, setTasks] = useState<Task[]>([]);
+   const [error, setError] = useState<string | null>(null);
+   const [pagination, setPagination] = useState({
+      page: 1,
+      limit: 20,
+      total: 0,
+      pages: 0,
+   });
+   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
    const [filters, setFilters] = useState<CompactFilterState>({
       categories: [],
@@ -96,45 +106,79 @@ export default function TasksPage() {
 
    const isMobile = useIsMobile();
 
-   // Simulate initial loading
+   // Fetch tasks from API
    useEffect(() => {
-      const timer = setTimeout(() => setIsLoading(false), 800);
-      return () => clearTimeout(timer);
-   }, []);
+      const fetchTasks = async () => {
+         try {
+            setIsLoading(true);
+            setError(null);
 
-   // Filter and sort tasks
+            // Map filters to API query params
+            const params: any = {
+               page: 1, // Reset to page 1 on filter change
+               limit: TASKS_PER_PAGE,
+               status: "open", // Only show open tasks on discover page
+            };
+
+            // Add backend-supported filters
+            if (filters.categories.length > 0) {
+               // For now, send first category (backend may need update for multiple)
+               params.category = filters.categories[0];
+            }
+
+            if (searchQuery.trim()) {
+               params.search = searchQuery;
+            }
+
+            if (filters.minBudget > 0) {
+               params.minBudget = filters.minBudget;
+            }
+
+            if (filters.maxBudget < 100000) {
+               params.maxBudget = filters.maxBudget;
+            }
+
+            // Map sortBy to backend format
+            if (filters.sortBy && filters.sortBy !== "nearest") {
+               params.sortBy = filters.sortBy;
+            }
+
+            const response: TaskListResponse = await tasksApi.getPublicTasks(params);
+
+            setTasks(response.tasks || []);
+            setPagination(response.pagination);
+         } catch (err: any) {
+            console.error("Error fetching tasks:", err);
+            setError(err.message || "Failed to load tasks. Please try again.");
+            setTasks([]);
+         } finally {
+            setIsLoading(false);
+         }
+      };
+
+      fetchTasks();
+   }, [searchQuery, filters]);
+
+   // Filter and sort tasks (client-side for unsupported backend filters)
    const getFilteredTasks = useCallback((): Task[] => {
-      let filtered = [...mockTasksData];
+      let filtered = [...tasks];
 
-      // Search filter
-      if (searchQuery.trim()) {
-         const query = searchQuery.toLowerCase();
-         filtered = filtered.filter(
-            (task) =>
-               task.title.toLowerCase().includes(query) ||
-               task.category.toLowerCase().includes(query) ||
-               task.description?.toLowerCase().includes(query) ||
-               task.location.city.toLowerCase().includes(query)
-         );
-      }
-
-      // Category filter (multi-select)
-      if (filters.categories.length > 0) {
+      // Client-side filters for unsupported backend options
+      
+      // Suburb filter (backend only supports city)
+      if (filters.suburb) {
          filtered = filtered.filter((task) =>
-            filters.categories.includes(task.category)
+            task.location.address.toLowerCase().includes(filters.suburb.toLowerCase())
          );
       }
 
-      // Budget filter
-      const budgetValue = (task: Task) =>
-         typeof task.budget === "object" ? task.budget.amount : task.budget;
+      // Remotely filter (not supported by backend)
+      if (filters.remotely) {
+         // For now, we don't have a "remote" flag in the task model
+         // This could be added later or we could filter by some other criteria
+      }
 
-      filtered = filtered.filter((task) => {
-         const price = budgetValue(task);
-         return price >= filters.minBudget && price <= filters.maxBudget;
-      });
-
-      // Sorting
+      // Sort by nearest (client-side distance calculation)
       if (filters.sortBy === "nearest") {
          filtered.sort((a, b) => {
             const [lngA, latA] = a.location?.coordinates || [0, 0];
@@ -153,21 +197,10 @@ export default function TasksPage() {
             );
             return distA - distB;
          });
-      } else if (filters.sortBy === "price-low") {
-         filtered.sort((a, b) => budgetValue(a) - budgetValue(b));
-      } else if (filters.sortBy === "price-high") {
-         filtered.sort((a, b) => budgetValue(b) - budgetValue(a));
-      } else {
-         // Recent (default)
-         filtered.sort(
-            (a, b) =>
-               new Date(b.createdAt!).getTime() -
-               new Date(a.createdAt!).getTime()
-         );
       }
 
       return filtered;
-   }, [searchQuery, filters]);
+   }, [tasks, filters]);
 
    const filteredTasks = getFilteredTasks();
    const selectedTask = filteredTasks.find((t) => t._id === selectedTaskId);
@@ -214,7 +247,25 @@ export default function TasksPage() {
                      }}
                      className="overflow-y-auto py-8 md:px-3"
                   >
-                     {isLoading ? (
+                     {error ? (
+                        <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                           <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-4">
+                              <AlertCircle className="w-8 h-8 text-red-500" />
+                           </div>
+                           <h3 className="text-lg font-semibold text-secondary-900 mb-2">
+                              Error Loading Tasks
+                           </h3>
+                           <p className="text-sm text-secondary-600 mb-4 max-w-md">
+                              {error}
+                           </p>
+                           <Button
+                              onClick={() => window.location.reload()}
+                              className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold"
+                           >
+                              Retry
+                           </Button>
+                        </div>
+                     ) : isLoading ? (
                         <div className="p-4">
                            <TaskListSkeleton count={8} />
                         </div>
@@ -234,13 +285,36 @@ export default function TasksPage() {
                      )}
 
                      {/* Load more button */}
-                     {!isLoading && filteredTasks.length > 20 && (
+                     {!isLoading && !error && pagination.page < pagination.pages && (
                         <div className="p-4 text-center border-t border-secondary-200">
                            <Button
+                              onClick={async () => {
+                                 try {
+                                    setIsLoadingMore(true);
+                                    const params: any = {
+                                       page: pagination.page + 1,
+                                       limit: TASKS_PER_PAGE,
+                                       status: "open",
+                                    };
+                                    if (filters.categories.length > 0) params.category = filters.categories[0];
+                                    if (searchQuery.trim()) params.search = searchQuery;
+                                    if (filters.minBudget > 0) params.minBudget = filters.minBudget;
+                                    if (filters.maxBudget < 100000) params.maxBudget = filters.maxBudget;
+                                    if (filters.sortBy && filters.sortBy !== "nearest") params.sortBy = filters.sortBy;
+                                    const response: TaskListResponse = await tasksApi.getPublicTasks(params);
+                                    setTasks(prev => [...prev, ...(response.tasks || [])]);
+                                    setPagination(response.pagination);
+                                 } catch (err: any) {
+                                    console.error("Error loading more tasks:", err);
+                                 } finally {
+                                    setIsLoadingMore(false);
+                                 }
+                              }}
                               variant="outline"
                               className="border-secondary-300"
+                              disabled={isLoadingMore}
                            >
-                              Load more tasks
+                              {isLoadingMore ? "Loading..." : `Load more tasks`}
                            </Button>
                         </div>
                      )}
