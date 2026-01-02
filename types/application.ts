@@ -11,14 +11,15 @@ export interface TaskApplication {
   
   // Task and applicant relationship
   taskId: string | Task;
-  applicantUid: string;
-  applicantProfile: {
+  applicantId: string; // MongoDB ObjectId as string
+  applicantProfile?: {
     name: string;
-    rating: number;
-    completedTasks: number;
-    verified: boolean;
-    photoURL: string;
-    totalReviews: number;
+    rating?: number;
+    photoURL?: string | null;
+    totalReviews?: number;
+    skills?: {
+      list: string[];
+    };
   };
   
   // Application details

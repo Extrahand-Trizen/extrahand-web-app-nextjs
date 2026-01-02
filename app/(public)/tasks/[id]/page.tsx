@@ -25,7 +25,10 @@ import { MakeOfferModal } from "@/components/tasks/offers/MakeOfferModal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth/context";
+import { useUserStore } from "@/lib/state/userStore";
 import type { Task } from "@/types/task";
+import { applicationsApi } from "@/lib/api/endpoints/applications";
+import { tasksApi } from "@/lib/api/endpoints/tasks";
 
 const formatDate = (date: Date | string | undefined) => {
    if (!date) return "Flexible";
@@ -52,53 +55,33 @@ export default function TaskDetailsPage() {
    const [scrollY, setScrollY] = useState(0);
    const isMobile = useIsMobile();
    const { currentUser } = useAuth();
+   const userProfile = useUserStore((state) => state.user); // Get profile from global state
    
    // Check if current user is the task owner
-   const isOwner = Boolean(task && currentUser && task.requesterId === currentUser.uid);
-   
-   // State for user's own application on this task
-   const [myApplication, setMyApplication] = useState<any | null>(null);
-   const [loadingMyApplication, setLoadingMyApplication] = useState(false);
-
-   // Fetch user's own application for this task (if not owner)
-   useEffect(() => {
-      const fetchMyApplication = async () => {
-         if (!currentUser || isOwner || !taskId) return;
-         
-         setLoadingMyApplication(true);
-         try {
-            const { applicationsApi } = await import("@/lib/api/endpoints/applications");
-            const response = await applicationsApi.getMyApplications();
-            
-            // Find application for this specific task
-            const responseData = response as any;
-            const apps = Array.isArray(responseData?.data) ? responseData.data : [];
-            
-            const myApp = apps.find((app: any) => {
-               const appTaskId = typeof app.taskId === "object" ? app.taskId._id : app.taskId;
-               return appTaskId === taskId;
-            });
-            
-            if (myApp) {
-               console.log("✅ Found user's application for this task:", myApp);
-               setMyApplication(myApp);
-            }
-         } catch (error) {
-            console.error("Error fetching my application:", error);
-         } finally {
-            setLoadingMyApplication(false);
-         }
-      };
-
-      fetchMyApplication();
-   }, [currentUser, isOwner, taskId]);
+   // Compare MongoDB ObjectIds: profile._id with task.requesterId
+   const isOwner = (() => {
+      if (!task || !userProfile) return false;
+      
+      // Convert both to strings for comparison (handles ObjectId vs string)
+      const taskRequesterId = String(task.requesterId || '');
+      const userProfileId = String(userProfile._id || '');
+      
+      // Debug logging
+      console.log("🔍 isOwner Check:", {
+         taskRequesterId,
+         userProfileId,
+         match: taskRequesterId === userProfileId,
+         taskStatus: task.status,
+      });
+      
+      return taskRequesterId !== '' && userProfileId !== '' && taskRequesterId === userProfileId;
+   })();
 
    // Fetch task data from API
    useEffect(() => {
       const fetchTask = async () => {
          setLoading(true);
          try {
-            const { tasksApi } = await import("@/lib/api/endpoints/tasks");
             const response = await tasksApi.getTask(taskId);
             
             console.log("✅ Task details response:", response);
@@ -222,72 +205,12 @@ export default function TaskDetailsPage() {
                      {/* Tab Content */}
                      <div>
                         {activeTab === "offers" ? (
-                           isOwner ? (
-                              <TaskOffersSection
-                                 taskId={taskId}
-                                 isOwner={isOwner}
-                              />
-                           ) : loadingMyApplication ? (
-                              <div className="p-8 flex justify-center">
-                                 <LoadingSpinner size="md" />
-                              </div>
-                           ) : myApplication ? (
-                              // Show user's own application
-                              <div className="p-6">
-                                 <div className="bg-primary-50 border border-primary-200 rounded-xl p-5">
-                                    <div className="flex items-center justify-between mb-4">
-                                       <h3 className="font-bold text-secondary-900">Your Offer</h3>
-                                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                          myApplication.status === "pending" 
-                                             ? "bg-yellow-100 text-yellow-800" 
-                                             : myApplication.status === "accepted"
-                                             ? "bg-green-100 text-green-800"
-                                             : "bg-red-100 text-red-800"
-                                       }`}>
-                                          {myApplication.status.toUpperCase()}
-                                       </span>
-                                    </div>
-                                    <div className="space-y-3">
-                                       <div className="flex justify-between text-sm">
-                                          <span className="text-secondary-600">Proposed Budget:</span>
-                                          <span className="font-semibold text-secondary-900">
-                                             ₹{myApplication.proposedBudget?.amount?.toLocaleString() || 0}
-                                          </span>
-                                       </div>
-                                       {myApplication.proposedTime?.estimatedDuration && (
-                                          <div className="flex justify-between text-sm">
-                                             <span className="text-secondary-600">Estimated Time:</span>
-                                             <span className="font-semibold text-secondary-900">
-                                                {myApplication.proposedTime.estimatedDuration} hours
-                                             </span>
-                                          </div>
-                                       )}
-                                       {myApplication.coverLetter && (
-                                          <div className="mt-3 pt-3 border-t border-primary-200">
-                                             <p className="text-xs text-secondary-600 mb-1">Your Message:</p>
-                                             <p className="text-sm text-secondary-700">{myApplication.coverLetter}</p>
-                                          </div>
-                                       )}
-                                       <div className="flex justify-between text-xs text-secondary-500 pt-2">
-                                          <span>Submitted: {new Date(myApplication.createdAt).toLocaleDateString()}</span>
-                                       </div>
-                                    </div>
-                                 </div>
-                              </div>
-                           ) : (
-                              // Show make offer button
-                              <div className="p-8 text-center">
-                                 <p className="text-secondary-600 mb-4">
-                                    Interested in this task? Submit your offer!
-                                 </p>
-                                 <Button
-                                    onClick={() => setShowMakeOfferModal(true)}
-                                    className="bg-primary-600 hover:bg-primary-700"
-                                 >
-                                    Make an Offer
-                                 </Button>
-                              </div>
-                           )
+                           <TaskOffersSection
+                              taskId={taskId}
+                              isOwner={isOwner}
+                              userProfile={userProfile}
+                              onMakeOffer={() => setShowMakeOfferModal(true)}
+                           />
                         ) : (
                            <TaskQuestionsSection taskId={taskId} isOwner={isOwner} />
                         )}

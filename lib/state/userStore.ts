@@ -4,7 +4,8 @@ import { create } from "zustand";
 import type { OnboardingState } from "@/types/user";
 
 export type UserProfile = {
-   uid: string;
+   _id?: string; // MongoDB ObjectId - used for ownership checks
+   uid: string; // Firebase UID
    name?: string;
    email?: string;
    phone?: string;

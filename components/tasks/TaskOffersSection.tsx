@@ -20,32 +20,10 @@ interface TaskOffersSectionProps {
    taskId: string;
    isOwner?: boolean;
    onApplicationsCountChange?: (count: number) => void;
+   userProfile?: any | null;
+   onMakeOffer?: () => void;
 }
 
-// Mock user data (would come from API)
-const mockUserData: Record<
-   string,
-   { name: string; rating: number; completedTasks: number; verified: boolean }
-> = {
-   performer1: {
-      name: "Arun Singh",
-      rating: 4.9,
-      completedTasks: 47,
-      verified: true,
-   },
-   performer2: {
-      name: "Sunita Devi",
-      rating: 4.8,
-      completedTasks: 32,
-      verified: true,
-   },
-   performer3: {
-      name: "Ramesh Kumar",
-      rating: 4.7,
-      completedTasks: 28,
-      verified: false,
-   },
-};
 
 const getTimeAgo = (date: Date | string | undefined): string => {
    if (!date) return "Recently";
@@ -68,6 +46,8 @@ export function TaskOffersSection({
    taskId,
    isOwner = false,
    onApplicationsCountChange,
+   userProfile = null,
+   onMakeOffer,
 }: TaskOffersSectionProps) {
    const [applications, setApplications] = useState<TaskApplication[]>([]);
    const [loading, setLoading] = useState(true);
@@ -86,59 +66,21 @@ export function TaskOffersSection({
 
    useEffect(() => {
       const loadApplications = async () => {
-         // Only load if user is the owner
-         if (!isOwner) {
-            console.log("ℹ️ Not the task owner, skipping applications fetch");
-            setLoading(false);
-            return;
-         }
-
          try {
             setLoading(true);
             
-            // Fetch real applications for this task
+            // Fetch applications for this task
+            // Backend handles authorization: owners get all, taskers get only their own
             const response = await applicationsApi.getTaskApplications(taskId);
             
-            console.log("✅ Task applications raw response:", response);
-            console.log("✅ Response type:", typeof response);
-            console.log("✅ Response keys:", response ? Object.keys(response) : "null");
+            // Standardized response format: { applications: [...], pagination: {...} }
+            const apps = response.applications || [];
             
-            // Handle different response structures from API
-            const responseData = response as any;
-            let apps: any[] = [];
-            
-            // Try different paths to find the applications array
-            if (responseData?.data?.data?.applications) {
-               apps = responseData.data.data.applications;
-               console.log("✅ Found apps at data.data.applications");
-            } else if (responseData?.data?.applications) {
-               apps = responseData.data.applications;
-               console.log("✅ Found apps at data.applications");
-            } else if (responseData?.applications) {
-               apps = responseData.applications;
-               console.log("✅ Found apps at applications");
-            } else if (Array.isArray(responseData?.data)) {
-               apps = responseData.data;
-               console.log("✅ Found apps at data (array)");
-            } else if (Array.isArray(responseData)) {
-               apps = responseData;
-               console.log("✅ Found apps as direct array");
-            }
-            
-            console.log("✅ Extracted applications:", apps);
-            console.log("✅ Applications count:", apps.length);
-            
-            // Show all applications (pending, accepted, rejected)
+            // Show applications
             setApplications(apps);
          } catch (error: any) {
             console.error("Error loading applications:", error);
-            
-            // Check if it's a 403 authorization error - user is not task owner
-            const status = error?.status || error?.data?.status;
-            if (status === 403) {
-               console.log("ℹ️ User is not the task owner, cannot view applications");
-               setApplications([]);
-            }
+            setApplications([]);
          } finally {
             setLoading(false);
          }
@@ -147,7 +89,7 @@ export function TaskOffersSection({
       if (taskId) {
          loadApplications();
       }
-   }, [taskId, isOwner]);
+   }, [taskId]);
 
    // Notify parent of count changes in a separate effect to avoid render issues
    useEffect(() => {
@@ -164,14 +106,15 @@ export function TaskOffersSection({
    };
 
    const handleAcceptSuccess = () => {
-      // Remove accepted application from list
+      // Update the application status to 'accepted' in the local state
+      // so the poster can still see the accepted offer
       if (selectedApplication) {
          setApplications((prev) => {
-            const updated = prev.filter(
-               (app) => app._id !== selectedApplication._id
+            const updated = prev.map((app) =>
+               app._id === selectedApplication._id
+                  ? { ...app, status: "accepted" as const }
+                  : { ...app, status: "rejected" as const } // Other pending apps get rejected
             );
-            // Notify parent of updated count
-            onApplicationsCountChangeRef.current?.(updated.length);
             return updated;
          });
       }
@@ -182,13 +125,23 @@ export function TaskOffersSection({
       if (sortBy === "price-low")
          return a.proposedBudget.amount - b.proposedBudget.amount;
       if (sortBy === "rating") {
-         const userA = mockUserData[a.applicantUid];
-         const userB = mockUserData[b.applicantUid];
-         return (userB?.rating || 0) - (userA?.rating || 0);
+         const ratingA = a.applicantProfile?.rating || 0;
+         const ratingB = b.applicantProfile?.rating || 0;
+         return ratingB - ratingA;
       }
       // newest (default order)
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
    });
+
+   // Find accepted application to show prominently for task owners
+   const acceptedApplication = isOwner 
+      ? applications.find(app => app.status === "accepted")
+      : null;
+
+   // Filter out the accepted application from sorted list if it exists (shown separately)
+   const otherApplications = acceptedApplication 
+      ? sortedApplications.filter(app => app._id !== acceptedApplication._id)
+      : sortedApplications;
 
    if (loading) {
       return (
@@ -197,6 +150,75 @@ export function TaskOffersSection({
                <div className="w-12 h-12 border-4 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
                <p className="text-sm text-secondary-600">Loading offers...</p>
             </div>
+         </div>
+      );
+   }
+
+   // Find user's own application by comparing applicantId with userProfile._id
+   const myApplication = !isOwner && userProfile 
+      ? applications.find(app => app.applicantId === userProfile._id)
+      : null;
+
+   // If not owner and has application, show their own application
+   if (!isOwner && myApplication) {
+      return (
+         <div className="p-6">
+            <div className="bg-primary-50 border border-primary-200 rounded-xl p-5">
+               <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-secondary-900">Your Offer</h3>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                     myApplication.status === "pending" 
+                        ? "bg-yellow-100 text-yellow-800" 
+                        : myApplication.status === "accepted"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
+                  }`}>
+                     {myApplication.status.toUpperCase()}
+                  </span>
+               </div>
+               <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                     <span className="text-secondary-600">Proposed Budget:</span>
+                     <span className="font-semibold text-secondary-900">
+                        ₹{myApplication.proposedBudget?.amount?.toLocaleString() || 0}
+                     </span>
+                  </div>
+                  {myApplication.proposedTime?.estimatedDuration && (
+                     <div className="flex justify-between text-sm">
+                        <span className="text-secondary-600">Estimated Time:</span>
+                        <span className="font-semibold text-secondary-900">
+                           {myApplication.proposedTime.estimatedDuration} hours
+                        </span>
+                     </div>
+                  )}
+                  {myApplication.coverLetter && (
+                     <div className="mt-3 pt-3 border-t border-primary-200">
+                        <p className="text-xs text-secondary-600 mb-1">Your Message:</p>
+                        <p className="text-sm text-secondary-700">{myApplication.coverLetter}</p>
+                     </div>
+                  )}
+                  <div className="flex justify-between text-xs text-secondary-500 pt-2">
+                     <span>Submitted: {new Date(myApplication.createdAt).toLocaleDateString()}</span>
+                  </div>
+               </div>
+            </div>
+         </div>
+      );
+   }
+
+   // If not owner and no application, show make offer button
+   if (!isOwner && !myApplication) {
+      return (
+         <div className="p-8 text-center">
+            <p className="text-secondary-600 mb-4">
+               Interested in this task? Submit your offer!
+            </p>
+            <Button
+               onClick={onMakeOffer}
+               className="bg-primary-600 hover:bg-primary-700"
+            >
+               Make an Offer
+            </Button>
          </div>
       );
    }
@@ -264,8 +286,104 @@ export function TaskOffersSection({
                </div>
             ) : (
                <div className="space-y-3">
-                  {sortedApplications.map((application) => {
-                     const user = application.applicantProfile
+                  {/* Accepted Offer Section - Show prominently at the top */}
+                  {acceptedApplication && (
+                     <div className="mb-6">
+                        <div className="flex items-center gap-2 mb-3">
+                           <CheckCircle className="w-5 h-5 text-green-600" />
+                           <h3 className="font-bold text-green-800">Accepted Offer</h3>
+                        </div>
+                        <div className="p-4 md:p-6 rounded-xl bg-green-50 border-2 border-green-200">
+                           <div className="flex flex-col gap-4">
+                              {/* Header: Avatar + Name + Budget */}
+                              <div className="flex items-center justify-between gap-3">
+                                 <div className="flex gap-3">
+                                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-green-600 flex items-center justify-center text-white text-lg md:text-xl font-bold shrink-0 shadow-md">
+                                       {(acceptedApplication.applicantProfile?.name || "U").charAt(0)}
+                                    </div>
+                                    <div className="min-w-0">
+                                       <div className="flex items-center gap-2">
+                                          <h3 className="font-bold text-secondary-900 text-sm sm:text-base truncate">
+                                             {acceptedApplication.applicantProfile?.name || "Unknown User"}
+                                          </h3>
+                                          <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-semibold">
+                                             Assigned
+                                          </span>
+                                       </div>
+                                       <div className="flex items-center gap-2 text-xs text-secondary-500 mt-1">
+                                          <div className="flex items-center gap-1">
+                                             <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                                             <span className="font-semibold text-secondary-900">
+                                                {acceptedApplication.applicantProfile?.rating > 0 
+                                                   ? acceptedApplication.applicantProfile.rating.toFixed(1) 
+                                                   : "New"}
+                                             </span>
+                                          </div>
+                                          <span className="text-secondary-300">•</span>
+                                          <span>
+                                             {acceptedApplication.applicantProfile?.totalReviews || 0} reviews
+                                          </span>
+                                       </div>
+                                    </div>
+                                 </div>
+                                 <div className="text-right">
+                                    <div className="text-xl font-bold text-green-700 mb-1">
+                                       ₹{acceptedApplication.proposedBudget.amount.toLocaleString()}
+                                    </div>
+                                    {acceptedApplication.proposedTime?.estimatedDuration && (
+                                       <div className="text-xs text-secondary-500">
+                                          Est. {acceptedApplication.proposedTime.estimatedDuration}h
+                                       </div>
+                                    )}
+                                 </div>
+                              </div>
+
+                              {/* Cover Letter */}
+                              {acceptedApplication.coverLetter && (
+                                 <p className="text-sm text-secondary-700 leading-relaxed">
+                                    {acceptedApplication.coverLetter}
+                                 </p>
+                              )}
+
+                              {/* Actions */}
+                              <div className="flex gap-2 flex-wrap">
+                                 <Link href={`/profile/${acceptedApplication.applicantId}`}>
+                                    <Button
+                                       size="sm"
+                                       variant="outline"
+                                       className="border-green-300 text-green-700 hover:bg-green-50 rounded-lg text-xs font-medium"
+                                    >
+                                       View Profile
+                                    </Button>
+                                 </Link>
+                                 <Link href="/chat">
+                                    <Button
+                                       size="sm"
+                                       className="bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-semibold"
+                                    >
+                                       <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
+                                       Message Tasker
+                                    </Button>
+                                 </Link>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  )}
+
+                  {/* Other Applications - Show below the accepted one */}
+                  {otherApplications.length > 0 && (
+                     <>
+                        {acceptedApplication && (
+                           <h3 className="font-semibold text-secondary-700 text-sm mb-2">Other Offers</h3>
+                        )}
+                        {otherApplications.map((application) => {
+                     const user = application.applicantProfile || { 
+                        name: "Unknown User", 
+                        rating: 0, 
+                        totalReviews: 0,
+                        verified: false 
+                     };
 
                      return (
                         <div
@@ -285,23 +403,21 @@ export function TaskOffersSection({
                                           <h3 className="font-bold text-secondary-900 text-sm sm:text-base truncate">
                                              {user.name}
                                           </h3>
-                                          {user.verified && (
-                                             <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 shrink-0" />
-                                          )}
+                                          {/* Verified badge - can add later based on backend flag */}
                                        </div>
 
                                        <div className="flex items-center gap-2 text-xs text-secondary-500 mt-1">
                                           <div className="flex items-center gap-1">
                                              <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
                                              <span className="font-semibold text-secondary-900">
-                                                {user.rating}
+                                                {user.rating > 0 ? user.rating.toFixed(1) : "New"}
                                              </span>
                                           </div>
                                           <span className="text-secondary-300">
                                              •
                                           </span>
                                           <span>
-                                             {user.completedTasks} tasks
+                                             {user.totalReviews} {user.totalReviews === 1 ? "review" : "reviews"}
                                           </span>
                                        </div>
                                     </div>
@@ -375,17 +491,15 @@ export function TaskOffersSection({
 
                               {/* Actions */}
                               <div className="flex gap-2 w-full flex-wrap">
-                                 <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="text-secondary-600 hover:bg-secondary-50 rounded-lg text-[10px] md:text-xs font-medium"
-                                 >
-                                    <Link
-                                       href={`/profile/${application.applicantUid}`}
+                                 <Link href={`/profile/${application.applicantId}`}>
+                                    <Button
+                                       size="sm"
+                                       variant="ghost"
+                                       className="text-secondary-600 hover:bg-secondary-50 rounded-lg text-[10px] md:text-xs font-medium"
                                     >
                                        View Profile
-                                    </Link>
-                                 </Button>
+                                    </Button>
+                                 </Link>
 
                                  <Link href="/chat">
                                     <Button
@@ -413,6 +527,8 @@ export function TaskOffersSection({
                         </div>
                      );
                   })}
+                     </>
+                  )}
                </div>
             )}
          </div>

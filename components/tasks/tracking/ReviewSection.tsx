@@ -155,17 +155,17 @@ export function ReviewSection({
 
          {/* Reviews List */}
          {reviews.length === 0 && !userReview ? (
-            <div className="bg-secondary-50 rounded-lg p-6 md:p-8 text-center">
-               <Star className="w-10 h-10 md:w-12 md:h-12 text-secondary-300 mx-auto mb-3" />
-               <p className="text-sm md:text-base text-secondary-600 font-medium mb-1">
+            <div className="text-center py-8">
+               <Star className="w-12 h-12 text-secondary-400 mx-auto mb-3" />
+               <p className="text-sm text-secondary-600 mb-1">
                   No reviews yet
                </p>
-               <p className="text-xs md:text-sm text-secondary-500">
+               <p className="text-xs text-secondary-500">
                   {canReview && reviewedUserId && reviewedUserName
                      ? "Be the first to leave a review!"
                      : !reviewedUserId || !reviewedUserName
-                     ? "Unable to review: Missing user information."
-                     : "Reviews will appear here once submitted."}
+                     ? ""
+                     : "Reviews will appear here once submitted"}
                </p>
             </div>
          ) : (

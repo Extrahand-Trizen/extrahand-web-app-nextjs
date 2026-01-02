@@ -7,15 +7,22 @@ import { fetchWithAuth } from '../client';
 
 export interface Chat {
   _id: string;
-  participants: string[];
-  relatedTask?: string;
-  relatedApplication?: string;
+  chatId: string;  // Format: "chat_uid1_uid2"
+  participants: string[];  // Array of MongoDB user IDs
   lastMessage?: {
     text: string;
-    senderUid: string;
+    senderId: string;
     timestamp: Date;
   };
+  otherParticipant?: {   // Profile data from chat service
+    uid: string;
+    name: string;
+    profileImage?: string;
+  };
+  relatedTask?: string;
+  relatedApplication?: string;
   unreadCount: number;
+  isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -23,12 +30,31 @@ export interface Chat {
 export interface Message {
   _id: string;
   chatId: string;
-  senderUid: string;
+  senderId: string;
   text: string;
-  type: 'text' | 'image' | 'file';
-  replyTo?: string;
-  isRead: boolean;
+  type: 'text' | 'image' | 'file' | 'system';
+  status: 'sent' | 'delivered' | 'read' | 'sending' | 'failed';
+  metadata?: {
+    fileName?: string;
+    fileSize?: number;
+    fileType?: string;
+    fileUrl?: string;
+    replyTo?: string;
+  };
+  sender?: {             // Sender profile data
+    uid: string;
+    name: string;
+    profileImage?: string;
+  };
+  // Frontend-only fields for compatibility with old types
+  taskId?: string;
+  senderName?: string;
+  readBy?: Array<{
+    userId: string;
+    readAt: Date;
+  }>;
   createdAt: Date;
+  updatedAt?: Date;
 }
 
 export const chatsApi = {
@@ -37,7 +63,8 @@ export const chatsApi = {
    * GET /api/v1/chats
    */
   async getChats(): Promise<{ chats: Chat[] }> {
-    return fetchWithAuth('chats');
+    const response = await fetchWithAuth('chats');
+    return response.data || { chats: [] };
   },
 
   /**

@@ -13,10 +13,11 @@ export const applicationsApi = {
    * POST /api/v1/applications
    */
   async submitApplication(applicationData: CreateApplicationRequest): Promise<TaskApplication> {
-    return fetchWithAuth('applications', {
+    const response = await fetchWithAuth('applications', {
       method: 'POST',
       body: JSON.stringify(applicationData),
     });
+    return response.data || response;
   },
 
   /**
@@ -25,7 +26,18 @@ export const applicationsApi = {
    */
   async getApplications(params?: ApplicationQueryParams): Promise<ApplicationsResponse> {
     const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
-    return fetchWithAuth(`applications${queryString}`);
+    const response = await fetchWithAuth(`applications${queryString}`);
+    
+    // Handle standardized response format: { success, data, meta: { pagination } }
+    if (response.data && response.meta?.pagination) {
+      return {
+        applications: response.data,
+        pagination: response.meta.pagination,
+      };
+    }
+    
+    // Fallback for legacy format
+    return response.data || response;
   },
 
   /**
@@ -33,7 +45,8 @@ export const applicationsApi = {
    * GET /api/v1/applications/:id
    */
   async getApplication(applicationId: string): Promise<TaskApplication> {
-    return fetchWithAuth(`applications/${applicationId}`);
+    const response = await fetchWithAuth(`applications/${applicationId}`);
+    return response.data || response;
   },
 
   /**
@@ -44,10 +57,11 @@ export const applicationsApi = {
     applicationId: string,
     updateData: UpdateApplicationRequest
   ): Promise<TaskApplication> {
-    return fetchWithAuth(`applications/${applicationId}`, {
+    const response = await fetchWithAuth(`applications/${applicationId}`, {
       method: 'PUT',
       body: JSON.stringify(updateData),
     });
+    return response.data || response;
   },
 
   /**
@@ -55,7 +69,17 @@ export const applicationsApi = {
    * GET /api/v1/applications?taskId=:taskId
    */
   async getTaskApplications(taskId: string): Promise<ApplicationsResponse> {
-    return fetchWithAuth(`applications?taskId=${taskId}`);
+    const response = await fetchWithAuth(`applications?taskId=${taskId}`);
+    
+    // Handle standardized response format
+    if (response.data && response.meta?.pagination) {
+      return {
+        applications: response.data,
+        pagination: response.meta.pagination,
+      };
+    }
+    
+    return response.data || response;
   },
 
   /**
@@ -68,7 +92,17 @@ export const applicationsApi = {
       params.status = status as any;
     }
     const queryString = `?${new URLSearchParams(params as any).toString()}`;
-    return fetchWithAuth(`applications${queryString}`);
+    const response = await fetchWithAuth(`applications${queryString}`);
+    
+    // Handle standardized response format
+    if (response.data && response.meta?.pagination) {
+      return {
+        applications: response.data,
+        pagination: response.meta.pagination,
+      };
+    }
+    
+    return response.data || response;
   },
 };
 

@@ -143,7 +143,7 @@ export default function TasksPage() {
                params.sortBy = filters.sortBy;
             }
 
-            const response: TaskListResponse = await tasksApi.getTasks(params);
+            const response: TaskListResponse = await tasksApi.getPublicTasks(params);
 
             // Handle both wrapped and unwrapped responses
             setTasks(response.tasks || []);
@@ -307,7 +307,7 @@ export default function TasksPage() {
                                     if (filters.minBudget > 0) params.minBudget = filters.minBudget;
                                     if (filters.maxBudget < 100000) params.maxBudget = filters.maxBudget;
                                     if (filters.sortBy && filters.sortBy !== "nearest") params.sortBy = filters.sortBy;
-                                    const response: TaskListResponse = await tasksApi.getTasks(params);
+                                    const response: TaskListResponse = await tasksApi.getPublicTasks(params);
                                     setTasks(prev => [...prev, ...(response.tasks || [])]);
                                     setPagination(response.pagination || pagination);
                                  } catch (err: any) {

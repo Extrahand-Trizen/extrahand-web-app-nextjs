@@ -222,6 +222,12 @@ export function MyApplicationsContent({
                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
                   <div className="space-y-4 sm:space-y-6">
                      {applications.map((application) => {
+                        // Handle case where taskId might be null or not populated
+                        if (!application.taskId) {
+                           console.warn("Application missing taskId:", application._id);
+                           return null;
+                        }
+                        
                         const taskId =
                            typeof application.taskId === "string"
                               ? application.taskId
@@ -240,7 +246,7 @@ export function MyApplicationsContent({
                               }
                            />
                         );
-                     })}
+                     }).filter(Boolean)}
                   </div>
 
                   {/* Pagination (for future use) */}

@@ -68,6 +68,9 @@ export const authApi = {
          throw new Error(error.error || "Failed to complete OTP");
       }
 
+      // For web clients, backend returns:
+      // { success: true, profile: {...}, user: {...}, sessionId: "...", accessTokenExpiresAt: "..." }
+      // Tokens are set as HttpOnly cookies (not in response body)
       return response.json();
    },
 

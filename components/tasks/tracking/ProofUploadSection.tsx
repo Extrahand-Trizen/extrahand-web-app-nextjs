@@ -132,17 +132,20 @@ export function ProofUploadSection({
 
   // Submit proof
   const handleSubmit = async () => {
-    // Check if task has completion proof (images are saved to DB on upload)
-    if (!task.completionProof || task.completionProof.length === 0) {
+    // Check if there are uploaded images (local state) or existing proof
+    const hasProof = uploadedImages.length > 0 || (task.completionProof && task.completionProof.length > 0);
+    if (!hasProof) {
       toast.error("Please upload at least one proof image");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // No need to pass uploadedImages - they're already in the database
-      await onSubmitProof([], notes.trim() || undefined);
-      // Don't clear notes or local state - let parent handle refresh
+      // Pass uploadedImages to the submit handler
+      await onSubmitProof(uploadedImages, notes.trim() || undefined);
+      // Clear local state after successful submit
+      setUploadedImages([]);
+      setNotes("");
     } catch (error) {
       console.error("Submit proof error:", error);
       toast.error("Failed to submit proof");
@@ -268,7 +271,7 @@ export function ProofUploadSection({
   // Show empty state or upload form for taskers
   if (!canUpload) {
     // Show empty state for tasker when task is in progress but no proof yet
-    if (userRole === "tasker" && !hasExistingProof) {
+    if (!hasExistingProof) {
       return (
         <div className="bg-white rounded-xl shadow-sm border border-secondary-200 p-4 md:p-6">
           <div className="flex items-center gap-2 mb-4">
@@ -279,11 +282,15 @@ export function ProofUploadSection({
           </div>
           <div className="text-center py-8">
             <ImageIcon className="w-12 h-12 text-secondary-400 mx-auto mb-3" />
+            
             <p className="text-sm text-secondary-600">
               No proof of work uploaded yet
             </p>
             <p className="text-xs text-secondary-500 mt-1">
-              Upload proof when task is in progress
+              {userRole === "tasker"
+                ? "Upload proof when task is in progress"
+                : "Proof of work will be uploaded here"
+              }
             </p>
           </div>
         </div>
@@ -396,7 +403,7 @@ export function ProofUploadSection({
         {/* Submit Button */}
         <Button
           onClick={handleSubmit}
-          disabled={isSubmitting || !task.completionProof || task.completionProof.length === 0}
+          disabled={isSubmitting || (uploadedImages.length === 0 && (!task.completionProof || task.completionProof.length === 0))}
           className="w-full"
         >
           {isSubmitting ? (

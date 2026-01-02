@@ -11,6 +11,7 @@ import { reviewsApi } from "./endpoints/reviews";
 import { reportsApi } from "./endpoints/reports";
 import { authApi } from "./endpoints/auth";
 import { sessionsApi } from "./endpoints/sessions";
+import { completionApi } from "./endpoints/completion";
 
 export const api = {
    // Profile management
@@ -29,7 +30,7 @@ export const api = {
    ...reviewsApi,
 
    // Completion API (dynamic import)
-   ...(await import("./endpoints/completion")).completionApi,
+   ...completionApi,
 
    // Report management
    ...reportsApi,

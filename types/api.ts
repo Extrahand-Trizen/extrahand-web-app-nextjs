@@ -41,8 +41,10 @@ export interface CompleteOTPResponse {
       uid: string;
       phone: string | null;
    };
-   tokens: SessionTokens;
+   sessionId?: string;
+   tokens?: SessionTokens; // Optional - not returned for web clients (HttpOnly cookies)
    error?: string;
+   message?: string;
 }
 
 export interface PaginationParams {

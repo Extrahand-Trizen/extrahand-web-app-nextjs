@@ -7,6 +7,7 @@ export { TaskTrackingHeader } from "./TaskTrackingHeader";
 export { TaskStatusTimeline } from "./TaskStatusTimeline";
 export { TaskDetailsCard } from "./TaskDetailsCard";
 export { StatusUpdateSection } from "./StatusUpdateSection";
+export { ProofUploadForm } from "./ProofUploadForm";
 export { ProofUploadSection } from "./ProofUploadSection";
 export { ProofGallery } from "./ProofGallery";
 export { EmbeddedChat } from "./EmbeddedChat";

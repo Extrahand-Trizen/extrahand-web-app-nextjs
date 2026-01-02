@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth/context";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { ProfileSection } from "@/types/profile";
+import { ProfileSection, Review, WorkHistoryItem } from "@/types/profile";
 import { UserProfile } from "@/types/user";
 import {
    ProfileSidebar,
@@ -28,118 +28,9 @@ import {
    SheetTitle,
 } from "@/components/ui/sheet";
 import { ArrowLeft, Menu } from "lucide-react";
-
-const MOCK_USER: UserProfile = {
-   _id: "dev-user-1",
-   uid: "dev-user-1",
-   userType: "business",
-   name: "Anita Kapoor",
-   email: "anita.kapoor@example.com",
-   phone: "+91 98765 43210",
-   photoURL:
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400",
-   roles: ["tasker"],
-   location: {
-      type: "Point",
-      coordinates: [72.8777, 19.076],
-      city: "Mumbai",
-      state: "Maharashtra",
-   },
-   rating: 4.8,
-   totalReviews: 122,
-   totalTasks: 150,
-   completedTasks: 142,
-   isVerified: true,
-   isAadhaarVerified: true,
-   isEmailVerified: true,
-   isBankVerified: true,
-   isPanVerified: false,
-   isPhoneVerified: true,
-   isActive: true,
-   verificationBadge: "verified",
-   skills: {
-      list: [
-         { name: "Handyman", verified: true },
-         { name: "Assembly", verified: true },
-         { name: "Delivery", verified: false },
-      ],
-   },
-   business: {
-      description:
-         "Professional home services provider with 5+ years of experience. Specializing in handyman tasks, assembly, and delivery services across Mumbai.",
-   },
-   createdAt: new Date("2023-01-15"),
-   updatedAt: new Date(),
-};
-
-const MOCK_REVIEWS = [
-   {
-      id: "1",
-      taskId: "t1",
-      taskTitle: "Furniture Assembly",
-      reviewerId: "u1",
-      reviewerName: "Raj P.",
-      rating: 5,
-      comment: "Excellent work! Very professional and quick.",
-      createdAt: new Date("2024-11-20"),
-      role: "poster" as const,
-   },
-   {
-      id: "2",
-      taskId: "t2",
-      taskTitle: "Home Repair",
-      reviewerId: "u2",
-      reviewerName: "Priya S.",
-      rating: 5,
-      comment: "Fixed everything perfectly. Highly recommend!",
-      createdAt: new Date("2024-11-15"),
-      role: "poster" as const,
-   },
-   {
-      id: "3",
-      taskId: "t3",
-      taskTitle: "Package Delivery",
-      reviewerId: "u3",
-      reviewerName: "Amit K.",
-      rating: 4,
-      comment: "Good service, on time delivery.",
-      createdAt: new Date("2024-11-10"),
-      role: "poster" as const,
-   },
-];
-
-const MOCK_WORK_HISTORY = [
-   {
-      id: "1",
-      taskId: "t1",
-      title: "Furniture Assembly",
-      category: "Home Services",
-      completedAt: new Date("2024-11-20"),
-      amount: 800,
-      rating: 5,
-      role: "tasker" as const,
-   },
-   {
-      id: "2",
-      taskId: "t2",
-      title: "Home Repair",
-      category: "Home Services",
-      completedAt: new Date("2024-11-15"),
-      amount: 1200,
-      rating: 5,
-      role: "tasker" as const,
-   },
-   {
-      id: "3",
-      taskId: "t3",
-      title: "Package Delivery",
-      category: "Delivery",
-      completedAt: new Date("2024-11-10"),
-      amount: 300,
-      rating: 4,
-      role: "tasker" as const,
-   },
-];
+import { profilesApi } from "@/lib/api/endpoints/profiles";
+import { reviewsApi } from "@/lib/api/endpoints/reviews";
+import { toast } from "sonner";
 
 const VALID_SECTIONS: ProfileSection[] = [
    "overview",
@@ -170,10 +61,90 @@ function ProfilePageContent() {
    const router = useRouter();
    const searchParams = useSearchParams();
    const { userData, loading: authLoading, refreshUserData } = useAuth();
-   const user = (userData ?? MOCK_USER) as UserProfile;
+   
+   const [user, setUser] = useState<UserProfile | null>(userData);
+   const [reviews, setReviews] = useState<Review[]>([]);
+   const [workHistory, setWorkHistory] = useState<WorkHistoryItem[]>([]);
+   const [loadingProfile, setLoadingProfile] = useState(false);
+   const [loadingReviews, setLoadingReviews] = useState(false);
    const [isMobile, setIsMobile] = useState(false);
    const [section, setSection] = useState<ProfileSection>("overview");
    const [navOpen, setNavOpen] = useState(false);
+
+   // Fetch profile data on mount
+   useEffect(() => {
+      const fetchProfileData = async () => {
+         if (!userData?.uid) return;
+         
+         setLoadingProfile(true);
+         try {
+            const profileData = await profilesApi.me();
+            setUser(profileData as UserProfile);
+         } catch (error: any) {
+            console.error("Failed to fetch profile:", error);
+            toast.error("Failed to load profile data", {
+               description: error.message || "Please try again later.",
+            });
+         } finally {
+            setLoadingProfile(false);
+         }
+      };
+
+      if (userData) {
+         setUser(userData);
+         fetchProfileData();
+      }
+   }, [userData, toast]);
+
+   // Fetch reviews
+   useEffect(() => {
+      const fetchReviews = async () => {
+         if (!user?.uid) return;
+         
+         setLoadingReviews(true);
+         try {
+            console.log("🔍 Fetching reviews for user:", user.uid);
+            const response = await reviewsApi.getUserReviews(user.uid, { limit: 10 });
+            
+            // Check if response has reviews array
+            if (!response || !response.reviews || !Array.isArray(response.reviews)) {
+               console.log("No reviews found or invalid response format");
+               setReviews([]);
+               return;
+            }
+            
+            // Map API reviews to profile review format
+            const mappedReviews: Review[] = response.reviews.map((review: any) => ({
+               id: review._id,
+               taskId: review.taskId,
+               taskTitle: review.taskTitle || "Task",
+               reviewerId: review.reviewerUid,
+               reviewerName: review.reviewerName || "User",
+               reviewerPhoto: review.reviewerPhoto,
+               rating: review.rating,
+               comment: review.comment || "",
+               createdAt: new Date(review.createdAt),
+               role: "poster" as const, // Assuming reviews are from posters
+            }));
+            
+            console.log("✅ Reviews loaded:", mappedReviews.length);
+            setReviews(mappedReviews);
+         } catch (error: any) {
+            console.error("❌ Failed to fetch reviews (non-critical):", error.message || error);
+            // Silently fail - reviews are not critical for profile page to work
+            setReviews([]);
+         } finally {
+            setLoadingReviews(false);
+         }
+      };
+
+      if (user?.uid) {
+         fetchReviews();
+      }
+   }, [user?.uid]);
+
+   // TODO: Fetch work history from tasks API
+   // Currently work history endpoint doesn't exist, leaving empty for now
 
    useEffect(() => {
       const s = searchParams.get("section") as ProfileSection;
@@ -193,12 +164,31 @@ function ProfilePageContent() {
       window.history.pushState({}, "", `?section=${s}`);
    }, []);
 
-   const props = {
-      user,
-      onNavigate: goTo,
-      onSaveProfile: async () => {
+   const handleSaveProfile = async (data: Partial<UserProfile>) => {
+      try {
+         await profilesApi.upsertProfile(data);
+         toast.success("Profile updated successfully");
          await refreshUserData();
-      },
+         
+         // Refresh profile data
+         const updatedProfile = await profilesApi.me();
+         setUser(updatedProfile as UserProfile);
+      } catch (error: any) {
+         console.error("Failed to update profile:", error);
+         toast.error("Failed to update profile", {
+            description: error.message || "Please try again later.",
+         });
+         throw error;
+      }
+   };
+
+   const props = {
+      user: user!,
+      reviews,
+      workHistory,
+      loadingReviews,
+      onNavigate: goTo,
+      onSaveProfile: handleSaveProfile,
       onVerify: async (t: string) => {
          router.push(
             {
@@ -209,23 +199,53 @@ function ProfilePageContent() {
             }[t] || "/profile/verify"
          );
       },
-      onSaveNotifications: async () => {},
-      onSavePreferences: async () => {},
-      onChangePassword: async () => {},
-      onRevokeSession: async () => {},
-      onRevokeAllSessions: async () => {},
-      onUpdatePrivacy: async () => {},
+      onSaveNotifications: async () => {
+         // TODO: Implement when notification settings API is available
+         toast.info("Notification settings will be saved once backend API is ready");
+      },
+      onSavePreferences: async () => {
+         // TODO: Implement when preferences API is available
+         toast.info("Preferences will be saved once backend API is ready");
+      },
+      onChangePassword: async () => {
+         // TODO: Implement password change flow
+         toast.info("Password change feature coming soon");
+      },
+      onRevokeSession: async () => {
+         // TODO: Implement session revocation
+         toast.info("Session management feature coming soon");
+      },
+      onRevokeAllSessions: async () => {
+         // TODO: Implement revoke all sessions
+         toast.info("Session management feature coming soon");
+      },
+      onUpdatePrivacy: async () => {
+         // TODO: Implement privacy settings update
+         toast.info("Privacy settings will be saved once backend API is ready");
+      },
       onDeleteAccount: async () => {
-         router.push("/");
+         // TODO: Implement account deletion
+         if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+            toast.info("Account deletion feature coming soon");
+         }
       },
    };
 
-   if (authLoading)
+   if (authLoading || (loadingProfile && !user)) {
       return (
          <div className="flex items-center justify-center py-20">
             <LoadingSpinner size="lg" />
          </div>
       );
+   }
+
+   if (!user) {
+      return (
+         <div className="flex items-center justify-center py-20">
+            <p className="text-gray-500">Failed to load profile data</p>
+         </div>
+      );
+   }
 
    if (isMobile) {
       return (
@@ -325,8 +345,11 @@ export default function ProfilePage() {
 
 interface Props {
    user: UserProfile;
+   reviews?: Review[];
+   workHistory?: WorkHistoryItem[];
+   loadingReviews?: boolean;
    onNavigate: (s: ProfileSection) => void;
-   onSaveProfile: () => Promise<void>;
+   onSaveProfile: (data?: Partial<UserProfile>) => Promise<void>;
    onVerify: (t: string) => Promise<void>;
    onSaveNotifications: () => Promise<void>;
    onSavePreferences: () => Promise<void>;
@@ -346,8 +369,8 @@ function renderSection(s: ProfileSection, p: Props) {
             <PublicProfile
                user={p.user}
                isOwnProfile
-               reviews={MOCK_REVIEWS}
-               workHistory={MOCK_WORK_HISTORY}
+               reviews={p.reviews || []}
+               workHistory={p.workHistory || []}
             />
          );
       case "edit-profile":

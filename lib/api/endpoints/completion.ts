@@ -11,7 +11,6 @@ export const completionApi = {
    * Submit completion proof
    * Tasker submits proof for review when work is done
    * Automatically changes task status to 'review'
-   * Note: Images should already be uploaded via upload endpoint
    */
   async submitCompletionProof(
     taskId: string,
@@ -19,7 +18,10 @@ export const completionApi = {
   ): Promise<Task> {
     const response = await fetchWithAuth(`tasks/${taskId}/submit-proof`, {
       method: "POST",
-      body: JSON.stringify({ notes: data.notes }),
+      body: JSON.stringify({ 
+        proofUrls: data.proofUrls || [],
+        notes: data.notes 
+      }),
     });
     // Backend returns { success: true, data: task }
     return response.data || response;
