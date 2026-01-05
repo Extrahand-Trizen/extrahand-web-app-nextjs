@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, KeyboardEvent } from "react";
+import { useState, useRef, KeyboardEvent, useEffect } from "react";
 import { Send, Paperclip, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,20 +10,62 @@ interface MessageComposerProps {
    onSendMessage: (text: string) => Promise<void>;
    disabled?: boolean;
    placeholder?: string;
+   onTypingStart?: () => void;
+   onTypingStop?: () => void;
 }
 
 export function MessageComposer({
    onSendMessage,
    disabled = false,
    placeholder = "Type a message...",
+   onTypingStart,
+   onTypingStop,
 }: MessageComposerProps) {
    const [message, setMessage] = useState("");
    const [isSending, setIsSending] = useState(false);
+   const [isTyping, setIsTyping] = useState(false);
    const textareaRef = useRef<HTMLTextAreaElement>(null);
+   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+   // Handle typing events with debounce
+   useEffect(() => {
+      if (message.length > 0 && !isTyping) {
+         setIsTyping(true);
+         onTypingStart?.();
+      }
+
+      // Clear existing timeout
+      if (typingTimeoutRef.current) {
+         clearTimeout(typingTimeoutRef.current);
+      }
+
+      // Set new timeout to stop typing indicator after 2 seconds of no typing
+      if (message.length > 0) {
+         typingTimeoutRef.current = setTimeout(() => {
+            setIsTyping(false);
+            onTypingStop?.();
+         }, 2000);
+      } else if (isTyping) {
+         setIsTyping(false);
+         onTypingStop?.();
+      }
+
+      return () => {
+         if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+         }
+      };
+   }, [message]);
 
    const handleSend = async () => {
       const trimmedMessage = message.trim();
       if (!trimmedMessage || isSending || disabled) return;
+
+      // Stop typing indicator when sending
+      if (isTyping) {
+         setIsTyping(false);
+         onTypingStop?.();
+      }
 
       setIsSending(true);
       try {

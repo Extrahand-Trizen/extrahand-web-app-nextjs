@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import { format, isSameDay, isToday, isYesterday } from "date-fns";
 import { MessageBubble } from "./MessageBubble";
 import type { Message } from "@/types/chat";
@@ -17,13 +17,39 @@ export function MessageList({
    isLoading = false,
 }: MessageListProps) {
    const scrollRef = useRef<HTMLDivElement>(null);
+   const bottomRef = useRef<HTMLDivElement>(null);
 
-   useEffect(() => {
-      // Scroll to bottom when new messages arrive
+   // Aggressive auto-scroll to bottom
+   const scrollToBottom = useCallback(() => {
       if (scrollRef.current) {
          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
       }
-   }, [messages]);
+      // Also try scrollIntoView as backup
+      if (bottomRef.current) {
+         bottomRef.current.scrollIntoView({ block: 'end', inline: 'nearest' });
+      }
+   }, []);
+
+   // Scroll on messages change - multiple attempts
+   useEffect(() => {
+      // Immediate
+      scrollToBottom();
+      
+      // After 10ms (for DOM update)
+      const timer1 = setTimeout(scrollToBottom, 10);
+      
+      // After 100ms (for images/content)
+      const timer2 = setTimeout(scrollToBottom, 100);
+      
+      // After 300ms (final safety net)
+      const timer3 = setTimeout(scrollToBottom, 300);
+
+      return () => {
+         clearTimeout(timer1);
+         clearTimeout(timer2);
+         clearTimeout(timer3);
+      };
+   }, [messages, scrollToBottom]);
 
    const getDateLabel = (date: Date) => {
       if (isToday(date)) return "Today";
@@ -80,24 +106,42 @@ export function MessageList({
                {group.messages.map((message, index) => {
                   const isCurrentUser = message.senderId === currentUserId;
                   const prevMessage = group.messages[index - 1];
-                  const showAvatar =
-                     !prevMessage || prevMessage.senderId !== message.senderId;
-                  const showTimestamp =
-                     index === group.messages.length - 1 ||
-                     group.messages[index + 1]?.senderId !== message.senderId;
+                  
+                  // Show avatar if:
+                  // 1. First message in group, OR
+                  // 2. Different sender from previous, OR
+                  // 3. Same sender but more than 1 minutes gap
+                  const showAvatar = !prevMessage || 
+                     prevMessage.senderId !== message.senderId ||
+                     (new Date(message.createdAt).getTime() - new Date(prevMessage.createdAt).getTime()) > 1 * 60 * 1000;
+                  
+                  // Show timestamp if:
+                  // 1. Last message in group, OR
+                  // 2. Next message from different sender, OR
+                  // 3. Next message more than 1 minute later
+                  const nextMessage = group.messages[index + 1];
+                  // The original `showTimestamp` calculation is removed as it's now always true.
+                  // const showTimestamp =
+                  //    index === group.messages.length - 1 ||
+                  //    !nextMessage ||
+                  //    nextMessage.senderId !== message.senderId ||
+                  //    (new Date(nextMessage.createdAt).getTime() - new Date(message.createdAt).getTime()) > 1 * 60 * 1000;
 
                   return (
                      <MessageBubble
                         key={message._id}
                         message={message}
-                        isCurrentUser={isCurrentUser}
+                        isCurrentUser={message.senderId === currentUserId}
                         showAvatar={showAvatar}
-                        showTimestamp={showTimestamp}
+                        showTimestamp={true}
                      />
                   );
                })}
             </div>
          ))}
+         {/* Scroll anchor */}
+         <div ref={bottomRef} style={{ height: 1 }} />
       </div>
    );
 }
+

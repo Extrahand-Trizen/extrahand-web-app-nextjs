@@ -14,6 +14,7 @@ import { chatsApi } from "@/lib/api/endpoints/chats";
 import type { TaskChat, Message } from "@/types/chat";
 import { toast } from "sonner";
 import { useUserStore } from "@/lib/state/userStore";
+import { useChatSocket } from "@/lib/socket/hooks/useChatSocket";
 
 export default function ChatPage() {
   const router = useRouter();
@@ -28,6 +29,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const [isLoadingChats, setIsLoadingChats] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<Record<string, string[]>>({});
 
   // Load user's chats on mount
   useEffect(() => {
@@ -152,6 +154,10 @@ export default function ChatPage() {
               senderName = otherParticipant?.name || "User";
             }
 
+            // Determine initial message status
+            const initialStatus = m.status || "sent";
+            console.log(`📝 Message ${m._id} loaded with status:`, initialStatus, "from", m.senderId === userProfile._id ? "ME" : "OTHER");
+
             return {
               _id: m._id,
               chatId: m.chatId,
@@ -160,7 +166,7 @@ export default function ChatPage() {
               senderId: m.senderId,
               senderName: senderName,
               type: m.type,
-              status: m.status,
+              status: initialStatus,
               createdAt: new Date(m.createdAt),
               updatedAt: m.updatedAt ? new Date(m.updatedAt) : new Date(m.createdAt),
               readBy: m.readBy || [],
@@ -181,6 +187,144 @@ export default function ChatPage() {
 
     loadMessages();
   }, [activeChatId, messages]);
+
+  // Real-time chat: Listen for new messages via Socket.IO
+  const handleNewSocketMessage = useCallback((message: Message) => {
+    if (!userProfile?._id) return;
+    
+    // Only add if it's from the other user (our own messages are added optimistically)
+    if (message.senderId !== userProfile._id) {
+      const chatId = message.chatId;
+      
+      setMessages((prev) => {
+        const chatMessages = prev[chatId] || [];
+        
+        // Check if message already exists to avoid duplicates
+        if (chatMessages.some((m) => m._id === message._id)) {
+          return prev;
+        }
+        
+        return {
+          ...prev,
+          [chatId]: [...chatMessages, message],
+        };
+      });
+      
+      // Update last message in chat list
+      setChats((prevChats) =>
+        prevChats.map((chat) =>
+          chat.chatId === chatId
+            ? {
+                ...chat,
+                lastMessage: {
+                  text: message.text,
+                  senderId: message.senderId,
+                  timestamp: message.createdAt,
+                },
+                unreadCount: activeChatId === chatId ? 0 : (chat.unreadCount || 0) + 1,
+              }
+            : chat
+        )
+      );
+    }
+  }, [userProfile, activeChatId]);
+
+  // Handle typing indicators
+  const handleTyping = useCallback(
+    (data: { profileId: string; isTyping: boolean }) => {
+      if (!activeChatId) return;
+
+      console.log("👨‍💻 Typing event received:", data, "Current chat:", activeChatId);
+
+      setTypingUsers((prev) => {
+        const chatTyping = prev[activeChatId] || [];
+
+        if (data.isTyping) {
+          // Add user to typing list if not already there
+          if (!chatTyping.includes(data.profileId)) {
+            console.log("✅ Adding user to typing list:", data.profileId);
+            return {
+              ...prev,
+              [activeChatId]: [...chatTyping, data.profileId],
+            };
+          }
+        } else {
+          // Remove user from typing list
+          console.log("❌ Removing user from typing list:", data.profileId);
+          return {
+            ...prev,
+            [activeChatId]: chatTyping.filter((id) => id !== data.profileId),
+          };
+        }
+
+        return prev;
+      });
+    },
+    [activeChatId]
+  );
+
+  // Handle read receipts
+  const handleMessageRead = useCallback(
+    (data: { userId: string; chatId: string }) => {
+      console.log("✅ Message read event received:", data);
+      
+      // Only update if we're NOT the one who read (i.e., someone else read our messages)
+      if (data.userId === userProfile?._id) {
+        console.log("⏭️ Skipping - this is our own read receipt");
+        return;
+      }
+      
+      // Mark all OUR messages in this chat as read (if not already)
+      if (data.chatId) {
+        setMessages((prev) => {
+          const chatMessages = prev[data.chatId];
+          
+          if (!chatMessages) {
+            return prev;
+          }
+          
+          // Check if any of our messages need updating
+          const hasUnreadMessages = chatMessages.some(
+            (msg) => msg.senderId === userProfile?._id && msg.status !== "read"
+          );
+          
+          if (!hasUnreadMessages) {
+            console.log("⏭️ All our messages already marked as read");
+            return prev; // No update needed
+          }
+          
+          console.log(`📝 Updating unread messages to 'read' status`);
+          
+          // Create new array with updated messages (only our unread messages)
+          const updatedMessages = chatMessages.map((msg) => {
+            // Only update our messages that aren't already read
+            if (msg.senderId === userProfile?._id && msg.status !== "read") {
+              console.log(`✓ Message ${msg._id}: ${msg.status} -> read`);
+              return {
+                ...msg,
+                status: "read" as const,
+              };
+            }
+            return msg;
+          });
+          
+          return {
+            ...prev,
+            [data.chatId]: updatedMessages,
+          };
+        });
+      }
+    },
+    [userProfile?._id]
+  );
+
+  // Initialize Socket.IO for real-time updates
+  const { emitTypingStart, emitTypingStop } = useChatSocket({
+    chatId: activeChatId,
+    onNewMessage: handleNewSocketMessage,
+    onTyping: handleTyping,
+    onMessageRead: handleMessageRead,
+  });
 
   const activeChat = chats.find((c) => c.chatId === activeChatId) || null;
   const activeMessages = activeChatId ? messages[activeChatId] || [] : [];
@@ -323,6 +467,9 @@ export default function ChatPage() {
               onBack={handleBack}
               onViewTask={handleViewTask}
               isLoading={isLoadingMessages}
+              typingUsers={typingUsers[activeChatId] || []}
+              onTypingStart={emitTypingStart}
+              onTypingStop={emitTypingStop}
             />
           </div>
         </div>

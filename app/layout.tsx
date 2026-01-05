@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/auth/context";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { Toaster } from "@/components/ui/sonner";
+import { SocketProvider } from "@/lib/socket/SocketProvider";
 
 const inter = Inter({
    subsets: ["latin"],
@@ -28,11 +29,14 @@ export default function RootLayout({
          >
             <ErrorBoundary>
                <AuthProvider>
-                  <Toaster />
-                  {children}
+                  <SocketProvider>
+                     <Toaster />
+                     {children}
+                  </SocketProvider>
                </AuthProvider>
             </ErrorBoundary>
          </body>
       </html>
    );
 }
+

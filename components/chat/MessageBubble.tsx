@@ -38,7 +38,7 @@ export function MessageBubble({
    return (
       <div
          className={cn(
-            "flex gap-2",
+            "flex gap-2 my-1",
             isCurrentUser ? "flex-row-reverse" : "flex-row"
          )}
       >
@@ -48,7 +48,7 @@ export function MessageBubble({
                {message.senderName[0].toUpperCase()}
             </div>
          ) : (
-            <div className="w-0 shrink-0" />
+            <div className="w-7 shrink-0" />
          )}
 
          {/* Message Content */}

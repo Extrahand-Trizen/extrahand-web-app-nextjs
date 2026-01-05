@@ -6,7 +6,7 @@
  * Role-based views for poster and tasker
  */
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,8 @@ import { chatsApi } from "@/lib/api/endpoints/chats";
 import { toast } from "sonner";
 import { reportsApi } from "@/lib/api/endpoints/reports";
 import { completionApi } from "@/lib/api/endpoints/completion";
+import { useChatSocket } from "@/lib/socket/hooks/useChatSocket";
+import { useTaskSocket } from "@/lib/socket/hooks/useTaskSocket";
 import { useUserStore } from "@/lib/state/userStore";
 
 export default function TaskTrackingPage() {
@@ -313,6 +315,62 @@ export default function TaskTrackingPage() {
       loadChat();
    }, [task, userRole]);
 
+   // Real-time chat: Listen for new messages via Socket.IO
+   const handleNewSocketMessage = useCallback((message: Message) => {
+      // Only add if it's from the other user (our own messages are added optimistically)
+      if (message.senderId !== userProfile?._id) {
+         setChatMessages((prev) => {
+            // Check if message already exists to avoid duplicates
+            if (prev.some((m) => m._id === message._id)) {
+               return prev;
+            }
+            return [...prev, message];
+         });
+      }
+   }, [userProfile]);
+
+   // Initialize Socket.IO for real-time chat
+   useChatSocket({
+      chatId,
+      onNewMessage: handleNewSocketMessage,
+   });
+
+   // Real-time task updates: Listen for task status changes via Socket.IO
+   const handleTaskStatusChanged = useCallback((updatedTask: any) => {
+      console.log("📨 Real-time task status update:", updatedTask);
+      setTask(updatedTask as Task);
+      toast.success(`Task status updated to ${updatedTask.status}`);
+   }, []);
+
+   const handleProofSubmitted = useCallback((updatedTask: any) => {
+      console.log("📸 Real-time proof submission:", updatedTask);
+      setTask(updatedTask as Task);
+      toast.info("Completion proof has been submitted for review");
+   }, []);
+
+   const handleProofApproved = useCallback((updatedTask: any) => {
+      console.log("✅ Real-time proof approval:", updatedTask);
+      setTask(updatedTask as Task);
+      toast.success("Completion proof has been approved!");
+   }, []);
+
+   const handleProofRejected = useCallback((data: any) => {
+      console.log("❌ Real-time proof rejection:", data);
+      if (data.task) {
+         setTask(data.task as Task);
+      }
+      toast.error(`Proof rejected: ${data.reason || "Please revise and resubmit"}`);
+   }, []);
+
+   // Initialize Socket.IO for real-time task updates
+   useTaskSocket({
+      taskId: task?._id || null,
+      onStatusChanged: handleTaskStatusChanged,
+      onProofSubmitted: handleProofSubmitted,
+      onProofApproved: handleProofApproved,
+      onProofRejected: handleProofRejected,
+   });
+
    // Handle send message
    const handleSendMessage = async (text: string) => {
       if (!task || !chatId) return;
@@ -321,7 +379,7 @@ export default function TaskTrackingPage() {
          // Send message via API
          const newMessage = await chatsApi.sendMessage(chatId, text);
          
-         // Add message to local state immediately
+         // Add message to local state immediately (optimistic update)
          const formattedMessage: Message = {
             _id: newMessage._id,
             chatId: newMessage.chatId,

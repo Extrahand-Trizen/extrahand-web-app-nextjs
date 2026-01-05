@@ -24,6 +24,9 @@ interface ConversationViewProps {
    onBack?: () => void;
    onViewTask?: (taskId: string) => void;
    isLoading?: boolean;
+   typingUsers?: string[];
+   onTypingStart?: () => void;
+   onTypingStop?: () => void;
 }
 
 export function ConversationView({
@@ -34,6 +37,9 @@ export function ConversationView({
    onBack,
    onViewTask,
    isLoading = false,
+   typingUsers = [],
+   onTypingStart,
+   onTypingStop,
 }: ConversationViewProps) {
    if (!chat) {
       return (
@@ -177,14 +183,32 @@ export function ConversationView({
             </div>
          </div>
 
-         {/* Messages */}
-         <div className="flex-1 min-h-0 overflow-hidden bg-white">
-            <MessageList
-               messages={messages}
-               currentUserId={currentUserId}
-               isLoading={isLoading}
-            />
-         </div>
+          {/* Messages Container */}
+          <div className="flex-1 min-h-0 flex flex-col bg-white">
+             <div className="flex-1 overflow-hidden">
+                <MessageList
+                   messages={messages}
+                   currentUserId={currentUserId}
+                   isLoading={isLoading}
+                />
+             </div>
+             
+             {/* Typing Indicator - Fixed at bottom */}
+             {typingUsers.length > 0 && (
+                <div className="px-4 py-2 bg-gray-50 border-t border-gray-100">
+                   <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <div className="flex gap-1">
+                         <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                         <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                         <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                      </div>
+                      <span className="italic">
+                         {otherParticipant?.name || "User"} is typing...
+                      </span>
+                   </div>
+                </div>
+             )}
+          </div>
 
          {/* Input */}
          <div className="flex-none border-t border-gray-200 bg-white">
@@ -196,6 +220,8 @@ export function ConversationView({
                      ? "Type a message..."
                      : "This conversation is closed"
                }
+               onTypingStart={onTypingStart}
+               onTypingStop={onTypingStop}
             />
          </div>
       </div>
