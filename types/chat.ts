@@ -31,7 +31,7 @@ export interface Message {
   text: string;
   senderId: string;
   senderName: string;
-  type: 'text' | 'image' | 'system';
+  type: 'text' | 'image' | 'file' | 'system';
   status: MessageStatus;
   createdAt: Date;
   updatedAt?: Date;

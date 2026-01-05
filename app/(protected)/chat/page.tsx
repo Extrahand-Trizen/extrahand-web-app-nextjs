@@ -10,92 +10,95 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChatList, ConversationView } from "@/components/chat";
-import { chatsApi, type Message } from "@/lib/api/endpoints/chats";
+import { chatsApi } from "@/lib/api/endpoints/chats";
+import type { TaskChat, Message } from "@/types/chat";
 import { toast } from "sonner";
-
-// Convert backend chat to TaskChat format for components
-interface TaskChat {
-  _id: string;
-  chatId: string;
-  taskId: string;
-  taskMetadata: {
-    taskId: string;
-    taskTitle: string;
-    taskStatus: string;
-    posterId: string;
-    posterName: string;
-    taskerId?: string;
-    taskerName?: string;
-  };
-  participants: Array<{
-    uid: string;
-    name: string;
-    avatar?: string;
-    role: "poster" | "tasker";
-  }>;
-  lastMessage?: {
-    text: string;
-    senderId: string;
-    timestamp: Date;
-  };
-  unreadCount: number;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { useUserStore } from "@/lib/state/userStore";
 
 export default function ChatPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialChatId = searchParams.get("chatId");
+  
+  // Get current user profile from store (contains MongoDB _id)
+  const userProfile = useUserStore((state) => state.user);
 
   const [chats, setChats] = useState<TaskChat[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const [isLoadingChats, setIsLoadingChats] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string>("");
 
   // Load user's chats on mount
   useEffect(() => {
     async function loadChats() {
+      if (!userProfile?._id) {
+        console.log("Waiting for user profile to load...");
+        return;
+      }
+      
       try {
         setIsLoadingChats(true);
         const response = await chatsApi.getChats();
         
+        const currentUserId = userProfile._id;
+        
         // Convert backend chats to TaskChat format
-        const convertedChats: TaskChat[] = response.chats.map((chat: any) => ({
-          _id: chat._id,
-          chatId: chat.chatId,
-          taskId: chat.relatedTask || "",
-          taskMetadata: {
+        const convertedChats: TaskChat[] = response.chats.map((chat: any) => {
+          const otherParticipantId = chat.otherParticipant?._id;
+          
+          // Get actual requester and assignee IDs from task details
+          // DO NOT use participants array order - it's sorted, not role-based!
+          const taskRequesterId = chat.taskDetails?.requesterId;
+          const taskAssigneeId = chat.taskDetails?.assigneeId;
+          
+          // Determine if current user is poster (requester) or tasker (assignee)
+          // by comparing their ID with the actual task role IDs
+          const currentUserIsPoster = taskRequesterId === currentUserId;
+          const otherUserIsPoster = taskRequesterId === otherParticipantId;
+          
+          // Assign roles based on actual task roles
+          const currentUserRole = currentUserIsPoster ? "poster" : "tasker";
+          const otherUserRole = otherUserIsPoster ? "poster" : "tasker";
+
+          return {
+            _id: chat._id,
+            chatId: chat.chatId,
             taskId: chat.relatedTask || "",
-            taskTitle: "Task", // TODO: Fetch from task service if needed
-            taskStatus: "assigned" as const,
-            posterId: chat.participants[0] || "",
-            posterName: chat.otherParticipant?.name || "User",
-            taskerId: chat.participants[1],
-            taskerName: chat.otherParticipant?.name || "User",
-          },
-          participants: chat.participants.map((p: string, idx: number) => ({
-            uid: p,
-            name: idx === 0 ? "You" : chat.otherParticipant?.name || "User",
-            avatar: chat.otherParticipant?.profileImage,
-            role: idx === 0 ? "poster" : "tasker",
-          })),
-          lastMessage: chat.lastMessage,
-          unreadCount: chat.unreadCount || 0,
-          isActive: chat.isActive,
-          createdAt: new Date(chat.createdAt),
-          updatedAt: new Date(chat.updatedAt),
-        }));
+            taskMetadata: {
+              taskId: chat.relatedTask || "",
+              taskTitle: chat.taskDetails?.title || "Task",
+              taskStatus: (chat.taskDetails?.status || "assigned") as "assigned" | "open" | "started" | "in_progress" | "review" | "completed" | "cancelled",
+              posterId: taskRequesterId,
+              posterName: chat.taskDetails?.requesterName || "Task Owner",
+              taskerId: taskAssigneeId,
+              taskerName: chat.taskDetails?.assigneeName || "Tasker",
+            },
+            participants: [
+              // Current user
+              {
+                uid: currentUserId,
+                name: "You",
+                avatar: undefined,
+                role: currentUserRole,
+              },
+              // Other participant
+              {
+                uid: otherParticipantId,
+                name: chat.otherParticipant?.name || "User",
+                avatar: chat.otherParticipant?.profileImage,
+                role: otherUserRole,
+              },
+            ],
+            lastMessage: chat.lastMessage,
+            unreadCount: chat.unreadCount || 0,
+            isActive: chat.isActive,
+            createdAt: new Date(chat.createdAt),
+            updatedAt: new Date(chat.updatedAt),
+          };
+        });
 
         setChats(convertedChats);
-        
-        // Get current user ID from first chat
-        if (convertedChats.length > 0) {
-          setCurrentUserId(convertedChats[0].participants[0].uid);
-        }
       } catch (error: any) {
         console.error("Failed to load chats:", error);
         toast.error("Failed to load chats");
@@ -104,8 +107,10 @@ export default function ChatPage() {
       }
     }
 
-    loadChats();
-  }, []);
+    if (userProfile?._id) {
+      loadChats();
+    }
+  }, [userProfile?._id]);
 
   // Auto-select chat from URL
   useEffect(() => {
@@ -126,22 +131,42 @@ export default function ChatPage() {
         setIsLoadingMessages(true);
         const response = await chatsApi.getChatMessages(activeChatId);
         
+        // Get taskId from active chat
+        const chat = chats.find((c) => c.chatId === activeChatId);
+        const taskId = chat?.taskId || "";
+        
         setMessages((prev) => ({
           ...prev,
-          [activeChatId]: response.messages.map((m: any) => ({
-            _id: m._id,
-            chatId: m.chatId,
-            taskId: "", // Not needed for display
-            text: m.text,
-            senderId: m.senderId,
-            senderName: m.sender?.name || "User",
-            type: m.type,
-            status: m.status,
-            createdAt: new Date(m.createdAt),
-            updatedAt: m.updatedAt ? new Date(m.updatedAt) : new Date(m.createdAt),
-            readBy: m.readBy || [],
-            sender: m.sender,
-          })),
+          [activeChatId]: response.messages.map((m: any) => {
+            // Determine sender name
+            // If sender is current user, show "You"
+            // Otherwise show the other participant's name
+            let senderName = "User";
+            
+            if (userProfile?._id === m.senderId) {
+              // Message from current user
+              senderName = "You";
+            } else {
+              // Message from other participant - find them in participants array
+              const otherParticipant = chat?.participants.find(p => p.uid !== userProfile?._id);
+              senderName = otherParticipant?.name || "User";
+            }
+
+            return {
+              _id: m._id,
+              chatId: m.chatId,
+              taskId: taskId,
+              text: m.text,
+              senderId: m.senderId,
+              senderName: senderName,
+              type: m.type,
+              status: m.status,
+              createdAt: new Date(m.createdAt),
+              updatedAt: m.updatedAt ? new Date(m.updatedAt) : new Date(m.createdAt),
+              readBy: m.readBy || [],
+              sender: m.sender,
+            };
+          }),
         }));
 
         // Mark chat as read
@@ -172,7 +197,7 @@ export default function ChatPage() {
 
   const handleSendMessage = useCallback(
     async (text: string) => {
-      if (!activeChatId || !activeChat) return;
+      if (!activeChatId || !activeChat || !userProfile?._id) return;
 
       const optimisticId = `temp_${Date.now()}`;
       const optimistic: Message = {
@@ -180,7 +205,7 @@ export default function ChatPage() {
         chatId: activeChatId,
         taskId: activeChat.taskId,
         text,
-        senderId: currentUserId,
+        senderId: userProfile._id,
         senderName: "You",
         type: "text",
         status: "sending",
@@ -221,7 +246,7 @@ export default function ChatPage() {
                   ...chat,
                   lastMessage: {
                     text,
-                    senderId: currentUserId,
+                    senderId: userProfile._id,
                     timestamp: new Date(),
                   },
                 }
@@ -242,7 +267,7 @@ export default function ChatPage() {
         toast.error("Failed to send message");
       }
     },
-    [activeChatId, activeChat, currentUserId]
+    [activeChatId, activeChat, userProfile?._id]
   );
 
   const handleViewTask = useCallback(
@@ -278,7 +303,7 @@ export default function ChatPage() {
           >
             <ChatList
               chats={chats}
-              currentUserId={currentUserId}
+              currentUserId={userProfile?._id || ""}
               activeChat={activeChatId}
               onChatSelect={handleChatSelect}
             />
@@ -293,7 +318,7 @@ export default function ChatPage() {
             <ConversationView
               chat={activeChat}
               messages={activeMessages}
-              currentUserId={currentUserId}
+              currentUserId={userProfile?._id || ""}
               onSendMessage={handleSendMessage}
               onBack={handleBack}
               onViewTask={handleViewTask}

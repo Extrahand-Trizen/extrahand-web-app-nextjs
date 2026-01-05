@@ -39,6 +39,7 @@ import type {
 import type { Message } from "@/types/chat";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
 import { reviewsApi } from "@/lib/api/endpoints/reviews";
+import { chatsApi } from "@/lib/api/endpoints/chats";
 import { toast } from "sonner";
 import { reportsApi } from "@/lib/api/endpoints/reports";
 import { completionApi } from "@/lib/api/endpoints/completion";
@@ -60,6 +61,8 @@ export default function TaskTrackingPage() {
    const [activeTab, setActiveTab] = useState("overview");
    const [chatMessages, setChatMessages] = useState<Message[]>([]);
    const [isLoadingChat, setIsLoadingChat] = useState(false);
+   const [chatId, setChatId] = useState<string | null>(null);
+   const [chatError, setChatError] = useState<string | null>(null);
    
    // Get user profile from store (contains MongoDB _id)
    const userProfile = useUserStore((state) => state.user);
@@ -251,116 +254,92 @@ export default function TaskTrackingPage() {
       }
    };
 
-   // Load chat messages - Same conversation, but perspective flips based on role
+   // Load chat - Start or get existing chat for this task
    useEffect(() => {
-      if (!task) return;
+      if (!task || userRole === "viewer") return;
 
       const loadChat = async () => {
          setIsLoadingChat(true);
-         // TODO: Replace with actual API call
-         // const chat = await api.getChatByTaskId(task._id);
-         // const messages = await api.getChatMessages(chat.chatId);
-
-         // Fixed conversation - same messages, but sender flips based on role
-         const taskerUserId = task.assigneeUid || "mock_tasker_123";
-         const taskerUserName = task.assignedToName || "Tasker";
-         const posterUserId = task.requesterId || "mock_poster_123";
-         const posterUserName = task.requesterName || "Task Owner";
-         const currentUserId = currentUser?.uid || "current_user";
-
-         // Base conversation structure - same messages regardless of role
-         const baseConversation: Array<{
-            _id: string;
-            text: string;
-            fromTasker: boolean; // true = originally from tasker, false = from poster
-            createdAt: number;
-         }> = [
-            {
-               _id: "msg1",
-               text: "Hello! I'm ready to start working on this task.",
-               fromTasker: true, // Tasker says this
-               createdAt: Date.now() - 3600000,
-            },
-            {
-               _id: "msg2",
-               text: "Great! Let me know if you have any questions.",
-               fromTasker: false, // Poster says this
-               createdAt: Date.now() - 3300000,
-            },
-            {
-               _id: "msg3",
-               text: "I'll keep you updated on the progress.",
-               fromTasker: true, // Tasker says this
-               createdAt: Date.now() - 1800000,
-            },
-            {
-               _id: "msg4",
-               text: "Perfect! Looking forward to seeing the results.",
-               fromTasker: false, // Poster says this
-               createdAt: Date.now() - 900000,
-            },
-         ];
-
-         // Map messages - flip perspective based on current role
-         const mockMessages: Message[] = baseConversation.map((baseMsg) => {
-            // Determine if this message is from current user based on role
-            // If viewing as poster: poster messages = "You", tasker messages = "other"
-            // If viewing as tasker: tasker messages = "You", poster messages = "other"
-            const isFromCurrentUser =
-               (userRole === "poster" && !baseMsg.fromTasker) ||
-               (userRole === "tasker" && baseMsg.fromTasker);
-
-            return {
-               _id: baseMsg._id,
-               chatId: `task_${task._id}_chat`,
-               taskId: task._id,
-               text: baseMsg.text,
-               senderId: isFromCurrentUser
-                  ? currentUserId
-                  : baseMsg.fromTasker
-                  ? taskerUserId
-                  : posterUserId,
-               senderName: isFromCurrentUser
-                  ? "You"
-                  : baseMsg.fromTasker
-                  ? taskerUserName
-                  : posterUserName,
-               type: "text",
-               status: "read",
-               createdAt: new Date(baseMsg.createdAt),
-               readBy: [],
-            };
-         });
-
-         setChatMessages(mockMessages);
-         setIsLoadingChat(false);
+         setChatError(null);
+         
+         try {
+            // Start or get existing chat for this task
+            const response = await chatsApi.startChatForTask(task._id);
+            const chat = response.chat;
+            
+            if (chat) {
+               setChatId(chat.chatId);
+               
+               // Fetch messages for this chat
+               const messagesResponse = await chatsApi.getChatMessages(chat.chatId);
+               const messages = messagesResponse.messages || [];
+               
+               // Map messages to the expected format with safe date parsing
+               const formattedMessages: Message[] = messages.map((msg: any) => {
+                  // Safe date parsing - fallback to current date if invalid
+                  let parsedDate = new Date();
+                  if (msg.createdAt) {
+                     const tempDate = new Date(msg.createdAt);
+                     if (!isNaN(tempDate.getTime())) {
+                        parsedDate = tempDate;
+                     }
+                  }
+                  
+                  return {
+                     _id: msg._id,
+                     chatId: msg.chatId,
+                     taskId: task._id,
+                     text: msg.text || "",
+                     senderId: msg.senderId,
+                     senderName: msg.sender?.name || "User",
+                     type: msg.type || "text",
+                     status: msg.status || "read",
+                     createdAt: parsedDate,
+                     readBy: msg.readBy || [],
+                  };
+               });
+               
+               setChatMessages(formattedMessages);
+            }
+         } catch (error: any) {
+            console.error("Failed to load chat:", error);
+            const errorMessage = error?.message || "Failed to load chat";
+            setChatError(errorMessage);
+         } finally {
+            setIsLoadingChat(false);
+         }
       };
 
       loadChat();
-   }, [task, userRole, currentUser]);
+   }, [task, userRole]);
 
    // Handle send message
    const handleSendMessage = async (text: string) => {
-      if (!task) return;
+      if (!task || !chatId) return;
 
-      // TODO: Replace with actual API call
-      // await api.sendMessage(chatId, text);
+      try {
+         // Send message via API
+         const newMessage = await chatsApi.sendMessage(chatId, text);
+         
+         // Add message to local state immediately
+         const formattedMessage: Message = {
+            _id: newMessage._id,
+            chatId: newMessage.chatId,
+            taskId: task._id,
+            text: newMessage.text,
+            senderId: newMessage.senderId,
+            senderName: "You",
+            type: newMessage.type || "text",
+            status: newMessage.status || "sent",
+            createdAt: new Date(newMessage.createdAt),
+            readBy: [],
+         };
 
-      // Mock: Add message to local state
-      const newMessage: Message = {
-         _id: `msg_${Date.now()}`,
-         chatId: `task_${task._id}_chat`,
-         taskId: task._id,
-         text,
-         senderId: currentUser?.uid || "current_user",
-         senderName: "You",
-         type: "text",
-         status: "sent",
-         createdAt: new Date(),
-         readBy: [],
-      };
-
-      setChatMessages([...chatMessages, newMessage]);
+         setChatMessages([...chatMessages, formattedMessage]);
+      } catch (error) {
+         console.error("Failed to send message:", error);
+         toast.error("Failed to send message");
+      }
    };
 
    // Handle create review
@@ -657,20 +636,20 @@ export default function TaskTrackingPage() {
          </div>
 
          {/* Floating Chat Widget - Available for poster and tasker */}
-         {userRole !== "viewer" && (
+         {userRole !== "viewer" && !chatError && (
             <FloatingChatWidget
                taskId={task._id}
                otherUserId={
                   userRole === "poster"
-                     ? task.assigneeUid || "mock_tasker_123"
-                     : task.requesterId || "mock_poster_123"
+                     ? (task as any).assigneeId || ""
+                     : task.requesterId || ""
                }
                otherUserName={
                   userRole === "poster"
-                     ? task.assignedToName || "Tasker"
+                     ? (task as any).assigneeName || "Tasker"
                      : task.requesterName || "Task Owner"
                }
-               currentUserId={currentUser?.uid || "current_user"}
+               currentUserId={userProfile?._id || ""}
                messages={chatMessages}
                onSendMessage={handleSendMessage}
                isLoading={isLoadingChat}

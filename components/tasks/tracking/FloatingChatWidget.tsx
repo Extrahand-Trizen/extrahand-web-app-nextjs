@@ -88,7 +88,16 @@ export function FloatingChatWidget({
       }
    };
 
+   // Safe date parsing helper
+   const parseDate = (dateInput: Date | string | undefined): Date => {
+      if (!dateInput) return new Date();
+      const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
+      return isNaN(date.getTime()) ? new Date() : date;
+   };
+
    const getDateLabel = (date: Date) => {
+      // Ensure we have a valid date
+      if (!date || isNaN(date.getTime())) return "Today";
       if (isToday(date)) return "Today";
       if (isYesterday(date)) return "Yesterday";
       return format(date, "MMM d");
@@ -188,17 +197,17 @@ export function FloatingChatWidget({
                   </div>
                ) : (
                   messages.map((msg, index) => {
-                     const showDate =
-                        index === 0 ||
-                        new Date(msg.createdAt).getDate() !==
-                           new Date(messages[index - 1].createdAt).getDate();
+                     const msgDate = parseDate(msg.createdAt);
+                     const prevMsgDate = index > 0 ? parseDate(messages[index - 1].createdAt) : null;
+                     const showDate = index === 0 || 
+                        (prevMsgDate && msgDate.getDate() !== prevMsgDate.getDate());
 
                      return (
-                        <div key={msg._id}>
+                        <div key={msg._id || `msg-${index}`}>
                            {showDate && (
                               <div className="flex justify-center my-3">
                                  <span className="text-xs text-secondary-500 px-3 py-1 bg-white border border-secondary-200 rounded-full shadow-sm">
-                                    {getDateLabel(new Date(msg.createdAt))}
+                                    {getDateLabel(msgDate)}
                                  </span>
                               </div>
                            )}

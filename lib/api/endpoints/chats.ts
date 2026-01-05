@@ -96,7 +96,13 @@ export const chatsApi = {
     limit: number = 50
   ): Promise<{ messages: Message[]; pagination: any }> {
     const queryString = `?page=${page}&limit=${limit}`;
-    return fetchWithAuth(`chats/${chatId}/messages${queryString}`);
+    const response = await fetchWithAuth(`chats/${chatId}/messages${queryString}`);
+    // API returns: { success, data: [...], pagination }
+    // We need: { messages: [...], pagination }
+    return {
+      messages: response.data || [],
+      pagination: response.pagination || {}
+    };
   },
 
   /**
@@ -109,7 +115,7 @@ export const chatsApi = {
     type: 'text' | 'image' | 'file' = 'text',
     replyTo?: string
   ): Promise<Message> {
-    return fetchWithAuth(`chats/${chatId}/messages`, {
+    const response = await fetchWithAuth(`chats/${chatId}/messages`, {
       method: 'POST',
       body: JSON.stringify({
         text,
@@ -117,6 +123,8 @@ export const chatsApi = {
         replyTo,
       }),
     });
+    // API returns: { success, data: { message: {...} } }
+    return response.data?.message || response.data || response;
   },
 
   /**
@@ -135,6 +143,20 @@ export const chatsApi = {
    */
   async getChatDetails(chatId: string): Promise<Chat> {
     return fetchWithAuth(`chats/${chatId}`);
+  },
+
+  /**
+   * Start a chat for a task (with validation)
+   * POST /api/v1/chats/task/:taskId/start
+   * 
+   * This validates that the current user is either the poster or assigned tasker
+   * before allowing chat creation.
+   */
+  async startChatForTask(taskId: string): Promise<{ chat: Chat }> {
+    const response = await fetchWithAuth(`chats/task/${taskId}/start`, {
+      method: 'POST',
+    });
+    return response.data || { chat: null };
   },
 };
 

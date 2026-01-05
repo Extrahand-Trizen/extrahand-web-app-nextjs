@@ -3,7 +3,7 @@
 import { ArrowLeft, MoreVertical, ExternalLink, Flag, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback,AvatarImage } from "@/components/ui/avatar";
 import {
    DropdownMenu,
    DropdownMenuContent,
@@ -117,9 +117,14 @@ export function ConversationView({
 
                {otherParticipant && (
                   <>
-                     <div className="w-9 h-9 rounded-full bg-gray-700 text-white flex items-center justify-center text-sm font-medium shrink-0">
-                        {otherParticipant.name[0].toUpperCase()}
-                     </div>
+                     <Avatar className="w-9 h-9">
+                        {otherParticipant.avatar && (
+                           <AvatarImage src={otherParticipant.avatar} alt={otherParticipant.name} />
+                        )}
+                        <AvatarFallback className="bg-gray-700 text-white text-sm font-medium">
+                           {otherParticipant.name[0].toUpperCase()}
+                        </AvatarFallback>
+                     </Avatar>
                      <div className="flex-1 min-w-0">
                         <h2 className="text-sm font-semibold text-gray-900 truncate">
                            {otherParticipant.name}
