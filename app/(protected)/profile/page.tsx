@@ -426,13 +426,7 @@ function renderSection(s: ProfileSection, p: Props) {
             />
          );
       case "addresses":
-         return (
-            <AddressesSection
-               onDeleteAddress={console.log}
-               onSetDefault={console.log}
-               onSaveAddress={console.log}
-            />
-         );
+         return <AddressesSection />;
       case "notifications":
          return (
             <NotificationsSection

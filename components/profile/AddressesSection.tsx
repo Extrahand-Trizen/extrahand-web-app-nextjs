@@ -5,7 +5,7 @@
  * Manage saved addresses for task locations
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,9 @@ import {
    X,
 } from "lucide-react";
 import { SavedAddress, AddressType } from "@/types/profile";
+import { addressesApi } from "@/lib/api/endpoints/addresses";
+import { toast } from "sonner";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 interface AddressesSectionProps {
    addresses?: SavedAddress[];
@@ -34,69 +37,17 @@ interface AddressesSectionProps {
    onSaveAddress?: (address: Partial<SavedAddress>) => void;
 }
 
-// Mock addresses for development
-const mockAddresses: SavedAddress[] = [
-   {
-      id: "addr1",
-      type: "home",
-      label: "Home",
-      name: "Anita Kapoor",
-      addressLine1: "Flat 402, Sunrise Apartments",
-      addressLine2: "Sector 15, Koregaon Park",
-      landmark: "Near Phoenix Mall",
-      city: "Pune",
-      state: "Maharashtra",
-      pinCode: "411001",
-      country: "India",
-      phone: "+91 98765 43210",
-      isDefault: true,
-      isVerified: true,
-      coordinates: { lat: 18.5362, lng: 73.8939 },
-      createdAt: new Date("2024-01-15"),
-   },
-   {
-      id: "addr2",
-      type: "work",
-      label: "Office",
-      name: "Anita Kapoor",
-      addressLine1: "WeWork, Tower B, 5th Floor",
-      addressLine2: "Magarpatta City",
-      city: "Pune",
-      state: "Maharashtra",
-      pinCode: "411028",
-      country: "India",
-      phone: "+91 98765 43210",
-      isDefault: false,
-      isVerified: true,
-      coordinates: { lat: 18.5089, lng: 73.926 },
-      createdAt: new Date("2024-02-20"),
-   },
-   {
-      id: "addr3",
-      type: "other",
-      label: "Parents' Home",
-      name: "Suresh Kapoor",
-      addressLine1: "12, Shanti Nagar",
-      landmark: "Opposite City Hospital",
-      city: "Mumbai",
-      state: "Maharashtra",
-      pinCode: "400001",
-      country: "India",
-      phone: "+91 99887 76655",
-      alternatePhone: "+91 22 2345 6789",
-      isDefault: false,
-      isVerified: false,
-      createdAt: new Date("2024-03-10"),
-   },
-];
+
 
 export function AddressesSection({
-   addresses = mockAddresses,
+   addresses: propAddresses,
    onEditAddress,
    onDeleteAddress,
    onSetDefault,
    onSaveAddress,
 }: AddressesSectionProps) {
+   const [addresses, setAddresses] = useState<SavedAddress[]>(propAddresses || []);
+   const [loading, setLoading] = useState(false);
    const [expandedId, setExpandedId] = useState<string | null>(null);
 
    // Internal modal state
@@ -104,6 +55,28 @@ export function AddressesSection({
    const [editingAddress, setEditingAddress] = useState<
       SavedAddress | undefined
    >(undefined);
+
+   // Fetch addresses on mount
+   useEffect(() => {
+      const fetchAddresses = async () => {
+         setLoading(true);
+         try {
+            const data = await addressesApi.getAddresses();
+            setAddresses(data);
+         } catch (error: any) {
+            console.error('Failed to fetch addresses:', error);
+            toast.error('Failed to load addresses', {
+               description: error.message || 'Please try again later'
+            });
+         } finally {
+            setLoading(false);
+         }
+      };
+      
+      if (!propAddresses) {
+         fetchAddresses();
+      }
+   }, [propAddresses]);
 
    // Internal handlers
    const handleAddAddress = () => {
@@ -117,14 +90,75 @@ export function AddressesSection({
       if (onEditAddress) onEditAddress(address);
    };
 
-   const handleSaveAddress = (data: Partial<SavedAddress>) => {
+   const handleSaveAddress = async (data: Partial<SavedAddress>) => {
       if (onSaveAddress) {
          onSaveAddress(data);
-      } else {
-         console.log("Address saved:", data);
+         setShowAddressModal(false);
+         setEditingAddress(undefined);
+         return;
       }
-      setShowAddressModal(false);
-      setEditingAddress(undefined);
+
+      try {
+         if (editingAddress) {
+            // Update existing address
+            const updated = await addressesApi.updateAddress(editingAddress.id, data);
+            setAddresses(prev => prev.map(addr => 
+               addr.id === editingAddress.id ? updated : addr
+            ));
+            toast.success('Address updated successfully');
+         } else {
+            // Add new address
+            const newAddress = await addressesApi.addAddress(data);
+            setAddresses(prev => [...prev, newAddress]);
+            toast.success('Address added successfully');
+         }
+         setShowAddressModal(false);
+         setEditingAddress(undefined);
+      } catch (error: any) {
+         console.error('Failed to save address:', error);
+         toast.error('Failed to save address', {
+            description: error.message || 'Please try again later'
+         });
+      }
+   };
+
+   const handleDeleteAddress = async (id: string) => {
+      if (onDeleteAddress) {
+         onDeleteAddress(id);
+         return;
+      }
+
+      try {
+         await addressesApi.deleteAddress(id);
+         setAddresses(prev => prev.filter(addr => addr.id !== id));
+         toast.success('Address deleted successfully');
+      } catch (error: any) {
+         console.error('Failed to delete address:', error);
+         toast.error('Failed to delete address', {
+            description: error.message || 'Please try again later'
+         });
+      }
+   };
+
+   const handleSetDefault = async (id: string) => {
+      if (onSetDefault) {
+         onSetDefault(id);
+         return;
+      }
+
+      try {
+         const updated = await addressesApi.setDefaultAddress(id);
+         setAddresses(prev => prev.map(addr => ({
+            ...addr,
+            isDefault: addr.id === id
+         })));
+         toast.success('Default address updated');
+      } catch (error: any) {
+         console.error('Failed to set default address:', error);
+         toast.error('Failed to set default address', {
+            description: error.message || 'Please try again later'
+         });
+      }
    };
 
    const getTypeIcon = (type: AddressType) => {
@@ -144,6 +178,14 @@ export function AddressesSection({
       if(address.isDefault) return "bg-primary-100 text-primary-700";
       return "bg-secondary-100 text-secondary-700";
    };
+
+   if (loading) {
+      return (
+         <div className="flex items-center justify-center py-20">
+            <LoadingSpinner size="lg" />
+         </div>
+      );
+   }
 
    return (
       <div className="max-w-4xl space-y-4 sm:space-y-6">
@@ -181,8 +223,8 @@ export function AddressesSection({
                         )
                      }
                      onEdit={() => handleEditAddress(address)}
-                     onDelete={() => onDeleteAddress?.(address.id)}
-                     onSetDefault={() => onSetDefault?.(address.id)}
+                     onDelete={() => handleDeleteAddress(address.id)}
+                     onSetDefault={() => handleSetDefault(address.id)}
                      getTypeIcon={getTypeIcon}
                      getTypeColor={getTypeColor}
                   />
