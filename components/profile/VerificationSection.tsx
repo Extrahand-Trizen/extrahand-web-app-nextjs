@@ -1,425 +1,310 @@
-// VerificationSection.tsx - Complete Mobile Responsive
 "use client";
 
-import React from "react";
 import { useRouter } from "next/navigation";
+import { ChevronRight, CheckCircle, Shield, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-   CheckCircle2,
-   AlertCircle,
-   Clock,
-   Phone,
-   Mail,
-   Fingerprint,
-   Building2,
-   Shield,
-   ChevronRight,
-   ExternalLink,
-   FileText,
-   Briefcase,
-} from "lucide-react";
 import { UserProfile } from "@/types/user";
-import { VerificationStatus } from "@/types/profile";
 
 interface VerificationSectionProps {
-   user: UserProfile;
-   onVerify: (type: string) => void;
+  user: UserProfile;
+  onVerify?: (type: string) => void;
 }
 
 interface VerificationItem {
-   id: string;
-   type: string;
-   label: string;
-   description: string;
-   icon: React.ReactNode;
-   status: VerificationStatus;
-   verifiedAt?: Date;
-   whyItMatters: string;
-   action?: string;
-   route?: string;
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  route: string;
+  isVerified: boolean;
+  verifiedAt?: Date;
+  required?: boolean;
+  businessOnly?: boolean;
 }
 
-export function VerificationSection({
-   user,
-   onVerify,
-}: VerificationSectionProps) {
-   const router = useRouter();
+export function VerificationSection({ user }: VerificationSectionProps) {
+  const router = useRouter();
 
-   // Base verifications for all users
-   const baseVerifications: VerificationItem[] = [
-      {
-         id: "phone",
-         type: "phone",
-         label: "Phone Number",
-         description: user.isPhoneVerified
-            ? `+91 ${maskPhone(user.phone || "")}`
-            : user.phone
-            ? "Verification pending"
-            : "Not provided",
-         icon: <Phone className="w-4 h-4 sm:w-5 sm:h-5" />,
-         status: user.isPhoneVerified ? "verified" : "not_started",
-         verifiedAt: user.phoneVerifiedAt
-            ? new Date(user.phoneVerifiedAt)
-            : undefined,
-         whyItMatters: "Required for task communications and account recovery",
-         action: user.isPhoneVerified ? undefined : "Verify Phone",
-         route: "/profile/verify/phone",
-      },
-      {
-         id: "email",
-         type: "email",
-         label: "Email Address",
-         description: user.isEmailVerified
-            ? maskEmail(user.email || "")
-            : user.email
-            ? "Verification pending"
-            : "Not provided",
-         icon: <Mail className="w-4 h-4 sm:w-5 sm:h-5" />,
-         status: user.isEmailVerified ? "verified" : "not_started",
-         verifiedAt: user.emailVerifiedAt
-            ? new Date(user.emailVerifiedAt)
-            : undefined,
-         whyItMatters: "Receive important updates and notifications",
-         action: user.isEmailVerified ? undefined : "Verify Email",
-         route: "/profile/verify/email",
-      },
-      {
-         id: "aadhaar",
-         type: "aadhaar",
-         label: "Aadhaar Verification",
-         description: user.isAadhaarVerified
-            ? user.maskedAadhaar || "Identity verified"
-            : "Government ID verification",
-         icon: <Fingerprint className="w-4 h-4 sm:w-5 sm:h-5" />,
-         status: user.isAadhaarVerified ? "verified" : "not_started",
-         verifiedAt: user.aadhaarVerifiedAt
-            ? new Date(user.aadhaarVerifiedAt)
-            : undefined,
-         whyItMatters:
-            "Builds trust with other users and unlocks higher task values",
-         action: user.isAadhaarVerified ? undefined : "Verify Aadhaar",
-         route: "/profile/verify/aadhaar",
-      },
-      {
-         id: "bank",
-         type: "bank",
-         label: "Bank Account",
-         description:
-            user.isBankVerified && user.bankAccount
-               ? `${user.bankAccount.bankName} - ${user.bankAccount.maskedAccountNumber}`
-               : "Add bank account for payouts",
-         icon: <Building2 className="w-4 h-4 sm:w-5 sm:h-5" />,
-         status: user.isBankVerified ? "verified" : "not_started",
-         verifiedAt: user.bankVerifiedAt
-            ? new Date(user.bankVerifiedAt)
-            : undefined,
-         whyItMatters: "Required to receive payments for completed tasks",
-         action: user.isBankVerified ? undefined : "Add Bank Account",
-         route: "/profile/verify/bank",
-      },
-   ];
+  console.log(user);
+  // Individual verifications - for all users
+  const individualVerifications: VerificationItem[] = [
+    {
+      id: "phone",
+      type: "phone",
+      title: "Phone Number",
+      description: "Verified during signup via Firebase",
+      route: "", // No route - already verified
+      isVerified: true, // Always verified via Firebase
+      verifiedAt: user.createdAt, // Use account creation date
+      required: true,
+    },
+    {
+      id: "email",
+      type: "email",
+      title: "Email Address",
+      description: user.isEmailVerified ? `Verified ${user.email}` : "Verify your email address",
+      route: "/profile/verify/email",
+      isVerified: user.isEmailVerified || false,
+      verifiedAt: user.emailVerifiedAt,
+      required: true,
+    },
+    {
+      id: "aadhaar",
+      type: "aadhaar",
+      title: "Aadhaar Verification",
+      description: user.isAadhaarVerified
+        ? `Verified ${user.maskedAadhaar || "XXXX XXXX XXXX"}`
+        : "Verify your identity with Aadhaar",
+      route: "/profile/verify/aadhaar",
+      isVerified: user.isAadhaarVerified || false,
+      verifiedAt: user.aadhaarVerifiedAt,
+      required: false,
+    },
+    {
+      id: "bank",
+      type: "bank",
+      title: "Bank Account",
+      description: user.isBankVerified
+        ? `Verified ${user?.maskedBankAccount}`
+        : "Verify your bank account",
+      route: "/profile/verify/bank",
+      isVerified: user.isBankVerified || false,
+      verifiedAt: user.bankVerifiedAt,
+      required: false,
+    },
+  ];
 
-   // PAN verification for business accounts
-   const panVerification: VerificationItem = {
+  // Business verifications - only for business accounts
+  const businessVerifications: VerificationItem[] = user.userType === "business" ? [
+    {
       id: "pan",
       type: "pan",
-      label: "PAN Verification",
-      description: user.isPanVerified
-         ? user.maskedPan || "PAN verified"
-         : "Required for business accounts",
-      icon: <FileText className="w-4 h-4 sm:w-5 sm:h-5" />,
-      status: user.isPanVerified ? "verified" : "not_started",
-      verifiedAt: user.panVerifiedAt ? new Date(user.panVerifiedAt) : undefined,
-      whyItMatters: "Required for tax compliance and business transactions",
-      action: user.isPanVerified ? undefined : "Verify PAN",
+      title: "PAN Verification",
+      description: user.business?.pan?.isPANVerified
+        ? `Verified ${user.maskedPan || user.business?.pan?.maskedPAN || "XXXXX****X"}`
+        : "Verify your PAN for business operations",
       route: "/profile/verify/pan",
-   };
+      isVerified: user.business?.pan?.isPANVerified || false,
+      verifiedAt: user.business?.pan?.panVerifiedAt,
+      required: true,
+      businessOnly: true,
+    },
+    {
+      id: "gst",
+      type: "gst",
+      title: "GST Verification",
+      description: user.business?.isGSTVerified
+        ? `Verified ${user.business?.gstNumber || "GST Number"}`
+        : "Verify your GST number for tax compliance",
+      route: "/profile/verify/gst",
+      isVerified: user.business?.isGSTVerified || false,
+      verifiedAt: user.business?.gstVerifiedAt,
+      businessOnly: true,
+    },
+    // TODO: Implement business bank verification in backend first
+    // {
+    //   id: "business-bank",
+    //   type: "business-bank",
+    //   title: "Business Bank Account",
+    //   description: user.business?.bankAccount?.isVerified
+    //     ? `Verified ${user.business.bankAccount.accountHolderName}`
+    //     : "Verify your business bank account",
+    //   route: "/profile/verify/business-bank",
+    //   isVerified: user.business?.bankAccount?.isVerified || false,
+    //   verifiedAt: user.business?.bankAccount?.verifiedAt,
+    //   required: true,
+    //   businessOnly: true,
+    // },
+  ] : [];
 
-   // Include PAN verification only for business accounts
-   const verifications: VerificationItem[] =
-      user.userType === "business"
-         ? [...baseVerifications, panVerification]
-         : baseVerifications;
+  const handleNavigate = (route: string) => {
+    router.push(route);
+  };
 
-   const verifiedCount = verifications.filter(
-      (v) => v.status === "verified"
-   ).length;
-   const totalCount = verifications.length;
+  const getVerificationIcon = (item: VerificationItem) => {
+    if (item.isVerified) {
+      return <CheckCircle className="w-5 h-5 text-green-600" />;
+    }
+    if (item.required) {
+      return <AlertCircle className="w-5 h-5 text-amber-600" />;
+    }
+    return <Shield className="w-5 h-5 text-gray-400" />;
+  };
 
-   return (
-      <div className="max-w-4xl space-y-4 sm:space-y-6">
-         {/* Header */}
-         <div>
-            <h2 className="text-base sm:text-lg font-semibold text-gray-900">
-               Verifications
-            </h2>
-            <p className="text-xs sm:text-sm text-gray-500 mt-1">
-               Verify your identity to build trust and unlock more features
-            </p>
-         </div>
+  const getStatusBadge = (item: VerificationItem) => {
+    if (item.isVerified) {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          Verified
+        </span>
+      );
+    }
+    if (item.required) {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+          Required
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+        Optional
+      </span>
+    );
+  };
 
-         {/* Summary Card */}
-         <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5">
-            <div className="flex items-center justify-between">
-               <div className="flex items-center gap-2 sm:gap-3">
-                  <div
-                     className={cn(
-                        "w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shrink-0",
-                        verifiedCount === totalCount
-                           ? "bg-green-100"
-                           : "bg-amber-100"
-                     )}
-                  >
-                     <Shield
-                        className={cn(
-                           "w-5 h-5 sm:w-6 sm:h-6",
-                           verifiedCount === totalCount
-                              ? "text-green-600"
-                              : "text-amber-600"
-                        )}
-                     />
+  return (
+    <div className="max-w-4xl space-y-6">
+      {/* Header */}
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">Verifications</h2>
+        <p className="text-sm text-gray-500 mt-1">
+          Verify your identity to build trust and unlock features
+        </p>
+      </div>
+
+      {/* Individual Verifications */}
+      <div className="bg-white rounded-lg border border-gray-200">
+        <div className="px-4 py-3 sm:px-5 sm:py-4 bg-gray-50 border-b border-gray-200">
+          <h3 className="text-sm font-semibold text-gray-900">Individual Verifications</h3>
+          <p className="text-xs text-gray-500 mt-0.5">Required for all users</p>
+        </div>
+        <div className="divide-y divide-gray-100">
+          {individualVerifications.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => handleNavigate(item.route)}
+              className="w-full px-4 py-4 sm:px-5 sm:py-5 hover:bg-gray-50 transition-colors text-left group"
+            >
+              <div className="flex items-center gap-4">
+                <div className="flex-shrink-0">
+                  {getVerificationIcon(item)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="text-sm font-semibold text-gray-900">{item.title}</h4>
+                    {getStatusBadge(item)}
                   </div>
-                  <div>
-                     <h3 className="text-xs sm:text-sm font-medium text-gray-900">
-                        Verification Status
-                     </h3>
-                     <p className="text-xs sm:text-sm text-gray-500">
-                        {verifiedCount} of {totalCount} verifications complete
-                     </p>
-                  </div>
-               </div>
-               <Badge
-                  variant="secondary"
-                  className={cn(
-                     "text-[10px] sm:text-xs shrink-0",
-                     verifiedCount === totalCount
-                        ? "bg-green-100 text-green-700"
-                        : "bg-amber-100 text-amber-700"
+                  <p className="text-sm text-gray-500">{item.description}</p>
+                  {item.verifiedAt && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      Verified on {new Date(item.verifiedAt).toLocaleDateString()}
+                    </p>
                   )}
-               >
-                  {verifiedCount === totalCount
-                     ? "Fully Verified"
-                     : "Incomplete"}
-               </Badge>
-            </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" />
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
 
-            {/* Progress Bar */}
-            <div className="mt-4">
-               <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                     className={cn(
-                        "h-full rounded-full transition-all",
-                        verifiedCount === totalCount
-                           ? "bg-green-500"
-                           : "bg-amber-500"
-                     )}
-                     style={{ width: `${(verifiedCount / totalCount) * 100}%` }}
-                  />
-               </div>
-            </div>
-         </div>
-
-         {/* Verification Items */}
-         <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
-            {verifications.map((item) => (
-               <VerificationRow
-                  key={item.id}
-                  item={item}
-                  onVerify={() => {
-                     if (item.route) {
-                        router.push(item.route);
-                     } else {
-                        onVerify(item.type);
-                     }
-                  }}
-               />
+      {/* Business Verifications - Only for business accounts */}
+      {user.userType === "business" && businessVerifications.length > 0 && (
+        <div className="bg-white rounded-lg border border-gray-200">
+          <div className="px-4 py-3 sm:px-5 sm:py-4 bg-primary-50 border-b border-primary-200">
+            <h3 className="text-sm font-semibold text-primary-900">Business Verifications</h3>
+            <p className="text-xs text-primary-700 mt-0.5">Required for business operations</p>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {businessVerifications.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => handleNavigate(item.route)}
+                className="w-full px-4 py-4 sm:px-5 sm:py-5 hover:bg-gray-50 transition-colors text-left group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex-shrink-0">
+                    {getVerificationIcon(item)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="text-sm font-semibold text-gray-900">{item.title}</h4>
+                      {getStatusBadge(item)}
+                    </div>
+                    <p className="text-sm text-gray-500">{item.description}</p>
+                    {item.verifiedAt && (
+                      <p className="text-xs text-gray-400 mt-1">
+                        Verified on {new Date(item.verifiedAt).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" />
+                </div>
+              </button>
             ))}
-         </div>
+          </div>
+        </div>
+      )}
 
-         {/* View All Link */}
-         <div className="flex justify-center">
-            <Button
-               variant="ghost"
-               size="sm"
-               onClick={() => router.push("/profile/verify")}
-               className="text-xs text-gray-500 hover:text-gray-700"
-            >
-               View All Verifications
-               <ExternalLink className="w-3 h-3 ml-1.5" />
-            </Button>
-         </div>
-
-         {/* Trust Info */}
-         <div className="bg-gray-50 rounded-lg p-4 sm:p-5">
-            <h3 className="text-xs sm:text-sm font-medium text-gray-900 mb-2">
-               Why Verification Matters
-            </h3>
-            <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-gray-600">
-               <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 mt-0.5 shrink-0" />
-                  <span>Verified profiles get 3x more task offers</span>
-               </li>
-               <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 mt-0.5 shrink-0" />
-                  <span>
-                     Access higher value tasks with complete verification
-                  </span>
-               </li>
-               <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 mt-0.5 shrink-0" />
-                  <span>Build trust with task posters and taskers</span>
-               </li>
-            </ul>
-         </div>
-      </div>
-   );
-}
-
-interface VerificationRowProps {
-   item: VerificationItem;
-   onVerify: () => void;
-}
-
-function VerificationRow({ item, onVerify }: VerificationRowProps) {
-   return (
-      <div className="px-4 py-3 sm:px-5 sm:py-4">
-         <div className="flex items-start gap-3 sm:gap-4">
-            <div
-               className={cn(
-                  "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0",
-                  item.status === "verified" ? "bg-green-100" : "bg-gray-100"
-               )}
-            >
-               <span
-                  className={cn(
-                     item.status === "verified"
-                        ? "text-green-600"
-                        : "text-gray-400"
-                  )}
-               >
-                  {item.icon}
-               </span>
+      {/* Trust Level Info */}
+      <div className="bg-gradient-to-br from-primary-50 to-primary-100/50 rounded-lg p-4 sm:p-5 border border-primary-200">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-gray-900">Trust Level</h3>
+          {user.userType === "business" && user.business?.verificationStatus ? (
+            <span className={cn(
+              "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold",
+              user.business.verificationStatus.badge === "enterprise" && "bg-green-100 text-green-800",
+              user.business.verificationStatus.badge === "trusted" && "bg-purple-100 text-purple-800",
+              user.business.verificationStatus.badge === "verified" && "bg-blue-100 text-blue-800",
+              (user.business.verificationStatus.badge === "basic" || user.business.verificationStatus.badge === "none") && "bg-yellow-100 text-yellow-800"
+            )}>
+              {user.business.verificationStatus.badge?.toUpperCase() || "BASIC"}
+            </span>
+          ) : (
+            <span className={cn(
+              "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold",
+              user.verificationBadge === "trusted" && "bg-green-100 text-green-800",
+              user.verificationBadge === "verified" && "bg-blue-100 text-blue-800",
+              user.verificationBadge === "basic" && "bg-yellow-100 text-yellow-800",
+              !user.verificationBadge && "bg-gray-100 text-gray-800"
+            )}>
+              {user.verificationBadge?.toUpperCase() || "NONE"}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex-1">
+            <div className="flex items-center justify-between text-sm mb-2">
+              <span className="text-gray-600">Progress</span>
+              <span className="font-semibold text-gray-900">
+                {user.userType === "business" && user.business?.verificationStatus ? (
+                  `Level ${user.business.verificationStatus.level || 0}/3`
+                ) : (
+                  user.verificationBadge === "trusted" ? "100%" :
+                  user.verificationBadge === "verified" ? "66%" :
+                  user.verificationBadge === "basic" ? "33%" : "0%"
+                )}
+              </span>
             </div>
-
-            <div className="flex-1 min-w-0">
-               <div className="flex items-center gap-2 flex-wrap">
-                  <h4 className="text-xs sm:text-sm font-medium text-gray-900 truncate">
-                     {item.label}
-                  </h4>
-                  <StatusBadge status={item.status} />
-               </div>
-               <p className="text-xs sm:text-sm text-gray-500 mt-0.5 truncate">
-                  {item.description}
-               </p>
-               <p className="text-[10px] sm:text-xs text-gray-400 mt-1 line-clamp-2">
-                  {item.whyItMatters}
-               </p>
+            <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className={cn(
+                  "h-full rounded-full transition-all duration-500",
+                  user.userType === "business" && user.business?.verificationStatus ? (
+                    user.business.verificationStatus.level === 3 ? "bg-green-600 w-full" :
+                    user.business.verificationStatus.level === 2 ? "bg-purple-600 w-2/3" :
+                    user.business.verificationStatus.level === 1 ? "bg-blue-600 w-1/3" :
+                    "bg-yellow-500 w-0"
+                  ) : (
+                    user.verificationBadge === "trusted" ? "bg-green-600 w-full" :
+                    user.verificationBadge === "verified" ? "bg-blue-600 w-2/3" :
+                    user.verificationBadge === "basic" ? "bg-yellow-600 w-1/3" :
+                    "bg-gray-400 w-0"
+                  )
+                )}
+              />
             </div>
-
-            {item.action && (
-               <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onVerify}
-                  className="shrink-0 text-xs h-8 px-2 sm:px-3 hidden sm:flex"
-               >
-                  {item.action}
-               </Button>
-            )}
-
-            {item.status === "verified" && item.verifiedAt && (
-               <span className="text-[10px] sm:text-xs text-gray-400 shrink-0 hidden sm:block">
-                  {formatDate(item.verifiedAt)}
-               </span>
-            )}
-         </div>
-
-         {/* Mobile action button */}
-         {item.action && (
-            <Button
-               variant="outline"
-               size="sm"
-               onClick={onVerify}
-               className="w-full mt-3 text-xs h-8 sm:hidden"
-            >
-               {item.action}
-               <ChevronRight className="w-3 h-3 ml-1" />
-            </Button>
-         )}
+          </div>
+        </div>
+        <p className="text-xs text-gray-600 mt-3">
+          {user.userType === "business" ? (
+            "Complete more business verifications to unlock higher trust levels and premium features"
+          ) : (
+            "Complete more verifications to increase your trust level and unlock premium features"
+          )}
+        </p>
       </div>
-   );
+    </div>
+  );
 }
-
-interface StatusBadgeProps {
-   status: VerificationStatus;
-}
-
-function StatusBadge({ status }: StatusBadgeProps) {
-   const config = {
-      verified: {
-         icon: <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" />,
-         label: "Verified",
-         className: "bg-green-100 text-green-700",
-      },
-      pending: {
-         icon: <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />,
-         label: "Pending",
-         className: "bg-amber-100 text-amber-700",
-      },
-      not_started: {
-         icon: <AlertCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3" />,
-         label: "Not Started",
-         className: "bg-gray-100 text-gray-600",
-      },
-      failed: {
-         icon: <AlertCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3" />,
-         label: "Failed",
-         className: "bg-red-100 text-red-700",
-      },
-      expired: {
-         icon: <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />,
-         label: "Expired",
-         className: "bg-red-100 text-red-700",
-      },
-   };
-
-   const { icon, label, className } = config[status];
-
-   return (
-      <Badge
-         variant="secondary"
-         className={cn("text-[10px] sm:text-xs gap-1 shrink-0", className)}
-      >
-         {icon}
-         {label}
-      </Badge>
-   );
-}
-
-// Helper functions
-function maskPhone(phone: string): string {
-   const digits = phone.replace(/\D/g, "");
-   if (digits.length >= 10) {
-      return `${digits.slice(0, 2)}****${digits.slice(-4)}`;
-   }
-   return phone;
-}
-
-function maskEmail(email: string): string {
-   const [local, domain] = email.split("@");
-   if (local.length > 2) {
-      return `${local.slice(0, 2)}***@${domain}`;
-   }
-   return email;
-}
-
-function formatDate(date: Date): string {
-   return date.toLocaleDateString("en-IN", {
-      month: "short",
-      year: "numeric",
-   });
-}
-
-export default VerificationSection;

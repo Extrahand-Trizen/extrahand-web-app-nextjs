@@ -31,6 +31,7 @@ import { ArrowLeft, Menu } from "lucide-react";
 import { profilesApi } from "@/lib/api/endpoints/profiles";
 import { reviewsApi } from "@/lib/api/endpoints/reviews";
 import { toast } from "sonner";
+import { privacyApi } from "@/lib/api/endpoints/privacy";
 
 const VALID_SECTIONS: ProfileSection[] = [
    "overview",
@@ -60,7 +61,7 @@ const SECTION_TITLES: Record<ProfileSection, string> = {
 function ProfilePageContent() {
    const router = useRouter();
    const searchParams = useSearchParams();
-   const { userData, loading: authLoading, refreshUserData } = useAuth();
+   const { userData, loading: authLoading, refreshUserData, logout } = useAuth();
    
    const [user, setUser] = useState<UserProfile | null>(userData);
    const [reviews, setReviews] = useState<Review[]>([]);
@@ -219,14 +220,30 @@ function ProfilePageContent() {
          // TODO: Implement revoke all sessions
          toast.info("Session management feature coming soon");
       },
-      onUpdatePrivacy: async () => {
-         // TODO: Implement privacy settings update
-         toast.info("Privacy settings will be saved once backend API is ready");
+      onUpdatePrivacy: async (settings?: any) => {
+         try {
+            // Privacy settings are handled within PrivacySection component
+            // This is called when SecuritySection saves privacy settings
+            toast.success("Privacy settings updated successfully");
+            await refreshUserData();
+         } catch (error: any) {
+            console.error("Failed to update privacy settings:", error);
+            toast.error(error.message || "Failed to update privacy settings");
+         }
       },
-      onDeleteAccount: async () => {
-         // TODO: Implement account deletion
-         if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
-            toast.info("Account deletion feature coming soon");
+      onDeleteAccount: async (reason?: string) => {
+         //Account deletion is handled within PrivacySection component
+         // This is a fallback handler
+         try {
+            if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+               await privacyApi.requestDeletion(true, reason);
+               toast.success("Account deletion requested. You have 30 days to cancel.");
+               // Logout after deletion request
+               await logout();
+            }
+         } catch (error: any) {
+            console.error("Failed to request account deletion:", error);
+            toast.error(error.message || "Failed to request account deletion");
          }
       },
    };
@@ -482,6 +499,7 @@ function renderSection(s: ProfileSection, p: Props) {
                onSave={p.onUpdatePrivacy}
             />
          );
+      // business-verification section removed - now integrated into verifications section
       default:
          return <ProfileOverview user={p.user} onNavigate={p.onNavigate} />;
    }

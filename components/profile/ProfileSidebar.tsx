@@ -19,6 +19,7 @@ import {
    Lock,
    ChevronRight,
    MapPin,
+   BriefcaseBusiness,
 } from "lucide-react";
 import { ProfileSection } from "@/types/profile";
 

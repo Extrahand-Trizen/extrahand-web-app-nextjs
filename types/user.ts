@@ -106,6 +106,28 @@ export interface UserProfile {
       address?: string;
       website?: string;
       description?: string;
+      pan?: {
+         number?: string;
+         maskedPAN?: string;
+         isPANVerified: boolean;
+         panVerifiedAt?: Date;
+      };
+      bankAccount?: {
+         accountNumber?: string;
+         ifscCode?: string;
+         accountHolderName?: string;
+         bankName?: string;
+         isVerified: boolean;
+         verifiedAt?: Date;
+      };
+      gstNumber?: string;
+      isGSTVerified: boolean;
+      gstVerifiedAt?: Date;
+      verificationStatus?: {
+         level: number; // 0: none, 1: PAN+Bank, 2: +GST+Aadhaar, 3: +Documents
+         badge?: "none" | "verified" | "trusted" | "enterprise";
+         lastVerifiedAt?: Date;
+      };
    };
    photoURL?: string;
    agreeUpdates?: boolean;
@@ -113,6 +135,7 @@ export interface UserProfile {
    createdAt: Date;
    updatedAt: Date;
    bio?: string;
+   maskedBankAccount: string
 }
 
 export interface OnboardingState {

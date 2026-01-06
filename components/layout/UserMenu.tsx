@@ -5,6 +5,7 @@ const USER_MENU_ITEMS = [
    { label: "Home", route: "/home" },
    { label: "Dashboard", route: "/tasks" },
    { label: "Profile", route: "/profile" },
+   { label: "Chat", route: "/chat" },
    { label: "Post a Task", route: "/tasks/new" },
 ];
 

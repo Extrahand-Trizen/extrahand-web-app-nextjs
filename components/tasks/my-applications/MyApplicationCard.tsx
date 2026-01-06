@@ -246,7 +246,7 @@ export function MyApplicationCard({
                         <span className="sm:hidden">Track</span>
                      </Button>
                   </Link>
-                  <Link href="/chat">
+                  <Link href={`/chat?chatId=chat_${taskId}`}>
                      <Button
                         variant="outline"
                         size="sm"

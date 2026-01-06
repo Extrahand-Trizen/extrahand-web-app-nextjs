@@ -12,6 +12,8 @@ import { reportsApi } from "./endpoints/reports";
 import { authApi } from "./endpoints/auth";
 import { sessionsApi } from "./endpoints/sessions";
 import { completionApi } from "./endpoints/completion";
+import { privacyApi } from "./endpoints/privacy";
+import { businessApi } from "./endpoints/business";
 
 export const api = {
    // Profile management
@@ -38,6 +40,12 @@ export const api = {
    // Auth management
    ...authApi,
    ...sessionsApi,
+
+   // Privacy management
+   ...privacyApi,
+
+   // Business verification
+   ...businessApi,
 
    // Utility functions
    async uploadImage(_file: File): Promise<string> {
@@ -74,3 +82,6 @@ export const api = {
       return stats;
    },
 };
+
+// Re-export verification API
+export { verificationApi } from './endpoints/verification';

@@ -32,10 +32,14 @@ import {
    AadhaarVerificationState,
    AADHAAR_CONSENT,
 } from "@/types/verification";
+import { verificationApi } from "@/lib/api/endpoints/verification";
+import { useAuth } from "@/lib/auth/context";
+import { toast } from "sonner";
 
 export default function AadhaarVerificationPage() {
    const router = useRouter();
    const inputRef = useRef<HTMLInputElement>(null);
+   const { refreshUserData } = useAuth();
 
    const [state, setState] = useState<AadhaarVerificationState>({
       step: "consent",
@@ -66,7 +70,7 @@ export default function AadhaarVerificationPage() {
    const handleBack = () => {
       switch (state.step) {
          case "consent":
-            router.push("/profile/verify");
+            router.push("/profile?section=verifications");
             break;
          case "input":
             setState((p) => ({ ...p, step: "consent" }));
@@ -75,7 +79,7 @@ export default function AadhaarVerificationPage() {
             setState((p) => ({ ...p, step: "input", otp: "" }));
             break;
          default:
-            router.push("/profile/verify");
+            router.push("/profile?section=verifications");
       }
    };
 
@@ -91,11 +95,38 @@ export default function AadhaarVerificationPage() {
       setIsLoading(true);
       setState((p) => ({ ...p, error: undefined }));
       try {
-         await new Promise((r) => setTimeout(r, 1500));
-         setState((p) => ({ ...p, step: "otp", otpSent: true }));
-         setOtpTimer(600);
-      } catch {
-         setState((p) => ({ ...p, error: "Failed to send OTP" }));
+         // Call real backend API
+         const result = await verificationApi.initiateAadhaar(clean, {
+            given: true,
+            text: AADHAAR_CONSENT.paragraph,
+            version: "v1.0",
+         });
+
+         if (result.success) {
+            setState((p) => ({
+               ...p,
+               step: "otp",
+               otpSent: true,
+               transactionId: result.data.refId,
+            }));
+            setOtpTimer(600); // 10 minutes
+            toast.success(result.message || "OTP sent successfully");
+            
+            // Show test OTP in sandbox mode
+            if (result.data.testOtp) {
+               toast.info(`Test OTP: ${result.data.testOtp}`, {
+                  description: "Sandbox mode - use this OTP for testing",
+                  duration: 10000,
+               });
+            }
+         } else {
+            setState((p) => ({ ...p, error: result.message || "Failed to send OTP" }));
+            toast.error(result.message || "Failed to send OTP");
+         }
+      } catch (error: any) {
+         const errorMsg = error.response?.data?.error || error.message || "Failed to send OTP";
+         setState((p) => ({ ...p, error: errorMsg }));
+         toast.error(errorMsg);
       } finally {
          setIsLoading(false);
       }
@@ -106,34 +137,69 @@ export default function AadhaarVerificationPage() {
          setState((p) => ({ ...p, error: "Please enter complete OTP" }));
          return;
       }
+      if (!state.transactionId) {
+         setState((p) => ({ ...p, error: "Transaction ID missing" }));
+         return;
+      }
       setIsLoading(true);
       setState((p) => ({ ...p, error: undefined }));
       try {
-         await new Promise((r) => setTimeout(r, 2000));
-         setState((p) => ({
-            ...p,
-            step: "success",
-            verifiedData: {
-               name: "Anita Kapoor",
-               maskedAadhaar: "XXXX XXXX 4321",
-            },
-         }));
-      } catch {
+         // Call real backend API
+         const result = await verificationApi.verifyAadhaar(state.transactionId, state.otp);
+         
+         if (result.success) {
+            setState((p) => ({
+               ...p,
+               step: "success",
+               verifiedData: {
+                  name: result.data.verifiedData.name,
+                  maskedAadhaar: result.data.maskedAadhaar,
+               },
+            }));
+            toast.success(result.message || "Aadhaar verified successfully!");
+            
+            // Refresh user data to update profile
+            await refreshUserData();
+            
+            // Force router refresh to update UI
+            router.refresh();
+         } else {
+            const newAttempts = state.attemptsRemaining - 1;
+            if (newAttempts <= 0) {
+               setState((p) => ({
+                  ...p,
+                  step: "error",
+                  error: "Maximum attempts exceeded",
+               }));
+               toast.error("Maximum OTP attempts exceeded");
+            } else {
+               setState((p) => ({
+                  ...p,
+                  attemptsRemaining: newAttempts,
+                  otp: "",
+                  error: `Invalid OTP. ${newAttempts} attempts left.`,
+               }));
+               toast.error(`Invalid OTP. ${newAttempts} attempts remaining`);
+            }
+         }
+      } catch (error: any) {
+         const errorMsg = error.response?.data?.error || error.message || "OTP verification failed";
          const newAttempts = state.attemptsRemaining - 1;
          if (newAttempts <= 0) {
             setState((p) => ({
                ...p,
                step: "error",
-               error: "Max attempts exceeded",
+               error: "Maximum attempts exceeded",
             }));
          } else {
             setState((p) => ({
                ...p,
                attemptsRemaining: newAttempts,
                otp: "",
-               error: `Invalid OTP. ${newAttempts} attempts left.`,
+               error: errorMsg,
             }));
          }
+         toast.error(errorMsg);
       } finally {
          setIsLoading(false);
       }
@@ -141,18 +207,40 @@ export default function AadhaarVerificationPage() {
 
    const handleResend = async () => {
       if (otpTimer > 0) return;
+      if (!state.transactionId) {
+         toast.error("Cannot resend OTP - transaction ID missing");
+         return;
+      }
       setIsLoading(true);
       try {
-         await new Promise((r) => setTimeout(r, 1500));
-         setOtpTimer(600);
-         setState((p) => ({
-            ...p,
-            otp: "",
-            attemptsRemaining: 3,
-            error: undefined,
-         }));
-      } catch {
-         setState((p) => ({ ...p, error: "Failed to resend" }));
+         const result = await verificationApi.resendAadhaarOtp(state.transactionId);
+         
+         if (result.success) {
+            setOtpTimer(600);
+            setState((p) => ({
+               ...p,
+               otp: "",
+               attemptsRemaining: 3,
+               error: undefined,
+               transactionId: result.data.refId, // Update with new refId if changed
+            }));
+            toast.success("OTP resent successfully");
+            
+            // Show test OTP in sandbox mode
+            if (result.data.testOtp) {
+               toast.info(`Test OTP: ${result.data.testOtp}`, {
+                  description: "Sandbox mode",
+                  duration: 10000,
+               });
+            }
+         } else {
+            toast.error(result.message || "Failed to resend OTP");
+            setState((p) => ({ ...p, error: result.message || "Failed to resend OTP" }));
+         }
+      } catch (error: any) {
+         const errorMsg = error.response?.data?.error || error.message || "Failed to resend OTP";
+         toast.error(errorMsg);
+         setState((p) => ({ ...p, error: errorMsg }));
       } finally {
          setIsLoading(false);
       }
@@ -581,7 +669,10 @@ export default function AadhaarVerificationPage() {
                      </div>
                   </div>
                   <Button
-                     onClick={() => router.push("/profile/verify")}
+                     onClick={() => {
+                        router.push("/profile?section=verifications");
+                        router.refresh(); // Force refresh to show updated data
+                     }}
                      className="w-full h-12 text-sm font-medium bg-primary-600 hover:bg-primary-500 rounded-xl"
                   >
                      Back to Verifications
@@ -619,7 +710,7 @@ export default function AadhaarVerificationPage() {
                         Try Again
                      </Button>
                      <Button
-                        onClick={() => router.push("/profile/verify")}
+                        onClick={() => router.push("/profile?section=verifications")}
                         variant="outline"
                         className="w-full h-12 text-sm font-medium rounded-xl"
                      >

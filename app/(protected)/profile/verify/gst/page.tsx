@@ -1,93 +1,73 @@
 /**
- * PAN Verification Page
- * Business account PAN verification with document upload
+ * GST Verification Page
+ * Business GST number verification
  */
 
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
-   FileText,
-   Lock,
    AlertCircle,
    ArrowLeft,
    CheckCircle2,
-   Shield,
    XCircle,
    RefreshCw,
-   Upload,
-   Eye,
-   EyeOff,
-   Building2,
+   Receipt,
    Sparkles,
-   BadgeCheck,
+   Lock,
 } from "lucide-react";
 import { businessApi } from "@/lib/api/endpoints/business";
 import { useAuth } from "@/lib/auth/context";
 import { toast } from "sonner";
 
-interface PANVerificationState {
+interface GSTVerificationState {
    step: "input" | "processing" | "success" | "error";
-   pan: string;
-   name: string;
-   showPan: boolean;
+   gstNumber: string;
    consentGiven: boolean;
    verifiedData?: {
-      name: string;
-      category: string;
-      maskedPan: string;
+      gstNumber: string;
+      isVerified: boolean;
+      note?: string;
    };
    error?: string;
 }
 
-export default function PANVerificationPage() {
+export default function GSTVerificationPage() {
    const router = useRouter();
    const { refreshUserData } = useAuth();
 
-   const [state, setState] = useState<PANVerificationState>({
+   const [state, setState] = useState<GSTVerificationState>({
       step: "input",
-      pan: "",
-      name: "",
-      showPan: false,
+      gstNumber: "",
       consentGiven: false,
    });
 
    const [isLoading, setIsLoading] = useState(false);
 
    const handleBack = () => {
-      if (state.step === "input") {
-         router.push("/profile?section=verifications");
-      } else {
-         router.push("/profile?section=verifications");
-      }
+      router.push("/profile?section=verifications");
    };
 
-   const validatePAN = (pan: string): boolean => {
-      // PAN format: 5 letters, 4 digits, 1 letter (e.g., ABCDE1234F)
-      const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
-      return panRegex.test(pan.toUpperCase());
+   const validateGST = (gst: string): boolean => {
+      // GST format: 2 digits + 5 letters + 4 digits + 1 letter + 1 alphanumeric + Z + 1 alphanumeric
+      // Example: 22AAAAA0000A1Z5
+      const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+      return gstRegex.test(gst.toUpperCase());
    };
 
-   const formatPANInput = (value: string): string => {
-      return value
-         .replace(/[^a-zA-Z0-9]/g, "")
-         .toUpperCase()
-         .slice(0, 10);
+   const formatGST = (value: string): string => {
+      return value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 15);
    };
 
-   const maskPAN = (pan: string): string => {
-      if (pan.length !== 10) return pan;
-      return `XXXXX${pan.slice(5, 9)}${pan.slice(9)}`;
-   };
-
-   const handleVerifyPAN = async () => {
-      if (!validatePAN(state.pan)) {
+   const handleVerifyGST = async () => {
+      // Validation
+      if (!validateGST(state.gstNumber)) {
          setState((p) => ({
             ...p,
-            error: "Please enter a valid PAN (e.g., ABCDE1234F)",
+            error: "Please enter a valid GST number (e.g., 22AAAAA0000A1Z5)",
          }));
          return;
       }
@@ -104,34 +84,39 @@ export default function PANVerificationPage() {
       setState((p) => ({ ...p, error: undefined, step: "processing" }));
 
       try {
-         // Call real backend API
-         const result = await businessApi.verifyPAN(state.pan, {
-            given: true,
-            text: "I consent to verify my business PAN for compliance and operations",
-            version: "v1.0",
-         });
+         // Call verification API
+         const result = await businessApi.verifyGST(state.gstNumber);
 
-         if (result.success && result.verified) {
+         if (result.success) {
             setState((p) => ({
                ...p,
                step: "success",
-               verifiedData: result.data,
+               verifiedData: {
+                  gstNumber: state.gstNumber,
+                  isVerified: true,
+                  note: result.data?.businessName 
+                     ? `Business: ${result.data.businessName}${result.data.gstStatus ? ` | Status: ${result.data.gstStatus}` : ''}`
+                     : undefined,
+               },
             }));
-            toast.success(result.message || "PAN verified successfully!");
+            toast.success(result.message || "GST number verified successfully!");
             
-            // Refresh user data to update profile
+            // Refresh user data
             await refreshUserData();
             router.refresh();
          } else {
             setState((p) => ({
                ...p,
                step: "error",
-               error: result.message || "PAN verification failed",
+               error: result.message || "GST verification failed",
             }));
-            toast.error(result.message || "PAN verification failed");
+            toast.error(result.message || "GST verification failed");
          }
       } catch (error: any) {
-         const errorMsg = error.response?.data?.error || error.message || "PAN verification failed";
+         const errorMsg =
+            error.response?.data?.error ||
+            error.message ||
+            "GST verification failed";
          setState((p) => ({
             ...p,
             step: "error",
@@ -143,76 +128,34 @@ export default function PANVerificationPage() {
       }
    };
 
-   // ========================================
-   // Render Functions
-   // ========================================
-
    const renderInputStep = () => (
       <div className="space-y-6">
-         {/* PAN Number Input */}
+         {/* GST Number */}
          <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">
-               PAN Number
-            </label>
-            <div className="relative">
-               <input
-                  type={state.showPan ? "text" : "password"}
-                  value={state.pan}
-                  onChange={(e) =>
-                     setState((p) => ({
-                        ...p,
-                        pan: formatPANInput(e.target.value),
-                        error: undefined,
-                     }))
-                  }
-                  placeholder="ABCDE1234F"
-                  maxLength={10}
-                  className={cn(
-                     "w-full px-4 py-3 text-base border rounded-xl transition-all duration-200 uppercase tracking-wider",
-                     "focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500",
-                     state.error
-                        ? "border-red-300 bg-red-50/50"
-                        : "border-gray-200"
-                  )}
-               />
-               <button
-                  type="button"
-                  onClick={() =>
-                     setState((p) => ({ ...p, showPan: !p.showPan }))
-                  }
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
-               >
-                  {state.showPan ? (
-                     <EyeOff className="w-5 h-5" />
-                  ) : (
-                     <Eye className="w-5 h-5" />
-                  )}
-               </button>
-            </div>
-         </div>
-
-         {/* Name Input */}
-         <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
-               Name as per PAN Card
+               GST Number (GSTIN)
             </label>
             <input
                type="text"
-               value={state.name}
+               value={state.gstNumber}
                onChange={(e) =>
                   setState((p) => ({
                      ...p,
-                     name: e.target.value.toUpperCase(),
+                     gstNumber: formatGST(e.target.value),
                      error: undefined,
                   }))
                }
-               placeholder="FULL NAME AS PER PAN"
+               placeholder="22AAAAA0000A1Z5"
+               maxLength={15}
                className={cn(
-                  "w-full px-4 py-3 text-base border rounded-xl transition-all duration-200 uppercase",
+                  "w-full px-4 py-3 text-base border rounded-xl transition-all duration-200 uppercase font-mono",
                   "focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500",
-                  "border-gray-200"
+                  state.error ? "border-red-300 bg-red-50/50" : "border-gray-200"
                )}
             />
+            <p className="text-xs text-gray-500">
+               Enter your 15-character GST identification number
+            </p>
          </div>
 
          {/* Error */}
@@ -226,40 +169,15 @@ export default function PANVerificationPage() {
          {/* Info Box */}
          <div className="bg-primary-50 rounded-xl p-4 space-y-3">
             <div className="flex items-start gap-2">
-               <Building2 className="w-5 h-5 text-primary-600 mt-0.5" />
+               <Receipt className="w-5 h-5 text-primary-600 mt-0.5" />
                <div>
                   <p className="text-sm font-medium text-primary-800">
-                     Business Account Requirement
+                     GST Format Validation
                   </p>
                   <p className="text-xs text-primary-600 mt-1">
-                     PAN verification is mandatory for business accounts to
-                     ensure tax compliance and enable higher transaction limits.
+                     We'll validate your GST number format to ensure it's correct. Real-time GST API verification is coming soon for complete validation.
                   </p>
                </div>
-            </div>
-         </div>
-
-         {/* Benefits */}
-         <div className="space-y-3">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-               Benefits of PAN verification
-            </p>
-            <div className="grid grid-cols-1 gap-2">
-               {[
-                  { icon: BadgeCheck, text: "Unlock higher payout limits" },
-                  { icon: Shield, text: "Ensure tax compliance" },
-                  { icon: Building2, text: "Access business features" },
-               ].map((item, i) => (
-                  <div
-                     key={i}
-                     className="flex items-center gap-3 p-3 bg-white border border-gray-100 rounded-lg"
-                  >
-                     <div className="w-8 h-8 rounded-full bg-primary-50 flex items-center justify-center">
-                        <item.icon className="w-4 h-4 text-primary-600" />
-                     </div>
-                     <span className="text-sm text-gray-700">{item.text}</span>
-                  </div>
-               ))}
             </div>
          </div>
 
@@ -279,29 +197,29 @@ export default function PANVerificationPage() {
             />
             <div className="text-xs text-gray-600">
                <p>
-                  I consent to verify my business PAN for compliance and
-                  operations. I understand that my PAN details will be verified
-                  through official channels and only masked information will be
-                  stored.
+                  I consent to verify my business GST number. I understand that this information will be stored securely and used for verification purposes only.
                </p>
             </div>
          </label>
 
          {/* Submit Button */}
          <Button
-            onClick={handleVerifyPAN}
+            onClick={handleVerifyGST}
             disabled={
-               isLoading || state.pan.length !== 10 || !state.consentGiven
+               isLoading ||
+               !state.gstNumber ||
+               state.gstNumber.length !== 15 ||
+               !state.consentGiven
             }
             className="w-full h-12 text-base font-medium bg-primary-700 hover:bg-primary-600"
          >
             {isLoading ? (
                <div className="flex items-center gap-2">
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  Verifying PAN...
+                  Verifying...
                </div>
             ) : (
-               "Verify PAN"
+               "Verify GST Number"
             )}
          </Button>
       </div>
@@ -315,15 +233,15 @@ export default function PANVerificationPage() {
 
          <div className="space-y-2">
             <h2 className="text-xl font-bold text-gray-900">
-               Processing Verification
+               Verifying GST Number
             </h2>
             <p className="text-gray-600">
-               Please wait while we verify your PAN details...
+               Please wait while we validate your GST number...
             </p>
          </div>
 
          <div className="bg-primary-50 rounded-xl p-4 text-sm text-primary-700">
-            This usually takes a few seconds. Do not close this page.
+            This usually takes a few seconds.
          </div>
       </div>
    );
@@ -341,48 +259,47 @@ export default function PANVerificationPage() {
 
          <div className="space-y-2">
             <h2 className="text-xl font-bold text-gray-900">
-               PAN Verified Successfully!
+               GST Number Verified!
             </h2>
             <p className="text-gray-600">
-               Your PAN <strong>{state.verifiedData?.maskedPan || maskPAN(state.pan)}</strong> has been verified.
+               Your GST number <strong className="font-mono">{state.verifiedData?.gstNumber}</strong> has been verified.
             </p>
+            {state.verifiedData?.note && (
+               <p className="text-sm text-gray-500">
+                  {state.verifiedData.note}
+               </p>
+            )}
          </div>
 
          <div className="bg-primary-50 rounded-xl p-4 text-left space-y-2">
             <p className="text-sm font-medium text-primary-800">
-               You&apos;ve unlocked:
+               Business Benefits Unlocked:
             </p>
             <ul className="space-y-2 text-sm text-primary-700">
                <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4" />
-                  Higher transaction limits
+                  Enhanced business profile credibility
                </li>
                <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4" />
-                  Business account features
+                  B2B transaction capabilities
                </li>
                <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4" />
-                  TDS compliance automation
+                  Priority support for business accounts
                </li>
             </ul>
          </div>
 
-         <div className="flex flex-col gap-3">
-            <Button
-               onClick={() => router.push("/profile")}
-               className="w-full h-12 text-base font-medium bg-primary-600 hover:bg-primary-700"
-            >
-               Continue to Profile
-            </Button>
-            <Button
-               variant="outline"
-               onClick={() => router.push("/profile/verify")}
-               className="w-full h-12 text-base"
-            >
-               Complete More Verifications
-            </Button>
-         </div>
+         <Button
+            onClick={() => {
+               router.push("/profile?section=verifications");
+               router.refresh();
+            }}
+            className="w-full h-12 text-base font-medium bg-primary-600 hover:bg-primary-700"
+         >
+            Back to Verifications
+         </Button>
       </div>
    );
 
@@ -397,13 +314,12 @@ export default function PANVerificationPage() {
                Verification Failed
             </h2>
             <p className="text-gray-600">
-               We couldn&apos;t verify your PAN. Please try again.
+               We couldn't verify your GST number. Please try again.
             </p>
          </div>
 
          <div className="bg-red-50 rounded-xl p-4 text-sm text-red-700">
-            {state.error ||
-               "Please ensure the PAN details and document are correct."}
+            {state.error || "Please ensure your GST number is correct."}
          </div>
 
          <div className="flex flex-col gap-3">
@@ -417,7 +333,7 @@ export default function PANVerificationPage() {
             </Button>
             <Button
                variant="outline"
-               onClick={() => router.push("/profile/verify")}
+               onClick={() => router.push("/profile?section=verifications")}
                className="w-full h-12 text-base"
             >
                Back to Verifications
@@ -425,10 +341,6 @@ export default function PANVerificationPage() {
          </div>
       </div>
    );
-
-   // ========================================
-   // Main Render
-   // ========================================
 
    return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -442,34 +354,27 @@ export default function PANVerificationPage() {
                   <ArrowLeft className="w-5 h-5" />
                </button>
                <h1 className="text-base font-semibold text-gray-900">
-                  PAN Verification
+                  GST Verification
                </h1>
-               <span className="ml-auto text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-                  Business
-               </span>
             </div>
          </div>
 
-
-
          {/* Content */}
          <div className="max-w-5xl mx-auto px-4 py-8">
-            {/* Title */}
-            {(state.step === "input") && (
+            {state.step === "input" && (
                <div className="text-center mb-8">
                   <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary-100 mb-4">
-                     <FileText className="w-7 h-7 text-primary-600" />
+                     <Receipt className="w-7 h-7 text-primary-600" />
                   </div>
                   <h1 className="text-2xl font-bold text-gray-900">
-                     Verify Your PAN
+                     Verify Your GST Number
                   </h1>
                   <p className="text-gray-500 mt-2">
-                     Required for business accounts
+                     Validate your business GST identification number
                   </p>
                </div>
             )}
 
-            {/* Steps */}
             {state.step === "input" && renderInputStep()}
             {state.step === "processing" && renderProcessingStep()}
             {state.step === "success" && renderSuccessStep()}
@@ -477,8 +382,8 @@ export default function PANVerificationPage() {
          </div>
 
          {/* Security Footer */}
-         {(state.step === "input") && (
-            <div className="max-w-lg mx-auto px-4 pb-8">
+         {state.step === "input" && (
+            <div className="max-w-5xl mx-auto px-4 pb-8">
                <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
                   <Lock className="w-3.5 h-3.5" />
                   <span>Your data is encrypted and stored securely</span>

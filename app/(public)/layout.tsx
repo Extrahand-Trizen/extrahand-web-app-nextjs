@@ -7,12 +7,12 @@ export default function PublicLayout({
    children: React.ReactNode;
 }) {
    return (
-      <>
+      <div suppressHydrationWarning>
          <LandingHeader />
          <main className="min-h-[calc(100vh - 110px)]">
             <div className="w-full mx-auto">{children}</div>
          </main>
          <LandingFooter />
-      </>
+      </div>
    );
 }

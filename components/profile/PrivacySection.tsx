@@ -19,12 +19,17 @@ import {
    ChevronDown,
    ChevronUp,
    Info,
+   Download,
+   Trash2,
+   AlertTriangle,
 } from "lucide-react";
 import {
    PrivacySettingsState,
    ProfileVisibilityLevel,
    DEFAULT_PRIVACY_SETTINGS,
 } from "@/types/consent";
+import { privacyApi } from "@/lib/api/endpoints/privacy";
+import { toast } from "sonner";
 
 interface PrivacySectionProps {
    settings?: PrivacySettingsState;
@@ -61,13 +66,17 @@ export function PrivacySection({
    settings = DEFAULT_PRIVACY_SETTINGS,
    onSave,
 }: PrivacySectionProps) {
-   const [localSettings, setLocalSettings] =
+    const [localSettings, setLocalSettings] =
       useState<PrivacySettingsState>(settings);
    const [isSaving, setIsSaving] = useState(false);
    const [hasChanges, setHasChanges] = useState(false);
    const [expandedSections, setExpandedSections] = useState<string[]>([
       "visibility",
    ]);
+   const [isDownloading, setIsDownloading] = useState(false);
+   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+   const [deleteReason, setDeleteReason] = useState("");
+   const [isDeleting, setIsDeleting] = useState(false);
 
    const toggleSection = (section: string) => {
       setExpandedSections((prev) =>
@@ -97,6 +106,60 @@ export function PrivacySection({
          console.error("Failed to save privacy settings:", error);
       } finally {
          setIsSaving(false);
+      }
+   };
+
+   const handleDataExport = async () => {
+      try {
+         setIsDownloading(true);
+         toast.info("Preparing your data export...");
+         
+         const exportData = await privacyApi.exportData();
+         
+         // Create a downloadable JSON file
+         const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+            type: "application/json",
+         });
+         const url = URL.createObjectURL(blob);
+         const link = document.createElement("a");
+         link.href = url;
+         link.download = `extrahand-data-export-${new Date().toISOString().split('T')[0]}.json`;
+         document.body.appendChild(link);
+         link.click();
+         document.body.removeChild(link);
+         URL.revokeObjectURL(url);
+         
+         toast.success("Your data has been downloaded successfully!");
+      } catch (error: any) {
+         console.error("Data export error:", error);
+         toast.error(error.message || "Failed to export data");
+      } finally {
+         setIsDownloading(false);
+      }
+   };
+
+   const handleDeleteAccount = async () => {
+      if (!showDeleteConfirm) {
+         setShowDeleteConfirm(true);
+         return;
+      }
+
+      try {
+         setIsDeleting(true);
+         const result = await privacyApi.requestDeletion(true, deleteReason);
+         
+         toast.success(result.message, {
+            description: `Account will be deleted on ${new Date(result.deletionScheduledFor).toLocaleDateString()}`,
+            duration: 8000,
+         });
+         
+         setShowDeleteConfirm(false);
+         setDeleteReason("");
+      } catch (error: any) {
+         console.error("Account deletion error:", error);
+         toast.error(error.message || "Failed to request account deletion");
+      } finally {
+         setIsDeleting(false);
       }
    };
 
@@ -237,38 +300,137 @@ export function PrivacySection({
          </CollapsibleSection>
 
          {/* Data Management */}
-         <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5">
-            <div className="flex items-start gap-3">
-               <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-                  <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
-               </div>
-               <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-medium text-gray-900">
-                     Your Data Rights
-                  </h3>
-                  <p className="text-xs text-gray-500 mt-1">
-                     You can request a copy of your data or delete your account
-                     at any time.
-                  </p>
-                  <div className="flex flex-wrap gap-2 mt-3">
+         <CollapsibleSection
+            title="Advanced Settings"
+            description="Data export and account management"
+            icon={<Shield className="w-4 h-4 sm:w-5 sm:h-5" />}
+            isExpanded={expandedSections.includes("advanced")}
+            onToggle={() => toggleSection("advanced")}
+         >
+            <div className="space-y-4">
+               {/* Data Export */}
+               <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                     <Download className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                     <h4 className="text-sm font-medium text-gray-900">
+                        Export Your Data
+                     </h4>
+                     <p className="text-xs text-gray-500 mt-1">
+                        Download a complete copy of all your data in JSON format
+                     </p>
                      <Button
                         variant="outline"
                         size="sm"
-                        className="text-xs h-8"
+                        className="text-xs h-8 mt-2"
+                        onClick={handleDataExport}
+                        disabled={isDownloading}
                      >
-                        Download My Data
-                     </Button>
-                     <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                     >
-                        Delete Account
+                        {isDownloading ? (
+                           <>
+                              <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                              Preparing...
+                           </>
+                        ) : (
+                           <>
+                              <Download className="w-3 h-3 mr-2" />
+                              Download My Data
+                           </>
+                        )}
                      </Button>
                   </div>
                </div>
+
+               {/* Account Deletion */}
+               <div className="flex items-start gap-3 pt-4 border-t border-gray-100">
+                  <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                     <Trash2 className="w-4 h-4 text-red-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                     <h4 className="text-sm font-medium text-gray-900">
+                        Delete Account
+                     </h4>
+                     <p className="text-xs text-gray-500 mt-1">
+                        Permanently delete your account and all associated data
+                     </p>
+                     
+                     {!showDeleteConfirm ? (
+                        <Button
+                           variant="outline"
+                           size="sm"
+                           className="text-xs h-8 mt-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                           onClick={() => setShowDeleteConfirm(true)}
+                        >
+                           <Trash2 className="w-3 h-3 mr-2" />
+                           Delete Account
+                        </Button>
+                     ) : (
+                        <div className="mt-3 space-y-3 bg-red-50 border border-red-200 rounded-lg p-3">
+                           <div className="flex items-start gap-2">
+                              <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
+                              <div>
+                                 <p className="text-xs font-medium text-red-900">
+                                    Are you absolutely sure?
+                                 </p>
+                                 <p className="text-xs text-red-700 mt-1">
+                                    This action cannot be undone. Your account will be scheduled for deletion after a 30-day grace period.
+                                 </p>
+                              </div>
+                           </div>
+                           
+                           <div className="space-y-2">
+                              <Label htmlFor="deleteReason" className="text-xs text-red-900">
+                                 Reason for deletion (optional)
+                              </Label>
+                              <textarea
+                                 id="deleteReason"
+                                 className="w-full text-xs p-2 border border-red-300 rounded-md resize-none"
+                                 rows={2}
+                                 placeholder="Help us improve by telling us why you're leaving..."
+                                 value={deleteReason}
+                                 onChange={(e) => setDeleteReason(e.target.value)}
+                              />
+                           </div>
+                           
+                           <div className="flex gap-2">
+                              <Button
+                                 size="sm"
+                                 variant="outline"
+                                 className="text-xs h-8 flex-1"
+                                 onClick={() => {
+                                    setShowDeleteConfirm(false);
+                                    setDeleteReason("");
+                                 }}
+                                 disabled={isDeleting}
+                              >
+                                 Cancel
+                              </Button>
+                              <Button
+                                 size="sm"
+                                 className="text-xs h-8 flex-1 bg-red-600 hover:bg-red-700"
+                                 onClick={handleDeleteAccount}
+                                 disabled={isDeleting}
+                              >
+                                 {isDeleting ? (
+                                    <>
+                                       <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                       Deleting...
+                                    </>
+                                 ) : (
+                                    <>
+                                       <Trash2 className="w-3 h-3 mr-1" />
+                                       Confirm Delete
+                                    </>
+                                 )}
+                              </Button>
+                           </div>
+                        </div>
+                     )}
+                  </div>
+               </div>
             </div>
-         </div>
+         </CollapsibleSection>
 
          {/* Info Box */}
          <div className="bg-primary-50 rounded-lg p-4 flex items-start gap-3">

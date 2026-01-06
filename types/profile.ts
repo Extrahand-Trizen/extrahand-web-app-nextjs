@@ -273,6 +273,7 @@ export type ProfileSection =
    | "security"
    | "privacy";
 
+
 export interface ProfileNavItem {
    id: ProfileSection;
    label: string;
