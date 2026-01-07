@@ -43,13 +43,21 @@ if (typeof window !== "undefined") {
       console.warn("Analytics initialization failed:", e);
    }
 } else {
-   // Server-side: create minimal app instance
-   if (getApps().length === 0) {
+   // Server-side: only initialize if we have a valid API key
+   // During build, env vars may not be available, so skip initialization
+   if (FIREBASE_CONFIG.apiKey && getApps().length === 0) {
       app = initializeApp(FIREBASE_CONFIG);
-   } else {
+      auth = getAuth(app);
+   } else if (getApps().length > 0) {
       app = getApps()[0];
+      auth = getAuth(app);
+   } else {
+      // Build-time: No valid config, create stub
+      // This prevents errors during Next.js build/SSG
+      // Firebase will be properly initialized client-side at runtime
+      app = null as any;
+      auth = null as any;
    }
-   auth = getAuth(app);
 }
 
 export { app, auth, analytics };
