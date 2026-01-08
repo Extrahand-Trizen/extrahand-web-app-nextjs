@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { isValidCoordinate, sanitizeString } from "@/lib/utils/sanitization";
+import { GoogleMapPicker } from "@/components/maps/GoogleMapPicker";
 
 interface LocationData {
    address: string;
@@ -41,7 +42,7 @@ const parseLocationFromGeocode = (data: any): Partial<LocationData> => {
       address: data.address || data.description || "",
       city: data.raw.address.city || "",
       state: data.raw.address.state || "",
-      pinCode: data.raw.address.postcode,
+      pinCode: data.raw.address.postcode || data.raw.address.postalCode || "",
       country: data.raw.address.country || "India",
    };
 };
@@ -62,8 +63,18 @@ export function InteractiveLocationPicker({
    const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
    const [showSuggestions, setShowSuggestions] = useState(false);
    const [isSearching, setIsSearching] = useState(false);
+   const sessionTokenRef = useRef<string>(Math.random().toString(36).substring(7));
+   const [mapsApiKey, setMapsApiKey] = useState<string | null>(null);
 
-   // Debounce location search
+   // Fetch Google Maps API key on mount
+   useEffect(() => {
+      fetch('/api/maps/key')
+         .then(res => res.json())
+         .then(data => setMapsApiKey(data.apiKey))
+         .catch(err => console.error('Failed to load Maps API key:', err));
+   }, []);
+
+   // Debounce location search - Increased to 500ms to reduce API calls
    useEffect(() => {
       if (!addressInput || addressInput.length < 2) {
          setSuggestions([]);
@@ -72,17 +83,17 @@ export function InteractiveLocationPicker({
 
       const timer = setTimeout(() => {
          searchLocations(addressInput);
-      }, 300);
+      }, 500); // Increased debounce for cost optimization
 
       return () => clearTimeout(timer);
    }, [addressInput]);
 
-   // Search locations using API
+   // Search locations using API with session token for cost optimization
    const searchLocations = async (searchText: string) => {
       setIsSearching(true);
       try {
          const response = await fetch(
-            `/api/geocode/search?input=${encodeURIComponent(searchText)}`
+            `/api/geocode/search?input=${encodeURIComponent(searchText)}&sessionToken=${sessionTokenRef.current}`
          );
          const data = await response.json();
 
@@ -178,7 +189,7 @@ export function InteractiveLocationPicker({
          },
          {
             enableHighAccuracy: true,
-            timeout: 10000,
+            timeout: 15000, // Increased to 15 seconds for better reliability
             maximumAge: 0,
          }
       );
@@ -246,6 +257,33 @@ export function InteractiveLocationPicker({
       handleAddressSearch(suggestion);
    };
 
+   // Handle marker drag on map
+   const handleMarkerDrag = useCallback(async (lat: number, lng: number) => {
+      const coords: [number, number] = [lng, lat];
+      setMarkerPosition(coords);
+      setMapCenter(coords);
+
+      // Reverse geocode to get address
+      try {
+         const response = await fetch(`/api/geocode?lat=${lat}&lng=${lng}`);
+         if (!response.ok) throw new Error('Geocoding failed');
+         
+         const data = await response.json();
+         const locationData = parseLocationFromGeocode(data);
+
+         const updatedLocation: LocationData = {
+            ...value,
+            ...locationData,
+            coordinates: coords,
+         };
+         onChange(updatedLocation);
+         setAddressInput(locationData.address || "");
+         onCoordinatesChange?.(coords);
+      } catch (error) {
+         console.error('Failed to geocode marker position:', error);
+      }
+   }, [value, onChange, onCoordinatesChange]);
+
    return (
       <div className="space-y-4">
          {/* Address Input with Suggestions */}
@@ -259,7 +297,7 @@ export function InteractiveLocationPicker({
                      suggestions.length > 0 && setShowSuggestions(true)
                   }
                   onBlur={() =>
-                     setTimeout(() => setShowSuggestions(false), 200)
+                     setTimeout(() => setShowSuggestions(false), 300)
                   }
                   onKeyDown={(e) => {
                      if (e.key === "Enter") {
@@ -325,40 +363,23 @@ export function InteractiveLocationPicker({
             )}
          </Button>
 
-         {/* Map Preview (Placeholder - will integrate with Google Maps) */}
+         {/* Google Maps - Interactive */}
          <div className="relative w-full h-64 bg-gray-100 rounded-lg border-2 border-gray-200 overflow-hidden">
-            {/* Map placeholder */}
-            <div className="absolute inset-0 flex items-center justify-center">
-               <div className="text-center text-gray-500">
-                  <MapPin className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-                  <p className="text-sm font-medium">Map Preview</p>
-                  <p className="text-xs mt-1">
-                     {markerPosition
-                        ? `${markerPosition[1].toFixed(
-                             4
-                          )}, ${markerPosition[0].toFixed(4)}`
-                        : "Use 'Locate Me' or enter address"}
-                  </p>
-               </div>
-            </div>
-
-            {/* Marker indicator */}
-            {markerPosition && (
-               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-                  <div className="relative">
-                     <MapPin
-                        className="w-10 h-10 text-red-600 drop-shadow-lg"
-                        fill="currentColor"
-                     />
-                     <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-4 bg-red-600/30 rounded-full blur-sm"></div>
+            {mapsApiKey ? (
+               <GoogleMapPicker
+                  center={mapCenter}
+                  markerPosition={markerPosition}
+                  onMarkerDragEnd={handleMarkerDrag}
+                  apiKey={mapsApiKey}
+               />
+            ) : (
+               <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center text-gray-500">
+                     <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+                     <p className="text-sm font-medium">Loading map...</p>
                   </div>
                </div>
             )}
-
-            {/* TODO: Integrate Google Maps here */}
-            <div className="absolute bottom-3 left-3 bg-white px-3 py-1.5 rounded-md shadow-sm text-xs text-gray-600 border border-gray-200">
-               📍 Map integration pending
-            </div>
          </div>
 
          {/* Location Details Grid */}

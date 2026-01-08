@@ -41,7 +41,6 @@ export function RecommendedTasks() {
                limit: 10, 
                status: "open",
                sortBy: "createdAt",
-               sortOrder: "desc"
             });
             // API returns { tasks, pagination }
             setTasks(response.tasks || []);

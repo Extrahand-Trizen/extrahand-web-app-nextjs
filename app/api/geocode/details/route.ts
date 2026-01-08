@@ -1,17 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Simple in-memory cache to reduce API calls
-const geocodeCache = new Map<string, any>();
+/**
+ * Get place details from Google Places API using place_id
+ * This provides accurate coordinates and full address for a selected place
+ */
+
+// Cache for place details to reduce API calls
+const detailsCache = new Map<string, any>();
 const CACHE_DURATION = 1000 * 60 * 60; // 1 hour
 
 export async function GET(request: NextRequest) {
    const searchParams = request.nextUrl.searchParams;
-   const lat = searchParams.get("lat");
-   const lng = searchParams.get("lng");
+   const placeId = searchParams.get("placeId");
 
-   if (!lat || !lng) {
+   if (!placeId) {
       return NextResponse.json(
-         { error: "Missing latitude or longitude" },
+         { error: "Missing placeId parameter" },
          { status: 400 }
       );
    }
@@ -24,44 +28,52 @@ export async function GET(request: NextRequest) {
       );
    }
 
-   // Check cache first to avoid unnecessary API calls
-   const cacheKey = `${lat},${lng}`;
-   const cached = geocodeCache.get(cacheKey);
+   // Check cache first
+   const cached = detailsCache.get(placeId);
    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
       return NextResponse.json(cached.data);
    }
 
    try {
-      // Use Google Maps Geocoding API for reliable, fast reverse geocoding
-      const response = await fetch(
-         `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`,
-         {
-            next: { revalidate: 3600 }, // Cache for 1 hour
-         }
-      );
+      // Use Google Places Details API
+      const url = new URL("https://maps.googleapis.com/maps/api/place/details/json");
+      url.searchParams.set("place_id", placeId);
+      url.searchParams.set("key", apiKey);
+      url.searchParams.set("fields", "formatted_address,geometry,address_components");
+
+      const response = await fetch(url.toString(), {
+         next: { revalidate: 3600 }, // Cache for 1 hour
+      });
 
       if (!response.ok) {
-         throw new Error("Google Geocoding API request failed");
+         throw new Error("Places Details API request failed");
       }
 
       const data = await response.json();
 
-      if (data.status !== "OK" || !data.results || data.results.length === 0) {
-         throw new Error(`Geocoding failed: ${data.status}`);
+      if (data.status !== "OK" || !data.result) {
+         throw new Error(`Place details failed: ${data.status}`);
       }
 
-      const result = data.results[0];
-      const address = result.formatted_address;
-      const components = result.address_components;
+      const result = data.result;
+      const location = result.geometry?.location;
+
+      if (!location) {
+         throw new Error("No location data in place details");
+      }
 
       // Extract address components
+      const components = result.address_components || [];
       const getComponent = (type: string) => {
          const component = components.find((c: any) => c.types.includes(type));
          return component?.long_name || "";
       };
 
       const responseData = {
-         address: address,
+         lat: location.lat,
+         lng: location.lng,
+         coordinates: [location.lng, location.lat],
+         address: result.formatted_address,
          raw: {
             address: {
                street: getComponent("route"),
@@ -74,16 +86,16 @@ export async function GET(request: NextRequest) {
       };
 
       // Cache the result
-      geocodeCache.set(cacheKey, {
+      detailsCache.set(placeId, {
          data: responseData,
          timestamp: Date.now(),
       });
 
       return NextResponse.json(responseData);
    } catch (error) {
-      console.error("Geocoding error:", error);
+      console.error("Place details error:", error);
       return NextResponse.json(
-         { error: "Failed to geocode location", address: `${lat}, ${lng}` },
+         { error: "Failed to get place details" },
          { status: 500 }
       );
    }
