@@ -61,6 +61,9 @@ export const reviewsApi = {
   /**
    * Get reviews for a user
    * GET /api/v1/reviews/user/:userId?limit=10&skip=0&rating=5
+   * 
+   * Note: API returns { success, code, message, data: Review[] }
+   * fetchWithAuth automatically extracts the data property
    */
   async getUserReviews(
     userId: string,
@@ -69,7 +72,7 @@ export const reviewsApi = {
       skip?: number;
       rating?: number;
     }
-  ): Promise<{ reviews: Review[]; total: number }> {
+  ): Promise<{ data: Review[] }> {
     const params = new URLSearchParams();
     if (options?.limit) params.append('limit', options.limit.toString());
     if (options?.skip) params.append('skip', options.skip.toString());
@@ -77,7 +80,7 @@ export const reviewsApi = {
     
     const queryString = params.toString();
     const response = await fetchWithAuth(`reviews/user/${userId}${queryString ? `?${queryString}` : ''}`);
-    return response.data || response;
+    return response;
   },
 
   /**

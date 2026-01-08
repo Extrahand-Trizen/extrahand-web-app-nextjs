@@ -11,6 +11,13 @@ export type UserProfile = {
    phone?: string;
    roles?: string[];
    location?: any;
+   
+   // Profile Stats
+   totalTasks?: number;
+   completedTasks?: number;
+   postedTasks?: number;
+   rating?: number;
+   totalReviews?: number;
 };
 
 type UserState = {

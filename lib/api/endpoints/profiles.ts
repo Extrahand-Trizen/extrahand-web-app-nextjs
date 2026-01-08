@@ -3,7 +3,7 @@
  * Matches task-connect-relay routes/profiles.js
  */
 
-import { fetchWithAuth } from '../client';
+import { fetchWithAuth, fetchPublic } from '../client';
 import { UserProfile } from '@/types/user';
 
 export const profilesApi = {
@@ -27,11 +27,21 @@ export const profilesApi = {
   },
 
   /**
-   * Get profile by user ID
+   * Get profile by user ID (requires authentication)
    * GET /api/v1/profiles/:userId
    */
   async getProfile(userId: string): Promise<UserProfile> {
-    return fetchWithAuth(`profiles/${userId}`);
+    const response = await fetchWithAuth(`profiles/${userId}`);
+    return response.profile || response;
+  },
+
+  /**
+   * Get public profile by user ID (no authentication required)
+   * GET /api/v1/profiles/:userId
+   */
+  async getPublicProfile(userId: string): Promise<UserProfile> {
+    const response = await fetchPublic(`profiles/${userId}`);
+    return response.profile || response;
   },
 
   /**
@@ -73,6 +83,23 @@ export const profilesApi = {
   }> {
     const queryString = `?q=${encodeURIComponent(query)}&limit=${limit}`;
     return fetchWithAuth(`profiles/search${queryString}`);
+  },
+
+  /**
+   * Get profile statistics (public access)
+   * GET /api/v1/profiles/:userId/stats
+   */
+  async getProfileStats(userId: string): Promise<{
+    success: boolean;
+    data: {
+      totalTasks: number;
+      completedTasks: number;
+      postedTasks: number;
+      totalReviews: number;
+      rating: number;
+    };
+  }> {
+    return fetchPublic(`profiles/${userId}/stats`);
   },
 };
 

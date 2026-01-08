@@ -108,14 +108,14 @@ function ProfilePageContent() {
             const response = await reviewsApi.getUserReviews(user.uid, { limit: 10 });
             
             // Check if response has reviews array
-            if (!response || !response.reviews || !Array.isArray(response.reviews)) {
+            if (!response || !response.data || !Array.isArray(response.data)) {
                console.log("No reviews found or invalid response format");
                setReviews([]);
                return;
             }
             
             // Map API reviews to profile review format
-            const mappedReviews: Review[] = response.reviews.map((review: any) => ({
+            const mappedReviews: Review[] = response.data.map((review: any) => ({
                id: review._id,
                taskId: review.taskId,
                taskTitle: review.taskTitle || "Task",
@@ -144,8 +144,27 @@ function ProfilePageContent() {
       }
    }, [user?.uid]);
 
-   // TODO: Fetch work history from tasks API
-   // Currently work history endpoint doesn't exist, leaving empty for now
+   // Extract work history from profile data
+   useEffect(() => {
+      if (user && (user as any).workHistory) {
+         console.log('📦 Using work history from profile response:', (user as any).workHistory.length);
+         const profileWorkHistory = (user as any).workHistory;
+         
+         // Map to WorkHistoryItem format
+         const mappedWorkHistory: WorkHistoryItem[] = profileWorkHistory.map((item: any) => ({
+            id: item._id,
+            taskTitle: item.title,
+            category: item.category,
+            completedDate: new Date(item.completedAt),
+            earnings: item.budget,
+         }));
+         
+         setWorkHistory(mappedWorkHistory);
+      } else {
+         console.log('ℹ️ No work history in profile response');
+         setWorkHistory([]);
+      }
+   }, [user]);
 
    useEffect(() => {
       const s = searchParams.get("section") as ProfileSection;

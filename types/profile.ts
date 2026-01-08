@@ -47,13 +47,15 @@ export interface Review {
 // Work history types
 export interface WorkHistoryItem {
    id: string;
-   taskId: string;
-   title: string;
+   taskId?: string;
+   taskTitle: string;
    category: string;
-   completedAt: Date;
-   amount: number;
+   completedDate: Date;
+   completedAt?: Date; // Backward compatibility
+   earnings: number;
+   amount?: number; // Backward compatibility
    rating?: number;
-   role: "poster" | "tasker";
+   role?: "poster" | "tasker";
 }
 
 // Public profile view
