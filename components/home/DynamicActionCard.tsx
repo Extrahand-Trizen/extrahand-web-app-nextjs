@@ -11,30 +11,20 @@ import { useRouter } from "next/navigation";
 import {
    Sparkles,
    Shield,
-   CreditCard,
-   MessageSquare,
    CheckCircle2,
    ArrowRight,
    Clock,
-   Hourglass,
-   TrendingDown,
-   Trophy,
    User,
-   AlertCircle,
+   FileText,
+   Building2,
+   Trophy,
+   BadgeCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { DashboardData } from "@/types/dashboard";
+import { UserProfile } from "@/types/user";
 
 interface DynamicActionCardProps {
-   data: DashboardData;
-   user: {
-      name?: string;
-      isPhoneVerified?: boolean;
-      isEmailVerified?: boolean;
-      isAadhaarVerified?: boolean;
-      isBankVerified?: boolean;
-   };
-   overrideState?: CardState;
+   user: UserProfile;
 }
 
 type CardState =
@@ -48,68 +38,65 @@ type CardState =
    | "low_activity"
    | "achievement_unlocked";
 
-export function DynamicActionCard({
-   data,
-   user,
-   overrideState,
-}: DynamicActionCardProps) {
-   // Determine card state based on priority or use override
-   const cardState = overrideState || determineCardState(data);
+export function DynamicActionCard({ user }: DynamicActionCardProps) {
+   const cardState = determineCardState(user);
 
    switch (cardState) {
       case "first_time":
          return <FirstTimeCard />;
-      case "incomplete_setup":
-         return <IncompleteSetupCard data={data} user={user} />;
-      case "pending_action":
-         return <PendingActionCard data={data} />;
-      case "verification_pending":
-         return <VerificationPendingCard />;
-      case "payment_pending":
-         return <PaymentPendingCard data={data} />;
       case "profile_incomplete":
-         return <ProfileIncompleteCard />;
-      case "low_activity":
-         return <LowActivityCard />;
+         return <ProfileIncompleteCard user={user} />;
+      case "verification_pending":
+         return <VerificationPendingCard user={user} />;
       case "achievement_unlocked":
-         return <AchievementUnlockedCard data={data} />;
+         return <AchievementUnlockedCard user={user} />;
       case "returning_user":
-         return <ReturningUserCard data={data} />;
+      default:
+         return <ReturningUserCard user={user} />;
    }
 }
 
-function determineCardState(data: DashboardData): CardState {
-   // Priority 1: Pending actions (payments, offers, messages)
-   const hasPendingPayments = data.currentStatus.pendingPayments.length > 0;
-   const hasPendingOffers = data.currentStatus.pendingOffers.some(
-      (o) => o.type === "received"
-   );
-   const hasUnreadMessages =
-      data.currentStatus.activeChats.some((c) => c.unreadCount > 0) ||
-      data.currentStatus.activeTasks.length > 0;
-
-   if (hasPendingPayments || hasPendingOffers || hasUnreadMessages) {
-      return "pending_action";
+function determineCardState(user: UserProfile): CardState {
+   const isBusiness = user.userType === "business";
+   
+   // Priority 1: Profile incomplete (no photo or basic info missing)
+   if (!user.photoURL || !user.onboardingStatus?.completedSteps?.profile) {
+      return "profile_incomplete";
    }
 
-   // Priority 2: Incomplete setup
-   const hasIncompleteSetup = data.nudges.length > 0;
-   if (hasIncompleteSetup) {
-      return "incomplete_setup";
+   // Priority 2: Business verification pending
+   if (isBusiness) {
+      const biz = user.business;
+      const needsVerification = 
+         !biz?.pan?.isPANVerified ||
+         !biz?.isGSTVerified ||
+         !biz?.bankAccount?.isVerified;
+      
+      if (needsVerification) {
+         return "verification_pending";
+      }
    }
 
-   // Priority 3: First-time user (no activity)
-   const hasNoActivity =
-      data.stats.totalTasksPosted === 0 &&
-      data.stats.totalTasksAsTasker === 0 &&
-      data.stats.totalEarnings === 0 &&
-      data.taskSnapshots.length === 0;
+   // Priority 3: Individual verification pending
+   if (!isBusiness && (!user.isAadhaarVerified || !user.isBankVerified)) {
+      return "verification_pending";
+   }
 
+   // Priority 4: First-time user (no activity)
+   const hasNoActivity = 
+      (user.totalTasks || 0) === 0 && 
+      (user.completedTasks || 0) === 0;
+   
    if (hasNoActivity) {
       return "first_time";
    }
 
-   // Priority 4: Returning user
+   // Priority 5: Achievement unlocked (milestones)
+   if ((user.completedTasks || 0) >= 10) {
+      return "achievement_unlocked";
+   }
+
+   // Default: Returning user
    return "returning_user";
 }
 
@@ -128,7 +115,7 @@ function FirstTimeCard() {
                </h3>
                <p className="text-sm sm:text-base text-secondary-600 mb-4">
                   Get started by posting your first task or browse available
-                  opportunities to start earning. It only takes a few minutes.
+                  opportunities to start earning.
                </p>
                <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button
@@ -152,254 +139,12 @@ function FirstTimeCard() {
    );
 }
 
-function IncompleteSetupCard({
-   data,
-   user,
-}: {
-   data: DashboardData;
-   user: DynamicActionCardProps["user"];
-}) {
+function ProfileIncompleteCard({ user }: { user: UserProfile }) {
    const router = useRouter();
 
-   // Calculate setup progress
-   const setupItems = [
-      { key: "phone", verified: user.isPhoneVerified, label: "Phone" },
-      { key: "email", verified: user.isEmailVerified, label: "Email" },
-      { key: "aadhaar", verified: user.isAadhaarVerified, label: "Identity" },
-      { key: "bank", verified: user.isBankVerified, label: "Bank Account" },
-   ];
-
-   const completedCount = setupItems.filter((item) => item.verified).length;
-   const totalCount = setupItems.length;
-   const progress = (completedCount / totalCount) * 100;
-
-   // Get highest priority nudge
-   const priorityNudge = data.nudges.sort((a, b) => {
-      const priorityOrder = { high: 0, medium: 1, low: 2 };
-      return priorityOrder[a.priority] - priorityOrder[b.priority];
-   })[0];
-
-   return (
-      <div className="bg-primary-50 rounded-xl p-6 sm:p-8">
-         <div className="flex flex-col items-center text-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center">
-               <Shield className="w-6 h-6 text-primary-600" />
-            </div>
-            <div className="flex-1 max-w-2xl">
-               <h3 className="text-lg sm:text-xl font-bold text-secondary-900 mb-2">
-                  Complete Your Account Setup
-               </h3>
-               <p className="text-sm sm:text-base text-secondary-600 mb-3">
-                  {priorityNudge.description ||
-                     "Complete your verification to unlock more features and build trust with other users."}
-               </p>
-
-               {/* Progress Bar */}
-               <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                     <span className="text-xs font-medium text-secondary-700">
-                        {completedCount} of {totalCount} completed
-                     </span>
-                     <span className="text-xs text-secondary-500">
-                        {Math.round(progress)}%
-                     </span>
-                  </div>
-                  <div className="w-full h-2 bg-secondary-100 rounded-full overflow-hidden">
-                     <div
-                        className="h-full bg-primary-500 rounded-full transition-all"
-                        style={{ width: `${progress}%` }}
-                     />
-                  </div>
-               </div>
-
-               <div className="flex items-center justify-center gap-2 text-xs text-secondary-500 mb-4">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>Takes about 5 minutes • Secure & encrypted</span>
-               </div>
-
-               <div className="flex justify-center">
-                  <Button
-                     onClick={() => router.push(priorityNudge.actionRoute)}
-                     className="bg-primary-500 hover:bg-primary-600 text-white font-semibold shadow-sm"
-                  >
-                     {priorityNudge.actionLabel || "Continue Setup"}
-                     <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-               </div>
-            </div>
-         </div>
-      </div>
-   );
-}
-
-function PendingActionCard({ data }: { data: DashboardData }) {
-   const router = useRouter();
-
-   // Determine the most urgent action
-   const pendingPayment = data.currentStatus.pendingPayments[0];
-   const pendingOffer = data.currentStatus.pendingOffers.find(
-      (o) => o.type === "received"
-   );
-   const activeTask = data.currentStatus.activeTasks[0];
-   const unreadChat = data.currentStatus.activeChats.find(
-      (c) => c.unreadCount > 0
-   );
-
-   let action;
-   if (pendingPayment) {
-      action = {
-         icon: CreditCard,
-         title: `Release Payment: ₹${pendingPayment.amount.toLocaleString(
-            "en-IN"
-         )}`,
-         description: `Complete payment for "${pendingPayment.taskTitle}"`,
-         route: pendingPayment.actionRoute,
-         label: "Release Payment",
-         color: "primary",
-      };
-   } else if (pendingOffer) {
-      action = {
-         icon: MessageSquare,
-         title: `New Offer: ₹${pendingOffer.proposedBudget.toLocaleString(
-            "en-IN"
-         )}`,
-         description: `Review offer for "${pendingOffer.taskTitle}"`,
-         route: pendingOffer.actionRoute,
-         label: "View Offer",
-         color: "primary",
-      };
-   } else if (unreadChat) {
-      action = {
-         icon: MessageSquare,
-         title: `${unreadChat.unreadCount} new message${
-            unreadChat.unreadCount > 1 ? "s" : ""
-         }`,
-         description: `From ${unreadChat.otherPartyName} about "${unreadChat.taskTitle}"`,
-         route: `/chat?id=${unreadChat.id}`,
-         label: "Open Chat",
-         color: "primary",
-      };
-   } else if (activeTask) {
-      action = {
-         icon: CheckCircle2,
-         title: activeTask.nextAction,
-         description: `"${activeTask.title}" - ${activeTask.otherPartyName}`,
-         route: activeTask.nextActionRoute,
-         label: activeTask.nextAction,
-         color: "primary",
-      };
-   }
-
-   if (!action) return null;
-
-   const Icon = action.icon;
-   const classes = getCardClasses(action.color);
-
-   return (
-      <div className={`${classes.card} rounded-xl p-6 sm:p-8`}>
-         <div className="flex flex-col items-center text-center gap-4">
-            <div
-               className={`w-12 h-12 rounded-xl ${classes.iconBg} flex items-center justify-center`}
-            >
-               <Icon className={`w-6 h-6 ${classes.iconColor}`} />
-            </div>
-            <div className="flex-1 max-w-2xl">
-               <h3 className="text-lg sm:text-xl font-bold text-secondary-900 mb-2">
-                  {action.title}
-               </h3>
-               <p className="text-sm sm:text-base text-secondary-600 mb-4">
-                  {action.description}
-               </p>
-               <div className="flex justify-center">
-                  <Button
-                     onClick={() => router.push(action.route)}
-                     className={`${classes.button} text-white font-semibold shadow-sm`}
-                  >
-                     {action.label}
-                     <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-               </div>
-            </div>
-         </div>
-      </div>
-   );
-}
-
-function VerificationPendingCard() {
-   const router = useRouter();
-
-   return (
-      <div className="bg-amber-50 rounded-xl p-6 sm:p-8">
-         <div className="flex flex-col items-center text-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
-               <Hourglass className="w-6 h-6 text-amber-600" />
-            </div>
-            <div className="flex-1 max-w-2xl">
-               <h3 className="text-lg sm:text-xl font-bold text-secondary-900 mb-2">
-                  Verification Under Review
-               </h3>
-               <p className="text-sm sm:text-base text-secondary-600 mb-4">
-                  Your verification documents are being reviewed. This usually
-                  takes 24-48 hours. We&apos;ll notify you once it&apos;s
-                  complete.
-               </p>
-               <div className="flex justify-center">
-                  <Button
-                     onClick={() => router.push("/profile/verify")}
-                     className="bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-sm"
-                  >
-                     Check Status
-                     <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-               </div>
-            </div>
-         </div>
-      </div>
-   );
-}
-
-function PaymentPendingCard({ data }: { data: DashboardData }) {
-   const router = useRouter();
-   const pendingPayment = data.currentStatus.pendingPayments[0];
-
-   if (!pendingPayment) return null;
-
-   return (
-      <div className="bg-primary-50 rounded-xl p-6 sm:p-8">
-         <div className="flex flex-col items-center text-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center">
-               <CreditCard className="w-6 h-6 text-primary-600" />
-            </div>
-            <div className="flex-1 max-w-2xl">
-               <h3 className="text-lg sm:text-xl font-bold text-secondary-900 mb-2">
-                  Payment Ready to Release
-               </h3>
-               <p className="text-sm sm:text-base text-secondary-600 mb-3">
-                  You have ₹{pendingPayment.amount.toLocaleString("en-IN")}{" "}
-                  ready to release for &quot;{pendingPayment.taskTitle}&quot;.
-                  Complete the payment to finalize the task.
-               </p>
-               <div className="flex items-center justify-center gap-2 text-xs text-secondary-500 mb-4">
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  <span>Payment will be processed securely</span>
-               </div>
-               <div className="flex justify-center">
-                  <Button
-                     onClick={() => router.push(pendingPayment.actionRoute)}
-                     className="bg-primary-500 hover:bg-primary-600 text-white font-semibold shadow-sm"
-                  >
-                     Release Payment
-                     <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-               </div>
-            </div>
-         </div>
-      </div>
-   );
-}
-
-function ProfileIncompleteCard() {
-   const router = useRouter();
+   const missingItems: string[] = [];
+   if (!user.photoURL) missingItems.push("profile photo");
+   if (!user.onboardingStatus?.completedSteps?.profile) missingItems.push("profile details");
 
    return (
       <div className="bg-primary-50 rounded-xl p-6 sm:p-8">
@@ -412,9 +157,8 @@ function ProfileIncompleteCard() {
                   Complete Your Profile
                </h3>
                <p className="text-sm sm:text-base text-secondary-600 mb-4">
-                  Add a profile photo, bio, and skills to stand out to task
-                  posters. Profiles with complete information get 3x more
-                  offers.
+                  Add your {missingItems.join(" and ")} to stand out. 
+                  Complete profiles get 3x more engagement.
                </p>
                <div className="flex justify-center">
                   <Button
@@ -431,40 +175,103 @@ function ProfileIncompleteCard() {
    );
 }
 
-function LowActivityCard() {
+function VerificationPendingCard({ user }: { user: UserProfile }) {
    const router = useRouter();
+   const isBusiness = user.userType === "business";
 
-   const daysSinceLastActivity = 7; // Mock data
+   // Calculate verification progress
+   let verificationItems: { key: string; verified: boolean; label: string; route: string }[] = [];
+   let primaryAction = { label: "Verify Now", route: "/profile/verify" };
+
+   if (isBusiness) {
+      const biz = user.business;
+      verificationItems = [
+         { key: "pan", verified: !!biz?.pan?.isPANVerified, label: "PAN", route: "/profile/verify/pan" },
+         { key: "gst", verified: !!biz?.isGSTVerified, label: "GST", route: "/profile/verify/gst" },
+         { key: "bank", verified: !!biz?.bankAccount?.isVerified, label: "Bank", route: "/profile/verify/bank" },
+      ];
+      
+      const pendingItem = verificationItems.find(item => !item.verified);
+      if (pendingItem) {
+         primaryAction = { label: `Verify ${pendingItem.label}`, route: pendingItem.route };
+      }
+   } else {
+      verificationItems = [
+         { key: "aadhaar", verified: !!user.isAadhaarVerified, label: "Identity", route: "/profile/verify/aadhaar" },
+         { key: "bank", verified: !!user.isBankVerified, label: "Bank", route: "/profile/verify/bank" },
+      ];
+      
+      const pendingItem = verificationItems.find(item => !item.verified);
+      if (pendingItem) {
+         primaryAction = { label: `Verify ${pendingItem.label}`, route: pendingItem.route };
+      }
+   }
+
+   const completedCount = verificationItems.filter(item => item.verified).length;
+   const totalCount = verificationItems.length;
+   const progress = (completedCount / totalCount) * 100;
 
    return (
       <div className="bg-primary-50 rounded-xl p-6 sm:p-8">
          <div className="flex flex-col items-center text-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center">
-               <TrendingDown className="w-6 h-6 text-primary-600" />
+               <Shield className="w-6 h-6 text-primary-600" />
             </div>
             <div className="flex-1 max-w-2xl">
                <h3 className="text-lg sm:text-xl font-bold text-secondary-900 mb-2">
-                  Get Back in the Game
+                  Complete Your Verification
                </h3>
-               <p className="text-sm sm:text-base text-secondary-600 mb-4">
-                  It&apos;s been {daysSinceLastActivity} days since your last
-                  activity. Browse new tasks or post one to stay active and
-                  maintain your visibility.
+               <p className="text-sm sm:text-base text-secondary-600 mb-3">
+                  Verify your {isBusiness ? "business" : "identity"} to unlock all features and build trust.
                </p>
-               <div className="flex flex-col sm:flex-row gap-3 justify-center">
+
+               {/* Progress Bar */}
+               <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                     <span className="text-xs font-medium text-secondary-700">
+                        {completedCount} of {totalCount} verified
+                     </span>
+                     <span className="text-xs text-secondary-500">
+                        {Math.round(progress)}%
+                     </span>
+                  </div>
+                  <div className="w-full h-2 bg-secondary-100 rounded-full overflow-hidden">
+                     <div
+                        className="h-full bg-primary-500 rounded-full transition-all"
+                        style={{ width: `${progress}%` }}
+                     />
+                  </div>
+               </div>
+
+               {/* Verification Status Badges */}
+               <div className="flex flex-wrap justify-center gap-2 mb-4">
+                  {verificationItems.map(item => (
+                     <span 
+                        key={item.key}
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${
+                           item.verified 
+                              ? "bg-green-100 text-green-700" 
+                              : "bg-secondary-100 text-secondary-600"
+                        }`}
+                     >
+                        {item.verified && <CheckCircle2 className="w-3 h-3 inline mr-1" />}
+                        {item.label}
+                     </span>
+                  ))}
+               </div>
+
+               <div className="flex items-center justify-center gap-2 text-xs text-secondary-500 mb-4">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Takes about 5 minutes • Secure & encrypted</span>
+               </div>
+
+               <div className="flex justify-center">
                   <Button
-                     onClick={() => router.push("/discover")}
+                     onClick={() => router.push(primaryAction.route)}
                      className="bg-primary-500 hover:bg-primary-600 text-white font-semibold shadow-sm"
                   >
-                     Browse Tasks
+                     {primaryAction.label}
                      <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                  <Button
-                     variant="outline"
-                     onClick={() => router.push("/tasks/new")}
-                     className="border-secondary-300 hover:border-primary-300"
-                  >
-                     Post a Task
                   </Button>
                </div>
             </div>
@@ -473,14 +280,20 @@ function LowActivityCard() {
    );
 }
 
-function AchievementUnlockedCard({ data }: { data: DashboardData }) {
+function AchievementUnlockedCard({ user }: { user: UserProfile }) {
    const router = useRouter();
+   const completedTasks = user.completedTasks || 0;
 
-   const achievement = "Task Master"; // Mock data
-   const milestone =
-      data.stats.totalTasksCompleted >= 10
-         ? "10 tasks completed"
-         : "First task completed";
+   let achievement = "Rising Star";
+   let milestone = `${completedTasks} tasks completed`;
+   
+   if (completedTasks >= 50) {
+      achievement = "Expert Tasker";
+   } else if (completedTasks >= 25) {
+      achievement = "Task Master";
+   } else if (completedTasks >= 10) {
+      achievement = "Reliable Helper";
+   }
 
    return (
       <div className="bg-yellow-50 rounded-xl p-6 sm:p-8">
@@ -493,13 +306,9 @@ function AchievementUnlockedCard({ data }: { data: DashboardData }) {
                   🎉 Achievement Unlocked!
                </h3>
                <p className="text-sm sm:text-base text-secondary-600 mb-3">
-                  Congratulations! You&apos;ve earned the &quot;{achievement}
-                  &quot; badge for {milestone}. Keep up the great work!
+                  You&apos;ve earned the &quot;{achievement}&quot; badge for {milestone}. 
+                  Keep up the great work!
                </p>
-               <div className="flex items-center justify-center gap-2 text-xs text-secondary-500 mb-4">
-                  <Trophy className="w-3.5 h-3.5" />
-                  <span>View all achievements in your profile</span>
-               </div>
                <div className="flex justify-center">
                   <Button
                      onClick={() => router.push("/profile")}
@@ -515,34 +324,22 @@ function AchievementUnlockedCard({ data }: { data: DashboardData }) {
    );
 }
 
-function ReturningUserCard({ data }: { data: DashboardData }) {
+function ReturningUserCard({ user }: { user: UserProfile }) {
    const router = useRouter();
+   
+   const completedTasks = user.completedTasks || 0;
+   const rating = user.rating || 0;
 
-   // Calculate milestones
-   const totalTasks =
-      data.stats.totalTasksPosted + data.stats.totalTasksAsTasker;
-   const hasEarnings = data.stats.totalEarnings > 0;
-   const hasCompletedTasks = data.stats.totalTasksCompleted > 0;
+   let message = "Welcome back!";
+   let highlight = "Ready to get things done";
 
-   let message = "";
-   let highlight = "";
-
-   if (hasEarnings && data.stats.totalEarnings >= 10000) {
-      message = "You've earned over ₹10,000!";
-      highlight = `₹${data.stats.totalEarnings.toLocaleString(
-         "en-IN"
-      )} total earnings`;
-   } else if (totalTasks >= 10) {
-      message = "You're making great progress!";
-      highlight = `${totalTasks} tasks completed`;
-   } else if (hasCompletedTasks) {
+   if (completedTasks > 0) {
       message = "Keep up the great work!";
-      highlight = `${data.stats.totalTasksCompleted} task${
-         data.stats.totalTasksCompleted > 1 ? "s" : ""
-      } completed`;
-   } else {
-      message = "Welcome back!";
-      highlight = "Ready to get things done";
+      highlight = `${completedTasks} task${completedTasks > 1 ? "s" : ""} completed`;
+      
+      if (rating > 0) {
+         highlight += ` • ${rating.toFixed(1)} ⭐ rating`;
+      }
    }
 
    return (
@@ -556,8 +353,7 @@ function ReturningUserCard({ data }: { data: DashboardData }) {
                   {message}
                </h3>
                <p className="text-sm sm:text-base text-secondary-600 mb-4">
-                  {highlight}. Continue building your reputation and exploring
-                  new opportunities.
+                  {highlight}. Continue building your reputation.
                </p>
                <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button
@@ -578,45 +374,4 @@ function ReturningUserCard({ data }: { data: DashboardData }) {
          </div>
       </div>
    );
-}
-
-// Helper function for card classes
-function getCardClasses(color: string) {
-   switch (color) {
-      case "green":
-         return {
-            card: "bg-green-50",
-            iconBg: "bg-green-100",
-            iconColor: "text-green-600",
-            button: "bg-green-500 hover:bg-green-600",
-         };
-      case "primary":
-         return {
-            card: "bg-primary-50",
-            iconBg: "bg-primary-100",
-            iconColor: "text-primary-600",
-            button: "bg-primary-500 hover:bg-primary-600",
-         };
-      case "purple":
-         return {
-            card: "bg-purple-50",
-            iconBg: "bg-purple-100",
-            iconColor: "text-purple-600",
-            button: "bg-purple-500 hover:bg-purple-600",
-         };
-      case "blue":
-         return {
-            card: "bg-blue-50",
-            iconBg: "bg-blue-100",
-            iconColor: "text-blue-600",
-            button: "bg-blue-500 hover:bg-blue-600",
-         };
-      default:
-         return {
-            card: "bg-secondary-50",
-            iconBg: "bg-secondary-100",
-            iconColor: "text-secondary-600",
-            button: "bg-primary-500 hover:bg-primary-600",
-         };
-   }
 }

@@ -3,86 +3,58 @@
 /**
  * Recommended Tasks Carousel Component
  * Displays recommended tasks in a scrollable carousel format
- * Supports both scrolling and navigation arrows
+ * Fetches real tasks from public API
  */
 
 import React, { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, MapPin, Clock, Tag } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Clock, Tag, Loader2 } from "lucide-react";
+import { tasksApi } from "@/lib/api/endpoints/tasks";
 
-interface RecommendedTask {
-   id: string;
+interface Task {
+   _id: string;
    title: string;
    budget: number;
-   location: string;
+   location?: {
+      address?: string;
+      city?: string;
+   };
    category: string;
-   timeAgo: string;
-   applications?: number;
+   createdAt: string;
+   offers?: any[];
 }
-
-// Mock recommended tasks data
-const mockRecommendedTasks: RecommendedTask[] = [
-   {
-      id: "rec_1",
-      title: "Deep clean 3BHK apartment before move-in",
-      budget: 2500,
-      location: "Mumbai",
-      category: "Cleaning",
-      timeAgo: "2 hours ago",
-      applications: 3,
-   },
-   {
-      id: "rec_2",
-      title: "Assemble IKEA furniture - 5 pieces",
-      budget: 1800,
-      location: "Bangalore",
-      category: "Handyman",
-      timeAgo: "5 hours ago",
-      applications: 1,
-   },
-   {
-      id: "rec_3",
-      title: "Paint living room walls - 2 coats",
-      budget: 4500,
-      location: "Delhi",
-      category: "Painting",
-      timeAgo: "1 day ago",
-      applications: 5,
-   },
-   {
-      id: "rec_4",
-      title: "Garden maintenance and lawn mowing",
-      budget: 1200,
-      location: "Pune",
-      category: "Gardening",
-      timeAgo: "3 hours ago",
-      applications: 2,
-   },
-   {
-      id: "rec_5",
-      title: "Fix leaking kitchen faucet",
-      budget: 800,
-      location: "Hyderabad",
-      category: "Plumbing",
-      timeAgo: "6 hours ago",
-      applications: 0,
-   },
-   {
-      id: "rec_6",
-      title: "Office furniture moving - 2nd floor",
-      budget: 3200,
-      location: "Chennai",
-      category: "Moving",
-      timeAgo: "1 day ago",
-      applications: 4,
-   },
-];
 
 export function RecommendedTasks() {
    const router = useRouter();
    const scrollContainerRef = useRef<HTMLDivElement>(null);
    const [showLeftArrow, setShowLeftArrow] = useState(false);
    const [showRightArrow, setShowRightArrow] = useState(true);
+   const [tasks, setTasks] = useState<any[]>([]);
+   const [isLoading, setIsLoading] = useState(true);
+
+   // Fetch real tasks from API
+   useEffect(() => {
+      const fetchTasks = async () => {
+         try {
+            setIsLoading(true);
+            const response = await tasksApi.getPublicTasks({ 
+               limit: 10, 
+               status: "open",
+               sortBy: "createdAt",
+               sortOrder: "desc"
+            });
+            // API returns { tasks, pagination }
+            setTasks(response.tasks || []);
+         } catch (error) {
+            console.error("Failed to fetch recommended tasks:", error);
+            setTasks([]);
+         } finally {
+            setIsLoading(false);
+         }
+      };
+
+      fetchTasks();
+   }, []);
 
    const checkScrollButtons = () => {
       if (!scrollContainerRef.current) return;
@@ -105,7 +77,7 @@ export function RecommendedTasks() {
          container.removeEventListener("scroll", checkScrollButtons);
          window.removeEventListener("resize", checkScrollButtons);
       };
-   }, []);
+   }, [tasks]);
 
    const scroll = (direction: "left" | "right") => {
       if (!scrollContainerRef.current) return;
@@ -121,7 +93,39 @@ export function RecommendedTasks() {
       });
    };
 
-   if (mockRecommendedTasks.length === 0) {
+   // Format time ago
+   const formatTimeAgo = (dateString: string) => {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffHours / 24);
+
+      if (diffDays > 0) {
+         return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+      } else if (diffHours > 0) {
+         return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+      } else {
+         return "Just now";
+      }
+   };
+
+   if (isLoading) {
+      return (
+         <div className="w-full py-8 sm:py-12 bg-white">
+            <div className="max-w-7xl mx-auto px-6 sm:px-8 md:px-12">
+               <h2 className="text-lg sm:text-xl font-bold text-secondary-900 mb-6">
+                  Recommended for You
+               </h2>
+               <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
+               </div>
+            </div>
+         </div>
+      );
+   }
+
+   if (tasks.length === 0) {
       return null;
    }
 
@@ -170,14 +174,22 @@ export function RecommendedTasks() {
                   ref={scrollContainerRef}
                   className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4 -mx-2 px-2"
                >
-                  {mockRecommendedTasks.map((task) => (
+                  {tasks.map((task) => (
                      <div
-                        key={task.id}
+                        key={task._id}
                         className="task-card flex-shrink-0 w-[calc(100%-1rem)] sm:w-[calc(50%-1.5rem)] lg:w-[calc(33.333%-1.5rem)] min-w-[280px]"
                      >
                         <TaskCard
-                           task={task}
-                           onClick={() => router.push(`/tasks/${task.id}`)}
+                           task={{
+                              id: task._id,
+                              title: task.title,
+                              budget: typeof task.budget === 'object' ? task.budget.amount : task.budget,
+                              location: task.location?.city || task.location?.address || "Remote",
+                              category: task.category,
+                              timeAgo: formatTimeAgo(task.createdAt),
+                              applications: task.offers?.length || 0,
+                           }}
+                           onClick={() => router.push(`/tasks/${task._id}/track`)}
                         />
                      </div>
                   ))}
@@ -186,6 +198,16 @@ export function RecommendedTasks() {
          </div>
       </div>
    );
+}
+
+interface RecommendedTask {
+   id: string;
+   title: string;
+   budget: number;
+   location: string;
+   category: string;
+   timeAgo: string;
+   applications?: number;
 }
 
 function TaskCard({
@@ -243,6 +265,3 @@ function TaskCard({
       </button>
    );
 }
-
-
-

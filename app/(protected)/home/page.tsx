@@ -7,16 +7,13 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, RefreshCw, X, Settings } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
-   NotificationCenter,
-   QuickSearch,
    DynamicActionCard,
    RecommendedTasks,
 } from "@/components/home";
-import { mockDashboardData, mockUser } from "@/lib/data/mockDashboard";
-import type { DashboardData } from "@/types/dashboard";
+import { useUserStore } from "@/lib/state/userStore";
 
 type CardState =
    | "first_time"
@@ -43,14 +40,9 @@ const POPULAR_CATEGORIES = [
 
 export default function HomePage() {
    const router = useRouter();
+   const { user } = useUserStore();
    const [isRefreshing, setIsRefreshing] = useState(false);
    const [searchQuery, setSearchQuery] = useState("");
-   const [selectedCardState, setSelectedCardState] =
-      useState<CardState>("auto");
-   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
-
-   const data: DashboardData = mockDashboardData;
-   const user = mockUser;
 
    const handleRefresh = async () => {
       setIsRefreshing(true);
@@ -74,53 +66,6 @@ export default function HomePage() {
    return (
       <>
          <div className="bg-secondary-50">
-            {/* Settings Panel - Fixed on Right Side */}
-            {showSettingsPanel && (
-               <div className="fixed right-0 top-30 h-1/2 w-64 bg-white border-l border-secondary-200 shadow-xl z-40 overflow-y-auto">
-                  <div className="p-4 border-b border-secondary-200 flex items-center justify-between">
-                     <h3 className="text-sm font-semibold text-secondary-900">
-                        Card State (Dev)
-                     </h3>
-                     <button
-                        onClick={() => setShowSettingsPanel(false)}
-                        className="p-1 text-secondary-400 hover:text-secondary-600"
-                     >
-                        <X className="w-4 h-4" />
-                     </button>
-                  </div>
-                  <div className="p-4">
-                     <label className="block text-xs font-medium text-secondary-700 mb-2">
-                        Select Card State
-                     </label>
-                     <select
-                        value={selectedCardState}
-                        onChange={(e) =>
-                           setSelectedCardState(e.target.value as CardState)
-                        }
-                        className="w-full px-3 py-2 text-sm border border-secondary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
-                     >
-                        <option value="auto">Auto (Based on Data)</option>
-                        <option value="first_time">First Time User</option>
-                        <option value="incomplete_setup">
-                           Incomplete Setup
-                        </option>
-                        <option value="pending_action">Pending Action</option>
-                        <option value="verification_pending">
-                           Verification Pending
-                        </option>
-                        <option value="payment_pending">Payment Pending</option>
-                        <option value="profile_incomplete">
-                           Profile Incomplete
-                        </option>
-                        <option value="low_activity">Low Activity</option>
-                        <option value="achievement_unlocked">
-                           Achievement Unlocked
-                        </option>
-                        <option value="returning_user">Returning User</option>
-                     </select>
-                  </div>
-               </div>
-            )}
 
             {/* Main Content - Full Width */}
             <div className="w-full">
@@ -132,7 +77,7 @@ export default function HomePage() {
                      <div className="text-center mb-6 sm:mb-8">
                         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-secondary-900 mb-2">
                            {getGreeting()},{" "}
-                           {user.name?.split(" ")[0] || "there"}
+                           {user?.name?.split(" ")[0] || "there"}
                         </h1>
                         <p className="text-sm sm:text-base text-secondary-600">
                            How can we help you today?
@@ -186,15 +131,7 @@ export default function HomePage() {
                   {/* Dynamic Action Card Section - Full Width, Centered Content */}
                   <div>
                      <div className="w-full mx-auto">
-                        <DynamicActionCard
-                           data={data}
-                           user={user}
-                           overrideState={
-                              selectedCardState === "auto"
-                                 ? undefined
-                                 : selectedCardState
-                           }
-                        />
+                        {user && <DynamicActionCard user={user} />}
                      </div>
                   </div>
                </div>
