@@ -25,6 +25,15 @@ import {
    X,
    ChevronDown,
    Settings,
+   Home,
+   LayoutDashboard,
+   User as UserIcon,
+   PlusCircle,
+   LogOut,
+   Briefcase,
+   HelpCircle,
+   Grid3x3,
+   MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/context";
@@ -439,112 +448,172 @@ export const LandingHeader: React.FC = () => {
             </div>
          )}
 
-         {/* Mobile Menu Overlay */}
+         {/* Mobile Menu - Professional Slide-out Drawer */}
          {isMobileMenuOpen && (
-            <div className="fixed inset-0 z-40 lg:hidden">
+            <div className="fixed inset-0 z-50 lg:hidden">
                {/* Backdrop */}
                <div
-                  className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+                  className="absolute inset-0 bg-black/50 backdrop-blur-sm"
                   onClick={() => setIsMobileMenuOpen(false)}
                />
 
-               {/* Menu Panel */}
-               <div className="absolute top-16 left-0 right-0 bg-white border-b border-secondary-200 shadow-lg">
+               {/* Slide-out Drawer */}
+               <div className="absolute top-0 right-0 h-full w-[85%] max-w-sm bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
                   {!isMobileCategoriesOpen ? (
-                     <nav className="p-2">
-                        {/* Nav Items */}
-                        {navItems.map((item) => (
-                           <button
-                              key={item.label}
-                              onClick={() =>
-                                 handleNavClick(item.href, item.hasDropdown)
-                              }
-                              className="w-full text-left py-2 px-3 md:py-3 md:px-4 text-sm md:text-base font-medium text-secondary-700 hover:bg-secondary-50 rounded-lg transition-colors"
-                           >
-                              {item.label}
-                           </button>
-                        ))}
-
-                        {/* Divider */}
-                        <div className="my-4 border-t border-secondary-100" />
-
-                        {/* CTA Buttons */}
-                        <div className="flex flex-col gap-3 px-4">
-                           <Link href="/tasks/new" className="w-full">
-                              <Button className="w-full bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold py-5">
-                                 Post a Task
-                              </Button>
-                           </Link>
-                           <Link href="/earn-money" className="w-full">
-                              <Button
-                                 variant="outline"
-                                 className="w-full border-secondary-300 text-secondary-700 font-medium py-5"
-                              >
-                                 Become a Tasker
-                              </Button>
-                           </Link>
-                           {!isAuthenticated && (
-                              <>
-                                 <Link href="/signup" className="w-full">
-                                    <Button
-                                       variant="ghost"
-                                       className="w-full text-secondary-700 font-medium py-5"
-                                    >
-                                       Signup
-                                    </Button>
-                                 </Link>
-                                 <Link href="/login" className="w-full">
-                                    <Button
-                                       variant="ghost"
-                                       className="w-full text-secondary-700 font-medium py-5"
-                                    >
-                                       Log in
-                                    </Button>
-                                 </Link>
-                              </>
-                           )}
-                        </div>
-                        {isAuthenticated && (
-                           <div className="px-4 pb-6">
-                              <div className="mb-4 flex items-center gap-4 rounded-2xl border border-secondary-100 bg-secondary-50 p-4">
-                                 <span className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary-900 text-lg font-semibold text-white">
-                                    {initials}
-                                 </span>
-                                 <div>
-                                    <p className="text-xs uppercase text-secondary-500">
-                                       Signed in as
+                     <>
+                        {/* User Profile Section */}
+                        {isAuthenticated ? (
+                           <div className="bg-gradient-to-br from-primary-500 to-primary-600 px-4 py-4">
+                              <div className="flex items-center gap-3">
+                                 <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border-2 border-white/30">
+                                    <span className="text-lg font-bold text-white">
+                                       {initials}
+                                    </span>
+                                 </div>
+                                 <div className="flex-1 min-w-0">
+                                    <p className="text-xs text-white/80 font-medium">
+                                       Hello,
                                     </p>
-                                    <p className="text-base font-semibold text-secondary-900">
+                                    <p className="text-base font-bold text-white truncate">
                                        {displayName}
                                     </p>
                                  </div>
                               </div>
-                              <div className="flex flex-col gap-2">
-                                 {USER_MENU_ITEMS.map((item) => (
-                                    <button
-                                       key={item.label}
-                                       onClick={() => {
-                                          setIsMobileMenuOpen(false);
-                                          handleRouteChange(item.route);
-                                       }}
-                                       className="w-full rounded-xl border border-secondary-100 px-4 py-3 text-left text-secondary-800"
-                                    >
-                                       {item.label}
-                                    </button>
-                                 ))}
-                                 <button
-                                    onClick={async () => {
-                                       setIsMobileMenuOpen(false);
-                                       await handleLogout();
-                                    }}
-                                    className="w-full rounded-xl border border-red-100 px-4 py-3 text-left font-semibold text-red-600"
-                                 >
-                                    Logout
-                                 </button>
-                              </div>
+                           </div>
+                        ) : (
+                           <div className="bg-gradient-to-br from-primary-500 to-primary-600 px-4 py-4">
+                              <h2 className="text-lg font-bold text-white">ExtraHand</h2>
+                              <p className="text-xs text-white/80 mt-0.5">Find help or earn money</p>
                            </div>
                         )}
-                     </nav>
+
+                        {/* Navigation Items */}
+                        <nav className="flex-1 overflow-y-auto py-1">
+                           {isAuthenticated && (
+                              <>
+                                 {/* Main Menu Items */}
+                                 <div className="px-2 mb-1">
+                                    <button
+                                       onClick={() => {
+                                          setIsMobileMenuOpen(false);
+                                          handleRouteChange("/home");
+                                       }}
+                                       className="w-full flex items-center gap-3 px-3 py-2.5 text-secondary-700 hover:bg-secondary-50 rounded-lg transition-colors"
+                                    >
+                                       <Home className="w-4 h-4" />
+                                       <span className="text-sm font-medium">Home</span>
+                                    </button>
+                                    <button
+                                       onClick={() => {
+                                          setIsMobileMenuOpen(false);
+                                          handleRouteChange("/tasks");
+                                       }}
+                                       className="w-full flex items-center gap-3 px-3 py-2.5 text-secondary-700 hover:bg-secondary-50 rounded-lg transition-colors"
+                                    >
+                                       <LayoutDashboard className="w-4 h-4" />
+                                       <span className="text-sm font-medium">Dashboard</span>
+                                    </button>
+                                    <button
+                                       onClick={() => {
+                                          setIsMobileMenuOpen(false);
+                                          handleRouteChange("/chat");
+                                       }}
+                                       className="w-full flex items-center gap-3 px-3 py-2.5 text-secondary-700 hover:bg-secondary-50 rounded-lg transition-colors"
+                                    >
+                                       <MessageCircle className="w-4 h-4" />
+                                       <span className="text-sm font-medium">Chat</span>
+                                    </button>
+                                    <button
+                                       onClick={() => {
+                                          setIsMobileMenuOpen(false);
+                                          handleRouteChange("/profile");
+                                       }}
+                                       className="w-full flex items-center gap-3 px-3 py-2.5 text-secondary-700 hover:bg-secondary-50 rounded-lg transition-colors"
+                                    >
+                                       <UserIcon className="w-4 h-4" />
+                                       <span className="text-sm font-medium">Profile</span>
+                                    </button>
+                                 </div>
+
+                                 <div className="h-px bg-secondary-200 my-1" />
+                              </>
+                           )}
+
+                           {/* Public Navigation */}
+                           <div className="px-2">
+                              <button
+                                 onClick={() => handleNavClick("#categories", true)}
+                                 className="w-full flex items-center gap-3 px-3 py-2.5 text-secondary-700 hover:bg-secondary-50 rounded-lg transition-colors"
+                              >
+                                 <Grid3x3 className="w-4 h-4" />
+                                 <span className="text-sm font-medium">Categories</span>
+                              </button>
+                              <button
+                                 onClick={() => handleNavClick("/discover")}
+                                 className="w-full flex items-center gap-3 px-3 py-2.5 text-secondary-700 hover:bg-secondary-50 rounded-lg transition-colors"
+                              >
+                                 <Briefcase className="w-4 h-4" />
+                                 <span className="text-sm font-medium">Browse Tasks</span>
+                              </button>
+                              <button
+                                 onClick={() => handleNavClick("#how-it-works")}
+                                 className="w-full flex items-center gap-3 px-3 py-2.5 text-secondary-700 hover:bg-secondary-50 rounded-lg transition-colors"
+                              >
+                                 <HelpCircle className="w-4 h-4" />
+                                 <span className="text-sm font-medium">How it Works</span>
+                              </button>
+                           </div>
+
+                           <div className="h-px bg-secondary-200 my-1" />
+
+                           {/* CTA Section */}
+                           <div className="px-2">
+                              <Link href="/tasks/new" onClick={() => setIsMobileMenuOpen(false)}>
+                                 <button className="w-full flex items-center gap-3 px-3 py-2.5 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors font-semibold">
+                                    <PlusCircle className="w-4 h-4" />
+                                    <span className="text-sm">Post a Task</span>
+                                 </button>
+                              </Link>
+                              {!isAuthenticated && (
+                                 <Link href="/earn-money" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <button className="w-full flex items-center gap-3 px-3 py-2.5 text-secondary-700 hover:bg-secondary-50 rounded-lg transition-colors">
+                                       <Briefcase className="w-4 h-4" />
+                                       <span className="text-sm font-medium">Become a Tasker</span>
+                                    </button>
+                                 </Link>
+                              )}
+                           </div>
+                        </nav>
+
+                        {/* Bottom Section */}
+                        <div className="border-t border-secondary-200 p-3">
+                           {isAuthenticated ? (
+                              <button
+                                 onClick={async () => {
+                                    setIsMobileMenuOpen(false);
+                                    await handleLogout();
+                                 }}
+                                 className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors font-semibold text-sm"
+                              >
+                                 <LogOut className="w-4 h-4" />
+                                 <span>Logout</span>
+                              </button>
+                           ) : (
+                              <div className="flex flex-col gap-2">
+                                 <Link href="/login" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <Button variant="outline" className="w-full text-sm py-2">
+                                       Log in
+                                    </Button>
+                                 </Link>
+                                 <Link href="/signup" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <Button className="w-full bg-primary-500 hover:bg-primary-600 text-sm py-2">
+                                       Sign up
+                                    </Button>
+                                 </Link>
+                              </div>
+                           )}
+                        </div>
+                     </>
                   ) : (
                      <div className="p-4">
                         {/* Back Button */}
