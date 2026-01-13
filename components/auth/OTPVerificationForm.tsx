@@ -88,11 +88,21 @@ export function OTPVerificationForm({
       // 1. We have a phone number
       // 2. We haven't attempted initial send yet
       // 3. The phone number is different from the last one we sent to
-      if (phone && !hasAttemptedInitialSend.current && lastSentPhone.current !== phone) {
-         hasAttemptedInitialSend.current = true;
-         lastSentPhone.current = phone;
-         handleSendOtp(phone);
+      if (!phone || hasAttemptedInitialSend.current || lastSentPhone.current === phone) {
+         return;
       }
+
+      // Debounce to prevent rapid-fire calls from React Strict Mode or re-renders
+      const timeoutId = setTimeout(() => {
+         // Double-check conditions after debounce
+         if (phone && !hasAttemptedInitialSend.current && lastSentPhone.current !== phone) {
+            hasAttemptedInitialSend.current = true;
+            lastSentPhone.current = phone;
+            handleSendOtp(phone);
+         }
+      }, 100); // 100ms debounce
+
+      return () => clearTimeout(timeoutId);
       // eslint-disable-next-line react-hooks/exhaustive-deps
    }, [phone]);
 
