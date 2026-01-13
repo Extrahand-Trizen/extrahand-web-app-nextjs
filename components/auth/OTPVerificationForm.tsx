@@ -289,8 +289,9 @@ export function OTPVerificationForm({
             // NOTE: tokens are now HttpOnly cookies; not storing in state
          });
 
-         // 4. Refresh user data in AuthContext
-         await refreshUserData();
+         // NOTE: We don't call refreshUserData() here because onAuthStateChanged
+         // in AuthContext will automatically detect the Firebase user and call api.me()
+         // This prevents duplicate /me API calls
 
          // 5. Success!
          setIsVerified(true);

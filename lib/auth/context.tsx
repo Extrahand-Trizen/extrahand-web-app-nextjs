@@ -48,6 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
    const [loading, setLoading] = useState(true);
    const [sessionRestored, setSessionRestored] = useState(false);
    const prevUserRef = useRef<string | null>(null);
+   const fetchingProfileRef = useRef(false); // Prevent concurrent api.me() calls
    const storeLogin = useUserStore((state) => state.login);
    const storeLogout = useUserStore((state) => state.logout);
    const hydrateFromSession = useUserStore((state) => state.hydrateFromSession);
@@ -139,19 +140,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             const user = auth.currentUser;
             if (user) {
                setCurrentUser(user);
-               try {
-                  const userData = await api.me();
-                  setUserData(userData);
-                  storeLogin({ user: userData });
-                  console.log("✅ Session restored successfully");
-               } catch (error: any) {
-                  console.warn(
-                     "❌ Failed to restore user data:",
-                     error.message
-                  );
-                  setUserData(null);
-                  if (error?.status === 401) {
-                     await resetLocalSession();
+               
+               // Guard against concurrent api.me() calls
+               if (fetchingProfileRef.current) {
+                  console.log("⏭️ Skipping api.me() in restore - already fetching");
+               } else {
+                  try {
+                     fetchingProfileRef.current = true;
+                     const userData = await api.me();
+                     setUserData(userData);
+                     storeLogin({ user: userData });
+                     console.log("✅ Session restored successfully");
+                  } catch (error: any) {
+                     console.warn(
+                        "❌ Failed to restore user data:",
+                        error.message
+                     );
+                     setUserData(null);
+                     if (error?.status === 401) {
+                        await resetLocalSession();
+                     }
+                  } finally {
+                     fetchingProfileRef.current = false;
                   }
                }
             } else {
@@ -197,7 +207,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                   });
                }
 
+               // Guard against concurrent api.me() calls
+               if (fetchingProfileRef.current) {
+                  console.log("⏭️ Skipping api.me() - already fetching profile");
+                  return;
+               }
+
                try {
+                  fetchingProfileRef.current = true;
                   const userData = await api.me();
                   setUserData(userData);
                   storeLogin({ user: userData });
@@ -211,6 +228,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                      await resetLocalSession();
                      return;
                   }
+               } finally {
+                  fetchingProfileRef.current = false;
                }
             } else {
                setCurrentUser(null);
