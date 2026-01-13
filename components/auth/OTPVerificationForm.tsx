@@ -62,6 +62,7 @@ export function OTPVerificationForm({
    const { refreshUserData } = useAuth();
    const loginToStore = useUserStore((state) => state.login);
    const hasAttemptedInitialSend = useRef(false);
+   const lastSentPhone = useRef<string | null>(null);
 
    // Use the useOTP hook for state management
    const {
@@ -83,8 +84,13 @@ export function OTPVerificationForm({
 
    // Initial auto-send OTP
    useEffect(() => {
-      if (phone && !hasAttemptedInitialSend.current) {
+      // Only send if:
+      // 1. We have a phone number
+      // 2. We haven't attempted initial send yet
+      // 3. The phone number is different from the last one we sent to
+      if (phone && !hasAttemptedInitialSend.current && lastSentPhone.current !== phone) {
          hasAttemptedInitialSend.current = true;
+         lastSentPhone.current = phone;
          handleSendOtp(phone);
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
