@@ -19,6 +19,7 @@ import { auth } from "./firebase";
 import { api } from "@/lib/api";
 import { sessionsApi } from "@/lib/api/endpoints/sessions";
 import { sessionManager } from "./session";
+import { isOTPAuthInProgress } from "./authFlowState";
 import { UserProfile } from "@/types/user";
 import { useUserStore } from "@/lib/state/userStore";
 
@@ -205,6 +206,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                      lastRoute:
                         sessionManager.getLastRoute()?.route || "Landing",
                   });
+               }
+
+               // Skip api.me() if OTP auth is in progress (cookies not set yet)
+               if (isOTPAuthInProgress()) {
+                  console.log("⏭️ Skipping api.me() - OTP auth in progress, waiting for /complete to set cookies");
+                  return;
                }
 
                // Guard against concurrent api.me() calls

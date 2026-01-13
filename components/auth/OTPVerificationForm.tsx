@@ -28,6 +28,7 @@ import { useOTP } from "@/hooks/useOTP";
 import { authApi } from "@/lib/api/endpoints/auth";
 import { useAuth } from "@/lib/auth/context";
 import { sessionManager } from "@/lib/auth/session";
+import { setOTPAuthInProgress } from "@/lib/auth/authFlowState";
 import { useUserStore } from "@/lib/state/userStore";
 import { formatPhoneNumber } from "@/lib/utils/phone";
 
@@ -228,6 +229,9 @@ export function OTPVerificationForm({
       setHasError(false);
 
       try {
+         // Set flag to prevent onAuthStateChanged from calling api.me() prematurely
+         setOTPAuthInProgress(true);
+         
          // 1. Verify OTP with Firebase (client-side)
          const firebaseResult = await verifyOTPWithFirebase();
 
@@ -289,9 +293,12 @@ export function OTPVerificationForm({
             // NOTE: tokens are now HttpOnly cookies; not storing in state
          });
 
-         // NOTE: We don't call refreshUserData() here because onAuthStateChanged
-         // in AuthContext will automatically detect the Firebase user and call api.me()
-         // This prevents duplicate /me API calls
+         // Clear the OTP auth flag - cookies are now set
+         setOTPAuthInProgress(false);
+
+         // Now fetch the full profile from backend (cookies are set)
+         // This is the production-grade approach: sequential flow, no race conditions
+         await refreshUserData();
 
          // 5. Success!
          setIsVerified(true);
@@ -314,6 +321,9 @@ export function OTPVerificationForm({
             }
          }, 1000);
       } catch (error: any) {
+         // Reset the flag on error
+         setOTPAuthInProgress(false);
+         
          console.error("OTP verification error:", error);
          setHasError(true);
          toast.error("Verification failed", {
