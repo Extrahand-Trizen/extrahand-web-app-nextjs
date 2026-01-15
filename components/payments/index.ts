@@ -7,6 +7,7 @@
 export { PaymentSummaryCard } from "./PaymentSummaryCard";
 export { PaymentInitiation } from "./PaymentInitiation";
 export { PaymentSuccess } from "./PaymentSuccess";
+export { PaymentConfirmationModal } from "./PaymentConfirmationModal";
 
 // Error & Status Components
 export { PaymentFailed, RefundStatus } from "./PaymentErrorStates";

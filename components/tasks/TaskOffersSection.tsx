@@ -11,10 +11,12 @@ import {
    SelectTrigger,
    SelectValue,
 } from "@/components/ui/select";
+import { toast } from "sonner";
 
 import type { TaskApplication } from "@/types/application";
 import { applicationsApi } from "@/lib/api/endpoints/applications";
-import { AcceptOfferModal } from "./offers/AcceptOfferModal";
+import { PaymentConfirmationModal } from "@/components/payments/PaymentConfirmationModal";
+import { useAuth } from "@/lib/auth/context";
 
 interface TaskOffersSectionProps {
    taskId: string;
@@ -56,7 +58,8 @@ export function TaskOffersSection({
    );
    const [selectedApplication, setSelectedApplication] =
       useState<TaskApplication | null>(null);
-   const [showAcceptModal, setShowAcceptModal] = useState(false);
+   const [showPaymentModal, setShowPaymentModal] = useState(false);
+   const { currentUser } = useAuth();
    const onApplicationsCountChangeRef = useRef(onApplicationsCountChange);
 
    // Keep ref updated with latest callback
@@ -102,23 +105,46 @@ export function TaskOffersSection({
 
    const handleAcceptOffer = (application: TaskApplication) => {
       setSelectedApplication(application);
-      setShowAcceptModal(true);
+      setShowPaymentModal(true);
    };
 
-   const handleAcceptSuccess = () => {
-      // Update the application status to 'accepted' in the local state
-      // so the poster can still see the accepted offer
-      if (selectedApplication) {
-         setApplications((prev) => {
-            const updated = prev.map((app) =>
+   const handlePaymentSuccess = async (escrowId: string, paymentId: string) => {
+      try {
+         if (!selectedApplication) return;
+
+         // Update application status to accepted after payment
+         await applicationsApi.updateApplicationStatus(selectedApplication._id, {
+            status: "accepted" as any,
+         });
+
+         toast.success("Payment successful!", {
+            description: "Task assigned to tasker. Money held in escrow.",
+         });
+
+         // Update local state
+         setApplications((prev) =>
+            prev.map((app) =>
                app._id === selectedApplication._id
                   ? { ...app, status: "accepted" as const }
-                  : { ...app, status: "rejected" as const } // Other pending apps get rejected
-            );
-            return updated;
+                  : app.status === "pending"
+                  ? { ...app, status: "rejected" as const }
+                  : app
+            )
+         );
+
+         setSelectedApplication(null);
+      } catch (error) {
+         console.error("Error updating application:", error);
+         toast.error("Payment successful but failed to update task", {
+            description: "Please contact support if task doesn't update.",
          });
       }
-      setSelectedApplication(null);
+   };
+
+   const handlePaymentError = (error: Error) => {
+      toast.error("Payment failed", {
+         description: error.message || "Please try again.",
+      });
    };
 
    const sortedApplications = [...applications].sort((a, b) => {
@@ -533,13 +559,23 @@ export function TaskOffersSection({
             )}
          </div>
 
-         {/* Accept Offer Modal */}
-         {selectedApplication && (
-            <AcceptOfferModal
-               application={selectedApplication}
-               open={showAcceptModal}
-               onOpenChange={setShowAcceptModal}
-               onSuccess={handleAcceptSuccess}
+         {/* Payment Confirmation Modal */}
+         {selectedApplication && currentUser && (
+            <PaymentConfirmationModal
+               open={showPaymentModal}
+               onOpenChange={setShowPaymentModal}
+               task={{
+                  id: taskId,
+                  title: (selectedApplication.taskId as any)?.title || "Task",
+               }}
+               application={{
+                  id: selectedApplication._id,
+                  applicantId: selectedApplication.applicantId as string,
+                  proposedBudget: selectedApplication.proposedBudget,
+               }}
+               posterUid={currentUser.uid}
+               onSuccess={handlePaymentSuccess}
+               onError={handlePaymentError}
             />
          )}
       </>

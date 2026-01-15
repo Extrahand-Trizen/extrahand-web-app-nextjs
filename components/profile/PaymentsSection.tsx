@@ -5,7 +5,7 @@
  * Manage payment methods, payouts, and transaction history
  */
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +43,9 @@ import {
 } from "@/lib/data/payments";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
+import { paymentApi } from "@/lib/api/endpoints/payment";
+import { useAuth } from "@/lib/auth/context";
+import { toast } from "sonner";
 
 interface PaymentsSectionProps {
    paymentMethods?: PaymentMethod[];
@@ -60,7 +63,7 @@ interface PaymentsSectionProps {
 export function PaymentsSection({
    paymentMethods = mockPaymentMethods,
    payoutMethods = mockPayoutMethods,
-   transactions = mockTransactions,
+   transactions: initialTransactions,
    userId,
    onRemovePaymentMethod,
    onRemovePayoutMethod,
@@ -69,10 +72,17 @@ export function PaymentsSection({
    onSavePaymentMethod,
    onSavePayoutMethod,
 }: PaymentsSectionProps) {
+   const { currentUser } = useAuth();
    const [activeTab, setActiveTab] = useState("methods");
    const [transactionFilter, setTransactionFilter] = useState<
       "all" | "outgoing" | "earnings"
    >("all");
+   
+   // Real data state - start with empty array, no mock data
+   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions || []);
+   const [loadingTransactions, setLoadingTransactions] = useState(false);
+   const [realEarnings, setRealEarnings] = useState<number | null>(null);
+   const [realSpent, setRealSpent] = useState<number | null>(null);
 
    // Range filter state
    const [showRangeFilters, setShowRangeFilters] = useState(false);
@@ -83,6 +93,71 @@ export function PaymentsSection({
    // Internal modal state
    const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false);
    const [showPayoutMethodModal, setShowPayoutMethodModal] = useState(false);
+
+   // Fetch real transaction data when transactions tab is active
+   useEffect(() => {
+      const fetchTransactions = async () => {
+         if (!currentUser?.uid || activeTab !== 'transactions') return;
+         
+         setLoadingTransactions(true);
+         try {
+            const response = await paymentApi.getUserTransactions(currentUser.uid, { limit: 100 });
+            if (response && Array.isArray(response.transactions)) {
+               // Map payment service transactions to profile format
+               const mapped: Transaction[] = response.transactions.map((tx: any) => {
+                  // Map transaction type: escrow -> payment (outgoing)
+                  let mappedType: Transaction['type'] = 'payment';
+                  if (tx.type === 'escrow') {
+                     mappedType = 'payment'; // Escrow is money going out (payment for task)
+                  } else if (tx.type === 'payout' || tx.type === 'earning') {
+                     mappedType = 'payout'; // Money coming in
+                  }
+                  
+                  return {
+                     id: tx.transactionId || tx.id,
+                     type: mappedType,
+                     amount: parseFloat(tx.amount), // Convert string to number
+                     currency: 'INR', // Default currency
+                     status: tx.status === 'held' || tx.status === 'pending' ? 'pending' : 'completed',
+                     description: tx.description || '',
+                     createdAt: new Date(tx.date || tx.createdAt), // API uses 'date' field
+                     taskId: tx.metadata?.taskId,
+                     taskTitle: tx.metadata?.taskTitle,
+                  };
+               });
+               setTransactions(mapped);
+               
+               // Calculate spent from fetched transactions (including escrow)
+               const spent = mapped
+                  .filter((t) => t.type === "payment")
+                  .reduce((sum, t) => sum + t.amount, 0);
+               setRealSpent(spent);
+            }
+         } catch (error) {
+            console.error('Failed to fetch transactions:', error);
+          } finally {
+            setLoadingTransactions(false);
+         }
+      };
+
+      const fetchEarnings = async () => {
+         if (!currentUser?.uid || activeTab !== 'transactions') return;
+         
+         try {
+            const response = await paymentApi.getUserEarnings(currentUser.uid);
+            if (response.success && response.data) {
+               setRealEarnings(response.data.totalEarnings || 0);
+            }
+         } catch (error) {
+            console.error('Failed to fetch earnings:', error);
+         }
+      };
+
+      if (activeTab === 'transactions') {
+         fetchTransactions();
+         fetchEarnings();
+      }
+   }, [currentUser?.uid, activeTab]);
 
    // Check if any range filters are active
    const hasActiveRangeFilters = useMemo(() => {
@@ -115,12 +190,12 @@ export function PaymentsSection({
       setShowPayoutMethodModal(false);
    };
 
-   // Calculate totals
-   const totalEarnings = transactions
+   // Calculate totals (use real data if available, otherwise calculate from transactions)
+   const totalEarnings = realEarnings !== null ? realEarnings : transactions
       .filter((t) => t.type === "payout" && t.status === "completed")
       .reduce((sum, t) => sum + t.amount, 0);
 
-   const totalOutgoing = transactions
+   const totalOutgoing = realSpent !== null ? realSpent : transactions
       .filter((t) => t.type === "payment" && t.status === "completed")
       .reduce((sum, t) => sum + t.amount, 0);
 
@@ -568,7 +643,14 @@ export function PaymentsSection({
 
                {/* Transactions List */}
                <div className="bg-white rounded-lg border border-gray-200">
-                  {filteredTransactions.length > 0 ? (
+                  {loadingTransactions ? (
+                     <div className="px-4 py-12 sm:px-5 sm:py-16 text-center">
+                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600 mx-auto mb-4"></div>
+                        <p className="text-xs sm:text-sm text-gray-500">
+                           Loading transactions...
+                        </p>
+                     </div>
+                  ) : filteredTransactions.length > 0 ? (
                      <div className="divide-y divide-gray-100">
                         {filteredTransactions.map((transaction) => (
                            <TransactionRow
