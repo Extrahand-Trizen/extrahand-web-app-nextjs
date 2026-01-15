@@ -304,6 +304,35 @@ class SessionManager {
       };
    }
 
+   // Check if session is currently active
+   isSessionActive(): boolean {
+      const session = this.getSession();
+      return session.isAuthenticated;
+   }
+
+   // Handle authentication errors (e.g., refresh token expired)
+   handleAuthError(options?: { redirect?: boolean }): void {
+      try {
+         if (typeof window === "undefined") return;
+
+         console.log("🚨 Authentication error - clearing session");
+         
+         // Clear all session data
+         this.clearSession();
+
+         // Optionally redirect to login
+         if (options?.redirect && typeof window !== "undefined") {
+            const currentPath = window.location.pathname;
+            // Don't redirect if already on auth pages
+            if (!currentPath.startsWith("/auth")) {
+               window.location.href = "/auth/login";
+            }
+         }
+      } catch (error) {
+         console.warn("Failed to handle auth error:", error);
+      }
+   }
+
    // Get default session
    private getDefaultSession(): SessionData {
       return {
