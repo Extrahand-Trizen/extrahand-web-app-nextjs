@@ -171,4 +171,94 @@ export const verificationApi = {
   }> {
     return fetchWithAuth('verification/features');
   },
+
+  // ============ Email Verification ============
+
+  /**
+   * Initiate email verification (send OTP)
+   * POST /api/v1/verification/email/initiate
+   */
+  async initiateEmail(
+    email: string,
+    consentGiven: boolean = true
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      verificationId: string;
+      maskedEmail: string;
+      expiresAt: string;
+      expiresInMinutes: number;
+    };
+  }> {
+    return fetchWithAuth('verification/email/initiate', {
+      method: 'POST',
+      body: JSON.stringify({
+        email,
+        consentGiven,
+      }),
+    });
+  },
+
+  /**
+   * Verify email OTP
+   * POST /api/v1/verification/email/verify
+   */
+  async verifyEmail(
+    otp: string,
+    verificationId?: string
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      status: string;
+      maskedEmail: string;
+      verifiedAt: string;
+      alreadyVerified?: boolean;
+    };
+  }> {
+    return fetchWithAuth('verification/email/verify', {
+      method: 'POST',
+      body: JSON.stringify({
+        otp,
+        verificationId,
+      }),
+    });
+  },
+
+  /**
+   * Resend email verification OTP
+   * POST /api/v1/verification/email/resend
+   */
+  async resendEmailOtp(): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      verificationId: string;
+      maskedEmail: string;
+      expiresAt: string;
+      expiresInMinutes: number;
+    };
+  }> {
+    return fetchWithAuth('verification/email/resend', {
+      method: 'POST',
+    });
+  },
+
+  /**
+   * Get email verification status
+   * GET /api/v1/verification/email/status/:userId
+   */
+  async getEmailStatus(userId: string): Promise<{
+    success: boolean;
+    data: {
+      status: string;
+      isVerified: boolean;
+      maskedEmail?: string;
+      verifiedAt?: string;
+      attemptsRemaining: number;
+    };
+  }> {
+    return fetchWithAuth(`verification/email/status/${userId}`);
+  },
 };

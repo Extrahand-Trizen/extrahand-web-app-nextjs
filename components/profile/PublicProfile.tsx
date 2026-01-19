@@ -468,7 +468,7 @@ export function PublicProfile({
             <CardContent>
                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   <VerificationBadge label="Phone" verified={!!user.phone} />
-                  <VerificationBadge label="Email" verified={!!user.email} />
+                  <VerificationBadge label="Email" verified={!!user.isEmailVerified} />
                   <VerificationBadge
                      label="Identity"
                      verified={user.isAadhaarVerified}

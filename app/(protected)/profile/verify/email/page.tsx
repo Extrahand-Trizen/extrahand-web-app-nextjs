@@ -29,34 +29,55 @@ import {
    Bell,
 } from "lucide-react";
 import { EMAIL_CONSENT_TEXT } from "@/types/verification";
+import { verificationApi } from "@/lib/api/endpoints/verification";
+import { useAuth } from "@/lib/auth/context";
 
 interface EmailVerificationState {
    step: "input" | "otp" | "success" | "error";
    email: string;
    otp: string;
    attemptsRemaining: number;
+   verificationId?: string;
    error?: string;
+   isAlreadyVerified?: boolean;
 }
 
 export default function EmailVerificationPage() {
    const router = useRouter();
    const inputRef = useRef<HTMLInputElement>(null);
+   const { userData } = useAuth();
 
    const [state, setState] = useState<EmailVerificationState>({
       step: "input",
       email: "",
       otp: "",
-      attemptsRemaining: 3,
+      attemptsRemaining: 5,
    });
 
    const [isLoading, setIsLoading] = useState(false);
    const [otpTimer, setOtpTimer] = useState(0);
 
+   // Pre-populate email from user profile
    useEffect(() => {
-      if (state.step === "input" && inputRef.current) {
+      if (userData?.email) {
+         setState((p) => ({ ...p, email: userData.email || "" }));
+         // If email is already verified, show success state
+         if (userData.isEmailVerified) {
+            setState((p) => ({
+               ...p,
+               email: userData.email || "",
+               step: "success",
+               isAlreadyVerified: true,
+            }));
+         }
+      }
+   }, [userData]);
+
+   useEffect(() => {
+      if (state.step === "input" && inputRef.current && !state.email) {
          inputRef.current.focus();
       }
-   }, [state.step]);
+   }, [state.step, state.email]);
 
    useEffect(() => {
       let interval: NodeJS.Timeout;
@@ -66,16 +87,17 @@ export default function EmailVerificationPage() {
       return () => clearInterval(interval);
    }, [otpTimer]);
 
+
    const handleBack = () => {
       switch (state.step) {
          case "input":
-            router.push("/profile/verify");
+            router.push("/profile?section=verifications");
             break;
          case "otp":
             setState((p) => ({ ...p, step: "input", otp: "" }));
             break;
          default:
-            router.push("/profile/verify");
+            router.push("/profile?section=verifications");
       }
    };
 
@@ -94,11 +116,20 @@ export default function EmailVerificationPage() {
       setIsLoading(true);
       setState((p) => ({ ...p, error: undefined }));
       try {
-         await new Promise((r) => setTimeout(r, 1500));
-         setState((p) => ({ ...p, step: "otp" }));
-         setOtpTimer(300);
-      } catch {
-         setState((p) => ({ ...p, error: "Failed to send verification code" }));
+         const response = await verificationApi.initiateEmail(state.email, true);
+         if (response.success) {
+            setState((p) => ({
+               ...p,
+               step: "otp",
+               verificationId: response.data.verificationId,
+            }));
+            setOtpTimer(response.data.expiresInMinutes * 60);
+         } else {
+            setState((p) => ({ ...p, error: response.message || "Failed to send verification code" }));
+         }
+      } catch (err: unknown) {
+         const errorMessage = err instanceof Error ? err.message : "Failed to send verification code";
+         setState((p) => ({ ...p, error: errorMessage }));
       } finally {
          setIsLoading(false);
       }
@@ -112,10 +143,29 @@ export default function EmailVerificationPage() {
       setIsLoading(true);
       setState((p) => ({ ...p, error: undefined }));
       try {
-         await new Promise((r) => setTimeout(r, 2000));
-         setState((p) => ({ ...p, step: "success" }));
-      } catch {
+         const response = await verificationApi.verifyEmail(state.otp, state.verificationId);
+         if (response.success) {
+            setState((p) => ({ ...p, step: "success" }));
+         } else {
+            const newAttempts = state.attemptsRemaining - 1;
+            if (newAttempts <= 0) {
+               setState((p) => ({
+                  ...p,
+                  step: "error",
+                  error: "Max attempts exceeded",
+               }));
+            } else {
+               setState((p) => ({
+                  ...p,
+                  attemptsRemaining: newAttempts,
+                  otp: "",
+                  error: response.message || `Invalid code. ${newAttempts} attempts left.`,
+               }));
+            }
+         }
+      } catch (err: unknown) {
          const newAttempts = state.attemptsRemaining - 1;
+         const errorMessage = err instanceof Error ? err.message : "Verification failed";
          if (newAttempts <= 0) {
             setState((p) => ({
                ...p,
@@ -127,7 +177,7 @@ export default function EmailVerificationPage() {
                ...p,
                attemptsRemaining: newAttempts,
                otp: "",
-               error: `Invalid code. ${newAttempts} attempts left.`,
+               error: `${errorMessage}. ${newAttempts} attempts left.`,
             }));
          }
       } finally {
@@ -139,16 +189,22 @@ export default function EmailVerificationPage() {
       if (otpTimer > 0) return;
       setIsLoading(true);
       try {
-         await new Promise((r) => setTimeout(r, 1500));
-         setOtpTimer(300);
-         setState((p) => ({
-            ...p,
-            otp: "",
-            attemptsRemaining: 3,
-            error: undefined,
-         }));
-      } catch {
-         setState((p) => ({ ...p, error: "Failed to resend code" }));
+         const response = await verificationApi.resendEmailOtp();
+         if (response.success) {
+            setOtpTimer(response.data.expiresInMinutes * 60);
+            setState((p) => ({
+               ...p,
+               otp: "",
+               attemptsRemaining: 5,
+               verificationId: response.data.verificationId,
+               error: undefined,
+            }));
+         } else {
+            setState((p) => ({ ...p, error: response.message || "Failed to resend code" }));
+         }
+      } catch (err: unknown) {
+         const errorMessage = err instanceof Error ? err.message : "Failed to resend code";
+         setState((p) => ({ ...p, error: errorMessage }));
       } finally {
          setIsLoading(false);
       }
@@ -449,7 +505,7 @@ export default function EmailVerificationPage() {
                      </div>
                   </div>
                   <Button
-                     onClick={() => router.push("/profile/verify")}
+                     onClick={() => router.push("/profile?section=verifications")}
                      className="w-full h-12 text-sm font-medium bg-primary-600 hover:bg-primary-500 rounded-xl"
                   >
                      Back to Verifications
@@ -485,7 +541,7 @@ export default function EmailVerificationPage() {
                         Try Again
                      </Button>
                      <Button
-                        onClick={() => router.push("/profile/verify")}
+                        onClick={() => router.push("/profile?section=verifications")}
                         variant="outline"
                         className="w-full h-12 text-sm font-medium rounded-xl"
                      >
