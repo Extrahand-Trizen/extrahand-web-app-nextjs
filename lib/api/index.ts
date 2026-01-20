@@ -14,6 +14,7 @@ import { sessionsApi } from "./endpoints/sessions";
 import { completionApi } from "./endpoints/completion";
 import { privacyApi } from "./endpoints/privacy";
 import { businessApi } from "./endpoints/business";
+import { categoriesApi } from "./endpoints/categories";
 
 export const api = {
    // Profile management
@@ -46,6 +47,9 @@ export const api = {
 
    // Business verification
    ...businessApi,
+
+   // Categories from content-admin backend
+   ...categoriesApi,
 
    // Utility functions
    async uploadImage(_file: File): Promise<string> {

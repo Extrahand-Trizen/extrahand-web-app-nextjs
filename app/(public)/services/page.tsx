@@ -1,74 +1,37 @@
 import React from "react";
-import connectDB from "@/lib/mongodb";
-import TaskCategory from "@/lib/models/TaskCategory";
-import TaskSubcategory from "@/lib/models/TaskSubcategory";
+import { categoriesApi } from "@/lib/api/endpoints/categories";
 import CategoriesClient from "@/components/categories/CategoriesClient";
-
-interface Category {
-   _id?: string;
-   name: string;
-   slug: string;
-   heroImage?: string;
-   heroTitle: string;
-   heroDescription: string;
-   subcategories?: Subcategory[];
-}
-
-interface Subcategory {
-   _id?: string;
-   name: string;
-   slug: string;
-}
+import { Category, Subcategory } from "@/types/category";
 
 /**
  * Services Page (Server Component) - For Posters looking to hire
- * Fetches categories from MongoDB and passes them to client component
+ * Fetches categories from content-admin backend API
  */
 export default async function ServicesPage() {
    let categories: Category[] = [];
 
    try {
-      await connectDB();
-
-      // Fetch all published categories from database, sorted by name
-      const allCategories = await TaskCategory.find({
-         isPublished: true,
-      } as any)
-         .select("name slug heroImage heroTitle heroDescription")
-         .sort({ name: 1 })
-         .lean();
-
-      // Convert to plain objects
-      categories = allCategories.map((cat: any) =>
-         JSON.parse(JSON.stringify(cat))
-      );
+      // Fetch all published categories from content-admin backend
+      const allCategories = await categoriesApi.getCategories();
 
       // Fetch subcategories for each category
-      for (let category of categories) {
-         try {
-            const subcategories = await TaskSubcategory.find({
-               categorySlug: category.slug,
-               isPublished: true,
-            } as any)
-               .select("name slug")
-               .sort({ name: 1 })
-               .lean();
-
-            category.subcategories = subcategories.map((subcat: any) =>
-               JSON.parse(JSON.stringify(subcat))
-            );
-         } catch (err) {
-            console.error(
-               `Failed to fetch subcategories for ${category.name}:`,
-               err
-            );
-            category.subcategories = [];
-         }
-      }
+      categories = await Promise.all(
+         allCategories.map(async (cat) => {
+            const subcategories = await categoriesApi.getSubcategories(cat.slug);
+            return {
+               _id: cat._id,
+               name: cat.name,
+               slug: cat.slug,
+               heroImage: cat.heroImage,
+               heroTitle: cat.heroTitle,
+               heroDescription: cat.heroDescription,
+               subcategories: subcategories as Subcategory[],
+            };
+         })
+      );
    } catch (error) {
-      console.error("Error fetching categories:", error);
+      console.error("Error fetching categories from content-admin:", error);
    }
 
    return <CategoriesClient categories={categories} viewType="services" />;
 }
-
