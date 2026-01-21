@@ -1,10 +1,5 @@
 'use client';
 
-/**
- * Footer component
- * Responsive footer with links and social media
- */
-
 import React from 'react';
 import Link from 'next/link';
 
@@ -185,7 +180,8 @@ export const Footer: React.FC = () => {
         </div>
         
         <div className="border-t border-neutral-gray-600 mt-6 md:mt-8 pt-4 md:pt-6 text-center text-neutral-gray-50/60 text-sm md:text-base leading-snug">
-          © {new Date().getFullYear()} Extrahand. All rights reserved.
+          © {new Date().getFullYear()} NAIPUNYA AI LABS PRIVATE
+          LIMITED. All rights reserved.
         </div>
       </div>
     </footer>
