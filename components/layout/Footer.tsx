@@ -22,8 +22,8 @@ const footerColumns = [
       { label: 'Media Enquiries', href: '#' },
       { label: 'Community Guidelines', href: '#' },
       { label: 'Tasker Principles', href: '#' },
-      { label: 'Terms & Conditions', href: '#' },
-      { label: 'Privacy Policy', href: '#' },
+      { label: 'Terms & Conditions', href: '/terms-and-conditions' },
+      { label: 'Privacy Policy', href: '/privacy-policy' },
       { label: 'Contact Us', href: '#' },
     ],
   },
@@ -134,7 +134,7 @@ export const Footer: React.FC = () => {
                   key={idx}
                   href={icon.href}
                   aria-label={icon.label}
-                  className="w-10 h-10 md:w-[42px] md:h-[42px] bg-white rounded-full flex items-center justify-center transition-opacity duration-200 flex-shrink-0 hover:opacity-80"
+                  className="w-10 h-10 md:w-[42px] md:h-[42px] bg-white rounded-full flex items-center justify-center transition-opacity duration-200 shrink-0 hover:opacity-80"
                 >
                   {icon.icon}
                 </a>
@@ -180,8 +180,7 @@ export const Footer: React.FC = () => {
         </div>
         
         <div className="border-t border-neutral-gray-600 mt-6 md:mt-8 pt-4 md:pt-6 text-center text-neutral-gray-50/60 text-sm md:text-base leading-snug">
-          © {new Date().getFullYear()} NAIPUNYA AI LABS PRIVATE
-          LIMITED. All rights reserved.
+          © {new Date().getFullYear()} Naipunya AI Labs Private Limited. All rights reserved.
         </div>
       </div>
     </footer>
