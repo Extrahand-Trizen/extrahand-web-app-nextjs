@@ -6,7 +6,7 @@
 import { CategoryDetail, Category, Subcategory } from "@/types/category";
 
 const CONTENT_ADMIN_URL =
-   process.env.NEXT_PUBLIC_CONTENT_ADMIN_URL || "http://localhost:5001";
+   process.env.NEXT_PUBLIC_CONTENT_ADMIN_URL || "https://extrahand-content-admin-backend.apps.extrahand.in";
 
 /**
  * Fetch wrapper for content-admin API calls
