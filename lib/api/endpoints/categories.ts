@@ -57,7 +57,7 @@ export interface CategoriesListItem {
 
 export const categoriesApi = {
    /**
-    * Get all published categories
+    * Get all categories (no filter - returns all categories)
     * @returns Array of categories or empty array on error
     */
    async getCategories(): Promise<CategoriesListItem[]> {
@@ -67,8 +67,8 @@ export const categoriesApi = {
 
       if (!categories) return [];
 
-      // Filter to only published categories
-      return categories.filter((cat) => cat.isPublished);
+      // Return all categories (no filtering by isPublished)
+      return categories;
    },
 
    /**

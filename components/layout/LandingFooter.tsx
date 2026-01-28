@@ -104,12 +104,11 @@ export const LandingFooter: React.FC = () => {
                            ExtraHand
                         </span>
                         <span className="text-xs md:text-sm font-semibold text-secondary-400">
-                           By Naipunya AI Labs Private Limited
+                           By NAIPUNYA AI LABS PRIVATE LIMITED
                         </span>
                      </div>
                   </Link>
                   <p className="text-secondary-400 text-xs md:text-sm leading-relaxed mb-4 md:mb-6">
-                     ExtraHand is owned and operated by Naipunya AI Labs Private Limited. 
                      Get any task done by verified local experts. Safe, secure,
                      and simple.
                   </p>
@@ -231,17 +230,18 @@ export const LandingFooter: React.FC = () => {
             {/* Bottom bar */}
             <div className="border-t border-secondary-800 py-5 md:pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
                <p className="text-secondary-500 text-xs md:text-sm">
-                  © {new Date().getFullYear()} Naipunya AI Labs Private Limited. All rights reserved.
+                  © {new Date().getFullYear()} NAIPUNYA AI LABS PRIVATE
+                  LIMITED. All rights reserved.
                </p>
                <div className="flex items-center gap-6 text-xs md:text-sm">
                   <Link
-                     href="/privacy-policy"
+                     href="#"
                      className="text-secondary-400 hover:text-white transition-colors"
                   >
                      Privacy Policy
                   </Link>
                   <Link
-                     href="/terms-and-conditions"
+                     href="#"
                      className="text-secondary-400 hover:text-white transition-colors"
                   >
                      Terms of Service

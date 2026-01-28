@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/design/utils";
 import { Button } from "@/components/ui/button";
+import { categoriesApi } from "@/lib/api/endpoints/categories";
 
 const menuItems = [
    { label: "Post a Task", type: "button", route: "/tasks/new" },
@@ -21,7 +22,8 @@ const menuItems = [
    { label: "Become a Tasker", type: "button", route: "/signup" },
 ];
 
-const categories = [
+// Fallback categories if API fails
+const fallbackCategories = [
    "Accountants",
    "Admin",
    "Alterations",
@@ -106,8 +108,31 @@ export const Header: React.FC = () => {
    const [activeItem, setActiveItem] = useState<string | null>(null);
    const [showCategories, setShowCategories] = useState(false);
    const [showMobileMenu, setShowMobileMenu] = useState(false);
+   const [categories, setCategories] = useState<string[]>(fallbackCategories);
+   const [categoriesLoading, setCategoriesLoading] = useState(true);
    const dropdownRef = useRef<HTMLDivElement>(null);
    const mobileMenuRef = useRef<HTMLDivElement>(null);
+
+   // Fetch categories from API on mount
+   useEffect(() => {
+      const fetchCategories = async () => {
+         try {
+            const categoriesData = await categoriesApi.getCategories();
+            if (categoriesData && categoriesData.length > 0) {
+               // Extract category names from the API response
+               const categoryNames = categoriesData.map((cat) => cat.name);
+               setCategories(categoryNames);
+            }
+         } catch (error) {
+            console.error('Error fetching categories:', error);
+            // Keep fallback categories on error
+         } finally {
+            setCategoriesLoading(false);
+         }
+      };
+
+      fetchCategories();
+   }, []);
 
    useEffect(() => {
       if (!showCategories) return;
@@ -160,6 +185,12 @@ export const Header: React.FC = () => {
 
       setShowCategories(false);
       setShowMobileMenu(false);
+   };
+
+   const handleCategoryClick = (categoryName: string) => {
+      setShowCategories(false);
+      // Navigate to tasks page with category filter
+      router.push(`/discover?category=${encodeURIComponent(categoryName)}`);
    };
 
    const centerMenu = menuItems.slice(0, 4);
@@ -238,37 +269,39 @@ export const Header: React.FC = () => {
                      </button>
                      {showCategories && (
                         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-white border border-neutral-gray-200 rounded-lg shadow-lg z-[10000] p-6 w-[90vw] max-w-[650px] max-h-[350px] overflow-y-auto flex gap-8">
-                           {Array.from({ length: 4 }).map((_, colIdx) => (
-                              <ul key={colIdx} className="list-none p-0 m-0">
-                                 {categories
-                                    .slice(
-                                       Math.floor(
-                                          (categories.length / 4) * colIdx
-                                       ),
-                                       Math.floor(
-                                          (categories.length / 4) * (colIdx + 1)
+                           {categoriesLoading ? (
+                              <div className="text-secondary-500 text-sm">Loading categories...</div>
+                           ) : categories.length === 0 ? (
+                              <div className="text-secondary-500 text-sm">No categories available</div>
+                           ) : (
+                              Array.from({ length: 4 }).map((_, colIdx) => (
+                                 <ul key={colIdx} className="list-none p-0 m-0">
+                                    {categories
+                                       .slice(
+                                          Math.floor(
+                                             (categories.length / 4) * colIdx
+                                          ),
+                                          Math.floor(
+                                             (categories.length / 4) * (colIdx + 1)
+                                          )
                                        )
-                                    )
-                                    .map((cat) => (
-                                       <li key={cat}>
-                                          <a
-                                             href="#"
-                                             onClick={(e) => {
-                                                e.preventDefault();
-                                                console.log(
-                                                   "Category clicked:",
-                                                   cat
-                                                );
-                                                setShowCategories(false);
-                                             }}
-                                             className="block text-secondary-700 no-underline px-2 py-1 text-sm rounded font-sans transition-colors duration-200 hover:bg-neutral-gray-100 cursor-pointer"
-                                          >
-                                             {cat}
-                                          </a>
-                                       </li>
-                                    ))}
-                              </ul>
-                           ))}
+                                       .map((cat) => (
+                                          <li key={cat}>
+                                             <a
+                                                href="#"
+                                                onClick={(e) => {
+                                                   e.preventDefault();
+                                                   handleCategoryClick(cat);
+                                                }}
+                                                className="block text-secondary-700 no-underline px-2 py-1 text-sm rounded font-sans transition-colors duration-200 hover:bg-neutral-gray-100 cursor-pointer"
+                                             >
+                                                {cat}
+                                             </a>
+                                          </li>
+                                       ))}
+                                 </ul>
+                              ))
+                           )}
                         </div>
                      )}
                   </div>
