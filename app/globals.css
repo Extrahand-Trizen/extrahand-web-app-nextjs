@@ -403,3 +403,16 @@ html {
 .animate-progress {
    animation: progress 2s ease-in-out infinite;
 }
+
+/* Fix for hero title text overlap */
+section h1 {
+   line-height: 2 !important;
+   display: block !important;
+   word-spacing: normal !important;
+   letter-spacing: normal !important;
+   margin: 0 !important;
+   padding: 0 !important;
+   min-height: auto !important;
+   overflow: visible !important;
+   white-space: normal !important;
+}

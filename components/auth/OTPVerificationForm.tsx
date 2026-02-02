@@ -80,6 +80,7 @@ export function OTPVerificationForm({
 
    const [isVerified, setIsVerified] = useState(false);
    const [hasError, setHasError] = useState(false);
+   const isVerifyingRef = useRef(false); // Prevent duplicate verification attempts
 
    const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -110,7 +111,9 @@ export function OTPVerificationForm({
    // Auto-verify when OTP is complete
    useEffect(() => {
       const code = otp.join("");
-      if (code.length === OTP_LENGTH && !verifying && !isVerified) {
+      // Prevent duplicate verification attempts
+      if (code.length === OTP_LENGTH && !verifying && !isVerified && !isVerifyingRef.current) {
+         isVerifyingRef.current = true;
          handleVerify();
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -224,7 +227,15 @@ export function OTPVerificationForm({
 
    const handleVerify = async () => {
       const code = otp.join("");
-      if (code.length !== OTP_LENGTH) return;
+      if (code.length !== OTP_LENGTH) {
+         isVerifyingRef.current = false;
+         return;
+      }
+
+      // Prevent duplicate verification attempts
+      if (isVerifyingRef.current || verifying || isVerified) {
+         return;
+      }
 
       setHasError(false);
 
@@ -236,6 +247,9 @@ export function OTPVerificationForm({
          const firebaseResult = await verifyOTPWithFirebase();
 
          if (!firebaseResult.success) {
+            // Reset verification flag on error
+            isVerifyingRef.current = false;
+            
             // Handle Firebase verification errors
             if (
                firebaseResult.code === "auth/no-session" ||
@@ -249,6 +263,10 @@ export function OTPVerificationForm({
                      onClick: () => handleSendOtp(phone),
                   },
                });
+            } else if (firebaseResult.code === "auth/code-expired") {
+               // Don't show error toast for expired code if we already succeeded
+               // This prevents the duplicate toast issue
+               console.warn("OTP code expired (likely already used):", firebaseResult.code);
             } else {
                toast.error("Invalid OTP", {
                   description:
@@ -258,6 +276,7 @@ export function OTPVerificationForm({
                setOtp(Array(OTP_LENGTH).fill(""));
                focusInput(0);
             }
+            setOTPAuthInProgress(false);
             return;
          }
 
@@ -303,6 +322,7 @@ export function OTPVerificationForm({
          // 5. Success!
          setIsVerified(true);
          clearSession();
+         isVerifyingRef.current = false; // Reset verification flag on success
 
          const welcomeMessage =
             authType === "signup"
@@ -323,12 +343,26 @@ export function OTPVerificationForm({
       } catch (error: any) {
          // Reset the flag on error
          setOTPAuthInProgress(false);
+         isVerifyingRef.current = false;
+         
+         // Don't show error toast for code-expired if verification already succeeded
+         // This prevents duplicate toasts
+         const errorMessage = error?.message || "";
+         const errorCode = error?.code || "";
+         
+         if (errorCode === "auth/code-expired" || errorMessage.includes("code-expired")) {
+            // If we're already verified, don't show the error
+            if (isVerified) {
+               console.warn("Code expired error after successful verification - ignoring");
+               return;
+            }
+         }
          
          console.error("OTP verification error:", error);
          setHasError(true);
          toast.error("Verification failed", {
             description:
-               error.message || "Something went wrong. Please try again.",
+               errorMessage || "Something went wrong. Please try again.",
          });
          setOtp(Array(OTP_LENGTH).fill(""));
          focusInput(0);

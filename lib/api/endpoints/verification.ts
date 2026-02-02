@@ -1,27 +1,41 @@
 import { fetchWithAuth } from '../client';
 
-export interface AadhaarVerificationInitiateResponse {
+// DigiLocker (Aadhaar) - replaces OTP flow
+export interface DigilockerInitiateResponse {
   success: boolean;
   message: string;
   data: {
-    transactionId: string;
-    refId: string;
-    maskedAadhaar: string;
-    testOtp?: string; // Sandbox only
+    verification_id: string;
+    url: string;
+    status: string;
+    urlExpiresAt?: string;
+    alreadyVerified?: boolean;
+    maskedAadhaar?: string;
+    verifiedAt?: string;
   };
 }
 
-export interface AadhaarVerificationVerifyResponse {
+export interface DigilockerStatusResponse {
+  success: boolean;
+  message: string;
+  data: {
+    verification_id: string;
+    status: string;
+    document_consent?: boolean;
+    document_consent_validity?: string;
+    user_details?: Record<string, string>;
+    ready_for_complete: boolean;
+  };
+}
+
+export interface DigilockerCompleteResponse {
   success: boolean;
   message: string;
   data: {
     status: string;
-    maskedAadhaar: string;
-    verifiedData: {
-      name: string;
-      gender: string;
-      yearOfBirth: string;
-    };
+    maskedAadhaar?: string;
+    verifiedAt?: string;
+    alreadyVerified?: boolean;
   };
 }
 
@@ -34,55 +48,48 @@ export interface AadhaarVerificationStatus {
     maskedAadhaar?: string;
     provider?: string;
     verifiedAt?: Date;
-    attemptsRemaining: number;
   };
 }
 
 export const verificationApi = {
   /**
-   * Initiate Aadhaar verification (send OTP)
-   * POST /api/v1/verification/aadhaar/initiate
+   * Initiate DigiLocker Aadhaar verification
+   * POST /api/v1/verification/aadhaar/digilocker/initiate
+   * Returns DigiLocker URL for user to complete verification
    */
-  async initiateAadhaar(
-    aadhaarNumber: string,
-    consent: { given: boolean; text?: string; version?: string }
-  ): Promise<AadhaarVerificationInitiateResponse> {
-    return fetchWithAuth('verification/aadhaar/initiate', {
+  async initiateDigilocker(params: {
+    mobileNumber?: string;
+    aadhaarNumber?: string;
+    consentGiven: boolean;
+  }): Promise<DigilockerInitiateResponse> {
+    return fetchWithAuth('verification/aadhaar/digilocker/initiate', {
       method: 'POST',
       body: JSON.stringify({
-        aadhaarNumber,
-        consentGiven: consent.given,
-        consent,
+        mobileNumber: params.mobileNumber,
+        aadhaarNumber: params.aadhaarNumber,
+        consentGiven: params.consentGiven,
       }),
     });
   },
 
   /**
-   * Verify Aadhaar OTP
-   * POST /api/v1/verification/aadhaar/verify
+   * Get DigiLocker verification status (for polling)
+   * GET /api/v1/verification/aadhaar/digilocker/status?verification_id=xxx
    */
-  async verifyAadhaar(
-    transactionId: string,
-    otp: string
-  ): Promise<AadhaarVerificationVerifyResponse> {
-    return fetchWithAuth('verification/aadhaar/verify', {
-      method: 'POST',
-      body: JSON.stringify({
-        transactionId,
-        refId: transactionId,
-        otp,
-      }),
-    });
+  async getDigilockerStatus(verificationId: string): Promise<DigilockerStatusResponse> {
+    return fetchWithAuth(
+      `verification/aadhaar/digilocker/status?verification_id=${encodeURIComponent(verificationId)}`
+    );
   },
 
   /**
-   * Resend Aadhaar OTP
-   * POST /api/v1/verification/aadhaar/resend
+   * Complete DigiLocker verification (fetch document, update profile)
+   * POST /api/v1/verification/aadhaar/digilocker/complete
    */
-  async resendAadhaarOtp(refId: string): Promise<AadhaarVerificationInitiateResponse> {
-    return fetchWithAuth('verification/aadhaar/resend', {
+  async completeDigilocker(verificationId: string): Promise<DigilockerCompleteResponse> {
+    return fetchWithAuth('verification/aadhaar/digilocker/complete', {
       method: 'POST',
-      body: JSON.stringify({ refId }),
+      body: JSON.stringify({ verification_id: verificationId }),
     });
   },
 

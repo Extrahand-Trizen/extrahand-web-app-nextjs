@@ -187,6 +187,9 @@ export const useOTP = (
       [mode, sending]
    );
 
+   // Ref to prevent duplicate verification attempts
+   const isVerifyingRef = useRef(false);
+
    // 6. Verify OTP Function
    const verifyOTP = async () => {
       const code = otp.join("");
@@ -194,6 +197,16 @@ export const useOTP = (
          return {
             success: false,
             error: `Please enter the ${OTP_LENGTH}-digit verification code.`,
+         };
+      }
+
+      // Prevent duplicate verification attempts
+      if (isVerifyingRef.current) {
+         console.log("⚠️ [useOTP] Verification already in progress, skipping duplicate call");
+         return {
+            success: false,
+            error: "Verification already in progress",
+            code: "auth/verification-in-progress",
          };
       }
 
@@ -215,11 +228,14 @@ export const useOTP = (
       }
 
       try {
+         isVerifyingRef.current = true;
          setVerifying(true);
          const res = await confirmOTP(confirmationRef.current, code);
 
          if (res.success) {
             otpStateManager.clearAll();
+            confirmationRef.current = null; // Clear confirmation to prevent reuse
+            isVerifyingRef.current = false;
             return { success: true, user: res.user };
          } else {
             // Session expired logic
@@ -229,10 +245,12 @@ export const useOTP = (
             ) {
                confirmationRef.current = null;
             }
+            isVerifyingRef.current = false;
             return { success: false, error: res.error, code: res.code };
          }
       } catch (e: any) {
          console.error("❌ [useOTP] Verification error:", e);
+         isVerifyingRef.current = false;
          return {
             success: false,
             error: e.message || "Verification failed",

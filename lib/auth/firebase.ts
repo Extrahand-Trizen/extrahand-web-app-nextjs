@@ -132,11 +132,21 @@ export const signInWithPhone = async (
    recaptchaVerifier: RecaptchaVerifier
 ) => {
    try {
+      // Fail fast if Firebase config is missing (avoids cryptic errors)
+      if (!FIREBASE_CONFIG.apiKey || !FIREBASE_CONFIG.authDomain) {
+         const msg =
+            "Firebase config missing: set NEXT_PUBLIC_FIREBASE_API_KEY and NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN in .env";
+         console.error("❌ Phone auth failed:", { code: "config/missing", message: msg });
+         return { error: msg, code: "config/missing", success: false };
+      }
+
+      const currentOrigin =
+         typeof window !== "undefined" ? window.location.origin : "unknown";
       console.log("🔍 Attempting phone auth with:", {
          phoneNumber,
          projectId: FIREBASE_CONFIG.projectId,
          authDomain: FIREBASE_CONFIG.authDomain,
-         currentOrigin: typeof window !== "undefined" ? window.location.origin : "unknown",
+         currentOrigin,
       });
 
       const confirmationResult = await signInWithPhoneNumber(
@@ -147,20 +157,26 @@ export const signInWithPhone = async (
       console.log("✅ Phone auth successful");
       return { confirmationResult, success: true };
    } catch (error: any) {
+      // Firebase AuthError properties may be non-enumerable; extract explicitly so console shows real values (not {})
       const errorCode = error?.code || "auth/unknown-error";
       const errorMessage = error?.message || "Failed to send OTP";
+      const errorName = error?.name;
+      const errorStr = error ? String(error) : "unknown";
 
       console.error("❌ Phone auth failed:", {
          code: errorCode,
          message: errorMessage,
-         error: error,
+         name: errorName,
+         raw: errorStr,
       });
 
-      // Provide helpful error message for invalid-app-credential
+      // Provide helpful error message for invalid-app-credential (domain not in Firebase Authorized domains)
       if (errorCode === "auth/invalid-app-credential") {
          const origin = typeof window !== "undefined" ? window.location.origin : "unknown";
+         const fixHint = `Add "${origin}" (and localhost / 127.0.0.1 for dev) in Firebase Console → Authentication → Settings → Authorized domains.`;
+         console.error("Firebase auth/invalid-app-credential:", fixHint);
          return {
-            error: `Authentication failed: ${origin} is not authorized in Firebase Console.\n\nTo fix:\n1. Go to Firebase Console → Authentication → Settings → Authorized domains\n2. Add: localhost, 127.0.0.1\n\nOR use Firebase test phone numbers for development.`,
+            error: `This domain is not authorized for sign-in. ${fixHint}`,
             code: errorCode,
             success: false,
          };

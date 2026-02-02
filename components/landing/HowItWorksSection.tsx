@@ -41,7 +41,7 @@ const posterSteps = [
       title: "Get Quotes",
       description:
          "Taskers send quotes. Review ratings, experience and price before choosing.",
-      highlight: "Usually within hours",
+      highlight: "Usually within minutes",
    },
    {
       step: 3,

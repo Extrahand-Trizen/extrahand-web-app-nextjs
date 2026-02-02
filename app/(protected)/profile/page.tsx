@@ -227,10 +227,6 @@ function ProfilePageContent() {
          // TODO: Implement when preferences API is available
          toast.info("Preferences will be saved once backend API is ready");
       },
-      onChangePassword: async () => {
-         // TODO: Implement password change flow
-         toast.info("Password change feature coming soon");
-      },
       onRevokeSession: async () => {
          // TODO: Implement session revocation
          toast.info("Session management feature coming soon");
@@ -389,7 +385,6 @@ interface Props {
    onVerify: (t: string) => Promise<void>;
    onSaveNotifications: () => Promise<void>;
    onSavePreferences: () => Promise<void>;
-   onChangePassword: () => Promise<void>;
    onRevokeSession: () => Promise<void>;
    onRevokeAllSessions: () => Promise<void>;
    onUpdatePrivacy: () => Promise<void>;
@@ -491,7 +486,6 @@ function renderSection(s: ProfileSection, p: Props) {
                   allowMessagesFromAll: true,
                   showOnSearch: true,
                }}
-               onChangePassword={p.onChangePassword}
                onRevokeSession={p.onRevokeSession}
                onRevokeAllSessions={p.onRevokeAllSessions}
                onUpdatePrivacy={p.onUpdatePrivacy}

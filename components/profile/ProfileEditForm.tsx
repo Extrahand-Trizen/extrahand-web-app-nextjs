@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,10 @@ import {
    MapPin,
    AlertCircle,
 } from "lucide-react";
+import { toast } from "sonner";
 import { UserProfile } from "@/types/user";
+import { api } from "@/lib/api";
+import { isValidImageType, isValidFileSize } from "@/lib/utils/sanitization";
 
 interface ProfileEditFormProps {
    user: UserProfile;
@@ -55,10 +58,24 @@ export function ProfileEditForm({
    });
 
    const [photoURL, setPhotoURL] = useState(user.photoURL || "");
+   const [pendingPhotoFile, setPendingPhotoFile] = useState<File | null>(null);
+   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string>("");
    const [isSaving, setIsSaving] = useState(false);
    const [errors, setErrors] = useState<Record<string, string>>({});
    const [newSkill, setNewSkill] = useState("");
    const [hasChanges, setHasChanges] = useState(false);
+   const fileInputRef = useRef<HTMLInputElement>(null);
+
+   const MAX_PHOTO_MB = 5;
+
+   // Revoke object URL on cleanup to avoid memory leaks
+   useEffect(() => {
+      return () => {
+         if (photoPreviewUrl) {
+            URL.revokeObjectURL(photoPreviewUrl);
+         }
+      };
+   }, [photoPreviewUrl]);
 
    const updateField = useCallback(
       (field: keyof FormData, value: any) => {
@@ -107,6 +124,24 @@ export function ProfileEditForm({
 
       setIsSaving(true);
       try {
+         let savedPhotoURL: string | undefined = photoURL || undefined;
+         if (pendingPhotoFile) {
+            try {
+               savedPhotoURL = await api.uploadImage(pendingPhotoFile);
+               if (photoPreviewUrl) {
+                  URL.revokeObjectURL(photoPreviewUrl);
+               }
+               setPhotoPreviewUrl("");
+               setPhotoURL(savedPhotoURL);
+               setPendingPhotoFile(null);
+            } catch (uploadError) {
+               console.error("Photo upload failed:", uploadError);
+               toast.error("Failed to upload photo. Please try again.");
+               setIsSaving(false);
+               return;
+            }
+         }
+
          await onSave({
             name: `${formData.firstName} ${formData.lastName}`.trim(),
             email: formData.email,
@@ -116,10 +151,12 @@ export function ProfileEditForm({
             skills: {
                list: formData.skills.map((name) => ({ name })),
             },
+            photoURL: savedPhotoURL,
          });
          setHasChanges(false);
       } catch (error) {
          console.error("Failed to save profile:", error);
+         toast.error("Failed to save profile. Please try again.");
       } finally {
          setIsSaving(false);
       }
@@ -146,9 +183,36 @@ export function ProfileEditForm({
    };
 
    const handlePhotoUpload = () => {
-      // This would trigger file upload dialog
-      alert("Photo upload functionality would be implemented here");
+      fileInputRef.current?.click();
    };
+
+   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      e.target.value = "";
+      if (!file) return;
+
+      if (!isValidImageType(file.type)) {
+         toast.error("Invalid file type", {
+            description: "Please choose a JPG, PNG, or WebP image.",
+         });
+         return;
+      }
+      if (!isValidFileSize(file.size, MAX_PHOTO_MB)) {
+         toast.error("File too large", {
+            description: `Image must be under ${MAX_PHOTO_MB}MB.`,
+         });
+         return;
+      }
+
+      if (photoPreviewUrl) {
+         URL.revokeObjectURL(photoPreviewUrl);
+      }
+      setPhotoPreviewUrl(URL.createObjectURL(file));
+      setPendingPhotoFile(file);
+      setHasChanges(true);
+   };
+
+   const displayPhotoUrl = photoPreviewUrl || photoURL || undefined;
 
    return (
       <div className="max-w-4xl space-y-4 sm:space-y-6">
@@ -164,18 +228,27 @@ export function ProfileEditForm({
 
          {/* Photo Section */}
          <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5">
+            <input
+               ref={fileInputRef}
+               type="file"
+               accept="image/jpeg,image/jpg,image/png,image/webp"
+               className="hidden"
+               aria-label="Upload profile photo"
+               onChange={handleFileChange}
+            />
             <Label className="text-xs sm:text-sm font-medium text-gray-900 mb-3 block">
                Profile Photo
             </Label>
             <div className="flex items-center gap-3 sm:gap-4">
                <div className="relative">
                   <Avatar className="w-16 h-16 sm:w-20 sm:h-20">
-                     <AvatarImage src={photoURL || undefined} />
+                     <AvatarImage src={displayPhotoUrl} />
                      <AvatarFallback className="bg-gray-100 text-gray-600 text-xl sm:text-2xl font-medium">
                         {formData.firstName.charAt(0).toUpperCase() || "U"}
                      </AvatarFallback>
                   </Avatar>
                   <button
+                     type="button"
                      onClick={handlePhotoUpload}
                      className="absolute bottom-0 right-0 w-6 h-6 sm:w-7 sm:h-7 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors"
                   >
@@ -184,6 +257,7 @@ export function ProfileEditForm({
                </div>
                <div>
                   <Button
+                     type="button"
                      variant="outline"
                      size="sm"
                      onClick={handlePhotoUpload}
@@ -192,7 +266,7 @@ export function ProfileEditForm({
                      Upload Photo
                   </Button>
                   <p className="text-[10px] sm:text-xs text-gray-500 mt-1.5">
-                     JPG or PNG. Max size 5MB.
+                     JPG, PNG or WebP. Max size {MAX_PHOTO_MB}MB.
                   </p>
                </div>
             </div>

@@ -24,8 +24,6 @@ interface VerificationItem {
 
 export function VerificationSection({ user }: VerificationSectionProps) {
   const router = useRouter();
-
-  console.log(user);
   // Individual verifications - for all users
   const individualVerifications: VerificationItem[] = [
     {
@@ -177,7 +175,7 @@ export function VerificationSection({ user }: VerificationSectionProps) {
               className="w-full px-4 py-4 sm:px-5 sm:py-5 hover:bg-gray-50 transition-colors text-left group"
             >
               <div className="flex items-center gap-4">
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   {getVerificationIcon(item)}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -192,7 +190,7 @@ export function VerificationSection({ user }: VerificationSectionProps) {
                     </p>
                   )}
                 </div>
-                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" />
+                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors shrink-0" />
               </div>
             </button>
           ))}
@@ -214,7 +212,7 @@ export function VerificationSection({ user }: VerificationSectionProps) {
                 className="w-full px-4 py-4 sm:px-5 sm:py-5 hover:bg-gray-50 transition-colors text-left group"
               >
                 <div className="flex items-center gap-4">
-                  <div className="flex-shrink-0">
+                  <div className="shrink-0">
                     {getVerificationIcon(item)}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -229,7 +227,7 @@ export function VerificationSection({ user }: VerificationSectionProps) {
                       </p>
                     )}
                   </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" />
+                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors shrink-0" />
                 </div>
               </button>
             ))}
@@ -238,7 +236,7 @@ export function VerificationSection({ user }: VerificationSectionProps) {
       )}
 
       {/* Trust Level Info */}
-      <div className="bg-gradient-to-br from-primary-50 to-primary-100/50 rounded-lg p-4 sm:p-5 border border-primary-200">
+      <div className="bg-linear-to-br from-primary-50 to-primary-100/50 rounded-lg p-4 sm:p-5 border border-primary-200">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-gray-900">Trust Level</h3>
           {user.userType === "business" && user.business?.verificationStatus ? (
@@ -247,7 +245,7 @@ export function VerificationSection({ user }: VerificationSectionProps) {
               user.business.verificationStatus.badge === "enterprise" && "bg-green-100 text-green-800",
               user.business.verificationStatus.badge === "trusted" && "bg-purple-100 text-purple-800",
               user.business.verificationStatus.badge === "verified" && "bg-blue-100 text-blue-800",
-              (user.business.verificationStatus.badge === "basic" || user.business.verificationStatus.badge === "none") && "bg-yellow-100 text-yellow-800"
+              (user.business.verificationStatus.badge === "none" || !user.business.verificationStatus.badge) && "bg-yellow-100 text-yellow-800"
             )}>
               {user.business.verificationStatus.badge?.toUpperCase() || "BASIC"}
             </span>

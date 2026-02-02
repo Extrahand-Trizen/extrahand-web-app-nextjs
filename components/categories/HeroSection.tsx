@@ -92,7 +92,19 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-start">
                   {/* Left Content */}
                   <div className="space-y-6">
-                     <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white leading-tight tracking-tight">
+                     <h1 
+                        className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white tracking-tight break-words whitespace-normal block"
+                        style={{ 
+                           lineHeight: '2',
+                           display: 'block',
+                           margin: '0',
+                           padding: '0',
+                           wordSpacing: 'normal',
+                           letterSpacing: 'normal',
+                           minHeight: 'auto',
+                           overflow: 'visible'
+                        }}
+                     >
                         {heroTitle}
                      </h1>
                      <p className="text-lg sm:text-xl text-white/80 leading-relaxed max-w-xl">

@@ -224,10 +224,13 @@ function handlePhoneAuthResponse(res: any): SendResult {
       return { confirmation: res.confirmationResult, success: true };
    }
 
-   // Handle specific reCAPTCHA errors
+   // Handle specific reCAPTCHA errors (domain not authorized in Firebase Console)
    if (res?.code === "auth/invalid-app-credential") {
+      const currentOrigin =
+         typeof window !== "undefined" ? window.location.origin : "unknown";
       console.error(
-         "Firebase authentication configuration issue. Please check Firebase console settings."
+         "Firebase auth/invalid-app-credential: Add this origin to Authorized domains:",
+         currentOrigin
       );
 
       const currentDomain =

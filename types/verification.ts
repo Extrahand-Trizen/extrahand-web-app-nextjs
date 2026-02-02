@@ -110,17 +110,14 @@ export interface VerificationDisplayItem {
    isInline?: boolean; // For lightweight verifications like email
 }
 
-// Aadhaar verification form state
+// Aadhaar verification form state (DigiLocker flow)
 export interface AadhaarVerificationState {
-   step: "consent" | "input" | "otp" | "success" | "error";
+   step: "consent" | "input" | "redirecting" | "success" | "error";
+   mobileNumber: string;
    aadhaarNumber: string;
    consentGiven: boolean;
-   otpSent: boolean;
-   otp: string;
-   refId?: string;
-   transactionId?: string;
-   otpExpiresAt?: Date;
-   attemptsRemaining: number;
+   verificationId?: string;
+   digilockerUrl?: string;
    error?: string;
    verifiedData?: {
       name?: string;
@@ -207,15 +204,15 @@ export interface VerifyBankAccountResponse {
    mismatchReason?: string;
 }
 
-// Consent text for verifications
-export const AADHAAR_CONSENT_TEXT = `I voluntarily provide my Aadhaar number for verification purposes. I understand that:
+// Consent text for verifications (DigiLocker flow)
+export const AADHAAR_CONSENT_TEXT = `I voluntarily provide my Aadhaar/mobile for verification purposes. I understand that:
 
-• My Aadhaar details will be verified through UIDAI's secure OTP-based verification
+• My Aadhaar details will be verified through DigiLocker (government-backed, secure)
 • Only my name and masked Aadhaar number will be stored after verification
 • This verification helps build trust within the ExtraHand community
 • I can withdraw my consent at any time through my profile settings
 
-By proceeding, I confirm that I am the holder of this Aadhaar number and authorize ExtraHand to verify my identity.`;
+By proceeding, I confirm that I am the holder of this Aadhaar number and authorize ExtraHand to verify my identity via DigiLocker.`;
 
 export const BANK_CONSENT_TEXT = `I voluntarily provide my bank account details for verification purposes. I understand that:\n\n
 
@@ -228,16 +225,16 @@ By proceeding, I confirm that I am the account holder and authorize ExtraHand to
 
 export const EMAIL_CONSENT_TEXT = `I confirm this email address belongs to me and I authorize ExtraHand to send verification and important account communications to this address.`;
 
-// Structured consent objects (new - use these for rendering bullets + paragraph)
+// Structured consent objects (DigiLocker flow - government-backed, consent-based KYC)
 export const AADHAAR_CONSENT = {
    points: [
-      "My Aadhaar details will be verified through UIDAI's secure OTP-based verification",
+      "My Aadhaar details will be verified through DigiLocker (government-backed, secure)",
       "Only my name and masked Aadhaar number will be stored after verification",
       "This verification helps build trust within the ExtraHand community",
       "I can withdraw my consent at any time through my profile settings",
    ],
    paragraph:
-      "By proceeding, I confirm that I am the holder of this Aadhaar number and authorize ExtraHand to verify my identity.",
+      "By proceeding, I confirm that I am the holder of this Aadhaar number and authorize ExtraHand to verify my identity via DigiLocker.",
 };
 
 export const BANK_CONSENT = {
