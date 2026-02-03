@@ -490,7 +490,6 @@ export function TaskCreationFlow() {
                         form={form}
                         onEdit={(step) => setCurrentStep(step)}
                         isSubmitting={isSubmitting}
-                        onSubmit={() => form.handleSubmit(onSubmit)()}
                      />
                   )}
                </form>

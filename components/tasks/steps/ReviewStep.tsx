@@ -33,7 +33,6 @@ import { cn } from "@/lib/utils";
 interface ReviewStepProps {
    form: UseFormReturn<TaskFormData>;
    onEdit: (step: number) => void;
-   onSubmit: () => void;
    isSubmitting: boolean;
 }
 
@@ -56,7 +55,6 @@ const URGENCY_OPTIONS: Record<string, { label: string; surcharge: number }> = {
 export function ReviewStep({
    form,
    onEdit,
-   onSubmit,
    isSubmitting,
 }: ReviewStepProps) {
    const data = form.watch();
@@ -365,7 +363,6 @@ export function ReviewStep({
          <div className="pt-4 space-y-3">
             <Button
                type="submit"
-               onClick={onSubmit}
                disabled={!agreedToGuidelines || isSubmitting}
                className="w-full h-10 font-medium bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300"
                size="lg"

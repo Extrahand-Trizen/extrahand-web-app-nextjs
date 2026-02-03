@@ -52,10 +52,24 @@ export const api = {
    ...categoriesApi,
 
    // Utility functions
-   async uploadImage(_file: File): Promise<string> {
-      // TODO: Implement image upload to cloud storage
-      // For now, return a placeholder URL
-      return `https://via.placeholder.com/300x200/4A90E2/FFFFFF?text=Uploaded+Image`;
+   async uploadImage(file: File): Promise<string> {
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/uploads/profile-picture`, {
+         method: 'POST',
+         headers: {
+            'Authorization': `Bearer ${localStorage.getItem('idToken') || ''}`,
+         },
+         body: formData,
+      });
+
+      if (!response.ok) {
+         throw new Error('Failed to upload image');
+      }
+
+      const data = await response.json();
+      return data.data?.photoURL || data.data?.url || '';
    },
 
    // User statistics

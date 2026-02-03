@@ -179,6 +179,15 @@ export const Header: React.FC = () => {
          if (el) {
             el.scrollIntoView({ behavior: "smooth", block: "start" });
          }
+      } else if (item.label === "Become a Tasker") {
+         // Check if user is authenticated
+         const idToken = localStorage.getItem('idToken');
+         if (!idToken) {
+            // Redirect to 404 if not authenticated
+            router.push('/404');
+         } else {
+            router.push(item.route || '/signup');
+         }
       } else if (item.route) {
          router.push(item.route);
       }

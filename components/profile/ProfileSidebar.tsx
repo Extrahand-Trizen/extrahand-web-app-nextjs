@@ -50,12 +50,6 @@ const navItems: ProfileNavItem[] = [
       description: "Update your info",
    },
    {
-      id: "preferences",
-      label: "Preferences",
-      icon: <Settings className="w-5 h-5" />,
-      description: "Task preferences",
-   },
-   {
       id: "privacy",
       label: "Privacy",
       icon: <EyeOff className="w-5 h-5" />,
@@ -84,12 +78,6 @@ const navItems: ProfileNavItem[] = [
       label: "Notifications",
       icon: <Bell className="w-5 h-5" />,
       description: "Communication",
-   },
-   {
-      id: "security",
-      label: "Security",
-      icon: <Lock className="w-5 h-5" />,
-      description: "Account security",
    },
 ];
 
