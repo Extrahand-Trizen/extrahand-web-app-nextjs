@@ -51,13 +51,21 @@ export const useOTP = (
       const restoreOTPState = () => {
          try {
             const storedOTP = otpStateManager.getOTPInput();
+            const storedSession = otpStateManager.getOTPSession();
             if (
                storedOTP &&
                Array.isArray(storedOTP) &&
                storedOTP.length === OTP_LENGTH
             ) {
-               setOtp(storedOTP);
-               console.log("✅ [useOTP] Restored OTP state from storage");
+               // Only restore input state if there's a valid (non-expired) OTP session
+               if (storedSession && !otpStateManager.isSessionExpired(storedSession)) {
+                  setOtp(storedOTP);
+                  console.log("✅ [useOTP] Restored OTP state from storage");
+               } else {
+                  // Clear any stale OTP input to avoid showing old codes
+                  otpStateManager.clearOTPInput();
+                  console.log("ℹ️ [useOTP] Cleared stale OTP input (no active session)");
+               }
             }
          } catch (error) {
             console.warn("⚠️ [useOTP] Failed to restore OTP state:", error);
@@ -167,6 +175,8 @@ export const useOTP = (
 
                setOtp(Array(OTP_LENGTH).fill(""));
                setTimer(30);
+               // Make sure any previously typed OTP is removed from localStorage
+               otpStateManager.clearOTPInput();
                console.log("✅ [useOTP] OTP sent successfully");
 
                // Attempt WebOTP (SMS Receiver) API to auto-fill verification code in supporting browsers

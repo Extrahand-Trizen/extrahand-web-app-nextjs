@@ -111,9 +111,8 @@ export function OTPVerificationForm({
    // Auto-verify when OTP is complete
    useEffect(() => {
       const code = otp.join("");
-      // Prevent duplicate verification attempts
+      // Prevent duplicate verification attempts - call handleVerify and let it manage the flag
       if (code.length === OTP_LENGTH && !verifying && !isVerified && !isVerifyingRef.current) {
-         isVerifyingRef.current = true;
          handleVerify();
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
