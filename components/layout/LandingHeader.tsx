@@ -55,7 +55,7 @@ const navItems = [
    { label: "How it works", href: "#how-it-works" },
 ];
 
-const GuestCtaButtons = () => (
+const GuestCtaButtons = ({ onBecomeTasker }: { onBecomeTasker: () => void }) => (
    <>
       <Link href="/login">
          <Button
@@ -75,15 +75,14 @@ const GuestCtaButtons = () => (
             Signup
          </Button>
       </Link>
-      <Link href="/earn-money">
-         <Button
-            size="sm"
-            variant="outline"
-            className="border-secondary-300 text-secondary-700 font-medium"
-         >
-            Become a Tasker
-         </Button>
-      </Link>
+      <Button
+         size="sm"
+         variant="outline"
+         onClick={onBecomeTasker}
+         className="border-secondary-300 text-secondary-700 font-medium"
+      >
+         Become a Tasker
+      </Button>
    </>
 );
 
@@ -189,6 +188,17 @@ export const LandingHeader: React.FC = () => {
          router.push("/");
       }
    }, [logout, router]);
+
+   const handleBecomeTasker = useCallback(() => {
+      // Check if user is authenticated
+      if (!isAuthenticated) {
+         // Redirect to 404 page if not logged in
+         router.push("/not-found");
+      } else {
+         // If logged in, navigate to earn-money page
+         router.push("/earn-money");
+      }
+   }, [isAuthenticated, router]);
 
    return (
       <>
@@ -386,7 +396,7 @@ export const LandingHeader: React.FC = () => {
                   {/* Desktop CTA Group */}
                   <div className="hidden lg:flex items-center gap-2">
                      {!isAuthenticated ? (
-                        <GuestCtaButtons />
+                        <GuestCtaButtons onBecomeTasker={handleBecomeTasker} />
                      ) : (
                         <>
                            <NotificationCenter
@@ -575,12 +585,16 @@ export const LandingHeader: React.FC = () => {
                                  </button>
                               </Link>
                               {!isAuthenticated && (
-                                 <Link href="/earn-money" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <button className="w-full flex items-center gap-3 px-3 py-2.5 text-secondary-700 hover:bg-secondary-50 rounded-lg transition-colors">
-                                       <Briefcase className="w-4 h-4" />
-                                       <span className="text-sm font-medium">Become a Tasker</span>
-                                    </button>
-                                 </Link>
+                                 <button
+                                    onClick={() => {
+                                       setIsMobileMenuOpen(false);
+                                       handleBecomeTasker();
+                                    }}
+                                    className="w-full flex items-center gap-3 px-3 py-2.5 text-secondary-700 hover:bg-secondary-50 rounded-lg transition-colors"
+                                 >
+                                    <Briefcase className="w-4 h-4" />
+                                    <span className="text-sm font-medium">Become a Tasker</span>
+                                 </button>
                               )}
                            </div>
                         </nav>

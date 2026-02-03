@@ -53,6 +53,7 @@ export const api = {
 
    // Utility functions
    async uploadImage(file: File): Promise<string> {
+<<<<<<< Updated upstream
       const formData = new FormData();
       formData.append('image', file);
       
@@ -70,6 +71,38 @@ export const api = {
 
       const data = await response.json();
       return data.data?.photoURL || data.data?.url || '';
+=======
+      // Upload profile picture through the API gateway
+      const formData = new FormData();
+      formData.append("image", file);
+      
+      try {
+         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/uploads/profile-picture`, {
+            method: "POST",
+            headers: {
+               // Don't set Content-Type, let the browser set it with boundary
+            },
+            body: formData,
+            credentials: "include",
+         });
+
+         if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `Upload failed with status ${response.status}`);
+         }
+
+         const data = await response.json();
+         
+         if (data.success && data.data?.url) {
+            return data.data.url;
+         } else {
+            throw new Error(data.message || "Failed to upload image");
+         }
+      } catch (error) {
+         console.error("Image upload error:", error);
+         throw new Error(error instanceof Error ? error.message : "Failed to upload image");
+      }
+>>>>>>> Stashed changes
    },
 
    // User statistics
