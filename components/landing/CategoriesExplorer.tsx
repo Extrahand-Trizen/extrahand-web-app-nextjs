@@ -172,19 +172,12 @@ export const CategoriesExplorer = () => {
 
             {/* View all button */}
             <div className="text-center mt-6 md:mt-12">
-<<<<<<< Updated upstream
-               <a href="/discover" className="inline-flex items-center gap-2 px-5 py-3 md:px-6 bg-primary-500 hover:bg-primary-600 font-semibold rounded-xl text-sm md:text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 text-white">
-                  View all categories
-                  <ArrowRight className="h-5 w-5" />
-               </a>
-=======
                <Link href="/services">
                   <button className="inline-flex items-center gap-2 px-5 py-3 md:px-6 bg-primary-500 hover:bg-primary-600 font-semibold rounded-xl text-sm md:text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 text-white">
                      View all categories
                      <ArrowRight className="h-5 w-5" />
                   </button>
                </Link>
->>>>>>> Stashed changes
             </div>
          </div>
       </section>
