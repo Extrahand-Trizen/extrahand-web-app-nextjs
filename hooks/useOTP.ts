@@ -168,6 +168,42 @@ export const useOTP = (
                setOtp(Array(OTP_LENGTH).fill(""));
                setTimer(30);
                console.log("✅ [useOTP] OTP sent successfully");
+
+               // Attempt WebOTP (SMS Receiver) API to auto-fill verification code in supporting browsers
+               try {
+                  if (typeof window !== "undefined" && (navigator as any)?.credentials?.get) {
+                     const controller = new AbortController();
+                     const signal = controller.signal;
+
+                     // Abort after 40s to avoid hanging the promise
+                     const abortTimeout = setTimeout(() => controller.abort(), 40000);
+
+                     (async () => {
+                        try {
+                           // @ts-ignore - WebOTP API typings are not widely available
+                           const content = await (navigator as any).credentials.get({
+                              otp: { transport: ["sms"] },
+                              signal,
+                           });
+
+                           if (content && content.code) {
+                              const digits = content.code.replace(/\D/g, "").slice(0, OTP_LENGTH).split("");
+                              const newOtp = Array(OTP_LENGTH).fill("");
+                              digits.forEach((d: string, i: number) => (newOtp[i] = d));
+                              setOtp(newOtp);
+                              console.log("📥 [useOTP] Auto-filled OTP via WebOTP API:", content.code);
+                              // Let the component detect the filled OTP and trigger verification
+                           }
+                        } catch (err) {
+                           console.warn("⚠️ [useOTP] WebOTP attempt failed or not available:", err?.message || err);
+                        } finally {
+                           clearTimeout(abortTimeout);
+                        }
+                     })();
+                  }
+               } catch (err) {
+                  console.warn("⚠️ [useOTP] WebOTP detection error:", err);
+               }
             } else {
                // Handle Firebase Errors
                let msg = res.error || "Failed to send verification code.";

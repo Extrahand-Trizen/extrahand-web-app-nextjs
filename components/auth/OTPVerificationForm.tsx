@@ -440,6 +440,8 @@ export function OTPVerificationForm({
                                  }}
                                  type="text"
                                  inputMode="numeric"
+                                 autoComplete={idx === 0 ? "one-time-code" : "off"}
+                                 name={idx === 0 ? "otp" : undefined}
                                  maxLength={1}
                                  value={digit}
                                  onChange={(e) =>
