@@ -122,7 +122,9 @@ async function _fetchWithAuth(
       CORS_CONFIG[isDevelopment ? "development" : "production"];
 
    const headers = new Headers(init.headers || {});
-   if (!headers.has("Content-Type")) {
+   const isFormData =
+      typeof FormData !== "undefined" && init.body instanceof FormData;
+   if (!headers.has("Content-Type") && !isFormData) {
       headers.set("Content-Type", "application/json");
    }
 

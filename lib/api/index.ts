@@ -15,7 +15,7 @@ import { completionApi } from "./endpoints/completion";
 import { privacyApi } from "./endpoints/privacy";
 import { businessApi } from "./endpoints/business";
 import { categoriesApi } from "./endpoints/categories";
-import { CORS_CONFIG, getApiBaseUrl, isDevelopment } from "@/lib/config";
+import { fetchWithAuth } from "./client";
 
 export const api = {
    // Profile management
@@ -59,50 +59,19 @@ export const api = {
       formData.append("image", file);
       
       try {
-         const baseUrl = getApiBaseUrl().replace(/\/$/, "");
-         const url = `${baseUrl}/api/v1/uploads/profile-picture`;
-         const corsConfig = CORS_CONFIG[isDevelopment ? "development" : "production"];
-
-         const response = await fetch(url, {
+         const data = await fetchWithAuth("uploads/profile-picture", {
             method: "POST",
-            // Don't set Content-Type, let the browser set it with boundary
             body: formData,
-            ...corsConfig,
          });
 
-         if (!response.ok) {
-            let errorData: any = { message: `Upload failed with status ${response.status}` };
-            
-            // Try to parse as JSON, but handle non-JSON responses
-            const contentType = response.headers.get("content-type");
-            if (contentType && contentType.includes("application/json")) {
-               try {
-                  errorData = await response.json();
-               } catch (e) {
-                  // If JSON parsing fails, use text
-                  const text = await response.text();
-                  errorData = { message: text || `Upload failed with status ${response.status}` };
-               }
-            } else {
-               // Non-JSON response
-               const text = await response.text();
-               errorData = { message: text || `Upload failed with status ${response.status}` };
-            }
-            
-            const errorMsg = errorData.message || errorData.error || `Upload failed with status ${response.status}`;
-            throw new Error(errorMsg);
+         if (data?.success && data?.data?.url) {
+            return data.data.url;
+         }
+         if (data?.url) {
+            return data.url;
          }
 
-         const data = await response.json();
-         
-         if (data.success && data.data?.url) {
-            return data.data.url;
-         } else if (data.url) {
-            // Handle direct URL response format
-            return data.url;
-         } else {
-            throw new Error(data.message || "Failed to upload image");
-         }
+         throw new Error(data?.message || "Failed to upload image");
       } catch (error) {
          console.error("Image upload error:", error);
          if (error instanceof Error) {
