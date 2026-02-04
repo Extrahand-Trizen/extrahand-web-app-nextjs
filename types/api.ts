@@ -63,6 +63,8 @@ export interface PaginationResponse {
 export interface TaskQueryParams extends PaginationParams {
    category?: string;
    city?: string;
+   suburb?: string;
+   remotely?: boolean;
    minBudget?: number;
    maxBudget?: number;
    skills?: string[];

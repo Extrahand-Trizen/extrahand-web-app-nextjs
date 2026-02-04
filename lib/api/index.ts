@@ -58,11 +58,12 @@ export const api = {
       formData.append("image", file);
       
       try {
-         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/uploads/profile-picture`, {
+         const baseUrl = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}` : "";
+         const url = baseUrl ? `${baseUrl}/api/v1/uploads/profile-picture` : `/api/v1/uploads/profile-picture`;
+
+         const response = await fetch(url, {
             method: "POST",
-            headers: {
-               // Don't set Content-Type, let the browser set it with boundary
-            },
+            // Don't set Content-Type, let the browser set it with boundary
             body: formData,
             credentials: "include",
          });

@@ -19,10 +19,10 @@ const TASKS_PER_PAGE = 20;
 type CompactFilterState = {
    categories: string[];
    suburb: string;
-   remotely: boolean;
+   remotely: boolean | null;
    minBudget: number;
    maxBudget: number;
-   sortBy: "recent" | "nearest" | "price-low" | "price-high";
+   sortBy: "recent" | "nearest" | "price-low" | "price-high" | "date";
 };
 
 // tweak these to match your header/filter/footer sizes
@@ -98,7 +98,7 @@ export default function TasksPage() {
    const [filters, setFilters] = useState<CompactFilterState>({
       categories: [],
       suburb: "",
-      remotely: false,
+      remotely: null,
       minBudget: 0,
       maxBudget: 100000,
       sortBy: "recent",
@@ -120,14 +120,14 @@ export default function TasksPage() {
                status: "open", // Only show open tasks on discover page
             };
 
-            // Add backend-supported filters
+            // Add backend-supported filters (support multiple categories, budget, and search)
             if (filters.categories.length > 0) {
-               // For now, send first category (backend may need update for multiple)
-               params.category = filters.categories[0];
+               // Send comma-separated categories to backend which supports multiple
+               params.category = filters.categories.join(",");
             }
 
             if (searchQuery.trim()) {
-               params.search = searchQuery;
+               params.search = searchQuery.trim();
             }
 
             if (filters.minBudget > 0) {
@@ -136,6 +136,15 @@ export default function TasksPage() {
 
             if (filters.maxBudget < 100000) {
                params.maxBudget = filters.maxBudget;
+            }
+
+            if (filters.suburb) {
+               params.suburb = filters.suburb;
+            }
+
+            // Remotely: tri-state (null = not applied)
+            if (typeof filters.remotely !== 'undefined' && filters.remotely !== null) {
+               params.remotely = filters.remotely;
             }
 
             // Map sortBy to backend format
@@ -171,17 +180,22 @@ export default function TasksPage() {
 
       // Client-side filters for unsupported backend options
       
-      // Suburb filter (backend only supports city)
+      // Suburb filter
       if (filters.suburb) {
          filtered = filtered.filter((task) =>
-            task.location.address.toLowerCase().includes(filters.suburb.toLowerCase())
+            ((task.location?.address || task.location?.city) || "").toLowerCase().includes(filters.suburb.toLowerCase())
          );
       }
 
-      // Remotely filter (not supported by backend)
-      if (filters.remotely) {
-         // For now, we don't have a "remote" flag in the task model
-         // This could be added later or we could filter by some other criteria
+      // Remotely / In-person filter
+      if (typeof filters.remotely !== 'undefined' && filters.remotely !== null) {
+         if (filters.remotely === true) {
+            // Remote tasks: no coordinates/address
+            filtered = filtered.filter((task) => !task.location || !task.location.coordinates || task.location.coordinates.length === 0 || !task.location.address);
+         } else {
+            // In-person tasks: must have coordinates
+            filtered = filtered.filter((task) => task.location && task.location.coordinates && task.location.coordinates.length > 0);
+         }
       }
 
       // Sort by nearest (client-side distance calculation)
@@ -302,10 +316,12 @@ export default function TasksPage() {
                                        limit: TASKS_PER_PAGE,
                                        status: "open",
                                     };
-                                    if (filters.categories.length > 0) params.category = filters.categories[0];
-                                    if (searchQuery.trim()) params.search = searchQuery;
+                                    if (filters.categories.length > 0) params.category = filters.categories.join(",");
+                                    if (searchQuery.trim()) params.search = searchQuery.trim();
                                     if (filters.minBudget > 0) params.minBudget = filters.minBudget;
                                     if (filters.maxBudget < 100000) params.maxBudget = filters.maxBudget;
+                                    if (filters.suburb) params.suburb = filters.suburb;
+                                    if (typeof filters.remotely !== 'undefined' && filters.remotely !== null) params.remotely = filters.remotely;
                                     if (filters.sortBy && filters.sortBy !== "nearest") params.sortBy = filters.sortBy;
                                     const response: TaskListResponse = await tasksApi.getPublicTasks(params);
                                     setTasks(prev => [...prev, ...(response.tasks || [])]);

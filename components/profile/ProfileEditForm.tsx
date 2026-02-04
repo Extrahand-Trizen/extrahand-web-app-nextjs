@@ -134,9 +134,11 @@ export function ProfileEditForm({
                setPhotoPreviewUrl("");
                setPhotoURL(savedPhotoURL);
                setPendingPhotoFile(null);
-            } catch (uploadError) {
+            } catch (uploadError: any) {
                console.error("Photo upload failed:", uploadError);
-               toast.error("Failed to upload photo. Please try again.");
+               toast.error("Failed to upload photo", {
+                  description: uploadError?.message || "Please try again.",
+               });
                setIsSaving(false);
                return;
             }

@@ -97,7 +97,7 @@ export const LandingHeader: React.FC = () => {
    const [mobileActiveRole, setMobileActiveRole] = useState<
       "poster" | "tasker"
    >("poster");
-   const [showSettings, setShowSettings] = useState(false);
+
    const categoriesRef = useRef<HTMLDivElement>(null);
    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
    const isAuthenticated = Boolean(currentUser);
@@ -402,14 +402,7 @@ export const LandingHeader: React.FC = () => {
                            <NotificationCenter
                               status={mockDashboardData.currentStatus}
                            />
-                           <button
-                              onClick={() => setShowSettings(!showSettings)}
-                              className="p-2 text-secondary-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors bg-white shadow-sm"
-                              title="Settings"
-                              aria-label="Settings"
-                           >
-                              <Settings className="w-5 h-5" />
-                           </button>
+
                            <UserMenu
                               displayName={displayName}
                               initials={initials}
@@ -436,27 +429,7 @@ export const LandingHeader: React.FC = () => {
             </div>
          </header>
 
-         {/* Settings Panel - Fixed on Right Side (Dev Only) */}
-         {showSettings && isAuthenticated && (
-            <div className="fixed right-0 top-20 h-1/2 w-64 bg-white border-l border-secondary-200 shadow-xl z-40 overflow-y-auto">
-               <div className="p-4 border-b border-secondary-200 flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-secondary-900">
-                     Settings (Dev)
-                  </h3>
-                  <button
-                     onClick={() => setShowSettings(false)}
-                     className="p-1 text-secondary-400 hover:text-secondary-600"
-                  >
-                     <X className="w-4 h-4" />
-                  </button>
-               </div>
-               <div className="p-4">
-                  <p className="text-xs text-secondary-500">
-                     Developer settings panel
-                  </p>
-               </div>
-            </div>
-         )}
+
 
          {/* Mobile Menu - Professional Slide-out Drawer */}
          {isMobileMenuOpen && (

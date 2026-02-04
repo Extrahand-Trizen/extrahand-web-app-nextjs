@@ -236,6 +236,8 @@ export function OTPVerificationForm({
          return;
       }
 
+      // Mark as verifying to avoid concurrent calls (auto-fill + manual click)
+      isVerifyingRef.current = true;
       setHasError(false);
 
       try {
@@ -340,10 +342,6 @@ export function OTPVerificationForm({
             }
          }, 1000);
       } catch (error: any) {
-         // Reset the flag on error
-         setOTPAuthInProgress(false);
-         isVerifyingRef.current = false;
-         
          // Don't show error toast for code-expired if verification already succeeded
          // This prevents duplicate toasts
          const errorMessage = error?.message || "";
@@ -365,6 +363,14 @@ export function OTPVerificationForm({
          });
          setOtp(Array(OTP_LENGTH).fill(""));
          focusInput(0);
+      } finally {
+         // Ensure flags are cleared regardless of success or failure to avoid duplicate flows
+         try {
+            setOTPAuthInProgress(false);
+         } catch (e) {
+            /* ignore */
+         }
+         isVerifyingRef.current = false;
       }
    };
 

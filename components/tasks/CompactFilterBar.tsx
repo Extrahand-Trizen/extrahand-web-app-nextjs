@@ -51,8 +51,8 @@ export const CompactFilterBar = ({
 
    const hasActiveFilters =
       filters.categories.length > 0 ||
-      filters.suburb ||
-      filters.remotely ||
+      !!filters.suburb ||
+      filters.remotely !== null && typeof filters.remotely !== 'undefined' ||
       filters.minBudget !== 0 ||
       filters.maxBudget !== 100000 ||
       searchQuery.length > 0;
@@ -61,7 +61,7 @@ export const CompactFilterBar = ({
       onFilterChange({
          categories: [],
          suburb: "",
-         remotely: false,
+         remotely: null,
          minBudget: 0,
          maxBudget: 100000,
          sortBy: "recent",
@@ -231,9 +231,9 @@ export const LocationFilter = ({ filters, onFilterChange }) => {
             <div className="flex gap-2">
                <Button
                   size="sm"
-                  variant={filters.remotely ? "outline" : "default"}
+                  variant={filters.remotely === false ? "default" : "outline"}
                   onClick={() =>
-                     onFilterChange({ ...filters, remotely: false })
+                     onFilterChange({ ...filters, remotely: filters.remotely === false ? null : false })
                   }
                >
                   In-person
@@ -241,8 +241,8 @@ export const LocationFilter = ({ filters, onFilterChange }) => {
 
                <Button
                   size="sm"
-                  variant={filters.remotely ? "default" : "outline"}
-                  onClick={() => onFilterChange({ ...filters, remotely: true })}
+                  variant={filters.remotely === true ? "default" : "outline"}
+                  onClick={() => onFilterChange({ ...filters, remotely: filters.remotely === true ? null : true })}
                >
                   Remotely
                </Button>
