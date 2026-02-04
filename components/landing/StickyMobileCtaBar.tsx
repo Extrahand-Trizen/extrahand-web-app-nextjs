@@ -16,7 +16,7 @@ export const StickyMobileCtaBar: React.FC = () => {
             Post a Task
           </Button>
         </Link>
-        <Link href="/signup">
+        <Link href="/login">
           <Button variant="outline" className="border-secondary-300 text-secondary-700 font-medium py-6 rounded-xl">
             Tasker
           </Button>

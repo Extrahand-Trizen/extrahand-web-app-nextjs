@@ -179,6 +179,24 @@ export default function TasksPage() {
       let filtered = [...tasks];
 
       // Client-side filters for unsupported backend options
+      if (searchQuery.trim()) {
+         const query = searchQuery.trim().toLowerCase();
+         filtered = filtered.filter((task) => {
+            const title = task.title?.toLowerCase() || "";
+            const description = task.description?.toLowerCase() || "";
+            const category = task.category?.toLowerCase() || "";
+            const city = task.location?.city?.toLowerCase() || "";
+            const address = task.location?.address?.toLowerCase() || "";
+
+            return (
+               title.includes(query) ||
+               description.includes(query) ||
+               category.includes(query) ||
+               city.includes(query) ||
+               address.includes(query)
+            );
+         });
+      }
       
       // Suburb filter
       if (filters.suburb) {

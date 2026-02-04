@@ -63,7 +63,7 @@ export function CityHero({ city }: CityHeroProps) {
                      <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                   </Button>
                </Link>
-               <Link href="/signup">
+               <Link href="/login">
                   <Button
                      variant="outline"
                      size="lg"

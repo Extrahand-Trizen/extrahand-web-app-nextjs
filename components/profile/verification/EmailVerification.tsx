@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/input-otp";
 import { Mail, CheckCircle2, AlertCircle, X, Loader2 } from "lucide-react";
 import { FormInput, LoadingButton } from "./VerificationComponents";
+import { verificationApi } from "@/lib/api/endpoints/verification";
 
 interface EmailVerificationProps {
    currentEmail?: string;
@@ -37,6 +38,7 @@ export function EmailVerification({
    const [isLoading, setIsLoading] = useState(false);
    const [error, setError] = useState<string | undefined>();
    const [otpTimer, setOtpTimer] = useState(0);
+   const [verificationId, setVerificationId] = useState<string | undefined>();
 
    // OTP countdown timer
    useEffect(() => {
@@ -64,12 +66,17 @@ export function EmailVerification({
       setError(undefined);
 
       try {
-         // TODO: Replace with actual API call
-         await simulateApiCall(1500);
-         setStep("otp");
-         setOtpTimer(300); // 5 minutes
-      } catch {
-         setError("Failed to send verification code. Please try again.");
+         const response = await verificationApi.initiateEmail(email, true);
+         if (response.success) {
+            setVerificationId(response.data?.verificationId);
+            setStep("otp");
+            setOtpTimer((response.data?.expiresInMinutes || 5) * 60);
+         } else {
+            setError(response.message || "Failed to send verification code.");
+         }
+      } catch (err: unknown) {
+         const message = err instanceof Error ? err.message : "Failed to send verification code.";
+         setError(message);
       } finally {
          setIsLoading(false);
       }
@@ -85,12 +92,17 @@ export function EmailVerification({
       setError(undefined);
 
       try {
-         // TODO: Replace with actual API call
-         await simulateApiCall(1500);
-         setStep("verified");
-         onVerificationComplete?.();
-      } catch {
-         setError("Invalid code. Please try again.");
+         const response = await verificationApi.verifyEmail(otp, verificationId);
+         if (response.success) {
+            setStep("verified");
+            onVerificationComplete?.();
+         } else {
+            setError(response.message || "Invalid code. Please try again.");
+            setOtp("");
+         }
+      } catch (err: unknown) {
+         const message = err instanceof Error ? err.message : "Invalid code. Please try again.";
+         setError(message);
          setOtp("");
       } finally {
          setIsLoading(false);
@@ -104,11 +116,17 @@ export function EmailVerification({
       setError(undefined);
 
       try {
-         await simulateApiCall(1500);
-         setOtpTimer(300);
-         setOtp("");
-      } catch {
-         setError("Failed to resend code. Please try again.");
+         const response = await verificationApi.resendEmailOtp();
+         if (response.success) {
+            setVerificationId(response.data?.verificationId || verificationId);
+            setOtpTimer((response.data?.expiresInMinutes || 5) * 60);
+            setOtp("");
+         } else {
+            setError(response.message || "Failed to resend code. Please try again.");
+         }
+      } catch (err: unknown) {
+         const message = err instanceof Error ? err.message : "Failed to resend code. Please try again.";
+         setError(message);
       } finally {
          setIsLoading(false);
       }
@@ -125,6 +143,7 @@ export function EmailVerification({
       setEmail(currentEmail || "");
       setOtp("");
       setError(undefined);
+      setVerificationId(undefined);
    };
 
    // Verified state
@@ -363,10 +382,6 @@ function maskEmail(email: string): string {
    return `${local.slice(0, 2)}${"*".repeat(
       Math.min(local.length - 2, 5)
    )}@${domain}`;
-}
-
-function simulateApiCall(delay: number): Promise<void> {
-   return new Promise((resolve) => setTimeout(resolve, delay));
 }
 
 export default EmailVerification;

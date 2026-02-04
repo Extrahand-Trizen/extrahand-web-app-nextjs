@@ -190,15 +190,8 @@ export const LandingHeader: React.FC = () => {
    }, [logout, router]);
 
    const handleBecomeTasker = useCallback(() => {
-      // Check if user is authenticated
-      if (!isAuthenticated) {
-         // Redirect to 404 page if not logged in
-         router.push("/not-found");
-      } else {
-         // If logged in, navigate to earn-money page
-         router.push("/earn-money");
-      }
-   }, [isAuthenticated, router]);
+      router.push("/login");
+   }, [router]);
 
    return (
       <>

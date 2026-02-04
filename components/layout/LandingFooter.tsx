@@ -26,7 +26,7 @@ const footerLinks = {
    forTaskers: {
       title: "For Taskers",
       links: [
-         { label: "Become a Tasker", href: "/signup" },
+         { label: "Become a Tasker", href: "/login" },
          { label: "How to Earn", href: "#" },
          { label: "Tasker Guidelines", href: "#" },
          { label: "Success Stories", href: "#testimonials" },

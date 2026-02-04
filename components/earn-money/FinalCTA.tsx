@@ -51,7 +51,7 @@ export function FinalCTA() {
                asChild
                className="md:text-lg px-7 md:px-10 py-4 md:py-7 bg-primary-500 hover:bg-primary-400 text-secondary-900 font-bold shadow-2xl shadow-primary-500/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
             >
-               <Link href="/onboarding/role-selection?role=performer">
+               <Link href="/login">
                   Become a Tasker
                   <ArrowRight className="ml-2 w-5 h-5" />
                </Link>

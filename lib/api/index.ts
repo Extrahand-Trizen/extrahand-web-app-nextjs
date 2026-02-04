@@ -15,6 +15,7 @@ import { completionApi } from "./endpoints/completion";
 import { privacyApi } from "./endpoints/privacy";
 import { businessApi } from "./endpoints/business";
 import { categoriesApi } from "./endpoints/categories";
+import { CORS_CONFIG, getApiBaseUrl, isDevelopment } from "@/lib/config";
 
 export const api = {
    // Profile management
@@ -58,14 +59,15 @@ export const api = {
       formData.append("image", file);
       
       try {
-         const baseUrl = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}` : "";
-         const url = baseUrl ? `${baseUrl}/api/v1/uploads/profile-picture` : `/api/v1/uploads/profile-picture`;
+         const baseUrl = getApiBaseUrl().replace(/\/$/, "");
+         const url = `${baseUrl}/api/v1/uploads/profile-picture`;
+         const corsConfig = CORS_CONFIG[isDevelopment ? "development" : "production"];
 
          const response = await fetch(url, {
             method: "POST",
             // Don't set Content-Type, let the browser set it with boundary
             body: formData,
-            credentials: "include",
+            ...corsConfig,
          });
 
          if (!response.ok) {

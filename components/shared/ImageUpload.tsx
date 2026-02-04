@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { isValidImageType, isValidFileSize } from "@/lib/utils/sanitization";
+import { CORS_CONFIG, getApiBaseUrl, isDevelopment } from "@/lib/config";
 
 interface Attachment {
    type: string;
@@ -37,18 +38,49 @@ export function ImageUpload({
    const [isDragging, setIsDragging] = useState(false);
 
    const uploadFile = async (file: File): Promise<Attachment> => {
-      // TODO: Replace with actual cloud storage upload (AWS S3, Cloudinary, etc.)
-      // Mock upload for now
-      return new Promise((resolve) => {
-         setTimeout(() => {
-            resolve({
-               type: file.type,
-               url: URL.createObjectURL(file), // In production, this will be the cloud URL
-               filename: file.name,
-               uploadedAt: new Date(),
-            });
-         }, 1000);
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const baseUrl = getApiBaseUrl().replace(/\/$/, "");
+      const uploadUrl = `${baseUrl}/api/v1/uploads/task-image`;
+      const corsConfig = CORS_CONFIG[isDevelopment ? "development" : "production"];
+
+      const response = await fetch(uploadUrl, {
+         method: "POST",
+         body: formData,
+         ...corsConfig,
       });
+
+      if (!response.ok) {
+         let errorData: any = { message: `Upload failed with status ${response.status}` };
+         const contentType = response.headers.get("content-type");
+         if (contentType && contentType.includes("application/json")) {
+            try {
+               errorData = await response.json();
+            } catch (e) {
+               const text = await response.text();
+               errorData = { message: text || `Upload failed with status ${response.status}` };
+            }
+         } else {
+            const text = await response.text();
+            errorData = { message: text || `Upload failed with status ${response.status}` };
+         }
+
+         throw new Error(errorData.message || errorData.error || "Failed to upload image");
+      }
+
+      const data = await response.json();
+      const url = data?.data?.url || data?.url;
+      if (!url) {
+         throw new Error(data?.message || "Failed to upload image");
+      }
+
+      return {
+         type: file.type,
+         url,
+         filename: file.name,
+         uploadedAt: new Date(),
+      };
    };
 
    const validateFile = (file: File): string | null => {

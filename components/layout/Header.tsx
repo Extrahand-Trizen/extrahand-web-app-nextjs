@@ -19,7 +19,7 @@ const menuItems = [
    { label: "Benefits" },
    { label: "Login", route: "/login" },
    { label: "Signup", route: "/signup" },
-   { label: "Become a Tasker", type: "button", route: "/signup" },
+   { label: "Become a Tasker", type: "button", route: "/login" },
 ];
 
 // Fallback categories if API fails
@@ -180,14 +180,7 @@ export const Header: React.FC = () => {
             el.scrollIntoView({ behavior: "smooth", block: "start" });
          }
       } else if (item.label === "Become a Tasker") {
-         // Check if user is authenticated
-         const idToken = localStorage.getItem('idToken');
-         if (!idToken) {
-            // Redirect to 404 if not authenticated
-            router.push('/404');
-         } else {
-            router.push(item.route || '/signup');
-         }
+         router.push('/login');
       } else if (item.route) {
          router.push(item.route);
       }
