@@ -69,20 +69,44 @@ export const api = {
          });
 
          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || `Upload failed with status ${response.status}`);
+            let errorData: any = { message: `Upload failed with status ${response.status}` };
+            
+            // Try to parse as JSON, but handle non-JSON responses
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+               try {
+                  errorData = await response.json();
+               } catch (e) {
+                  // If JSON parsing fails, use text
+                  const text = await response.text();
+                  errorData = { message: text || `Upload failed with status ${response.status}` };
+               }
+            } else {
+               // Non-JSON response
+               const text = await response.text();
+               errorData = { message: text || `Upload failed with status ${response.status}` };
+            }
+            
+            const errorMsg = errorData.message || errorData.error || `Upload failed with status ${response.status}`;
+            throw new Error(errorMsg);
          }
 
          const data = await response.json();
          
          if (data.success && data.data?.url) {
             return data.data.url;
+         } else if (data.url) {
+            // Handle direct URL response format
+            return data.url;
          } else {
             throw new Error(data.message || "Failed to upload image");
          }
       } catch (error) {
          console.error("Image upload error:", error);
-         throw new Error(error instanceof Error ? error.message : "Failed to upload image");
+         if (error instanceof Error) {
+            throw error;
+         }
+         throw new Error("Failed to upload image");
       }
    },
 

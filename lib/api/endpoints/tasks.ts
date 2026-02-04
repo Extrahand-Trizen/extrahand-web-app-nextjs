@@ -38,7 +38,17 @@ export const tasksApi = {
    * GET /api/v1/tasks
    */
   async getPublicTasks(params?: TaskQueryParams): Promise<TaskListResponse> {
-    const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
+    // Build query string, filtering out undefined/null values and properly encoding all types (including booleans)
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        // Include all truthy values and the explicit false/0 values
+        if (value !== undefined && value !== null && value !== '') {
+          queryParams.set(key, String(value));
+        }
+      });
+    }
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
     const response = await fetchPublic(`tasks${queryString}`);
     
     // Handle standardized API response format: { success, code, message, data, meta: { pagination } }
