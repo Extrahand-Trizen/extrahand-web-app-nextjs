@@ -166,9 +166,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                   }
                }
             } else {
-               console.log(
-                  "⏳ Firebase auth not ready yet; waiting for onAuthStateChanged"
-               );
+               // Cookie-only session (e.g. LOCAL_TEST dummy login): only try api.me() if we have the auth cookie
+               // Otherwise we'd 401 and trigger redirect to login for every anonymous visitor
+               const hasAuthCookie =
+                  typeof document !== "undefined" &&
+                  document.cookie.split("; ").some((c) => c.startsWith("extrahand_auth=1"));
+               if (hasAuthCookie && !fetchingProfileRef.current) {
+                  try {
+                     fetchingProfileRef.current = true;
+                     const userData = await api.me();
+                     setUserData(userData);
+                     storeLogin({ user: userData });
+                     console.log("✅ Session restored from cookies (no Firebase user)");
+                  } catch {
+                     // No valid cookie session
+                  } finally {
+                     fetchingProfileRef.current = false;
+                  }
+               }
             }
          } catch (error) {
             console.warn("❌ Error restoring session:", error);
@@ -180,7 +195,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       };
 
       restoreSession();
-   }, [resetLocalSession]);
+   }, [resetLocalSession, storeLogin]);
 
    useEffect(() => {
       if (!sessionRestored) return;
@@ -240,11 +255,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                }
             } else {
                setCurrentUser(null);
-               setUserData(null);
-               prevUserRef.current = null;
-
-               sessionManager.clearSession();
-               storeLogout();
+               // Cookie-only session: only try api.me() if auth cookie present, to avoid 401 → redirect for anonymous users
+               const hasAuthCookie =
+                  typeof document !== "undefined" &&
+                  document.cookie.split("; ").some((c) => c.startsWith("extrahand_auth=1"));
+               if (hasAuthCookie) {
+                  try {
+                     const userData = await api.me();
+                     setUserData(userData);
+                     storeLogin({ user: userData });
+                  } catch (e: any) {
+                     if (e?.status === 401) {
+                        prevUserRef.current = null;
+                        setUserData(null);
+                        sessionManager.clearSession();
+                        storeLogout();
+                     }
+                  }
+               }
             }
          }
          setLoading(false);

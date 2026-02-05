@@ -58,14 +58,9 @@ async function refreshAccessToken(): Promise<boolean> {
       
       // Dynamically import to avoid circular dependencies
       const { sessionsApi } = await import("@/lib/api/endpoints/sessions");
-      const { sessionManager } = await import("@/lib/auth/session");
 
-      // Check if we're still authenticated before attempting refresh
-      if (!sessionManager.isSessionActive()) {
-         console.warn("⚠️ Session not active, skipping refresh");
-         throw new Error("Session not active");
-      }
-
+      // Attempt refresh regardless of sessionManager state; we can't read HttpOnly
+      // cookies from JS, so the server will return 401 if no valid refresh cookie.
       // Call the refresh endpoint (refresh token is in httpOnly cookie)
       await sessionsApi.refresh();
       

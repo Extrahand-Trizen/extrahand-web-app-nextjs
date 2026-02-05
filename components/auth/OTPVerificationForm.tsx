@@ -29,6 +29,7 @@ import { authApi } from "@/lib/api/endpoints/auth";
 import { useAuth } from "@/lib/auth/context";
 import { sessionManager } from "@/lib/auth/session";
 import { setOTPAuthInProgress } from "@/lib/auth/authFlowState";
+import { isLocalTestMode, isTestPhone, DUMMY_OTP } from "@/lib/auth/devOtp";
 import { useUserStore } from "@/lib/state/userStore";
 import { formatPhoneNumber } from "@/lib/utils/phone";
 
@@ -186,6 +187,13 @@ export function OTPVerificationForm({
    };
 
    const handleSendOtp = async (phoneInput: string) => {
+      if (isLocalTestMode() && isTestPhone(phoneInput)) {
+         resetTimer();
+         toast.success("OTP sent! (dev)", {
+            description: `Use OTP ${DUMMY_OTP} to sign in.`,
+         });
+         return;
+      }
       try {
          await sendOtp(phoneInput);
          resetTimer();
@@ -232,13 +240,112 @@ export function OTPVerificationForm({
       }
 
       // Prevent duplicate verification attempts
-      if (isVerifyingRef.current || verifying || isVerified) {
+      if (verifying || isVerified) {
          return;
       }
+
+      // Mark verification in progress to avoid duplicate triggers
+
+      // Mark verification in progress to avoid duplicate triggers
+   
 
       // Mark as verifying to avoid concurrent calls (auto-fill + manual click)
       isVerifyingRef.current = true;
       setHasError(false);
+
+      // Dev bypass: LOCAL_TEST + dummy phone → backend completeOTPDev (no Firebase)
+      if (isLocalTestMode() && isTestPhone(phone)) {
+         try {
+            setOTPAuthInProgress(true);
+            const backendResult = await authApi.completeOTPDev(
+               formatPhoneNumber(phone),
+               code,
+               authType,
+               userName || undefined
+            );
+            if (!backendResult.success) {
+               throw new Error(backendResult.error || "Verification failed");
+            }
+            loginToStore({
+               user: backendResult.profile ?? undefined,
+            });
+            sessionManager.saveSession({
+               isAuthenticated: true,
+               lastRoute: "Landing",
+            });
+            setOTPAuthInProgress(false);
+            await refreshUserData();
+            setIsVerified(true);
+            clearSession();
+            isVerifyingRef.current = false;
+            toast.success(
+               authType === "signup"
+                  ? `Welcome to ExtraHand${userName ? `, ${userName}` : ""}!`
+                  : "Welcome back!",
+               { description: "Phone verified successfully. Redirecting..." }
+            );
+            setTimeout(() => {
+               if (onSuccess) onSuccess();
+               else router.push("/home");
+            }, 1000);
+         } catch (err: any) {
+            setOTPAuthInProgress(false);
+            isVerifyingRef.current = false;
+            toast.error("Verification failed", {
+               description: err?.message || "Invalid OTP or test user not seeded.",
+            });
+            setOtp(Array(OTP_LENGTH).fill(""));
+            focusInput(0);
+         }
+         return;
+      }
+
+      // Dev bypass: LOCAL_TEST + dummy phone → backend completeOTPDev (no Firebase)
+      if (isLocalTestMode() && isTestPhone(phone)) {
+         try {
+            setOTPAuthInProgress(true);
+            const backendResult = await authApi.completeOTPDev(
+               formatPhoneNumber(phone),
+               code,
+               authType,
+               userName || undefined
+            );
+            if (!backendResult.success) {
+               throw new Error(backendResult.error || "Verification failed");
+            }
+            loginToStore({
+               user: backendResult.profile ?? undefined,
+            });
+            sessionManager.saveSession({
+               isAuthenticated: true,
+               lastRoute: "Landing",
+            });
+            setOTPAuthInProgress(false);
+            await refreshUserData();
+            setIsVerified(true);
+            clearSession();
+            isVerifyingRef.current = false;
+            toast.success(
+               authType === "signup"
+                  ? `Welcome to ExtraHand${userName ? `, ${userName}` : ""}!`
+                  : "Welcome back!",
+               { description: "Phone verified successfully. Redirecting..." }
+            );
+            setTimeout(() => {
+               if (onSuccess) onSuccess();
+               else router.push("/home");
+            }, 1000);
+         } catch (err: any) {
+            setOTPAuthInProgress(false);
+            isVerifyingRef.current = false;
+            toast.error("Verification failed", {
+               description: err?.message || "Invalid OTP or test user not seeded.",
+            });
+            setOtp(Array(OTP_LENGTH).fill(""));
+            focusInput(0);
+         }
+         return;
+      }
 
       try {
          // Set flag to prevent onAuthStateChanged from calling api.me() prematurely

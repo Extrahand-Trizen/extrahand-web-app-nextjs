@@ -75,6 +75,43 @@ export const authApi = {
    },
 
    /**
+    * Dev-only: complete OTP with test phone + fixed OTP (no Firebase).
+    * POST /api/v1/auth/otp/complete-dev
+    * Only use when on localhost with test phone; backend returns same shape and sets cookies.
+    */
+   async completeOTPDev(
+      phone: string,
+      otp: string,
+      mode: "login" | "signup",
+      name?: string
+   ): Promise<CompleteOTPResponse> {
+      const { getApiBaseUrl } = await import("@/lib/config");
+      const baseUrl = getApiBaseUrl().replace(/\/$/, "");
+      const url = `${baseUrl}/api/v1/auth/otp/complete-dev`;
+
+      const response = await fetch(url, {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         credentials: "include",
+         body: JSON.stringify({
+            phone,
+            otp,
+            mode,
+            name,
+            clientType: "web",
+         }),
+      });
+
+      if (!response.ok) {
+         const error = await response
+            .json()
+            .catch(() => ({ error: "Failed to complete OTP" }));
+         throw new Error(error.error || "Failed to complete OTP");
+      }
+      return response.json();
+   },
+
+   /**
     * Sync authenticated user profile with backend (requires HttpOnly cookies)
     * POST /api/v1/auth/sync
     */

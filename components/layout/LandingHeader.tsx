@@ -100,7 +100,8 @@ export const LandingHeader: React.FC = () => {
 
    const categoriesRef = useRef<HTMLDivElement>(null);
    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-   const isAuthenticated = Boolean(currentUser);
+   // Show profile when we have Firebase user OR backend userData (e.g. LOCAL_TEST dummy login)
+   const isAuthenticated = Boolean(currentUser) || Boolean(userData);
    const displayName =
       userData?.name ?? currentUser?.displayName ?? "Your Account";
    const initials = displayName
