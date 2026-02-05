@@ -63,9 +63,21 @@ export function SocketProvider({ children }: SocketProviderProps) {
     setIsConnecting(true);
 
     // Chat service socket
-    const chatServiceUrl =
-      process.env.NEXT_PUBLIC_CHAT_SERVICE_URL || "http://localhost:4003";
-    const chatSock = io(chatServiceUrl, {
+    const chatServiceUrl = process.env.NEXT_PUBLIC_CHAT_SERVICE_URL;
+    const shouldConnectSockets =
+      typeof window !== "undefined" && window.location.hostname === "localhost"
+        ? true
+        : Boolean(chatServiceUrl || process.env.NEXT_PUBLIC_TASK_SERVICE_URL);
+
+    if (!shouldConnectSockets) {
+      logger.warn(
+        "⚠️ Socket URLs not configured. Skipping socket connections in production."
+      );
+      setIsConnecting(false);
+      return;
+    }
+
+    const chatSock = io(chatServiceUrl || "http://localhost:4003", {
       auth: {
         profileId,
       },

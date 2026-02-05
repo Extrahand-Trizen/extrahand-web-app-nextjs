@@ -103,9 +103,13 @@ export const LandingHeader: React.FC = () => {
    // Show profile when we have Firebase user OR backend userData (e.g. LOCAL_TEST dummy login)
    const isAuthenticated = Boolean(currentUser) || Boolean(userData);
    const displayName =
-      userData?.name ?? currentUser?.displayName ?? "Your Account";
+      userData?.name ||
+      currentUser?.displayName ||
+      currentUser?.email ||
+      "Account";
    const initials = displayName
-      .split(" ")
+      .trim()
+      .split(/\s+/)
       .map((part) => part[0])
       .join("")
       .slice(0, 2)
@@ -191,7 +195,7 @@ export const LandingHeader: React.FC = () => {
    }, [logout, router]);
 
    const handleBecomeTasker = useCallback(() => {
-      router.push("/login");
+      router.push("/earn-money");
    }, [router]);
 
    return (

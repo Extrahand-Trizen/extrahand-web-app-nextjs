@@ -94,9 +94,22 @@ export const HeroSection: React.FC = () => {
 
                      const data = await response.json();
 
-                     if (data.address) {
-                        setLocation(data.address);
-                        setShowLocationDropdown(false);
+                     if (data) {
+                        const area =
+                           data?.raw?.address?.neighborhood ||
+                           data?.raw?.address?.sublocality ||
+                           data?.raw?.address?.street ||
+                           "";
+                        const city = data?.raw?.address?.city || "";
+                        const shortLocation =
+                           area && city
+                              ? `${area}, ${city}`
+                              : city || area || data.address || "";
+
+                        if (shortLocation) {
+                           setLocation(shortLocation);
+                           setShowLocationDropdown(false);
+                        }
                      }
                   } catch (error) {
                      console.error("Error geocoding:", error);

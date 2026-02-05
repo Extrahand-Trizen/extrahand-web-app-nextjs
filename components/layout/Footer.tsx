@@ -34,7 +34,7 @@ const footerColumns = [
       { label: 'Browse Tasks', href: '/discover' },
       { label: 'Login', href: '/login' },
       { label: 'Support Centre', href: '#' },
-      { label: 'Become a Tasker', href: '/login' },
+      { label: 'Become a Tasker', href: '/earn-money' },
     ],
   },
   {

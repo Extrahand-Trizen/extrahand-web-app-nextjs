@@ -19,7 +19,7 @@ const menuItems = [
    { label: "Benefits" },
    { label: "Login", route: "/login" },
    { label: "Signup", route: "/signup" },
-   { label: "Become a Tasker", type: "button", route: "/login" },
+   { label: "Become a Tasker", type: "button", route: "/earn-money" },
 ];
 
 // Fallback categories if API fails
@@ -180,7 +180,7 @@ export const Header: React.FC = () => {
             el.scrollIntoView({ behavior: "smooth", block: "start" });
          }
       } else if (item.label === "Become a Tasker") {
-         router.push('/login');
+         router.push('/earn-money');
       } else if (item.route) {
          router.push(item.route);
       }

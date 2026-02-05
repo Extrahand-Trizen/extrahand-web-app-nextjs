@@ -67,6 +67,7 @@ function ProfilePageContent() {
    const [reviews, setReviews] = useState<Review[]>([]);
    const [workHistory, setWorkHistory] = useState<WorkHistoryItem[]>([]);
    const [loadingProfile, setLoadingProfile] = useState(false);
+   const [profileError, setProfileError] = useState<string | null>(null);
    const [loadingReviews, setLoadingReviews] = useState(false);
    const [isMobile, setIsMobile] = useState(false);
    const [section, setSection] = useState<ProfileSection>("overview");
@@ -78,14 +79,13 @@ function ProfilePageContent() {
          if (!userData?.uid) return;
          
          setLoadingProfile(true);
+         setProfileError(null);
          try {
             const profileData = await profilesApi.me();
             setUser(profileData as UserProfile);
          } catch (error: any) {
             console.error("Failed to fetch profile:", error);
-            toast.error("Failed to load profile data", {
-               description: error.message || "Please try again later.",
-            });
+            setProfileError(error.message || "Failed to load profile data");
          } finally {
             setLoadingProfile(false);
          }
@@ -263,7 +263,7 @@ function ProfilePageContent() {
       },
    };
 
-   if (authLoading || (loadingProfile && !user)) {
+   if (authLoading || loadingProfile || (!user && !profileError)) {
       return (
          <div className="flex items-center justify-center py-20">
             <LoadingSpinner size="lg" />
@@ -274,7 +274,7 @@ function ProfilePageContent() {
    if (!user) {
       return (
          <div className="flex items-center justify-center py-20">
-            <p className="text-gray-500">Failed to load profile data</p>
+            <LoadingSpinner size="lg" />
          </div>
       );
    }

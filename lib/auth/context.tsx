@@ -72,7 +72,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
    const hasBackendSession = useCallback(() => true, []);
 
    const refreshUserData = useCallback(async () => {
-      if (currentUser) {
+      const hasAuthCookie =
+         typeof document !== "undefined" &&
+         document.cookie.split("; ").some((c) => c.startsWith("extrahand_auth=1"));
+
+      if (currentUser || hasAuthCookie) {
          try {
             console.log("🔄 Refreshing user data from backend API...");
             const userData = await api.me();

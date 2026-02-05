@@ -65,7 +65,13 @@ export async function GET(request: NextRequest) {
          raw: {
             address: {
                street: getComponent("route"),
-               city: getComponent("locality") || getComponent("administrative_area_level_2"),
+               neighborhood: getComponent("neighborhood"),
+               sublocality:
+                  getComponent("sublocality_level_1") ||
+                  getComponent("sublocality"),
+               city:
+                  getComponent("locality") ||
+                  getComponent("administrative_area_level_2"),
                state: getComponent("administrative_area_level_1"),
                country: getComponent("country"),
                postcode: getComponent("postal_code"),
