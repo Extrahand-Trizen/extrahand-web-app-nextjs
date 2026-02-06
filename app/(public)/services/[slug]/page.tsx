@@ -50,7 +50,13 @@ export default async function ServicePage({ params }: ServicePageProps) {
 
    const normalizedData = normalizeIncomeOpportunitiesData(categoryData);
 
-   return <CategoryDetailClient category={normalizedData} />;
+   return (
+      <CategoryDetailClient
+         category={normalizedData}
+         breadcrumbCategory="Services"
+         breadcrumbCategoryLink="/services"
+      />
+   );
 }
 
 export async function generateMetadata({ params }: ServicePageProps) {

@@ -29,10 +29,14 @@ import {
 
 interface CategoryDetailClientProps {
    category: CategoryDetail;
+   breadcrumbCategory?: string;
+   breadcrumbCategoryLink?: string;
 }
 
 const CategoryDetailClient: React.FC<CategoryDetailClientProps> = ({
    category,
+   breadcrumbCategory,
+   breadcrumbCategoryLink,
 }) => {
    const router = useRouter();
    const [selectedTasks, setSelectedTasks] = useState("1-2 tasks per week");
@@ -223,6 +227,8 @@ const CategoryDetailClient: React.FC<CategoryDetailClientProps> = ({
             heroImage={category.heroImage}
             heroTitle={category.heroTitle}
             heroDescription={category.heroDescription}
+            breadcrumbCategory={breadcrumbCategory}
+            breadcrumbCategoryLink={breadcrumbCategoryLink}
             rightCard={
                <EarningsCard
                   selectedTasks={selectedTasks}

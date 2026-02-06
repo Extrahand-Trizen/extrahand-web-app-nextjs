@@ -39,7 +39,7 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
             {categories.map((category) => {
                const suffix =
                   viewType === "jobs"
-                     ? "Jobs"
+                     ? "Tasks"
                      : viewType === "services"
                      ? "Services"
                      : "Tasks";
@@ -68,7 +68,7 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
          <div className="flex-1 max-w-[760px] py-4 sm:py-6 px-4 sm:px-6 pb-6 sm:pb-8 md:pb-10 mt-0 ml-0 md:py-5 md:px-10 md:-mt-[60px]">
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-3 text-[#0a1f44]">
                {viewType === "jobs"
-                  ? "Find Jobs on Extrahand"
+                  ? "Find Tasks on Extrahand"
                   : viewType === "services"
                   ? "Find Services on Extrahand"
                   : "Earn money on Extrahand"}
@@ -76,7 +76,7 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
 
             <p className="text-base sm:text-lg md:text-xl lg:text-[22px] text-[#0a1f44] mb-4 sm:mb-6 leading-[1.6]">
                {viewType === "jobs"
-                  ? "Extrahand is India's largest job marketplace. Browse all available jobs from handymen to cleaners to gardeners. Sign up now and get hired!"
+                  ? "Extrahand is India's largest task marketplace. Browse all available tasks from handymen to cleaners to gardeners. Sign up now and get hired!"
                   : viewType === "services"
                   ? "Extrahand is India's largest service marketplace. Find and hire skilled professionals for all kinds of services from handymen to cleaners to gardeners."
                   : "Extrahand is India's largest job marketplace for all kinds of Tasks from handymen to cleaners to gardeners. Sign up now and get hired!"}
