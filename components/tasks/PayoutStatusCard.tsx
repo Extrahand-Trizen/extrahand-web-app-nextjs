@@ -8,9 +8,8 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, CheckCircle, AlertCircle, Wallet } from "lucide-react";
+import { CheckCircle, AlertCircle, Wallet } from "lucide-react";
 import { paymentApi } from "@/lib/api/endpoints/payment";
-import { formatDistanceToNow } from "date-fns";
 
 interface PayoutStatusCardProps {
   taskId: string;
@@ -48,7 +47,6 @@ export function PayoutStatusCard({ taskId, taskStatus }: PayoutStatusCardProps) 
 
   const amount = parseFloat(escrow.amountInRupees || escrow.amount);
   const status = escrow.status;
-  const autoReleaseDate = escrow.autoReleaseDate ? new Date(escrow.autoReleaseDate) : null;
 
   return (
     <Card className="border-primary-200 bg-primary-50/30">
@@ -66,7 +64,8 @@ export function PayoutStatusCard({ taskId, taskStatus }: PayoutStatusCardProps) 
               <span className="text-sm font-semibold text-gray-900">₹{amount.toFixed(2)}</span>
             </div>
             
-            {autoReleaseDate && taskStatus === 'completed' && (
+            {/* Auto-release UI disabled - payouts/release handled elsewhere */}
+            {/* {autoReleaseDate && taskStatus === 'completed' && (
               <div className="flex items-start gap-2 mt-2 p-2 bg-amber-50 border border-amber-100 rounded">
                 <Clock className="w-4 h-4 text-amber-600 mt-0.5" />
                 <div className="flex-1">
@@ -76,7 +75,7 @@ export function PayoutStatusCard({ taskId, taskStatus }: PayoutStatusCardProps) 
                   </p>
                 </div>
               </div>
-            )}
+            )} */}
 
             {taskStatus !== 'completed' && (
               <div className="flex items-start gap-2 mt-2 p-2 bg-blue-50 border border-blue-100 rounded">

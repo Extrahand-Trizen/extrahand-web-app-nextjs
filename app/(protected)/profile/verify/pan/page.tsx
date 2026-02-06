@@ -25,7 +25,7 @@ import {
    Sparkles,
    BadgeCheck,
 } from "lucide-react";
-import { businessApi } from "@/lib/api/endpoints/business";
+import { verificationApi } from "@/lib/api/endpoints/verification";
 import { useAuth } from "@/lib/auth/context";
 import { toast } from "sonner";
 
@@ -104,22 +104,24 @@ export default function PANVerificationPage() {
       setState((p) => ({ ...p, error: undefined, step: "processing" }));
 
       try {
-         // Call real backend API
-         const result = await businessApi.verifyPAN(state.pan, {
+         const result = await verificationApi.verifyPAN(state.pan, {
             given: true,
-            text: "I consent to verify my business PAN for compliance and operations",
+            text: "I consent to verify my PAN for compliance and operations",
             version: "v1.0",
          });
 
-         if (result.success && result.verified) {
+         if (result.success && result.data) {
             setState((p) => ({
                ...p,
                step: "success",
-               verifiedData: result.data,
+               verifiedData: {
+                  name: result.data?.verifiedData?.name,
+                  category: "Individual",
+                  maskedPan: result.data?.maskedPAN ?? maskPAN(state.pan),
+               },
             }));
             toast.success(result.message || "PAN verified successfully!");
-            
-            // Refresh user data to update profile
+
             await refreshUserData();
             router.refresh();
          } else {
@@ -131,7 +133,7 @@ export default function PANVerificationPage() {
             toast.error(result.message || "PAN verification failed");
          }
       } catch (error: any) {
-         const errorMsg = error.response?.data?.error || error.message || "PAN verification failed";
+         const errorMsg = error.response?.data?.error || error.response?.data?.message || error.message || "PAN verification failed";
          setState((p) => ({
             ...p,
             step: "error",

@@ -14,7 +14,6 @@ import type {
   UserPayments,
   TransactionHistory,
   FeeBreakdown,
-  Payout,
 } from '@/types/payment';
 
 export const paymentApi = {
@@ -57,19 +56,19 @@ export const paymentApi = {
   },
 
   /**
-   * Process payout manually
+   * Process payout manually - DISABLED (payouts/release handled elsewhere)
    * POST /api/v1/payment/payout/process
    */
-  async processPayout(data: {
-    razorpayOrderId: string;
-    performerUid: string;
-    bankAccountId?: string;
-  }): Promise<{ success: boolean; payout?: Payout; error?: string }> {
-    return fetchWithAuth('/payment/payout/process', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
+  // async processPayout(data: {
+  //   razorpayOrderId: string;
+  //   performerUid: string;
+  //   bankAccountId?: string;
+  // }): Promise<{ success: boolean; payout?: Payout; error?: string }> {
+  //   return fetchWithAuth('/payment/payout/process', {
+  //     method: 'POST',
+  //     body: JSON.stringify(data),
+  //   });
+  // },
 
   /**
    * Get user earnings summary

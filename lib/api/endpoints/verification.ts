@@ -132,6 +132,32 @@ export const verificationApi = {
   },
 
   /**
+   * Verify PAN (direct Cashfree API)
+   * POST /api/v1/verification/pan/verify
+   */
+  async verifyPAN(
+    panNumber: string,
+    consent: { given: boolean; text?: string; version?: string }
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      verificationId?: string;
+      maskedPAN: string;
+      verifiedData?: { name?: string };
+      status: string;
+    };
+  }> {
+    return fetchWithAuth('verification/pan/verify', {
+      method: 'POST',
+      body: JSON.stringify({
+        panNumber,
+        consent,
+      }),
+    });
+  },
+
+  /**
    * Verify bank account with penny drop
    * POST /api/v1/verification/bank/verify
    */
