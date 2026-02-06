@@ -29,6 +29,7 @@ interface PaymentConfirmationModalProps {
   task: {
     id: string;
     title: string;
+    category?: string;
   };
   application: {
     id: string;
@@ -59,19 +60,19 @@ export function PaymentConfirmationModal({
 
   const amount = application.proposedBudget.amount;
 
-  // Calculate fees when modal opens
+  // Calculate fees when modal opens (category-aware for correct GST/fees)
   useEffect(() => {
     if (open) {
       calculateFees();
     }
-  }, [open, amount]);
+  }, [open, amount, task.category]);
 
   const calculateFees = async () => {
     try {
       setIsCalculating(true);
       setError(null);
       
-      const response = await paymentApi.calculateFees(amount);
+      const response = await paymentApi.calculateFees(amount, task.category);
       
       if (response.success && response.fees) {
         setFees(response.fees);
@@ -107,6 +108,7 @@ export function PaymentConfirmationModal({
         performerUid: application.applicantId,
         amount: fees.totalAmount, // Use total amount including fees, not just task amount
         autoReleaseAfterDays: 5 / (24 * 60), // 5 minutes for testing (convert minutes to fractional days)
+        taskCategory: task.category ?? undefined,
       });
 
       if (!escrowResponse.success || !escrowResponse.order) {
