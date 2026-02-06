@@ -60,6 +60,7 @@ export interface CreateEscrowRequest {
   amount: number; // Amount in rupees
   currency?: string;
   autoReleaseAfterDays?: number;
+  taskCategory?: string;
   metadata?: Record<string, any>;
 }
 

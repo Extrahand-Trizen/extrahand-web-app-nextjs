@@ -24,6 +24,7 @@ interface TaskOffersSectionProps {
    onApplicationsCountChange?: (count: number) => void;
    userProfile?: any | null;
    onMakeOffer?: () => void;
+   taskCategory?: string;
 }
 
 
@@ -50,6 +51,7 @@ export function TaskOffersSection({
    onApplicationsCountChange,
    userProfile = null,
    onMakeOffer,
+   taskCategory,
 }: TaskOffersSectionProps) {
    const [applications, setApplications] = useState<TaskApplication[]>([]);
    const [loading, setLoading] = useState(true);
@@ -570,6 +572,7 @@ export function TaskOffersSection({
                task={{
                   id: taskId,
                   title: (selectedApplication.taskId as any)?.title || "Task",
+                  category: taskCategory,
                }}
                application={{
                   id: selectedApplication._id,

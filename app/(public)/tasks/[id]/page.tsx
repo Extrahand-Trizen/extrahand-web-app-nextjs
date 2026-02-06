@@ -210,6 +210,7 @@ export default function TaskDetailsPage() {
                               isOwner={isOwner}
                               userProfile={userProfile}
                               onMakeOffer={() => setShowMakeOfferModal(true)}
+                              taskCategory={task?.category}
                            />
                         ) : (
                            <TaskQuestionsSection taskId={taskId} isOwner={isOwner} />

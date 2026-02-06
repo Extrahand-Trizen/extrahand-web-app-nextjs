@@ -105,10 +105,15 @@ export const paymentApi = {
   },
 
   /**
-   * Calculate fees for an amount
-   * GET /api/v1/payment/fees/calculate?amount=:amount
+   * Calculate fees for an amount (category-aware when taskCategory provided)
+   * GET /api/v1/payment/fees/calculate?amount=:amount&taskCategory=:taskCategory
    */
-  async calculateFees(amount: number): Promise<{ success: boolean; fees?: FeeBreakdown; error?: string }> {
-    return fetchWithAuth(`/payment/fees/calculate?amount=${amount}`);
+  async calculateFees(
+    amount: number,
+    taskCategory?: string
+  ): Promise<{ success: boolean; fees?: FeeBreakdown; error?: string }> {
+    const params = new URLSearchParams({ amount: String(amount) });
+    if (taskCategory?.trim()) params.set('taskCategory', taskCategory.trim());
+    return fetchWithAuth(`/payment/fees/calculate?${params.toString()}`);
   },
 };
