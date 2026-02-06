@@ -8,6 +8,36 @@ import type { RazorpayOrder, RazorpayPaymentResponse } from '@/types/payment';
 // Razorpay script URL
 const RAZORPAY_SCRIPT_URL = 'https://checkout.razorpay.com/v1/checkout.js';
 
+/** Cached key ID from API (avoids repeated fetches) */
+let cachedKeyId: string | null = null;
+
+/**
+ * Get Razorpay key ID: fetch from server API first (runtime env), then fall back to build-time NEXT_PUBLIC_.
+ * This allows setting RAZORPAY_KEY_ID only on the server without rebuilding the frontend.
+ */
+async function getRazorpayKeyId(): Promise<string> {
+  if (cachedKeyId) return cachedKeyId;
+  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID) {
+    cachedKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+    return cachedKeyId;
+  }
+  try {
+    const res = await fetch('/api/razorpay-key', { cache: 'no-store' });
+    const data = await res.json();
+    if (res.ok && data?.keyId) {
+      cachedKeyId = data.keyId;
+      return cachedKeyId;
+    }
+  } catch {
+    // Fall through to build-time env or throw
+  }
+  if (process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID) {
+    cachedKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+    return cachedKeyId;
+  }
+  throw new Error('Razorpay key not configured');
+}
+
 // Declare Razorpay global type
 declare global {
   interface Window {
@@ -99,11 +129,8 @@ export async function initiateRazorpayPayment(
       throw new Error('Failed to load Razorpay SDK');
     }
 
-    // Get Razorpay key from environment
-    const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-    if (!razorpayKey) {
-      throw new Error('Razorpay key not configured');
-    }
+    // Get Razorpay key: from server API (RAZORPAY_KEY_ID) or build-time NEXT_PUBLIC_RAZORPAY_KEY_ID
+    const razorpayKey = await getRazorpayKeyId();
 
     // Prepare Razorpay options
     const razorpayOptions: RazorpayOptions = {

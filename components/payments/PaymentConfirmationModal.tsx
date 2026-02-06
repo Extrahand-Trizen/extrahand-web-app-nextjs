@@ -91,6 +91,9 @@ export function PaymentConfirmationModal({
       setIsPaymentProcessing(true);
       setError(null);
 
+      if (!posterUid) {
+        throw new Error('Please log in to complete payment');
+      }
       if (!fees) {
         throw new Error('Fee calculation required before payment');
       }
@@ -196,6 +199,14 @@ export function PaymentConfirmationModal({
             </div>
           )}
 
+          {/* Not logged in */}
+          {!posterUid && !isCalculating && (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>Please log in to complete payment.</AlertDescription>
+            </Alert>
+          )}
+
           {/* Error State */}
           {error && (
             <Alert variant="destructive">
@@ -290,7 +301,7 @@ export function PaymentConfirmationModal({
           </Button>
           <Button
             onClick={handlePayment}
-            disabled={isCalculating || isPaymentProcessing || !!error}
+            disabled={!posterUid || isCalculating || isPaymentProcessing || !!error}
             className="min-w-[120px]"
           >
             {isPaymentProcessing ? (

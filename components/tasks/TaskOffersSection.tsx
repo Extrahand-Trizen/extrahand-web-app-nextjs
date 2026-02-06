@@ -559,11 +559,14 @@ export function TaskOffersSection({
             )}
          </div>
 
-         {/* Payment Confirmation Modal */}
-         {selectedApplication && currentUser && (
+         {/* Payment Confirmation Modal - render when offer selected so modal opens; posterUid can be empty if auth still loading */}
+         {selectedApplication && (
             <PaymentConfirmationModal
                open={showPaymentModal}
-               onOpenChange={setShowPaymentModal}
+               onOpenChange={(open) => {
+                  if (!open) setSelectedApplication(null);
+                  setShowPaymentModal(open);
+               }}
                task={{
                   id: taskId,
                   title: (selectedApplication.taskId as any)?.title || "Task",
@@ -573,7 +576,7 @@ export function TaskOffersSection({
                   applicantId: selectedApplication.applicantId as string,
                   proposedBudget: selectedApplication.proposedBudget,
                }}
-               posterUid={currentUser.uid}
+               posterUid={currentUser?.uid ?? ""}
                onSuccess={handlePaymentSuccess}
                onError={handlePaymentError}
             />
