@@ -50,7 +50,13 @@ export default async function JobPage({ params }: JobPageProps) {
 
    const normalizedData = normalizeIncomeOpportunitiesData(categoryData);
 
-   return <CategoryDetailClient category={normalizedData} />;
+   return (
+      <CategoryDetailClient
+         category={normalizedData}
+         breadcrumbCategory="Tasks"
+         breadcrumbCategoryLink="/jobs"
+      />
+   );
 }
 
 export async function generateMetadata({ params }: JobPageProps) {

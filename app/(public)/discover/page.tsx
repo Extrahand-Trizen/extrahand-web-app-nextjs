@@ -12,6 +12,7 @@ import { tasksApi } from "@/lib/api/endpoints/tasks";
 import type { Task, TaskListResponse } from "@/types/task";
 import { MapIcon, List, Plus, AlertCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useUserStore } from "@/lib/state/userStore";
 
 const HYDERABAD_CENTER = { lat: 17.385, lng: 78.4867 };
 const TASKS_PER_PAGE = 20;
@@ -48,6 +49,9 @@ const calculateDistance = (
    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
    return R * c;
 };
+
+const getBudgetAmount = (budget: Task["budget"]) =>
+   typeof budget === "number" ? budget : budget?.amount ?? 0;
 
 // Empty state
 const EmptyState = ({ searchQuery }: { searchQuery: string }) => {
@@ -105,6 +109,7 @@ export default function TasksPage() {
    });
 
    const isMobile = useIsMobile();
+   const userProfile = useUserStore((state) => state.user);
 
    // Fetch tasks from API
    useEffect(() => {
@@ -152,7 +157,20 @@ export default function TasksPage() {
                params.sortBy = filters.sortBy;
             }
 
-            const response: TaskListResponse = await tasksApi.getPublicTasks(params);
+            let response: TaskListResponse;
+            if (userProfile?._id) {
+               try {
+                  response = await tasksApi.getTasks(params);
+               } catch (err: any) {
+                  if (err?.status === 401) {
+                     response = await tasksApi.getPublicTasks(params);
+                  } else {
+                     throw err;
+                  }
+               }
+            } else {
+               response = await tasksApi.getPublicTasks(params);
+            }
 
             // Handle both wrapped and unwrapped responses
             setTasks(response.tasks || []);
@@ -172,11 +190,15 @@ export default function TasksPage() {
       };
 
       fetchTasks();
-   }, [searchQuery, filters]);
+   }, [searchQuery, filters, userProfile?._id]);
 
    // Filter and sort tasks (client-side for unsupported backend filters)
    const getFilteredTasks = useCallback((): Task[] => {
       let filtered = [...tasks];
+
+      if (userProfile?._id) {
+         filtered = filtered.filter((task) => task.requesterId !== userProfile._id);
+      }
 
       // Client-side filters for unsupported backend options
       if (searchQuery.trim()) {
@@ -237,8 +259,16 @@ export default function TasksPage() {
          });
       }
 
+      if (filters.sortBy === "price-low") {
+         filtered.sort((a, b) => getBudgetAmount(a.budget) - getBudgetAmount(b.budget));
+      }
+
+      if (filters.sortBy === "price-high") {
+         filtered.sort((a, b) => getBudgetAmount(b.budget) - getBudgetAmount(a.budget));
+      }
+
       return filtered;
-   }, [tasks, filters]);
+   }, [tasks, filters, userProfile?._id]);
 
    const filteredTasks = getFilteredTasks();
    const selectedTask = filteredTasks.find((t) => t._id === selectedTaskId);
@@ -341,7 +371,20 @@ export default function TasksPage() {
                                     if (filters.suburb) params.suburb = filters.suburb;
                                     if (typeof filters.remotely !== 'undefined' && filters.remotely !== null) params.remotely = filters.remotely;
                                     if (filters.sortBy && filters.sortBy !== "nearest") params.sortBy = filters.sortBy;
-                                    const response: TaskListResponse = await tasksApi.getPublicTasks(params);
+                                    let response: TaskListResponse;
+                                    if (userProfile?._id) {
+                                       try {
+                                          response = await tasksApi.getTasks(params);
+                                       } catch (err: any) {
+                                          if (err?.status === 401) {
+                                             response = await tasksApi.getPublicTasks(params);
+                                          } else {
+                                             throw err;
+                                          }
+                                       }
+                                    } else {
+                                       response = await tasksApi.getPublicTasks(params);
+                                    }
                                     setTasks(prev => [...prev, ...(response.tasks || [])]);
                                     setPagination(response.pagination || pagination);
                                  } catch (err: any) {

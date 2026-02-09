@@ -59,7 +59,7 @@ export const tasksApi = {
           page: response.meta.pagination.page,
           limit: response.meta.pagination.limit,
           total: response.meta.pagination.total,
-          pages: response.meta.pagination.pages,
+          pages: response.meta.pagination.totalPages ?? response.meta.pagination.pages,
         },
       };
     }

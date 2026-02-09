@@ -40,7 +40,11 @@ import { useAuth } from "@/lib/auth/context";
 import { UserMenu } from "./UserMenu";
 import { NotificationCenter } from "@/components/home";
 import { mockDashboardData } from "@/lib/data/mockDashboard";
-import { taskTypes } from "@/lib/constants";
+import { posterTaskTypes, taskerTaskTypes } from "@/lib/constants";
+import {
+   categoriesApi,
+   CategoriesListItem,
+} from "@/lib/api/endpoints/categories";
 
 const USER_MENU_ITEMS = [
    { label: "Home", route: "/home" },
@@ -97,6 +101,9 @@ export const LandingHeader: React.FC = () => {
    const [mobileActiveRole, setMobileActiveRole] = useState<
       "poster" | "tasker"
    >("poster");
+   const [taskerCategories, setTaskerCategories] = useState<
+      CategoriesListItem[]
+   >([]);
 
    const categoriesRef = useRef<HTMLDivElement>(null);
    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -114,6 +121,74 @@ export const LandingHeader: React.FC = () => {
       .join("")
       .slice(0, 2)
       .toUpperCase();
+
+   useEffect(() => {
+      let isMounted = true;
+
+      const loadTaskerCategories = async () => {
+         const categories = await categoriesApi.getCategories();
+         if (!isMounted) return;
+
+         const published = categories.filter(
+            (category) => category.isPublished !== false
+         );
+         const sorted = [...published].sort((a, b) =>
+            a.name.localeCompare(b.name)
+         );
+         setTaskerCategories(sorted);
+      };
+
+      loadTaskerCategories();
+
+      return () => {
+         isMounted = false;
+      };
+   }, []);
+
+   const toColumns = useCallback(<T,>(items: T[], columnCount: number) => {
+      if (!items.length) return [] as T[][];
+      const columnSize = Math.ceil(items.length / columnCount);
+      return Array.from({ length: columnCount }, (_, idx) =>
+         items.slice(idx * columnSize, (idx + 1) * columnSize)
+      ).filter((col) => col.length > 0);
+   }, []);
+
+   const posterColumns = useMemo(
+      () => posterTaskTypes.map((col) => col.map((label) => ({ label }))),
+      []
+   );
+   const taskerColumns = useMemo(() => {
+      if (!taskerCategories.length) {
+         return taskerTaskTypes.map((col) => col.map((label) => ({ label })));
+      }
+
+      const items = taskerCategories.map((category) => ({
+         label: category.name,
+         slug: category.slug,
+      }));
+
+      return toColumns(items, 4);
+   }, [taskerCategories, toColumns]);
+
+   const desktopCategories = useMemo(
+      () => (activeRole === "poster" ? posterColumns : taskerColumns),
+      [activeRole, posterColumns, taskerColumns]
+   );
+   const mobileCategories = useMemo(
+      () => (mobileActiveRole === "poster" ? posterColumns : taskerColumns),
+      [mobileActiveRole, posterColumns, taskerColumns]
+   );
+
+   const slugify = useCallback(
+      (value: string) =>
+         value
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, "-")
+            .replace(/[^a-z0-9-]/g, "")
+            .replace(/-+/g, "-"),
+      []
+   );
 
    // Handle scroll for sticky header styling
    useEffect(() => {
@@ -281,11 +356,11 @@ export const LandingHeader: React.FC = () => {
                                                    className={cn(
                                                       "w-full text-left rounded-lg border p-2.5 transition-colors",
                                                       activeRole === "tasker"
-                                                         ? "bg-blue-50 border-blue-200"
+                                                         ? "bg-primary-50 border-primary-200"
                                                          : "bg-white border-secondary-200 hover:bg-secondary-50"
                                                    )}
                                                 >
-                                                   <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">
+                                                   <span className="text-xs font-semibold text-primary-600 uppercase tracking-wide">
                                                       As a Tasker
                                                    </span>
                                                    <p className="text-xs text-secondary-600 mt-0.5">
@@ -318,32 +393,28 @@ export const LandingHeader: React.FC = () => {
 
                                           {/* Task types grid */}
                                           <div className="flex-1 grid grid-cols-4 gap-x-4 gap-y-0.5 text-sm max-h-[360px] overflow-y-auto">
-                                             {taskTypes.map((col, colIdx) => (
+                                             {desktopCategories.map(
+                                                (col, colIdx) => (
                                                 <div
                                                    key={colIdx}
                                                    className="space-y-0.5"
                                                 >
-                                                   {col.map((task) => (
+                                                   {col.map((task) => {
+                                                      const taskLabel = task.label;
+                                                      const taskSlug =
+                                                         task.slug || slugify(task.label);
+
+                                                      return (
                                                       <Link
-                                                         key={task}
+                                                         key={taskSlug}
                                                          href={
                                                             activeRole ===
                                                             "poster"
                                                                ? `/services/${encodeURIComponent(
-                                                                    task
-                                                                       .toLowerCase()
-                                                                       .replace(
-                                                                          /\s+/g,
-                                                                          "-"
-                                                                       )
+                                                                    taskSlug
                                                                  )}`
                                                                : `/jobs/${encodeURIComponent(
-                                                                    task
-                                                                       .toLowerCase()
-                                                                       .replace(
-                                                                          /\s+/g,
-                                                                          "-"
-                                                                       )
+                                                                    taskSlug
                                                                  )}`
                                                          }
                                                          className="block py-1 text-secondary-600 hover:text-secondary-900 hover:underline"
@@ -353,9 +424,10 @@ export const LandingHeader: React.FC = () => {
                                                             )
                                                          }
                                                       >
-                                                         {task}
+                                                         {taskLabel}
                                                       </Link>
-                                                   ))}
+                                                      );
+                                                   })}
                                                 </div>
                                              ))}
                                           </div>
@@ -622,11 +694,11 @@ export const LandingHeader: React.FC = () => {
                                  className={cn(
                                     "w-full text-left rounded-lg border p-2 transition-colors",
                                     mobileActiveRole === "tasker"
-                                       ? "bg-blue-50 border-blue-200"
+                                       ? "bg-primary-50 border-primary-200"
                                        : "bg-white border-secondary-200"
                                  )}
                               >
-                                 <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">
+                                 <span className="text-xs font-semibold text-primary-600 uppercase tracking-wide">
                                     As a Tasker
                                  </span>
                                  <p className="text-[10px] text-secondary-600 mt-0.5">
@@ -655,20 +727,20 @@ export const LandingHeader: React.FC = () => {
 
                         {/* Categories List */}
                         <div className="max-h-[50vh] overflow-y-auto space-y-1 mb-4">
-                           {taskTypes.flat().map((task) => (
+                           {mobileCategories.flat().map((task) => {
+                              const taskLabel = task.label;
+                              const taskSlug = task.slug || slugify(task.label);
+
+                              return (
                               <Link
-                                 key={task}
+                                 key={taskSlug}
                                  href={
                                     mobileActiveRole === "poster"
                                        ? `/services/${encodeURIComponent(
-                                            task
-                                               .toLowerCase()
-                                               .replace(/\s+/g, "-")
+                                            taskSlug
                                          )}`
                                        : `/jobs/${encodeURIComponent(
-                                            task
-                                               .toLowerCase()
-                                               .replace(/\s+/g, "-")
+                                            taskSlug
                                          )}`
                                  }
                                  className="block py-2 px-3 text-sm text-secondary-600 hover:bg-secondary-50 hover:text-secondary-900 rounded-lg"
@@ -677,9 +749,10 @@ export const LandingHeader: React.FC = () => {
                                     setIsMobileMenuOpen(false);
                                  }}
                               >
-                                 {task}
+                                 {taskLabel}
                               </Link>
-                           ))}
+                              );
+                           })}
                         </div>
 
                         {/* View All Button */}
