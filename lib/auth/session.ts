@@ -322,9 +322,20 @@ class SessionManager {
 
          // Optionally redirect to a public, signed-out page
          if (options?.redirect && typeof window !== "undefined") {
-            // Send user to landing page; route protection middleware will
-            // redirect to /login when they try to access protected pages.
-            window.location.href = "/";
+            const currentPath = window.location.pathname;
+
+            // Auth/public pages where we DON'T want to trigger another redirect
+            const isAuthOrPublicRoot =
+               currentPath === "/" ||
+               currentPath.startsWith("/login") ||
+               currentPath.startsWith("/signup") ||
+               currentPath.startsWith("/otp-verification");
+
+            // Only redirect away from protected/other pages; once we're on a
+            // public root like "/", stay there to avoid reload loops.
+            if (!isAuthOrPublicRoot) {
+               window.location.href = "/";
+            }
          }
       } catch (error) {
          console.warn("Failed to handle auth error:", error);
