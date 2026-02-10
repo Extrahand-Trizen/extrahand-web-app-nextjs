@@ -43,7 +43,7 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                   // Tasker view: show clean category name without "Tasks" suffix
                   displayName = category.name.replace(/ Tasks$/i, "");
                } else {
-                  const suffix = viewType === "services" ? "Services" : "Tasks";
+                  const suffix = viewType === "services" ? "Services" : "Task";
                   displayName = category.name.toLowerCase().endsWith("tasks")
                      ? category.name.replace(/ Tasks$/i, ` ${suffix}`)
                      : `${category.name} ${suffix}`;
@@ -91,7 +91,7 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                      ? category.name.replace(/ Tasks$/i, "")
                      : category.name.toLowerCase().endsWith("tasks")
                      ? category.name
-                     : `${category.name} Tasks`;
+                     : `${category.name} Task`;
 
                return (
                   <div

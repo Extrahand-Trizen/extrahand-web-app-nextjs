@@ -447,7 +447,7 @@ export const LandingHeader: React.FC = () => {
                                              href={
                                                 activeRole === "poster"
                                                    ? "/services"
-                                                   : "/tasks"
+                                                   : "/jobs"
                                              }
                                              className="text-sm font-medium text-primary-600 hover:underline"
                                              onClick={() =>
@@ -772,7 +772,7 @@ export const LandingHeader: React.FC = () => {
                            href={
                               mobileActiveRole === "poster"
                                  ? "/services"
-                                 : "/tasks"
+                                 : "/jobs"
                            }
                            className="block w-full text-center py-3 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg border border-primary-200"
                            onClick={() => {
