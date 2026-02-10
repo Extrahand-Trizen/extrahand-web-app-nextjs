@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { TaskMap } from "@/components/tasks/TaskMap";
 import { TaskCard } from "@/components/tasks/TaskCard";
@@ -82,9 +82,13 @@ const EmptyState = ({ searchQuery }: { searchQuery: string }) => {
 
 export default function TasksPage() {
    const router = useRouter();
+   const searchParams = useSearchParams();
+
+   const initialSearch = searchParams.get("q") || "";
+   const initialSuburb = searchParams.get("suburb") || "";
 
    // State
-   const [searchQuery, setSearchQuery] = useState("");
+   const [searchQuery, setSearchQuery] = useState(initialSearch);
    const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
    const [showTaskDetail, setShowTaskDetail] = useState(false);
    const [isLoading, setIsLoading] = useState(true);
@@ -101,7 +105,7 @@ export default function TasksPage() {
 
    const [filters, setFilters] = useState<CompactFilterState>({
       categories: [],
-      suburb: "",
+      suburb: initialSuburb,
       remotely: null,
       minBudget: 0,
       maxBudget: 100000,

@@ -131,15 +131,17 @@ export const HeroSection: React.FC = () => {
 
    const handleSearch = (e: React.FormEvent) => {
       e.preventDefault();
-      const searchParams = new URLSearchParams();
-      if (query) searchParams.set("q", query);
-      if (location) searchParams.set("location", location);
 
-      router.push(
-         searchParams.toString()
-            ? `/tasks/${searchParams.toString()}`
-            : "/tasks"
-      );
+      const searchParams = new URLSearchParams();
+      const trimmedQuery = query.trim();
+      const trimmedLocation = location.trim();
+
+      if (trimmedQuery) searchParams.set("q", trimmedQuery);
+      if (trimmedLocation) searchParams.set("suburb", trimmedLocation);
+
+      const qs = searchParams.toString();
+      // Public browse-tasks page with filters encoded in the query string
+      router.push(qs ? `/discover?${qs}` : "/discover");
    };
 
    return (
@@ -187,7 +189,7 @@ export const HeroSection: React.FC = () => {
                            value={location}
                            onChange={(e) => setLocation(e.target.value)}
                            onFocus={() => setShowLocationDropdown(true)}
-                           placeholder="Mumbai"
+                           placeholder="Hyderabad"
                            className="h-10 pl-10 pr-3 border-0 border-r border-gray-200 rounded-r-none focus-visible:ring-0 focus-visible:ring-offset-0 text-xs md:text-sm"
                            aria-label="Enter your location"
                         />
