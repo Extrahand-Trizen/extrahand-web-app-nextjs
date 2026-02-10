@@ -20,6 +20,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
          position="top-right"
          expand={true}
          richColors={false}
+         // Global close button on all toasts
          closeButton
          icons={{
             success: <CircleCheckIcon className="size-5 stroke-[2.5]" />,
