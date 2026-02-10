@@ -423,7 +423,7 @@ export const LandingHeader: React.FC = () => {
                                                                ? `/services/${encodeURIComponent(
                                                                     taskSlug
                                                                  )}`
-                                                               : `/jobs/${encodeURIComponent(
+                                                               : `/tasks/${encodeURIComponent(
                                                                     taskSlug
                                                                  )}`
                                                          }
@@ -447,7 +447,7 @@ export const LandingHeader: React.FC = () => {
                                              href={
                                                 activeRole === "poster"
                                                    ? "/services"
-                                                   : "/jobs"
+                                                   : "/tasks"
                                              }
                                              className="text-sm font-medium text-primary-600 hover:underline"
                                              onClick={() =>
@@ -751,7 +751,7 @@ export const LandingHeader: React.FC = () => {
                                        ? `/services/${encodeURIComponent(
                                             taskSlug
                                          )}`
-                                       : `/jobs/${encodeURIComponent(
+                                       : `/tasks/${encodeURIComponent(
                                             taskSlug
                                          )}`
                                  }
@@ -772,7 +772,7 @@ export const LandingHeader: React.FC = () => {
                            href={
                               mobileActiveRole === "poster"
                                  ? "/services"
-                                 : "/jobs"
+                                 : "/tasks"
                            }
                            className="block w-full text-center py-3 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg border border-primary-200"
                            onClick={() => {

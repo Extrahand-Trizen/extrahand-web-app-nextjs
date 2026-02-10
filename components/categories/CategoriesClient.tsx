@@ -37,15 +37,17 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
          {/* Left Sidebar - Categories List */}
          <section className="hidden md:flex self-start -mt-2 sm:-mt-5 flex-col gap-px text-sm sm:text-base font-medium text-[#0a1f44] ml-2 sm:ml-4 md:ml-6 lg:ml-8">
             {categories.map((category) => {
-               const suffix =
-                  viewType === "jobs"
-                     ? "Tasks"
-                     : viewType === "services"
-                     ? "Services"
-                     : "Tasks";
-               const displayName = category.name.toLowerCase().endsWith("tasks")
-                  ? category.name.replace(/ Tasks$/i, ` ${suffix}`)
-                  : `${category.name} ${suffix}`;
+               // Sidebar display label
+               let displayName: string;
+               if (viewType === "tasks") {
+                  // Tasker view: show clean category name without "Tasks" suffix
+                  displayName = category.name.replace(/ Tasks$/i, "");
+               } else {
+                  const suffix = viewType === "services" ? "Services" : "Tasks";
+                  displayName = category.name.toLowerCase().endsWith("tasks")
+                     ? category.name.replace(/ Tasks$/i, ` ${suffix}`)
+                     : `${category.name} ${suffix}`;
+               }
 
                return (
                   <button
@@ -84,11 +86,12 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
 
             {/* All Categories List */}
             {categories.map((category) => {
-               const categoryDisplayName = category.name
-                  .toLowerCase()
-                  .endsWith("tasks")
-                  ? category.name
-                  : `${category.name} Tasks`;
+               const categoryDisplayName =
+                  viewType === "jobs"
+                     ? category.name.replace(/ Tasks$/i, "")
+                     : category.name.toLowerCase().endsWith("tasks")
+                     ? category.name
+                     : `${category.name} Tasks`;
 
                return (
                   <div
@@ -100,7 +103,7 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                      <Link
                         href={
                            viewType === "jobs"
-                              ? `/jobs/${category.slug}`
+                              ? `/tasks/${category.slug}`
                               : viewType === "services"
                               ? `/services/${category.slug}`
                               : `/categories/${category.slug}`
@@ -161,7 +164,7 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                                  }
                                  const baseUrl =
                                     viewType === "jobs"
-                                       ? "/jobs"
+                                       ? "/tasks"
                                        : viewType === "services"
                                        ? "/services"
                                        : "/categories";
