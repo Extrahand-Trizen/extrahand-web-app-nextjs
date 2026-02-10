@@ -21,7 +21,6 @@ const protectedRoutes = [
    "/profile",
    "/profile/verify",
    "/tasks",
-   "/tasks/new",
    "/chat",
    "/applications",
    "/payments",

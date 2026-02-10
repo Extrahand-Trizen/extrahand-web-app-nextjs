@@ -7,8 +7,20 @@ import { z } from "zod";
 export const phoneAuthSchema = z.object({
    fullName: z
       .string()
+      .trim()
       .min(2, "Name must be at least 2 characters")
-      .max(50, "Name is too long"),
+      .max(50, "Name is too long")
+      .refine(
+         (val) =>
+            // Allow letters, spaces and a few simple punctuation marks,
+            // but require the name to start and end with a letter so
+            // values like "..." or "123" are rejected.
+            /^[A-Za-z][A-Za-z\s'.-]*[A-Za-z]$/.test(val),
+         {
+            message:
+               "Please enter a valid name using letters (A–Z) and spaces only",
+         }
+      ),
    phone: z
       .string()
       .min(10, "Phone number is required")

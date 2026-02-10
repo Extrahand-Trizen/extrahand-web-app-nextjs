@@ -29,6 +29,15 @@ import {
 
 import { api } from "@/lib/api";
 import { getErrorMessage, isNetworkError } from "@/lib/utils/errorUtils";
+import { useAuth } from "@/lib/auth/context";
+import {
+   Dialog,
+   DialogContent,
+   DialogDescription,
+   DialogFooter,
+   DialogHeader,
+   DialogTitle,
+} from "@/components/ui/dialog";
 
 export type TaskFormData = CompleteTaskFormData;
 
@@ -235,6 +244,9 @@ export function TaskCreationFlow() {
    const [isSubmitting, setIsSubmitting] = useState(false);
    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
    const [retryCount, setRetryCount] = useState(0);
+   const [showAuthModal, setShowAuthModal] = useState(false);
+   const { currentUser, userData } = useAuth();
+   const isAuthenticated = Boolean(currentUser) || Boolean(userData);
 
    const initialTitleFromQuery = searchParams.get("title") || "";
    const initialCategoryFromQuery = searchParams.get("category") || "";
@@ -380,6 +392,15 @@ export function TaskCreationFlow() {
    // Form submission handler
    const onSubmit = useCallback(
       async (data: TaskFormData) => {
+         // If user is not authenticated, save draft and prompt for login/signup
+         if (!isAuthenticated) {
+            const values = form.getValues();
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(values));
+            setHasUnsavedChanges(false);
+            setShowAuthModal(true);
+            return;
+         }
+
          // Prevent duplicate submissions
          if (isSubmitting) {
             return;
@@ -437,7 +458,7 @@ export function TaskCreationFlow() {
             setRetryCount(0);
          }
       },
-      [isSubmitting, createTaskWithRetry, router, form]
+      [isSubmitting, isAuthenticated, createTaskWithRetry, router, form]
    );
 
    // Save draft handler
@@ -457,6 +478,16 @@ export function TaskCreationFlow() {
       }
       router.back();
    }, [hasUnsavedChanges, handleSaveDraft, router]);
+
+   const handleAuthLogin = () => {
+      setShowAuthModal(false);
+      router.push("/login?next=/tasks/new");
+   };
+
+   const handleAuthSignup = () => {
+      setShowAuthModal(false);
+      router.push("/signup?next=/tasks/new");
+   };
 
    return (
       <div className="min-h-screen bg-gray-50">
@@ -545,6 +576,33 @@ export function TaskCreationFlow() {
                </form>
             </Form>
          </main>
+         {/* Auth Required Modal */}
+         <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
+            <DialogContent>
+               <DialogHeader>
+                  <DialogTitle>Sign in to post your task</DialogTitle>
+                  <DialogDescription>
+                     Please log in or create an account to submit your task. Your
+                     draft has been saved and will be restored after you sign in.
+                  </DialogDescription>
+               </DialogHeader>
+               <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+                  <Button
+                     variant="outline"
+                     className="w-full sm:w-auto"
+                     onClick={handleAuthSignup}
+                  >
+                     Create an account
+                  </Button>
+                  <Button
+                     className="w-full sm:w-auto"
+                     onClick={handleAuthLogin}
+                  >
+                     Log in
+                  </Button>
+               </DialogFooter>
+            </DialogContent>
+         </Dialog>
       </div>
    );
 }

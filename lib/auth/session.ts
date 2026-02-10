@@ -320,13 +320,11 @@ class SessionManager {
          // Clear all session data
          this.clearSession();
 
-         // Optionally redirect to login
+         // Optionally redirect to a public, signed-out page
          if (options?.redirect && typeof window !== "undefined") {
-            const currentPath = window.location.pathname;
-            // Don't redirect if already on auth pages
-            if (!currentPath.startsWith("/auth")) {
-               window.location.href = "/auth/login";
-            }
+            // Send user to landing page; route protection middleware will
+            // redirect to /login when they try to access protected pages.
+            window.location.href = "/";
          }
       } catch (error) {
          console.warn("Failed to handle auth error:", error);
