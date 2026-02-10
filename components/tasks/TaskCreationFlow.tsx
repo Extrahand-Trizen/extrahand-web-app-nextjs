@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -189,15 +189,23 @@ const INITIAL_FORM_DATA: TaskFormData = {
 
 export function TaskCreationFlow() {
    const router = useRouter();
+   const searchParams = useSearchParams();
    const [currentStep, setCurrentStep] = useState(1);
    const [isSubmitting, setIsSubmitting] = useState(false);
    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
    const [retryCount, setRetryCount] = useState(0);
 
+   const initialTitleFromQuery = searchParams.get("title") || "";
+   const initialCategoryFromQuery = searchParams.get("category") || "";
+
    const form = useForm({
       resolver: zodResolver(completeTaskSchema),
       mode: "onChange" as const,
-      defaultValues: INITIAL_FORM_DATA,
+      defaultValues: {
+         ...INITIAL_FORM_DATA,
+         ...(initialTitleFromQuery && { title: initialTitleFromQuery }),
+         ...(initialCategoryFromQuery && { category: initialCategoryFromQuery }),
+      },
    }) as UseFormReturn<TaskFormData>;
 
    // Memoized progress calculation

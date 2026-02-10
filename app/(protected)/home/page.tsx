@@ -38,6 +38,17 @@ const POPULAR_CATEGORIES = [
    "Delivery",
 ];
 
+const CATEGORY_PARAM_MAP: Record<string, string> = {
+   Cleaning: "cleaning",
+   Gardening: "gardening",
+   Delivery: "delivery",
+   Moving: "delivery",
+   Handyman: "repair",
+   Painting: "repair",
+   Plumbing: "repair",
+   Business: "other",
+};
+
 export default function HomePage() {
    const router = useRouter();
    const { user } = useUserStore();
@@ -52,15 +63,29 @@ export default function HomePage() {
 
    const handleSearch = (e: React.FormEvent) => {
       e.preventDefault();
-      if (searchQuery.trim()) {
-         router.push(`/tasks?q=${encodeURIComponent(searchQuery.trim())}`);
-      } else {
-         router.push("/tasks");
+      const trimmed = searchQuery.trim();
+
+      const params = new URLSearchParams();
+      if (trimmed) {
+         // Use search text as initial task title
+         params.set("title", trimmed);
       }
+
+      const qs = params.toString();
+      router.push(qs ? `/tasks/new?${qs}` : "/tasks/new");
    };
 
    const handleCategoryClick = (category: string) => {
-      router.push(`/tasks?q=${encodeURIComponent(category)}`);
+      const params = new URLSearchParams();
+      // Use the chip label as a helpful starter title
+      params.set("title", category);
+
+      const categoryId = CATEGORY_PARAM_MAP[category];
+      if (categoryId) {
+         params.set("category", categoryId);
+      }
+
+      router.push(`/tasks/new?${params.toString()}`);
    };
 
    return (
@@ -95,16 +120,16 @@ export default function HomePage() {
                               type="text"
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value)}
-                              placeholder="Search tasks..."
+                              placeholder="In a few words, what do you need done?"
                               className="h-12 sm:h-14 pl-10 sm:pl-12 pr-24 sm:pr-28 text-sm sm:text-base border-secondary-300 focus-visible:ring-2 focus-visible:ring-primary-500"
-                              aria-label="Search tasks"
+                              aria-label="Describe what you need done"
                            />
                            <button
                               type="submit"
                               className="absolute right-2 top-1/2 -translate-y-1/2 h-8 sm:h-10 px-4 sm:px-6 bg-primary-500 hover:bg-primary-600 text-white rounded-md text-sm sm:text-base font-medium transition-colors flex items-center gap-2"
                            >
                               <Search className="w-4 h-4" />
-                              <span>Search</span>
+                              <span>Get offers</span>
                            </button>
                         </div>
                      </form>
