@@ -303,7 +303,7 @@ export const LandingHeader: React.FC = () => {
 
                   {/* Desktop Navigation */}
                   <nav className="hidden lg:flex items-center gap-6">
-                     <Link href="/tasks/new">
+                     <Link href="/tasks/new" prefetch={false}>
                         <Button className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold shadow-sm">
                            Post a Task
                         </Button>
@@ -621,7 +621,7 @@ export const LandingHeader: React.FC = () => {
 
                            {/* CTA Section */}
                            <div className="px-2">
-                              <Link href="/tasks/new" onClick={() => setIsMobileMenuOpen(false)}>
+                              <Link href="/tasks/new" prefetch={false} onClick={() => setIsMobileMenuOpen(false)}>
                                  <button className="w-full flex items-center gap-3 px-3 py-2.5 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors font-semibold">
                                     <PlusCircle className="w-4 h-4" />
                                     <span className="text-sm">Post a Task</span>

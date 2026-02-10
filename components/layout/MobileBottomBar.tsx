@@ -42,6 +42,7 @@ export default function MobileBottomBar() {
                   <li key={item.href} className="">
                      <Link
                         href={item.href}
+                        prefetch={item.href === "/tasks/new" ? false : undefined}
                         aria-label={item.ariaLabel || item.label}
                         aria-current={isActive ? "page" : undefined}
                         className={
