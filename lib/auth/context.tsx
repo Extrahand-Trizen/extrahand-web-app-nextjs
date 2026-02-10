@@ -114,6 +114,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
          setUserData(null);
 
          console.log("✅ Logout successful");
+
+         // Force a clean reload so any in-memory state or cached client data
+         // is reset and the app boots in a fully signed-out state.
+         if (typeof window !== "undefined") {
+            window.location.href = "/";
+         }
       } catch (error) {
          console.error("❌ Logout error:", error);
          // Even if Firebase signOut fails, clear local session

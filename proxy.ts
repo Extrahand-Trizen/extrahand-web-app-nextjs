@@ -31,18 +31,24 @@ function isPublicPath(pathname: string) {
    const standardPublic = publicRoutes.some(
       (route) => pathname === route || pathname.startsWith(`${route}/`)
    );
-   
+
    const protectedProfilePaths = ["/profile/verify"];
    const isProtectedProfilePath = protectedProfilePaths.some(
       (path) => pathname.startsWith(path)
    );
-   
+
    // Only allow /profile/[id] where id is an actual user ID (not a reserved keyword)
    const isPublicProfile = pathname.startsWith("/profile/") && 
                            !isProtectedProfilePath &&
                            pathname.split("/").length >= 3;
-   
-   return standardPublic || isPublicProfile;
+
+   // Public task details: /tasks/[id] (full public read view)
+   const isPublicTaskDetails =
+      pathname.startsWith("/tasks/") &&
+      !pathname.startsWith("/tasks/new") &&
+      pathname.split("/").length >= 3;
+
+   return standardPublic || isPublicProfile || isPublicTaskDetails;
 }
 
 function isProtectedPath(pathname: string) {
@@ -50,11 +56,17 @@ function isProtectedPath(pathname: string) {
    if (pathname === "/profile" || (pathname.startsWith("/profile?") || pathname.startsWith("/profile#"))) {
       return true;
    }
+
+   // /tasks root and query variants are protected (my tasks/applications),
+   // but /tasks/[id] is handled as public above.
+   if (pathname === "/tasks" || pathname.startsWith("/tasks?") || pathname.startsWith("/tasks#")) {
+      return true;
+   }
    
    return protectedRoutes.some(
       (route) => {
-         // Skip /profile check here since we handle it above
-         if (route === "/profile") return false;
+         // Skip /profile and /tasks root here since we handle them above
+         if (route === "/profile" || route === "/tasks") return false;
          return pathname === route || pathname.startsWith(`${route}/`);
       }
    );

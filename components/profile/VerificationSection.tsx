@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { ChevronRight, CheckCircle, Shield, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UserProfile } from "@/types/user";
+import { toast } from "sonner";
 
 interface VerificationSectionProps {
   user: UserProfile;
@@ -115,8 +116,18 @@ export function VerificationSection({ user }: VerificationSectionProps) {
     // },
   ] : [];
 
-  const handleNavigate = (route: string) => {
-    router.push(route);
+  const handleNavigate = (item: VerificationItem) => {
+    // If Aadhaar is already verified, do not allow re-verification from the UI
+    if (item.id === "aadhaar" && item.isVerified) {
+      toast.success("Aadhaar already verified", {
+        description: "Your Aadhaar KYC has already been completed.",
+      });
+      return;
+    }
+
+    if (item.route) {
+      router.push(item.route);
+    }
   };
 
   const getVerificationIcon = (item: VerificationItem) => {
@@ -171,7 +182,7 @@ export function VerificationSection({ user }: VerificationSectionProps) {
           {individualVerifications.map((item) => (
             <button
               key={item.id}
-              onClick={() => handleNavigate(item.route)}
+              onClick={() => handleNavigate(item)}
               className="w-full px-4 py-4 sm:px-5 sm:py-5 hover:bg-gray-50 transition-colors text-left group"
             >
               <div className="flex items-center gap-4">
