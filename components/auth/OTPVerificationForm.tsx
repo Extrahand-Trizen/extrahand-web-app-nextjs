@@ -274,6 +274,7 @@ export function OTPVerificationForm({
                lastRoute: "Landing",
             });
             setOTPAuthInProgress(false);
+            await new Promise((r) => setTimeout(r, 200));
             await refreshUserData();
             setIsVerified(true);
             clearSession();
@@ -321,6 +322,7 @@ export function OTPVerificationForm({
                lastRoute: "Landing",
             });
             setOTPAuthInProgress(false);
+            await new Promise((r) => setTimeout(r, 200));
             await refreshUserData();
             setIsVerified(true);
             clearSession();
@@ -423,8 +425,11 @@ export function OTPVerificationForm({
          // Clear the OTP auth flag - cookies are now set
          setOTPAuthInProgress(false);
 
+         // Brief delay so the browser can persist Set-Cookie from the response before
+         // we send the next request (avoids 401 on first api.me() and redirect-to-login)
+         await new Promise((resolve) => setTimeout(resolve, 200));
+
          // Now fetch the full profile from backend (cookies are set)
-         // This is the production-grade approach: sequential flow, no race conditions
          await refreshUserData();
 
          // 5. Success!
