@@ -18,7 +18,7 @@ import React, {
    useMemo,
 } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
    Menu,
@@ -92,6 +92,7 @@ const GuestCtaButtons = ({ onBecomeTasker }: { onBecomeTasker: () => void }) => 
 
 export const LandingHeader: React.FC = () => {
    const router = useRouter();
+   const pathname = usePathname();
    const [isScrolled, setIsScrolled] = useState(false);
    const { currentUser, userData, logout } = useAuth();
    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -177,6 +178,15 @@ export const LandingHeader: React.FC = () => {
    const mobileCategories = useMemo(
       () => (mobileActiveRole === "poster" ? posterColumns : taskerColumns),
       [mobileActiveRole, posterColumns, taskerColumns]
+   );
+
+   // Show "How it works" only on the main landing page (/)
+   const visibleNavItems = useMemo(
+      () =>
+         navItems.filter((item) =>
+            item.label === "How it works" ? pathname === "/" : true
+         ),
+      [pathname]
    );
 
    const slugify = useCallback(
@@ -308,7 +318,7 @@ export const LandingHeader: React.FC = () => {
                            Post a Task
                         </Button>
                      </Link>
-                     {navItems.map((item) =>
+                     {visibleNavItems.map((item) =>
                         item.hasDropdown ? (
                            <div
                               key={item.label}
@@ -608,13 +618,15 @@ export const LandingHeader: React.FC = () => {
                                  <Briefcase className="w-4 h-4" />
                                  <span className="text-sm font-medium">Browse Tasks</span>
                               </button>
-                              <button
-                                 onClick={() => handleNavClick("#how-it-works")}
-                                 className="w-full flex items-center gap-3 px-3 py-2.5 text-secondary-700 hover:bg-secondary-50 rounded-lg transition-colors"
-                              >
-                                 <HelpCircle className="w-4 h-4" />
-                                 <span className="text-sm font-medium">How it Works</span>
-                              </button>
+                              {pathname === "/" && (
+                                 <button
+                                    onClick={() => handleNavClick("#how-it-works")}
+                                    className="w-full flex items-center gap-3 px-3 py-2.5 text-secondary-700 hover:bg-secondary-50 rounded-lg transition-colors"
+                                 >
+                                    <HelpCircle className="w-4 h-4" />
+                                    <span className="text-sm font-medium">How it Works</span>
+                                 </button>
+                              )}
                            </div>
 
                            <div className="h-px bg-secondary-200 my-1" />

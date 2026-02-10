@@ -348,7 +348,14 @@ export function TaskCreationFlow() {
       if (fieldsToValidate) {
          const isValid = await form.trigger(fieldsToValidate as any);
          if (!isValid) {
-            toast.error("Please fix the errors before continuing");
+            if (currentStep === 2) {
+               toast.error("Please select a location", {
+                  description:
+                     "Set where the task should take place before continuing.",
+               });
+            } else {
+               toast.error("Please fix the errors before continuing");
+            }
             return;
          }
       }

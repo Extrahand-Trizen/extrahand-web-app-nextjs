@@ -11,6 +11,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Facebook, Twitter, Instagram, Linkedin, Youtube } from "lucide-react";
 
 const footerLinks = {
@@ -82,6 +83,8 @@ const socialLinks = [
 ];
 
 export const LandingFooter: React.FC = () => {
+   const pathname = usePathname();
+
    return (
       <footer className="bg-secondary-900 text-white">
          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-12">
@@ -129,25 +132,34 @@ export const LandingFooter: React.FC = () => {
                </div>
 
                {/* Link columns */}
-               {Object.values(footerLinks).map((column) => (
-                  <div key={column.title}>
-                     <h3 className="text-sm md:text-base font-semibold text-white mb-3 md:mb-4">
-                        {column.title}
-                     </h3>
-                     <ul className="md:space-y-3">
-                        {column.links.map((link) => (
-                           <li key={link.label}>
-                              <Link
-                                 href={link.href}
-                                 className="text-secondary-400 hover:text-white text-xs md:text-sm transition-colors"
-                              >
-                                 {link.label}
-                              </Link>
-                           </li>
-                        ))}
-                     </ul>
-                  </div>
-               ))}
+               {Object.values(footerLinks).map((column) => {
+                  const links =
+                     column.title === "Discover" && pathname !== "/"
+                        ? column.links.filter(
+                             (link) => link.label !== "How it Works"
+                          )
+                        : column.links;
+
+                  return (
+                     <div key={column.title}>
+                        <h3 className="text-sm md:text-base font-semibold text-white mb-3 md:mb-4">
+                           {column.title}
+                        </h3>
+                        <ul className="md:space-y-3">
+                           {links.map((link) => (
+                              <li key={link.label}>
+                                 <Link
+                                    href={link.href}
+                                    className="text-secondary-400 hover:text-white text-xs md:text-sm transition-colors"
+                                 >
+                                    {link.label}
+                                 </Link>
+                              </li>
+                           ))}
+                        </ul>
+                     </div>
+                  );
+               })}
             </div>
 
             {/* App download section */}
