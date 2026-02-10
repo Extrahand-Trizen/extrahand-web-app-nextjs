@@ -7,12 +7,12 @@ import { Category } from "@/types/category";
 
 interface CategoriesClientProps {
    categories: Category[];
-   viewType?: "jobs" | "services" | "tasks";
+   viewType?: "jobs" | "services" | "task";
 }
 
 const CategoriesClient: React.FC<CategoriesClientProps> = ({
    categories = [],
-   viewType = "tasks",
+   viewType = "jobs",
 }) => {
    const [selectedCategory, setSelectedCategory] = useState<string | null>(
       null
@@ -39,7 +39,7 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
             {categories.map((category) => {
                // Sidebar display label
                let displayName: string;
-               if (viewType === "tasks") {
+               if (viewType === "jobs") {
                   // Tasker view: show clean category name without "Tasks" suffix
                   displayName = category.name.replace(/ Tasks$/i, "");
                } else {
@@ -103,7 +103,7 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                      <Link
                         href={
                            viewType === "jobs"
-                              ? `/tasks/${category.slug}`
+                              ? `/task/${category.slug}`
                               : viewType === "services"
                               ? `/services/${category.slug}`
                               : `/categories/${category.slug}`
@@ -164,7 +164,7 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                                  }
                                  const baseUrl =
                                     viewType === "jobs"
-                                       ? "/tasks"
+                                       ? "/task"
                                        : viewType === "services"
                                        ? "/services"
                                        : "/categories";

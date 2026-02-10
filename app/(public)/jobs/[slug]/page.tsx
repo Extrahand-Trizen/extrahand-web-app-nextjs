@@ -54,7 +54,7 @@ export default async function JobPage({ params }: JobPageProps) {
       <CategoryDetailClient
          category={normalizedData}
          breadcrumbCategory="Tasks"
-         breadcrumbCategoryLink="/jobs"
+         breadcrumbCategoryLink="/task"
       />
    );
 }

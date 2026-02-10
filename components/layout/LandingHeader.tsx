@@ -405,41 +405,46 @@ export const LandingHeader: React.FC = () => {
                                           <div className="flex-1 grid grid-cols-4 gap-x-4 gap-y-0.5 text-sm max-h-[360px] overflow-y-auto">
                                              {desktopCategories.map(
                                                 (col, colIdx) => (
-                                                <div
-                                                   key={colIdx}
-                                                   className="space-y-0.5"
-                                                >
-                                                   {col.map((task) => {
-                                                      const taskLabel = task.label;
-                                                      const taskSlug =
-                                                         task.slug || slugify(task.label);
+                                                   <div
+                                                      key={colIdx}
+                                                      className="space-y-0.5"
+                                                   >
+                                                      {col.map((task) => {
+                                                         const rawLabel = task.label || "";
+                                                         const taskLabel =
+                                                            activeRole === "tasker"
+                                                               ? rawLabel.replace(/ Tasks$/i, "")
+                                                               : rawLabel;
+                                                         const taskSlug =
+                                                            task.slug || slugify(rawLabel);
 
-                                                      return (
-                                                      <Link
-                                                         key={taskSlug}
-                                                         href={
-                                                            activeRole ===
-                                                            "poster"
-                                                               ? `/services/${encodeURIComponent(
-                                                                    taskSlug
-                                                                 )}`
-                                                               : `/tasks/${encodeURIComponent(
-                                                                    taskSlug
-                                                                 )}`
-                                                         }
-                                                         className="block py-1 text-secondary-600 hover:text-secondary-900 hover:underline"
-                                                         onClick={() =>
-                                                            setIsCategoriesOpen(
-                                                               false
-                                                            )
-                                                         }
-                                                      >
-                                                         {taskLabel}
-                                                      </Link>
-                                                      );
-                                                   })}
-                                                </div>
-                                             ))}
+                                                         return (
+                                                            <Link
+                                                               key={taskSlug}
+                                                               href={
+                                                                  activeRole ===
+                                                                  "poster"
+                                                                     ? `/services/${encodeURIComponent(
+                                                                          taskSlug
+                                                                       )}`
+                                                                     : `/task/${encodeURIComponent(
+                                                                          taskSlug
+                                                                       )}`
+                                                               }
+                                                               className="block py-1 text-secondary-600 hover:text-secondary-900 hover:underline"
+                                                               onClick={() =>
+                                                                  setIsCategoriesOpen(
+                                                                     false
+                                                                  )
+                                                               }
+                                                            >
+                                                               {taskLabel}
+                                                            </Link>
+                                                         );
+                                                      })}
+                                                   </div>
+                                                )
+                                             )}
                                           </div>
                                        </div>
                                        <div className="mt-3 pt-3 border-t border-secondary-100 text-right">
@@ -447,7 +452,7 @@ export const LandingHeader: React.FC = () => {
                                              href={
                                                 activeRole === "poster"
                                                    ? "/services"
-                                                   : "/jobs"
+                                                   : "/task"
                                              }
                                              className="text-sm font-medium text-primary-600 hover:underline"
                                              onClick={() =>
@@ -740,29 +745,33 @@ export const LandingHeader: React.FC = () => {
                         {/* Categories List */}
                         <div className="max-h-[50vh] overflow-y-auto space-y-1 mb-4">
                            {mobileCategories.flat().map((task) => {
-                              const taskLabel = task.label;
-                              const taskSlug = task.slug || slugify(task.label);
+                              const rawLabel = task.label || "";
+                              const taskLabel =
+                                 mobileActiveRole === "tasker"
+                                    ? rawLabel.replace(/ Tasks$/i, "")
+                                    : rawLabel;
+                              const taskSlug = task.slug || slugify(rawLabel);
 
                               return (
-                              <Link
-                                 key={taskSlug}
-                                 href={
-                                    mobileActiveRole === "poster"
-                                       ? `/services/${encodeURIComponent(
-                                            taskSlug
-                                         )}`
-                                       : `/tasks/${encodeURIComponent(
-                                            taskSlug
-                                         )}`
-                                 }
-                                 className="block py-2 px-3 text-sm text-secondary-600 hover:bg-secondary-50 hover:text-secondary-900 rounded-lg"
-                                 onClick={() => {
-                                    setIsMobileCategoriesOpen(false);
-                                    setIsMobileMenuOpen(false);
-                                 }}
-                              >
-                                 {taskLabel}
-                              </Link>
+                                 <Link
+                                    key={taskSlug}
+                                    href={
+                                       mobileActiveRole === "poster"
+                                          ? `/services/${encodeURIComponent(
+                                               taskSlug
+                                            )}`
+                                          : `/task/${encodeURIComponent(
+                                               taskSlug
+                                            )}`
+                                    }
+                                    className="block py-2 px-3 text-sm text-secondary-600 hover:bg-secondary-50 hover:text-secondary-900 rounded-lg"
+                                    onClick={() => {
+                                       setIsMobileCategoriesOpen(false);
+                                       setIsMobileMenuOpen(false);
+                                    }}
+                                 >
+                                    {taskLabel}
+                                 </Link>
                               );
                            })}
                         </div>
@@ -772,7 +781,7 @@ export const LandingHeader: React.FC = () => {
                            href={
                               mobileActiveRole === "poster"
                                  ? "/services"
-                                 : "/jobs"
+                                 : "/task"
                            }
                            className="block w-full text-center py-3 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg border border-primary-200"
                            onClick={() => {
