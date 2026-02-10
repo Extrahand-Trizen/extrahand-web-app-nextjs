@@ -37,6 +37,7 @@ import {
    type PhoneAuthFormData,
 } from "@/lib/validations/auth";
 import { formatPhoneNumber } from "@/lib/utils/phone";
+import { authApi } from "@/lib/api/endpoints/auth";
 import Image from "next/image";
 
 const BENEFITS = [
@@ -67,10 +68,26 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
       setIsSubmitting(true);
 
       try {
-         // Simulate API call to send OTP
-         await new Promise((resolve) => setTimeout(resolve, 1000));
-
          const formattedPhone = formatPhoneNumber(data.phone);
+
+         // Check if phone already exists; if yes, redirect to login instead of allowing duplicate signup
+         try {
+            const digitsOnly = formattedPhone.replace(/\D/g, "");
+            const result = await authApi.checkPhone(digitsOnly);
+            if (result?.exists) {
+               toast.error("Account already exists", {
+                  description:
+                     "This mobile number is already registered. Please log in instead.",
+               });
+               router.push(
+                  `/login?phone=${encodeURIComponent(formattedPhone)}`
+               );
+               return;
+            }
+         } catch (checkErr) {
+            // Non-blocking: log and continue with signup flow
+            console.warn("Phone check failed during signup, continuing anyway", checkErr);
+         }
 
          toast.success("OTP sent!", {
             description: `Verification code sent to ${formattedPhone}`,

@@ -46,6 +46,47 @@ const DRAFT_KEY = "taskDraft";
 // ============================================================================
 
 /**
+ * Safely convert possible date-like values back into Date instances.
+ */
+const reviveDate = (value: unknown): Date | null => {
+   if (!value) return null;
+   if (value instanceof Date) return value;
+   if (typeof value === "string" || typeof value === "number") {
+      const d = new Date(value);
+      return Number.isNaN(d.getTime()) ? null : d;
+   }
+   return null;
+};
+
+/**
+ * Normalize draft object loaded from localStorage so it matches
+ * the runtime shape expected by React Hook Form + Zod.
+ */
+const normalizeDraft = (raw: any): TaskFormData => {
+   const draft: TaskFormData = {
+      ...INITIAL_FORM_DATA,
+      ...(raw || {}),
+   };
+
+   // Fix top-level dates
+   draft.scheduledDate = reviveDate(draft.scheduledDate);
+   draft.scheduledTimeStart =
+      reviveDate(draft.scheduledTimeStart) || INITIAL_FORM_DATA.scheduledTimeStart;
+   draft.scheduledTimeEnd =
+      reviveDate(draft.scheduledTimeEnd) || INITIAL_FORM_DATA.scheduledTimeEnd;
+
+   // Normalize attachments uploadedAt fields
+   if (Array.isArray(draft.attachments)) {
+      draft.attachments = draft.attachments.map((a: any) => ({
+         ...a,
+         uploadedAt: reviveDate(a?.uploadedAt) || undefined,
+      }));
+   }
+
+   return draft;
+};
+
+/**
  * Map frontend urgency values to backend enum
  */
 const mapUrgencyToBackend = (
@@ -241,7 +282,8 @@ export function TaskCreationFlow() {
       if (draft) {
          try {
             const parsedDraft = JSON.parse(draft);
-            form.reset(parsedDraft);
+            const normalized = normalizeDraft(parsedDraft);
+            form.reset(normalized);
             toast.info("Draft restored", {
                description: "Your previous progress has been loaded.",
                action: {

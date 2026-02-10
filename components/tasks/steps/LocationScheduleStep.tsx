@@ -49,6 +49,7 @@ export function LocationScheduleStep({
 }: LocationScheduleStepProps) {
    const scheduledDate = form.watch("scheduledDate");
    const scheduledTimeStart = form.watch("scheduledTimeStart");
+   const scheduledTimeEnd = form.watch("scheduledTimeEnd");
    const location = form.watch("location");
 
    // Minimum date is today at midnight
@@ -83,6 +84,17 @@ export function LocationScheduleStep({
          }
       }
    }, [scheduledDate, form]);
+
+   // Ensure end time is never before start time
+   useEffect(() => {
+      if (!scheduledTimeStart || !scheduledTimeEnd) return;
+      if (scheduledTimeEnd <= scheduledTimeStart) {
+         // Auto-correct by setting end time 1 hour after start
+         const newEnd = new Date(scheduledTimeStart);
+         newEnd.setHours(newEnd.getHours() + 1);
+         form.setValue("scheduledTimeEnd", newEnd);
+      }
+   }, [scheduledTimeStart, scheduledTimeEnd, form]);
 
    const handleQuickDate = (daysOffset: number) => {
       const date = addDays(new Date(), daysOffset);

@@ -115,8 +115,10 @@ export default function TasksPage() {
    const isMobile = useIsMobile();
    const userProfile = useUserStore((state) => state.user);
 
-   // Fetch tasks from API
+   // Fetch tasks from API (debounced to avoid 429 rate limits)
    useEffect(() => {
+      let cancelled = false;
+
       const fetchTasks = async () => {
          try {
             setIsLoading(true);
@@ -152,7 +154,7 @@ export default function TasksPage() {
             }
 
             // Remotely: tri-state (null = not applied)
-            if (typeof filters.remotely !== 'undefined' && filters.remotely !== null) {
+            if (typeof filters.remotely !== "undefined" && filters.remotely !== null) {
                params.remotely = filters.remotely;
             }
 
@@ -176,24 +178,44 @@ export default function TasksPage() {
                response = await tasksApi.getPublicTasks(params);
             }
 
+            if (cancelled) return;
+
             // Handle both wrapped and unwrapped responses
             setTasks(response.tasks || []);
-            setPagination(response.pagination || {
-               page: 1,
-               limit: TASKS_PER_PAGE,
-               total: 0,
-               pages: 0,
-            });
+            setPagination(
+               response.pagination || {
+                  page: 1,
+                  limit: TASKS_PER_PAGE,
+                  total: 0,
+                  pages: 0,
+               }
+            );
          } catch (err: any) {
+            if (cancelled) return;
             console.error("Error fetching tasks:", err);
-            setError(err.message || "Failed to load tasks. Please try again.");
+
+            if (err?.status === 429) {
+               setError(
+                  "You're making requests too quickly. Please wait a moment and try again."
+               );
+            } else {
+               setError(err.message || "Failed to load tasks. Please try again.");
+            }
+
             setTasks([]);
          } finally {
-            setIsLoading(false);
+            if (!cancelled) {
+               setIsLoading(false);
+            }
          }
       };
 
-      fetchTasks();
+      const timeoutId = window.setTimeout(fetchTasks, 400); // debounce ~400ms
+
+      return () => {
+         cancelled = true;
+         window.clearTimeout(timeoutId);
+      };
    }, [searchQuery, filters, userProfile?._id]);
 
    // Filter and sort tasks (client-side for unsupported backend filters)
