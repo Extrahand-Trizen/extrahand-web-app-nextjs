@@ -45,7 +45,8 @@ interface PANVerificationState {
 
 export default function PANVerificationPage() {
    const router = useRouter();
-   const { refreshUserData } = useAuth();
+   const { refreshUserData, userData } = useAuth();
+   const isBusiness = userData?.userType === "business";
 
    const [state, setState] = useState<PANVerificationState>({
       step: "input",
@@ -231,11 +232,14 @@ export default function PANVerificationPage() {
                <Building2 className="w-5 h-5 text-primary-600 mt-0.5" />
                <div>
                   <p className="text-sm font-medium text-primary-800">
-                     Business Account Requirement
+                     {isBusiness
+                        ? "Business Account Requirement"
+                        : "Account Requirement"}
                   </p>
                   <p className="text-xs text-primary-600 mt-1">
-                     PAN verification is mandatory for business accounts to
-                     ensure tax compliance and enable higher transaction limits.
+                     {isBusiness
+                        ? "PAN verification is mandatory for business accounts to ensure tax compliance and enable higher transaction limits."
+                        : "PAN verification is required to post tasks and submit offers, and for tax compliance."}
                   </p>
                </div>
             </div>
@@ -248,9 +252,17 @@ export default function PANVerificationPage() {
             </p>
             <div className="grid grid-cols-1 gap-2">
                {[
-                  { icon: BadgeCheck, text: "Unlock higher payout limits" },
-                  { icon: Shield, text: "Ensure tax compliance" },
-                  { icon: Building2, text: "Access business features" },
+                  ...(isBusiness
+                     ? [
+                          { icon: BadgeCheck, text: "Unlock higher payout limits" },
+                          { icon: Shield, text: "Ensure tax compliance" },
+                          { icon: Building2, text: "Access business features" },
+                       ]
+                     : [
+                          { icon: BadgeCheck, text: "Post tasks and submit offers" },
+                          { icon: Shield, text: "Tax compliance" },
+                          { icon: Building2, text: "Build trust with requesters" },
+                       ]),
                ].map((item, i) => (
                   <div
                      key={i}
@@ -281,10 +293,9 @@ export default function PANVerificationPage() {
             />
             <div className="text-xs text-gray-600">
                <p>
-                  I consent to verify my business PAN for compliance and
-                  operations. I understand that my PAN details will be verified
-                  through official channels and only masked information will be
-                  stored.
+                  I consent to verify my PAN for compliance and operations. I
+                  understand that my PAN details will be verified through
+                  official channels and only masked information will be stored.
                </p>
             </div>
          </label>
@@ -355,18 +366,33 @@ export default function PANVerificationPage() {
                You&apos;ve unlocked:
             </p>
             <ul className="space-y-2 text-sm text-primary-700">
-               <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4" />
-                  Higher transaction limits
-               </li>
-               <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4" />
-                  Business account features
-               </li>
-               <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4" />
-                  TDS compliance automation
-               </li>
+               {isBusiness ? (
+                  <>
+                     <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4" />
+                        Higher transaction limits
+                     </li>
+                     <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4" />
+                        Business account features
+                     </li>
+                     <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4" />
+                        TDS compliance automation
+                     </li>
+                  </>
+               ) : (
+                  <>
+                     <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4" />
+                        Post tasks and submit offers
+                     </li>
+                     <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4" />
+                        Tax compliance
+                     </li>
+                  </>
+               )}
             </ul>
          </div>
 
@@ -446,9 +472,11 @@ export default function PANVerificationPage() {
                <h1 className="text-base font-semibold text-gray-900">
                   PAN Verification
                </h1>
-               <span className="ml-auto text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-                  Business
-               </span>
+               {isBusiness && (
+                  <span className="ml-auto text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                     Business
+                  </span>
+               )}
             </div>
          </div>
 
@@ -466,7 +494,9 @@ export default function PANVerificationPage() {
                      Verify Your PAN
                   </h1>
                   <p className="text-gray-500 mt-2">
-                     Required for business accounts
+                     {isBusiness
+                        ? "Required for business accounts"
+                        : "Required to post tasks and submit offers"}
                   </p>
                </div>
             )}
