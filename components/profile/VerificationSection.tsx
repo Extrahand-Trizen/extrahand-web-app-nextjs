@@ -216,12 +216,31 @@ export function VerificationSection({ user }: VerificationSectionProps) {
         ]
       : [];
 
+  /** Show "X is already verified" and block navigation for PAN, Aadhaar, Bank when verified. */
+  const alreadyVerifiedIds = ["pan", "aadhaar", "bank"];
+  const getAlreadyVerifiedMessage = (item: VerificationItem): string => {
+    const messages: Record<string, string> = {
+      pan: "PAN is already verified",
+      aadhaar: "Aadhaar is already verified",
+      bank: "Bank account is already verified",
+    };
+    return messages[item.id] ?? `${item.title} is already verified`;
+  };
+
   const handleNavigate = (item: VerificationItem) => {
-    if (item.isVerified && item.lockAfterVerification) {
-      toast.success("Already verified", {
-        description: "This verification has already been completed and cannot be changed.",
-      });
-      return;
+    if (item.isVerified) {
+      if (alreadyVerifiedIds.includes(item.id)) {
+        toast.info(getAlreadyVerifiedMessage(item), {
+          description: "No further action needed.",
+        });
+        return;
+      }
+      if (item.lockAfterVerification) {
+        toast.success("Already verified", {
+          description: "This verification has already been completed and cannot be changed.",
+        });
+        return;
+      }
     }
     if (item.route) {
       router.push(item.route);
