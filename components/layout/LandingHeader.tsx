@@ -424,9 +424,7 @@ export const LandingHeader: React.FC = () => {
                                                                href={
                                                                   activeRole ===
                                                                   "poster"
-                                                                     ? `/services/${encodeURIComponent(
-                                                                          taskSlug
-                                                                       )}`
+                                                                     ? "/coming-soon"
                                                                      : `/task/${encodeURIComponent(
                                                                           taskSlug
                                                                        )}`
@@ -451,7 +449,7 @@ export const LandingHeader: React.FC = () => {
                                           <Link
                                              href={
                                                 activeRole === "poster"
-                                                   ? "/services"
+                                                   ? "/coming-soon"
                                                    : "/task"
                                              }
                                              className="text-sm font-medium text-primary-600 hover:underline"
@@ -757,9 +755,7 @@ export const LandingHeader: React.FC = () => {
                                     key={taskSlug}
                                     href={
                                        mobileActiveRole === "poster"
-                                          ? `/services/${encodeURIComponent(
-                                               taskSlug
-                                            )}`
+                                          ? "/coming-soon"
                                           : `/task/${encodeURIComponent(
                                                taskSlug
                                             )}`
@@ -780,7 +776,7 @@ export const LandingHeader: React.FC = () => {
                         <Link
                            href={
                               mobileActiveRole === "poster"
-                                 ? "/services"
+                                 ? "/coming-soon"
                                  : "/task"
                            }
                            className="block w-full text-center py-3 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg border border-primary-200"

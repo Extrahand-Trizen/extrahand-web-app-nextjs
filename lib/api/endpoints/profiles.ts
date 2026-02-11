@@ -12,7 +12,21 @@ export const profilesApi = {
    * GET /api/v1/profiles/me
    */
   async me(): Promise<UserProfile> {
-    return fetchWithAuth('profiles/me');
+    const raw = await fetchWithAuth('profiles/me');
+
+    // Normalise PAN verification field from backend (isPANVerified) to frontend type (isPanVerified)
+    const normalised: UserProfile = {
+      ...raw,
+      // Prefer explicit isPanVerified if present, otherwise map from isPANVerified, defaulting to false
+      isPanVerified:
+        typeof raw.isPanVerified === 'boolean'
+          ? raw.isPanVerified
+          : typeof raw.isPANVerified === 'boolean'
+          ? raw.isPANVerified
+          : false,
+    };
+
+    return normalised;
   },
 
   /**

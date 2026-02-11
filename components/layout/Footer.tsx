@@ -8,23 +8,23 @@ const footerColumns = [
     title: 'Discover',
     links: [
       { label: 'How it works', href: '#how-it-works' },
-      { label: 'Earn money', href: '#' },
-      { label: 'Cost Guides', href: '#' },
-      { label: 'Service Guides', href: '#' },
-      { label: 'New Users FAQ', href: '#' },
+      { label: 'Earn money', href: '/coming-soon?type=info&label=Earn%20money' },
+      { label: 'Cost Guides', href: '/coming-soon?type=info&label=Cost%20Guides' },
+      { label: 'Service Guides', href: '/coming-soon?type=info&label=Service%20Guides' },
+      { label: 'New Users FAQ', href: '/coming-soon?type=info&label=New%20Users%20FAQ' },
     ],
   },
   {
     title: 'Company',
     links: [
-      { label: 'About Us', href: '#' },
-      { label: 'Careers', href: '#' },
-      { label: 'Media Enquiries', href: '#' },
-      { label: 'Community Guidelines', href: '#' },
-      { label: 'Tasker Principles', href: '#' },
+      { label: 'About Us', href: '/coming-soon?type=info&label=About%20Us' },
+      { label: 'Careers', href: '/coming-soon?type=info&label=Careers' },
+      { label: 'Media Enquiries', href: '/coming-soon?type=info&label=Media%20Enquiries' },
+      { label: 'Community Guidelines', href: '/coming-soon?type=info&label=Community%20Guidelines' },
+      { label: 'Tasker Principles', href: '/coming-soon?type=info&label=Tasker%20Principles' },
       { label: 'Terms & Conditions', href: '/terms-and-conditions' },
       { label: 'Privacy Policy', href: '/privacy-policy' },
-      { label: 'Contact Us', href: '#' },
+      { label: 'Contact Us', href: '/coming-soon?type=info&label=Contact%20Us' },
     ],
   },
   {
@@ -33,34 +33,34 @@ const footerColumns = [
       { label: 'Post a Task', href: '/tasks/new' },
       { label: 'Browse Tasks', href: '/discover' },
       { label: 'Login', href: '/login' },
-      { label: 'Support Centre', href: '#' },
+      { label: 'Support Centre', href: '/coming-soon?type=info&label=Support%20Centre' },
       { label: 'Become a Tasker', href: '/earn-money' },
     ],
   },
   {
     title: 'Popular Categories',
     links: [
-      { label: 'Electricians', href: '#' },
-      { label: 'Plumbers', href: '#' },
-      { label: 'Home Cleaning', href: '#' },
-      { label: 'Packers & Movers', href: '#' },
-      { label: 'Carpenters', href: '#' },
-      { label: 'AC Services', href: '#' },
-      { label: 'Appliance Repair', href: '#' },
+      { label: 'Electricians', href: '/coming-soon' },
+      { label: 'Plumbers', href: '/coming-soon' },
+      { label: 'Home Cleaning', href: '/coming-soon' },
+      { label: 'Packers & Movers', href: '/coming-soon' },
+      { label: 'Carpenters', href: '/coming-soon' },
+      { label: 'AC Services', href: '/coming-soon' },
+      { label: 'Appliance Repair', href: '/coming-soon' },
     ],
   },
   {
     title: 'Popular Cities',
     links: [
-      { label: 'Delhi NCR', href: '#' },
-      { label: 'Mumbai', href: '#' },
-      { label: 'Bangalore', href: '#' },
-      { label: 'Hyderabad', href: '#' },
-      { label: 'Chennai', href: '#' },
-      { label: 'Kolkata', href: '#' },
-      { label: 'Pune', href: '#' },
-      { label: 'Ahmedabad', href: '#' },
-      { label: 'Jaipur', href: '#' },
+      { label: 'Delhi NCR', href: '/coming-soon?type=info&label=Delhi%20NCR' },
+      { label: 'Mumbai', href: '/coming-soon?type=info&label=Mumbai' },
+      { label: 'Bangalore', href: '/coming-soon?type=info&label=Bangalore' },
+      { label: 'Hyderabad', href: '/coming-soon?type=info&label=Hyderabad' },
+      { label: 'Chennai', href: '/coming-soon?type=info&label=Chennai' },
+      { label: 'Kolkata', href: '/coming-soon?type=info&label=Kolkata' },
+      { label: 'Pune', href: '/coming-soon?type=info&label=Pune' },
+      { label: 'Ahmedabad', href: '/coming-soon?type=info&label=Ahmedabad' },
+      { label: 'Jaipur', href: '/coming-soon?type=info&label=Jaipur' },
     ],
   },
 ];
@@ -68,28 +68,28 @@ const footerColumns = [
 const socialIcons = [
   {
     label: 'Facebook',
-    href: '#',
+    href: '/coming-soon?type=info&label=Facebook',
     icon: (
       <svg width="24" height="24" fill="#2250d7" viewBox="0 0 24 24"><path d="M22.675 0h-21.35C.595 0 0 .592 0 1.326v21.348C0 23.408.595 24 1.325 24h11.495v-9.294H9.691v-3.622h3.129V8.413c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.797.143v3.24l-1.918.001c-1.504 0-1.797.715-1.797 1.763v2.313h3.587l-.467 3.622h-3.12V24h6.116C23.406 24 24 23.408 24 22.674V1.326C24 .592 23.406 0 22.675 0"/></svg>
     ),
   },
   {
     label: 'YouTube',
-    href: '#',
+    href: '/coming-soon?type=info&label=YouTube',
     icon: (
       <svg width="24" height="24" fill="#FF0000" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
     ),
   },
   {
     label: 'Instagram',
-    href: '#',
+    href: '/coming-soon?type=info&label=Instagram',
     icon: (
       <svg width="24" height="24" fill="#000" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
     ),
   },
   {
     label: 'LinkedIn',
-    href: '#',
+    href: '/coming-soon?type=info&label=LinkedIn',
     icon: (
       <svg width="24" height="24" fill="#0077B5" viewBox="0 0 24 24"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>
     ),
@@ -145,7 +145,7 @@ export const Footer: React.FC = () => {
           {/* App Download Buttons */}
           <div className="flex flex-col md:flex-row gap-3 md:gap-6.5 items-center">
             <a
-              href="#"
+              href="/coming-soon?type=info&label=Mobile%20App"
               aria-label="Download on the App Store"
               className="inline-block no-underline"
             >
@@ -160,7 +160,7 @@ export const Footer: React.FC = () => {
               </div>
             </a>
             <a
-              href="#"
+              href="/coming-soon?type=info&label=Mobile%20App"
               aria-label="Get it on Google Play"
               className="inline-block no-underline"
             >

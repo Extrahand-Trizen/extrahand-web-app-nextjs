@@ -16,7 +16,13 @@ import {
    PopoverContent,
    PopoverTrigger,
 } from "@/components/ui/popover";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import {
+   Select,
+   SelectContent,
+   SelectItem,
+   SelectTrigger,
+   SelectValue,
+} from "@/components/ui/select";
 
 interface DateTimePickerProps {
    value: Date | undefined;
@@ -115,7 +121,7 @@ export function DateTimePicker({
             </Button>
          </PopoverTrigger>
          <PopoverContent className="w-auto p-0" align="start">
-            <div className="sm:flex">
+            <div className="flex flex-col gap-3 p-3">
                {/* Calendar */}
                <Calendar
                   mode="single"
@@ -125,105 +131,76 @@ export function DateTimePicker({
                   initialFocus
                />
 
-               {/* Time Picker */}
-               <div className="flex flex-col sm:flex-row sm:h-[300px] divide-y sm:divide-y-0 sm:divide-x">
-                  {/* Hours */}
-                  <ScrollArea className="w-64 sm:w-auto">
-                     <div className="flex sm:flex-col p-2">
-                        {Array.from({ length: 12 }, (_, i) => i + 1)
-                           .reverse()
-                           .map((hour) => {
-                              const isSelected =
-                                 value &&
-                                 value instanceof Date &&
-                                 !isNaN(value.getTime()) &&
-                                 value.getHours() % 12 === hour % 12;
-
-                              return (
-                                 <Button
-                                    key={hour}
-                                    size="icon"
-                                    variant={isSelected ? "default" : "ghost"}
-                                    className="sm:w-full shrink-0 aspect-square"
-                                    onClick={() =>
-                                       handleTimeChange("hour", hour.toString())
-                                    }
-                                    type="button"
-                                 >
-                                    {hour}
-                                 </Button>
-                              );
-                           })}
-                     </div>
-                     <ScrollBar
-                        orientation="horizontal"
-                        className="sm:hidden"
-                     />
-                  </ScrollArea>
-
-                  {/* Minutes */}
-                  <ScrollArea className="w-64 sm:w-auto">
-                     <div className="flex sm:flex-col p-2">
-                        {Array.from({ length: 12 }, (_, i) => i * 5).map(
-                           (minute) => {
-                              const isSelected =
-                                 value &&
-                                 value instanceof Date &&
-                                 !isNaN(value.getTime()) &&
-                                 value.getMinutes() === minute;
-
-                              return (
-                                 <Button
-                                    key={minute}
-                                    size="icon"
-                                    variant={isSelected ? "default" : "ghost"}
-                                    className="sm:w-full shrink-0 aspect-square"
-                                    onClick={() =>
-                                       handleTimeChange(
-                                          "minute",
-                                          minute.toString()
-                                       )
-                                    }
-                                    type="button"
-                                 >
-                                    {minute.toString().padStart(2, "0")}
-                                 </Button>
-                              );
-                           }
+               {/* Time Picker - dropdown style */}
+               <div className="flex items-center gap-3 justify-start">
+                  {/* Hour */}
+                  <Select
+                     value={
+                        value && value instanceof Date && !isNaN(value.getTime())
+                           ? ((value.getHours() % 12) || 12).toString()
+                           : undefined
+                     }
+                     onValueChange={(v) => handleTimeChange("hour", v)}
+                  >
+                     <SelectTrigger size="sm" className="min-w-[72px]">
+                        <SelectValue placeholder="HH" />
+                     </SelectTrigger>
+                     <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(
+                           (hour) => (
+                              <SelectItem key={hour} value={hour.toString()}>
+                                 {hour.toString().padStart(2, "0")}
+                              </SelectItem>
+                           )
                         )}
-                     </div>
-                     <ScrollBar
-                        orientation="horizontal"
-                        className="sm:hidden"
-                     />
-                  </ScrollArea>
+                     </SelectContent>
+                  </Select>
 
-                  {/* AM/PM */}
-                  <ScrollArea className="">
-                     <div className="flex sm:flex-col p-2">
-                        {["AM", "PM"].map((ampm) => {
-                           const isSelected =
-                              value &&
-                              value instanceof Date &&
-                              !isNaN(value.getTime()) &&
-                              ((ampm === "AM" && value.getHours() < 12) ||
-                                 (ampm === "PM" && value.getHours() >= 12));
+                  <span className="text-secondary-500 text-sm">:</span>
 
-                           return (
-                              <Button
-                                 key={ampm}
-                                 size="icon"
-                                 variant={isSelected ? "default" : "ghost"}
-                                 className="sm:w-full shrink-0 aspect-square"
-                                 onClick={() => handleTimeChange("ampm", ampm)}
-                                 type="button"
-                              >
-                                 {ampm}
-                              </Button>
-                           );
-                        })}
-                     </div>
-                  </ScrollArea>
+                  {/* Minute */}
+                  <Select
+                     value={
+                        value && value instanceof Date && !isNaN(value.getTime())
+                           ? value.getMinutes().toString()
+                           : undefined
+                     }
+                     onValueChange={(v) => handleTimeChange("minute", v)}
+                  >
+                     <SelectTrigger size="sm" className="min-w-[72px]">
+                        <SelectValue placeholder="MM" />
+                     </SelectTrigger>
+                     <SelectContent>
+                        {[0, 15, 30, 45].map((minute) => (
+                           <SelectItem
+                              key={minute}
+                              value={minute.toString()}
+                           >
+                              {minute.toString().padStart(2, "0")}
+                           </SelectItem>
+                        ))}
+                     </SelectContent>
+                  </Select>
+
+                  {/* AM / PM */}
+                  <Select
+                     value={
+                        value && value instanceof Date && !isNaN(value.getTime())
+                           ? value.getHours() >= 12
+                              ? "PM"
+                              : "AM"
+                           : undefined
+                     }
+                     onValueChange={(v) => handleTimeChange("ampm", v)}
+                  >
+                     <SelectTrigger size="sm" className="min-w-[72px]">
+                        <SelectValue placeholder="AM/PM" />
+                     </SelectTrigger>
+                     <SelectContent>
+                        <SelectItem value="AM">AM</SelectItem>
+                        <SelectItem value="PM">PM</SelectItem>
+                     </SelectContent>
+                  </Select>
                </div>
             </div>
          </PopoverContent>

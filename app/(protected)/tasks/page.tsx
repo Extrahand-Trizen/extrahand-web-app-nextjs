@@ -16,10 +16,8 @@ import { MyApplicationsContent } from "@/components/tasks/MyApplicationsContent"
 export default function TasksPage() {
    const router = useRouter();
    const searchParams = useSearchParams();
-   const [tasksCount, setTasksCount] = useState<number | null>(null);
-   const [applicationsCount, setApplicationsCount] = useState<number | null>(
-      null
-   );
+   const [tasksCount, setTasksCount] = useState<number>(0);
+   const [applicationsCount, setApplicationsCount] = useState<number>(0);
 
    const activeTab = useMemo(() => {
       const tabParam = searchParams.get("tab");
@@ -72,11 +70,9 @@ export default function TasksPage() {
                               className="px-3 py-2 rounded-lg border-b-2 border-transparent data-[state=active]:border-primary-600 data-[state=active]:text-primary-600 text-secondary-600 font-medium text-sm sm:text-base"
                            >
                               My Tasks
-                              {tasksCount !== null && (
-                                 <span className="ml-2 text-secondary-400">
-                                    {tasksCount}
-                                 </span>
-                              )}
+                              <span className="ml-2 text-secondary-400">
+                                 {tasksCount}
+                              </span>
                            </TabsTrigger>
 
                            <TabsTrigger
@@ -84,11 +80,9 @@ export default function TasksPage() {
                               className="px-3 py-2 rounded-lg border-b-2 border-transparent data-[state=active]:border-primary-600 data-[state=active]:text-primary-600 text-secondary-600 font-medium text-sm sm:text-base"
                            >
                               My Applications
-                              {applicationsCount !== null && (
-                                 <span className="ml-2 text-secondary-400">
-                                    {applicationsCount}
-                                 </span>
-                              )}
+                              <span className="ml-2 text-secondary-400">
+                                 {applicationsCount}
+                              </span>
                            </TabsTrigger>
                         </TabsList>
                      </div>
