@@ -21,110 +21,208 @@ interface VerificationItem {
   verifiedAt?: Date;
   required?: boolean;
   businessOnly?: boolean;
+  /** When true, verified items do not navigate (e.g. Aadhaar KYC is one-time). */
+  lockAfterVerification?: boolean;
+}
+
+/** Single source of truth for trust/verification level. Avoids duplicated badge/percentage logic in UI. */
+function getTrustMeta(user: UserProfile): {
+  percentage: number;
+  badge: string;
+  badgeLabel: string;
+  barWidthPercent: number;
+  barClassName: string;
+  badgeClassName: string;
+} {
+  const badgeToPercentage: Record<string, number> = {
+    trusted: 100,
+    verified: 66,
+    basic: 33,
+    none: 0,
+  };
+  const badgeToBarClass: Record<string, string> = {
+    trusted: "bg-green-600",
+    verified: "bg-blue-600",
+    basic: "bg-yellow-600",
+    none: "bg-gray-400",
+  };
+  const badgeToBadgeClass: Record<string, string> = {
+    trusted: "bg-green-100 text-green-800",
+    verified: "bg-blue-100 text-blue-800",
+    basic: "bg-yellow-100 text-yellow-800",
+    enterprise: "bg-green-100 text-green-800",
+    none: "bg-gray-100 text-gray-800",
+  };
+
+  if (user.userType === "business" && user.business?.verificationStatus) {
+    const level = user.business.verificationStatus.level ?? 0;
+    const badge = user.business.verificationStatus.badge ?? "none";
+    const maxLevel = 3;
+    return {
+      percentage: Math.round((level / maxLevel) * 100),
+      badge,
+      badgeLabel: (badge === "none" ? "BASIC" : badge).toUpperCase(),
+      barWidthPercent: (level / maxLevel) * 100,
+      barClassName:
+        level === 3 ? "bg-green-600" :
+        level === 2 ? "bg-purple-600" :
+        level === 1 ? "bg-blue-600" : "bg-yellow-500",
+      badgeClassName: badgeToBadgeClass[badge] ?? "bg-yellow-100 text-yellow-800",
+    };
+  }
+
+  const badge = user.verificationBadge ?? "none";
+  const percentage = badgeToPercentage[badge] ?? 0;
+  return {
+    percentage,
+    badge,
+    badgeLabel: (badge === "none" ? "NONE" : badge).toUpperCase(),
+    barWidthPercent: percentage,
+    barClassName: badgeToBarClass[badge] ?? "bg-gray-400",
+    badgeClassName: badgeToBadgeClass[badge] ?? "bg-gray-100 text-gray-800",
+  };
+}
+
+/** Consistent verification date formatting. Locale-controlled, single place to change. */
+function formatVerificationDate(date?: Date | string): string | null {
+  if (!date) return null;
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return null;
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(d);
+}
+
+/** Factory: one contract for all verification items. DRY, testable, easy to extend. */
+function createVerificationItem({
+  id,
+  title,
+  isVerified,
+  verifiedAt,
+  verifiedText,
+  defaultText,
+  route,
+  required = false,
+  businessOnly,
+  lockAfterVerification,
+}: {
+  id: string;
+  title: string;
+  isVerified?: boolean;
+  verifiedAt?: Date;
+  verifiedText?: string;
+  defaultText: string;
+  route: string;
+  required?: boolean;
+  businessOnly?: boolean;
+  lockAfterVerification?: boolean;
+}): VerificationItem {
+  const verified = isVerified ?? false;
+  return {
+    id,
+    type: id,
+    title,
+    description: verified ? (verifiedText ?? "Verified") : defaultText,
+    route,
+    isVerified: verified,
+    verifiedAt,
+    required,
+    ...(businessOnly !== undefined && { businessOnly }),
+    ...(lockAfterVerification !== undefined && { lockAfterVerification }),
+  };
 }
 
 export function VerificationSection({ user }: VerificationSectionProps) {
   const router = useRouter();
-  // Individual verifications - for all users
+
+  const isBusiness = user.userType === "business";
+  const panData = isBusiness
+    ? user.business?.pan
+    : {
+        isPANVerified: user.isPanVerified,
+        maskedPAN: user.maskedPan,
+        panVerifiedAt: user.panVerifiedAt,
+      };
+  const isPANVerified = panData?.isPANVerified ?? false;
+  const trustMeta = getTrustMeta(user);
+
+  // Individual verifications – single source of truth via factory
   const individualVerifications: VerificationItem[] = [
-    {
+    createVerificationItem({
       id: "phone",
-      type: "phone",
       title: "Phone Number",
-      description: "Verified during signup via Firebase",
-      route: "", // No route - already verified
-      isVerified: true, // Always verified via Firebase
-      verifiedAt: user.createdAt, // Use account creation date
+      isVerified: !!user.phone,
+      verifiedAt: user.createdAt,
+      verifiedText: user.phone ? `Verified ${user.phone}` : "Verified",
+      defaultText: "Verify your phone number",
+      route: "",
       required: true,
-    },
-    {
+    }),
+    createVerificationItem({
       id: "email",
-      type: "email",
       title: "Email Address",
-      description: user.isEmailVerified ? `Verified ${user.email}` : "Verify your email address",
-      route: "/profile/verify/email",
-      isVerified: user.isEmailVerified || false,
+      isVerified: user.isEmailVerified,
       verifiedAt: user.emailVerifiedAt,
+      verifiedText: user.email ? `Verified ${user.email}` : "Verified",
+      defaultText: "Verify your email address",
+      route: "/profile/verify/email",
       required: true,
-    },
-    {
+    }),
+    createVerificationItem({
       id: "aadhaar",
-      type: "aadhaar",
       title: "Aadhaar Verification",
-      description: user.isAadhaarVerified
-        ? `Verified ${user.maskedAadhaar || "XXXX XXXX XXXX"}`
-        : "Verify your identity with Aadhaar",
-      route: "/profile/verify/aadhaar",
-      isVerified: user.isAadhaarVerified || false,
+      isVerified: user.isAadhaarVerified,
       verifiedAt: user.aadhaarVerifiedAt,
-      required: false,
-    },
-    {
+      verifiedText: `Verified ${user.maskedAadhaar || "XXXX XXXX XXXX"}`,
+      defaultText: "Verify your identity with Aadhaar",
+      route: "/profile/verify/aadhaar",
+      lockAfterVerification: true,
+    }),
+    createVerificationItem({
       id: "bank",
-      type: "bank",
       title: "Bank Account",
-      description: user.isBankVerified
-        ? `Verified ${user?.maskedBankAccount}`
-        : "Verify your bank account",
-      route: "/profile/verify/bank",
-      isVerified: user.isBankVerified || false,
+      isVerified: user.isBankVerified,
       verifiedAt: user.bankVerifiedAt,
-      required: false,
-    },
+      verifiedText: user.maskedBankAccount ? `Verified ${user.maskedBankAccount}` : "Verified",
+      defaultText: "Verify your bank account",
+      route: "/profile/verify/bank",
+    }),
+    createVerificationItem({
+      id: "pan",
+      title: "PAN Card",
+      isVerified: isPANVerified,
+      verifiedAt: panData?.panVerifiedAt,
+      verifiedText: `Verified ${panData?.maskedPAN || "XXXXX****X"}`,
+      defaultText: "Verify your PAN card",
+      route: "/profile/verify/pan",
+    }),
   ];
 
-  // Business verifications - only for business accounts
-  const businessVerifications: VerificationItem[] = user.userType === "business" ? [
-    {
-      id: "pan",
-      type: "pan",
-      title: "PAN Verification",
-      description: user.business?.pan?.isPANVerified
-        ? `Verified ${user.maskedPan || user.business?.pan?.maskedPAN || "XXXXX****X"}`
-        : "Verify your PAN for business operations",
-      route: "/profile/verify/pan",
-      isVerified: user.business?.pan?.isPANVerified || false,
-      verifiedAt: user.business?.pan?.panVerifiedAt,
-      required: true,
-      businessOnly: true,
-    },
-    {
-      id: "gst",
-      type: "gst",
-      title: "GST Verification",
-      description: user.business?.isGSTVerified
-        ? `Verified ${user.business?.gstNumber || "GST Number"}`
-        : "Verify your GST number for tax compliance",
-      route: "/profile/verify/gst",
-      isVerified: user.business?.isGSTVerified || false,
-      verifiedAt: user.business?.gstVerifiedAt,
-      businessOnly: true,
-    },
-    // TODO: Implement business bank verification in backend first
-    // {
-    //   id: "business-bank",
-    //   type: "business-bank",
-    //   title: "Business Bank Account",
-    //   description: user.business?.bankAccount?.isVerified
-    //     ? `Verified ${user.business.bankAccount.accountHolderName}`
-    //     : "Verify your business bank account",
-    //   route: "/profile/verify/business-bank",
-    //   isVerified: user.business?.bankAccount?.isVerified || false,
-    //   verifiedAt: user.business?.bankAccount?.verifiedAt,
-    //   required: true,
-    //   businessOnly: true,
-    // },
-  ] : [];
+  // Business verifications – same factory, businessOnly flag
+  const businessVerifications: VerificationItem[] = isBusiness
+      ? [
+          createVerificationItem({
+            id: "gst",
+            title: "GST Verification",
+            isVerified: user.business?.isGSTVerified,
+            verifiedAt: user.business?.gstVerifiedAt,
+            verifiedText: `Verified ${user.business?.gstNumber || "GST Number"}`,
+            defaultText: "Verify your GST number for tax compliance",
+            route: "/profile/verify/gst",
+            businessOnly: true,
+          }),
+        ]
+      : [];
 
   const handleNavigate = (item: VerificationItem) => {
-    // If Aadhaar is already verified, do not allow re-verification from the UI
-    if (item.id === "aadhaar" && item.isVerified) {
-      toast.success("Aadhaar already verified", {
-        description: "Your Aadhaar KYC has already been completed.",
+    if (item.isVerified && item.lockAfterVerification) {
+      toast.success("Already verified", {
+        description: "This verification has already been completed and cannot be changed.",
       });
       return;
     }
-
     if (item.route) {
       router.push(item.route);
     }
@@ -195,9 +293,9 @@ export function VerificationSection({ user }: VerificationSectionProps) {
                     {getStatusBadge(item)}
                   </div>
                   <p className="text-sm text-gray-500">{item.description}</p>
-                  {item.verifiedAt && (
+                  {item.verifiedAt && formatVerificationDate(item.verifiedAt) && (
                     <p className="text-xs text-gray-400 mt-1">
-                      Verified on {new Date(item.verifiedAt).toLocaleDateString()}
+                      Verified on {formatVerificationDate(item.verifiedAt)}
                     </p>
                   )}
                 </div>
@@ -209,7 +307,7 @@ export function VerificationSection({ user }: VerificationSectionProps) {
       </div>
 
       {/* Business Verifications - Only for business accounts */}
-      {user.userType === "business" && businessVerifications.length > 0 && (
+      {isBusiness && businessVerifications.length > 0 && (
         <div className="bg-white rounded-lg border border-gray-200">
           <div className="px-4 py-3 sm:px-5 sm:py-4 bg-primary-50 border-b border-primary-200">
             <h3 className="text-sm font-semibold text-primary-900">Business Verifications</h3>
@@ -219,7 +317,7 @@ export function VerificationSection({ user }: VerificationSectionProps) {
             {businessVerifications.map((item) => (
               <button
                 key={item.id}
-                onClick={() => handleNavigate(item.route)}
+                onClick={() => handleNavigate(item)}
                 className="w-full px-4 py-4 sm:px-5 sm:py-5 hover:bg-gray-50 transition-colors text-left group"
               >
                 <div className="flex items-center gap-4">
@@ -232,9 +330,9 @@ export function VerificationSection({ user }: VerificationSectionProps) {
                       {getStatusBadge(item)}
                     </div>
                     <p className="text-sm text-gray-500">{item.description}</p>
-                    {item.verifiedAt && (
+                    {item.verifiedAt && formatVerificationDate(item.verifiedAt) && (
                       <p className="text-xs text-gray-400 mt-1">
-                        Verified on {new Date(item.verifiedAt).toLocaleDateString()}
+                        Verified on {formatVerificationDate(item.verifiedAt)}
                       </p>
                     )}
                   </div>
@@ -246,72 +344,32 @@ export function VerificationSection({ user }: VerificationSectionProps) {
         </div>
       )}
 
-      {/* Trust Level Info */}
+      {/* Trust Level Info – driven by getTrustMeta, no duplicated badge/percentage logic */}
       <div className="bg-linear-to-br from-primary-50 to-primary-100/50 rounded-lg p-4 sm:p-5 border border-primary-200">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-gray-900">Trust Level</h3>
-          {user.userType === "business" && user.business?.verificationStatus ? (
-            <span className={cn(
-              "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold",
-              user.business.verificationStatus.badge === "enterprise" && "bg-green-100 text-green-800",
-              user.business.verificationStatus.badge === "trusted" && "bg-purple-100 text-purple-800",
-              user.business.verificationStatus.badge === "verified" && "bg-blue-100 text-blue-800",
-              (user.business.verificationStatus.badge === "none" || !user.business.verificationStatus.badge) && "bg-yellow-100 text-yellow-800"
-            )}>
-              {user.business.verificationStatus.badge?.toUpperCase() || "BASIC"}
-            </span>
-          ) : (
-            <span className={cn(
-              "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold",
-              user.verificationBadge === "trusted" && "bg-green-100 text-green-800",
-              user.verificationBadge === "verified" && "bg-blue-100 text-blue-800",
-              user.verificationBadge === "basic" && "bg-yellow-100 text-yellow-800",
-              !user.verificationBadge && "bg-gray-100 text-gray-800"
-            )}>
-              {user.verificationBadge?.toUpperCase() || "NONE"}
-            </span>
-          )}
+          <span className={cn("inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold", trustMeta.badgeClassName)}>
+            {trustMeta.badgeLabel}
+          </span>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex-1">
             <div className="flex items-center justify-between text-sm mb-2">
               <span className="text-gray-600">Progress</span>
-              <span className="font-semibold text-gray-900">
-                {user.userType === "business" && user.business?.verificationStatus ? (
-                  `Level ${user.business.verificationStatus.level || 0}/3`
-                ) : (
-                  user.verificationBadge === "trusted" ? "100%" :
-                  user.verificationBadge === "verified" ? "66%" :
-                  user.verificationBadge === "basic" ? "33%" : "0%"
-                )}
-              </span>
+              <span className="font-semibold text-gray-900">{trustMeta.percentage}%</span>
             </div>
             <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
               <div
-                className={cn(
-                  "h-full rounded-full transition-all duration-500",
-                  user.userType === "business" && user.business?.verificationStatus ? (
-                    user.business.verificationStatus.level === 3 ? "bg-green-600 w-full" :
-                    user.business.verificationStatus.level === 2 ? "bg-purple-600 w-2/3" :
-                    user.business.verificationStatus.level === 1 ? "bg-blue-600 w-1/3" :
-                    "bg-yellow-500 w-0"
-                  ) : (
-                    user.verificationBadge === "trusted" ? "bg-green-600 w-full" :
-                    user.verificationBadge === "verified" ? "bg-blue-600 w-2/3" :
-                    user.verificationBadge === "basic" ? "bg-yellow-600 w-1/3" :
-                    "bg-gray-400 w-0"
-                  )
-                )}
+                className={cn("h-full rounded-full transition-all duration-500", trustMeta.barClassName)}
+                style={{ width: `${trustMeta.barWidthPercent}%` }}
               />
             </div>
           </div>
         </div>
         <p className="text-xs text-gray-600 mt-3">
-          {user.userType === "business" ? (
-            "Complete more business verifications to unlock higher trust levels and premium features"
-          ) : (
-            "Complete more verifications to increase your trust level and unlock premium features"
-          )}
+          {isBusiness
+            ? "Complete more business verifications to unlock higher trust levels and premium features"
+            : "Complete more verifications to increase your trust level and unlock premium features"}
         </p>
       </div>
     </div>
