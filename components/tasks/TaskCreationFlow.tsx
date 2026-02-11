@@ -348,14 +348,30 @@ export function TaskCreationFlow() {
       if (fieldsToValidate) {
          const isValid = await form.trigger(fieldsToValidate as any);
          if (!isValid) {
-            if (currentStep === 2) {
-               toast.error("Please select a location", {
-                  description:
-                     "Set where the task should take place before continuing.",
-               });
-            } else {
-               toast.error("Please fix the errors before continuing");
-            }
+            // Collect specific field error messages for clearer feedback
+            const errorMessages: string[] = [];
+            (fieldsToValidate as readonly string[]).forEach((name) => {
+               const fieldState = form.getFieldState(name as any);
+               const msg = fieldState.error?.message;
+               if (msg && !errorMessages.includes(msg)) {
+                  errorMessages.push(msg);
+               }
+            });
+
+            const primaryMessage =
+               errorMessages[0] ||
+               (currentStep === 2
+                  ? "Please select a location"
+                  : "Please fix the errors before continuing");
+
+            const secondary =
+               errorMessages.length > 1
+                  ? errorMessages.slice(1).join(" • ")
+                  : undefined;
+
+            toast.error(primaryMessage, {
+               description: secondary,
+            });
             return;
          }
       }

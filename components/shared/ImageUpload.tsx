@@ -133,7 +133,11 @@ export function ImageUpload({
                const attachment = await uploadFile(file);
                newAttachments.push(attachment);
             } catch (error) {
-               toast.error("Upload failed", { description: file.name });
+               const message =
+                  error instanceof Error && error.message
+                     ? error.message
+                     : "Upload failed";
+               toast.error(message, { description: file.name });
             }
          }
 

@@ -157,11 +157,19 @@ export function MakeOfferModal({
          form.reset();
          onOpenChange(false);
          onSuccess?.();
-      } catch (error) {
+      } catch (error: any) {
          console.error("Error submitting offer:", error);
-         toast.error("Failed to submit offer", {
-            description: getErrorMessage(error),
-         });
+         const isUnauthorized = error?.status === 401 || error?.status === 403;
+         if (isUnauthorized) {
+            toast.error("Session expired", {
+               description:
+                  "Please log in again to submit an offer. Your session may have expired.",
+            });
+         } else {
+            toast.error("Failed to submit offer", {
+               description: getErrorMessage(error),
+            });
+         }
       } finally {
          setIsSubmitting(false);
       }

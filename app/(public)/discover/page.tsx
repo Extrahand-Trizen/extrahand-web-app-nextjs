@@ -10,7 +10,7 @@ import { CompactFilterBar } from "@/components/tasks/CompactFilterBar";
 import { TaskListSkeleton } from "@/components/tasks/TaskSkeleton";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
 import type { Task, TaskListResponse } from "@/types/task";
-import { MapIcon, List, Plus, AlertCircle } from "lucide-react";
+import { List, Plus, AlertCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserStore } from "@/lib/state/userStore";
 
@@ -92,7 +92,6 @@ export default function TasksPage() {
    const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
    const [showTaskDetail, setShowTaskDetail] = useState(false);
    const [isLoading, setIsLoading] = useState(true);
-   const [showMobileMap, setShowMobileMap] = useState(false);
    const [tasks, setTasks] = useState<Task[]>([]);
    const [error, setError] = useState<string | null>(null);
    const [pagination, setPagination] = useState({
@@ -299,14 +298,14 @@ export default function TasksPage() {
    const filteredTasks = getFilteredTasks();
    const selectedTask = filteredTasks.find((t) => t._id === selectedTaskId);
 
-   // Handle task selection - show detail card instead of redirecting
+   // On mobile: go directly to task details. On desktop: show detail card overlay on map.
    const handleTaskSelect = (taskId: string) => {
+      if (isMobile) {
+         router.push(`/tasks/${taskId}`);
+         return;
+      }
       setSelectedTaskId(taskId);
       setShowTaskDetail(true);
-      // On mobile, switch to map view when a task is selected
-      if (isMobile) {
-         setShowMobileMap(true);
-      }
    };
 
    // Handle closing detail card
@@ -329,12 +328,8 @@ export default function TasksPage() {
          {/* Main content */}
          <div className="w-full max-w-7xl mx-auto px-4">
             <div className="flex gap-4">
-               {/* Left column: list */}
-               <div
-                  className={`w-full lg:w-1/2 ${
-                     isMobile ? (showMobileMap ? "hidden" : "block") : "block"
-                  }`}
-               >
+               {/* Left column: list (full width on mobile; half on desktop) */}
+               <div className="w-full lg:w-1/2">
                   <div
                      style={{
                         maxHeight: `calc(100vh - ${TOP_OFFSET_PX}px)`,
@@ -430,79 +425,41 @@ export default function TasksPage() {
                   </div>
                </div>
 
-               {/* Right column: map */}
-               {!isMobile ? (
-                  <div className="hidden lg:block lg:w-1/2">
+               {/* Right column: map (desktop only; hidden on mobile) */}
+               <div className="hidden lg:block lg:w-1/2">
+                  <div
+                     className="sticky"
+                     style={{ top: `${TOP_OFFSET_PX}px` }}
+                  >
                      <div
-                        className="sticky"
-                        style={{ top: `${TOP_OFFSET_PX}px` }}
+                        className="relative"
+                        style={{
+                           height: `calc(100vh - ${TOP_OFFSET_PX}px)`,
+                        }}
                      >
-                        <div
-                           className="relative"
-                           style={{
-                              height: `calc(100vh - ${TOP_OFFSET_PX}px)`,
-                           }}
-                        >
-                           <TaskMap
-                              tasks={filteredTasks}
-                              selectedTaskId={selectedTaskId}
-                              onTaskSelect={handleTaskSelect}
-                              centerCoordinates={HYDERABAD_CENTER}
-                           />
-                           {/* Desktop Task Detail Card Overlay */}
-                           {showTaskDetail && selectedTask && (
-                              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 w-full px-4">
-                                 <TaskDetailCard
-                                    task={selectedTask}
-                                    onClose={handleCloseDetail}
-                                 />
-                              </div>
-                           )}
-                        </div>
-                     </div>
-                  </div>
-               ) : (
-                  showMobileMap && (
-                     <div className="fixed inset-0 top-[120px] z-30 bg-white">
                         <TaskMap
                            tasks={filteredTasks}
                            selectedTaskId={selectedTaskId}
                            onTaskSelect={handleTaskSelect}
                            centerCoordinates={HYDERABAD_CENTER}
-                        />{" "}
-                        {/* Mobile Task Detail Card Overlay */}
+                        />
+                        {/* Desktop Task Detail Card Overlay */}
                         {showTaskDetail && selectedTask && (
-                           <div className="absolute bottom-4 left-4 right-4 z-50">
+                           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 w-full px-4">
                               <TaskDetailCard
                                  task={selectedTask}
                                  onClose={handleCloseDetail}
                               />
                            </div>
-                        )}{" "}
+                        )}
                      </div>
-                  )
-               )}
+                  </div>
+               </div>
             </div>
          </div>
 
-         {/* Mobile map toggle */}
-         {isMobile && (
-            <div className="fixed bottom-4 right-4 z-40">
-               <Button
-                  onClick={() => setShowMobileMap(!showMobileMap)}
-                  className="bg-white border-2 border-secondary-300 text-secondary-900 hover:bg-secondary-50 shadow-lg rounded-full w-14 h-14 p-0"
-               >
-                  {showMobileMap ? (
-                     <List className="w-6 h-6" />
-                  ) : (
-                     <MapIcon className="w-6 h-6" />
-                  )}
-               </Button>
-            </div>
-         )}
-
          {/* Mobile floating post button */}
-         {isMobile && !showMobileMap && (
+         {isMobile && (
             <div className="fixed bottom-4 left-4 z-40">
                <Button
                   onClick={() => router.push("/tasks/new")}

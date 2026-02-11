@@ -209,7 +209,7 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
                                     <FormLabel>Full Name</FormLabel>
                                     <FormControl>
                                        <Input
-                                          placeholder="John Doe"
+                                          placeholder="Enter your full name"
                                           {...field}
                                        />
                                     </FormControl>

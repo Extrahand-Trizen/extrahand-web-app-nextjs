@@ -251,10 +251,13 @@ export function TaskMap({
         `;
 
             marker.addListener("click", () => {
-               infoWindowRef.current?.setContent(infoContent);
-               infoWindowRef.current?.open(map, marker);
+               // When parent shows overlay (TaskDetailCard), don't open InfoWindow to avoid overlapping cards
                if (onTaskSelect) {
+                  infoWindowRef.current?.close();
                   onTaskSelect(task._id);
+               } else {
+                  infoWindowRef.current?.setContent(infoContent);
+                  infoWindowRef.current?.open(map, marker);
                }
                map.panTo(marker.getPosition()!);
             });
@@ -287,9 +290,12 @@ export function TaskMap({
       });
    }, [tasks, onTaskSelect, mapLoaded]);
 
-   // Highlight selected task marker
+   // Highlight selected task marker and keep InfoWindow closed when parent shows overlay
    useEffect(() => {
-      if (!mapInstanceRef.current || !selectedTaskId || !mapLoaded) return;
+      if (!mapInstanceRef.current || !mapLoaded) return;
+      // Close any open InfoWindow when selection changes so overlay is the single source of truth
+      infoWindowRef.current?.close();
+      if (!selectedTaskId) return;
 
       const selectedMarkerData = markersRef.current.find(
          ({ id }) => id === selectedTaskId

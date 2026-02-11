@@ -9,9 +9,10 @@ import Link from "next/link";
 
 interface TaskDetailsSidebarProps {
    task: Task;
+   isOwner?: boolean;
 }
 
-export function TaskDetailsSidebar({ task }: TaskDetailsSidebarProps) {
+export function TaskDetailsSidebar({ task, isOwner = false }: TaskDetailsSidebarProps) {
    const [showMakeOfferModal, setShowMakeOfferModal] = useState(false);
    const budgetAmount =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
@@ -42,7 +43,7 @@ export function TaskDetailsSidebar({ task }: TaskDetailsSidebarProps) {
                </div>
             </div>
 
-            {task.status === "open" && (
+            {task.status === "open" && !isOwner && (
                <div className="space-y-2">
                   <Button
                      onClick={() => setShowMakeOfferModal(true)}

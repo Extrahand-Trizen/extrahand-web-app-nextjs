@@ -324,12 +324,15 @@ class SessionManager {
          if (options?.redirect && typeof window !== "undefined") {
             const currentPath = window.location.pathname;
 
-            // Auth/public pages where we DON'T want to trigger another redirect
+            // Auth/public pages where we DON'T want to trigger another redirect.
+            // Include public task details (/tasks/:id) so 401 on offer submit doesn't
+            // send user home and then cause every task details visit to redirect.
             const isAuthOrPublicRoot =
                currentPath === "/" ||
                currentPath.startsWith("/login") ||
                currentPath.startsWith("/signup") ||
-               currentPath.startsWith("/otp-verification");
+               currentPath.startsWith("/otp-verification") ||
+               (currentPath.startsWith("/tasks/") && currentPath.length > "/tasks/".length);
 
             // Only redirect away from protected/other pages; once we're on a
             // public root like "/", stay there to avoid reload loops.

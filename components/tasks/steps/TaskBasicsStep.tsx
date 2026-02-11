@@ -28,7 +28,6 @@ interface TaskBasicsStepProps {
 const CATEGORIES = [
    { id: "cleaning", label: "Cleaning", icon: "🧹" },
    { id: "repair", label: "Repairs", icon: "🔧" },
-   { id: "delivery", label: "Delivery", icon: "📦" },
    { id: "assembly", label: "Assembly", icon: "🔨" },
    { id: "gardening", label: "Gardening", icon: "🌱" },
    { id: "petcare", label: "Pet Care", icon: "🐕" },
@@ -43,19 +42,7 @@ const SUBCATEGORIES: Record<string, string[]> = {
       "Move-out Cleaning",
       "Car Wash",
    ],
-   repair: [
-      "Plumbing",
-      "Electrical",
-      "Appliance Repair",
-      "Carpentry",
-      "Painting",
-   ],
-   delivery: [
-      "Food Delivery",
-      "Parcel Pickup",
-      "Grocery Shopping",
-      "Document Drop-off",
-   ],
+   repair: ["Plumbing", "Electrical", "Appliance Repair", "Carpentry", "Painting"],
    assembly: [
       "Furniture Assembly",
       "TV Mounting",

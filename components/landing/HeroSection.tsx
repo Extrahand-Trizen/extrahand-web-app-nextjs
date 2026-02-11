@@ -174,14 +174,14 @@ export const HeroSection: React.FC = () => {
                Join 50,000+ neighbours getting things done.
             </p>
 
-            {/* 3. The "Floating" Search Bar */}
-            <div className="bg-white px-2 md:py-2 rounded-lg shadow-lg max-w-2xl mx-auto">
+               {/* 3. The "Floating" Search Bar */}
+               <div className="bg-white px-2 md:py-2 rounded-lg shadow-lg max-w-2xl mx-auto">
                <form
                   onSubmit={handleSearch}
                   className="flex items-center gap-0"
                >
                   {/* Location Input with Dropdown */}
-                  <div className="relative w-5/12">
+                  <div className="relative w-1/3">
                      <div className="relative">
                         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 z-10" />
                         <Input
@@ -300,7 +300,8 @@ export const HeroSection: React.FC = () => {
 
                   {/* Task Search Input */}
                   <div className="relative flex-1">
-                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                     {/* Search icon aligned to the right end of the input */}
+                     <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                      <Input
                         type="text"
                         value={query}
@@ -311,7 +312,7 @@ export const HeroSection: React.FC = () => {
                            }
                         }}
                         placeholder="Try: Mount a TV, House cleaning..."
-                        className="h-10 pl-10 pr-3 border-0 rounded-l-none focus-visible:ring-0 focus-visible:ring-offset-0 text-xs md:text-sm"
+                        className="h-10 pl-3 pr-10 border-0 rounded-l-none focus-visible:ring-0 focus-visible:ring-offset-0 text-xs md:text-sm"
                         aria-label="Search tasks or describe what you need"
                      />
                   </div>

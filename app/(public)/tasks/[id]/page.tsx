@@ -221,13 +221,13 @@ export default function TaskDetailsPage() {
 
                {/* Right Sidebar - Desktop Only */}
                <div className="hidden lg:block">
-                  <TaskDetailsSidebar task={task} />
+                  <TaskDetailsSidebar task={task} isOwner={isOwner} />
                </div>
             </div>
          </div>
 
-         {/* Fixed Bottom CTA - Mobile */}
-         {showFixedCTA && task && task.status === "open" && (
+         {/* Fixed Bottom CTA - Mobile (only for non-owners) */}
+         {showFixedCTA && task && task.status === "open" && !isOwner && (
             <div className="fixed bottom-0 left-0 right-0 lg:hidden bg-white border-t border-secondary-200 shadow-xl animate-in slide-in-from-bottom-0 duration-300">
                <div className="max-w-7xl mx-auto px-4 py-3">
                   <Button

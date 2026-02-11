@@ -169,7 +169,7 @@ export function TaskQuestionsSection({ taskId, isOwner }: TaskQuestionsSectionPr
             <h2 className="md:text-lg font-bold text-secondary-900">
                Questions ({questions.length})
             </h2>
-            {!showQuestionForm && (
+            {!isOwner && !showQuestionForm && (
                <Button
                   onClick={() => setShowQuestionForm(true)}
                   size="sm"
@@ -200,7 +200,9 @@ export function TaskQuestionsSection({ taskId, isOwner }: TaskQuestionsSectionPr
                   No questions yet
                </p>
                <p className="text-sm text-secondary-500">
-                  Be the first to ask about this task
+                  {isOwner
+                     ? "Once taskers ask something about your task, you'll see it here and can reply."
+                     : "Be the first to ask about this task"}
                </p>
             </div>
          ) : (
