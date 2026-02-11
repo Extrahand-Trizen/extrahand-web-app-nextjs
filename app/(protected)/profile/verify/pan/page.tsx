@@ -32,7 +32,6 @@ import { toast } from "sonner";
 interface PANVerificationState {
    step: "input" | "processing" | "success" | "error";
    pan: string;
-   name: string;
    showPan: boolean;
    consentGiven: boolean;
    verifiedData?: {
@@ -51,7 +50,6 @@ export default function PANVerificationPage() {
    const [state, setState] = useState<PANVerificationState>({
       step: "input",
       pan: "",
-      name: "",
       showPan: false,
       consentGiven: false,
    });
@@ -192,30 +190,6 @@ export default function PANVerificationPage() {
                   )}
                </button>
             </div>
-         </div>
-
-         {/* Name Input */}
-         <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
-               Name as per PAN Card
-            </label>
-            <input
-               type="text"
-               value={state.name}
-               onChange={(e) =>
-                  setState((p) => ({
-                     ...p,
-                     name: e.target.value.toUpperCase(),
-                     error: undefined,
-                  }))
-               }
-               placeholder="FULL NAME AS PER PAN"
-               className={cn(
-                  "w-full px-4 py-3 text-base border rounded-xl transition-all duration-200 uppercase",
-                  "focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500",
-                  "border-gray-200"
-               )}
-            />
          </div>
 
          {/* Error */}

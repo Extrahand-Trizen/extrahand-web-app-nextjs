@@ -10,6 +10,15 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Fingerprint,
   Lock,
   AlertCircle,
@@ -23,18 +32,27 @@ import {
 } from "lucide-react";
 import { AADHAAR_CONSENT } from "@/types/verification";
 import { verificationApi } from "@/lib/api/endpoints/verification";
+import { useAuth } from "@/lib/auth/context";
 import { toast } from "sonner";
 
 const DIGILOCKER_SESSION_KEY = "digilocker_verification_id";
 
+/** Normalize profile phone to 10-digit Indian mobile for comparison (e.g. +917416337859 → 7416337859). */
+function normalizeProfilePhone(phone: string | null | undefined): string {
+  if (!phone) return "";
+  const digits = phone.replace(/\D/g, "");
+  return digits.length > 10 ? digits.slice(-10) : digits;
+}
+
 export default function AadhaarVerificationPage() {
   const router = useRouter();
+  const { userData } = useAuth();
   const [step, setStep] = useState<"consent" | "input" | "redirecting" | "error">("consent");
   const [mobileNumber, setMobileNumber] = useState("");
-  const [aadhaarNumber, setAadhaarNumber] = useState("");
   const [consentGiven, setConsentGiven] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);
+  const [showMismatchModal, setShowMismatchModal] = useState(false);
 
   const handleBack = () => {
     if (step === "consent") {
@@ -47,34 +65,28 @@ export default function AadhaarVerificationPage() {
     }
   };
 
-  const formatAadhaar = (v: string) => {
-    const d = v.replace(/\D/g, "").slice(0, 12);
-    return d.match(/.{1,4}/g)?.join(" ") || "";
-  };
-
   const formatMobile = (v: string) => {
     return v.replace(/\D/g, "").slice(0, 10);
   };
 
   const handleInitiate = async () => {
     const mobile = mobileNumber.replace(/\D/g, "").trim();
-    const aadhaar = aadhaarNumber.replace(/\s/g, "").trim();
 
-    if (!mobile && !aadhaar) {
-      setError("Please enter your mobile number or Aadhaar number");
-      toast.error("Mobile or Aadhaar required");
+    if (!mobile || mobile.length !== 10) {
+      setError("Please enter a valid 10-digit mobile number");
+      toast.error("Mobile number required");
       return;
     }
 
-    if (aadhaar && aadhaar.length !== 12) {
-      setError("Aadhaar number must be 12 digits");
-      toast.error("Invalid Aadhaar number");
+    const registeredPhone = normalizeProfilePhone(userData?.phone);
+    if (registeredPhone && mobile !== registeredPhone) {
+      setShowMismatchModal(true);
       return;
     }
 
-    if (mobile && mobile.length !== 10) {
-      setError("Mobile number must be 10 digits");
-      toast.error("Invalid mobile number");
+    if (!registeredPhone) {
+      setError("We couldn't find a registered mobile number. Please ensure your profile has a verified phone number.");
+      toast.error("Registered mobile required");
       return;
     }
 
@@ -83,8 +95,7 @@ export default function AadhaarVerificationPage() {
 
     try {
       const result = await verificationApi.initiateDigilocker({
-        mobileNumber: mobile || undefined,
-        aadhaarNumber: aadhaar || undefined,
+        mobileNumber: mobile,
         consentGiven: true,
       });
 
@@ -204,7 +215,7 @@ export default function AadhaarVerificationPage() {
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-5">
               <h3 className="text-sm font-semibold text-slate-900 mb-4">How it works</h3>
               {[
-                { title: "Enter mobile or Aadhaar", desc: "Your details stay secure" },
+                { title: "Enter registered mobile", desc: "Must match your account" },
                 { title: "Sign in to DigiLocker", desc: "Government portal" },
                 { title: "Share consent", desc: "Only masked details stored" },
               ].map((s, i) => (
@@ -265,7 +276,7 @@ export default function AadhaarVerificationPage() {
                 Enter your details
               </h2>
               <p className="text-sm text-slate-500 mt-1">
-                Provide mobile number or Aadhaar (at least one required)
+                Enter the mobile number registered with your account
               </p>
             </div>
 
@@ -279,30 +290,11 @@ export default function AadhaarVerificationPage() {
                     setMobileNumber(formatMobile(e.target.value));
                     setError(undefined);
                   }}
-                  placeholder="10-digit mobile"
+                  placeholder="10-digit mobile number"
                   maxLength={10}
                   inputMode="numeric"
                   className={cn(
                     "mt-2 w-full px-4 py-3.5 text-lg font-mono border rounded-xl focus:outline-none focus:ring-2 transition-all",
-                    error ? "border-red-300 focus:ring-red-500" : "border-slate-200 focus:ring-slate-900"
-                  )}
-                />
-              </label>
-              <div className="text-center text-sm text-slate-500">— or —</div>
-              <label className="block">
-                <span className="text-sm font-medium text-slate-700">Aadhaar Number</span>
-                <input
-                  type="text"
-                  value={aadhaarNumber}
-                  onChange={(e) => {
-                    setAadhaarNumber(formatAadhaar(e.target.value));
-                    setError(undefined);
-                  }}
-                  placeholder="0000 0000 0000"
-                  maxLength={14}
-                  inputMode="numeric"
-                  className={cn(
-                    "mt-2 w-full px-4 py-3.5 text-lg font-mono tracking-wider text-center border rounded-xl focus:outline-none focus:ring-2 transition-all",
                     error ? "border-red-300 focus:ring-red-500" : "border-slate-200 focus:ring-slate-900"
                   )}
                 />
@@ -329,13 +321,7 @@ export default function AadhaarVerificationPage() {
 
             <Button
               onClick={handleInitiate}
-              disabled={
-                isLoading ||
-                !(
-                  mobileNumber.replace(/\D/g, "").length === 10 ||
-                  aadhaarNumber.replace(/\s/g, "").length === 12
-                )
-              }
+              disabled={isLoading || mobileNumber.replace(/\D/g, "").length !== 10}
               className="w-full h-12 text-sm font-medium bg-slate-900 hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-500 rounded-xl"
             >
               {isLoading ? (
@@ -407,6 +393,24 @@ export default function AadhaarVerificationPage() {
           </div>
         )}
       </main>
+
+      <AlertDialog open={showMismatchModal} onOpenChange={setShowMismatchModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mobile number doesn&apos;t match</AlertDialogTitle>
+            <AlertDialogDescription>
+              Please enter the mobile number associated with your ExtraHand account. Aadhaar
+              verification requires the same number you used to register. If you no longer
+              have access to that number, update your phone number in your profile first.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowMismatchModal(false)}>
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -43,6 +43,8 @@ const footerLinks = {
          { label: "Contact", href: "#" },
          { label: "Help Center", href: "#" },
          { label: "FAQs", href: "#" },
+         { label: "Privacy Policy", href: "/privacy-policy" },
+         { label: "Terms and Conditions", href: "/terms-and-conditions" },
          { label: "Community Guidelines", href: "#" },
          { label: "Report an Issue", href: "#" },
       ],
@@ -111,7 +113,12 @@ export const LandingFooter: React.FC = () => {
                         </span>
                      </div>
                   </Link>
-                  <p className="text-secondary-400 text-xs md:text-sm leading-relaxed mb-4 md:mb-6">
+                  <p className="text-secondary-400 text-xs md:text-sm leading-relaxed mt-2">
+                     1-98/G/38, PLOT 37 AND 38, Serenity Square, Jain rock
+                     garden, The Westin Hyderabad Hitec City, OPPOSITE,
+                     Madhapur, Hyderabad, Telangana, 500081
+                  </p>
+                  <p className="text-secondary-400 text-xs md:text-sm leading-relaxed mb-4 md:mb-6 mt-2">
                      Get any task done by verified local experts. Safe, secure,
                      and simple.
                   </p>
@@ -247,16 +254,16 @@ export const LandingFooter: React.FC = () => {
                </p>
                <div className="flex items-center gap-6 text-xs md:text-sm">
                   <Link
-                     href="#"
+                     href="/privacy-policy"
                      className="text-secondary-400 hover:text-white transition-colors"
                   >
                      Privacy Policy
                   </Link>
                   <Link
-                     href="#"
+                     href="/terms-and-conditions"
                      className="text-secondary-400 hover:text-white transition-colors"
                   >
-                     Terms of Service
+                     Terms and Conditions
                   </Link>
                   <Link
                      href="#"
