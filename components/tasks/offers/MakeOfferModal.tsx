@@ -6,6 +6,7 @@
  */
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -45,6 +46,8 @@ import {
 } from "@/lib/validations/application";
 import { applicationsApi } from "@/lib/api/endpoints/applications";
 import { getErrorMessage } from "@/lib/utils/errorUtils";
+import { getOfferSubmissionVerificationStatus } from "@/lib/utils/verificationGate";
+import { useAuth } from "@/lib/auth/context";
 import type { Task } from "@/types/task";
 
 interface MakeOfferModalProps {
@@ -60,9 +63,13 @@ export function MakeOfferModal({
    onOpenChange,
    onSuccess,
 }: MakeOfferModalProps) {
+   const router = useRouter();
+   const { userData } = useAuth();
    const [isSubmitting, setIsSubmitting] = useState(false);
+   const [showVerificationModal, setShowVerificationModal] = useState(false);
    const [experienceInput, setExperienceInput] = useState("");
    const [portfolioInput, setPortfolioInput] = useState("");
+   const verificationStatus = getOfferSubmissionVerificationStatus(userData ?? null);
 
    const taskBudget =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
@@ -127,6 +134,12 @@ export function MakeOfferModal({
    const onSubmit = async (data: CreateApplicationFormData) => {
       if (isSubmitting) return;
 
+      // Background check: Aadhaar, PAN, and bank must be verified to apply
+      if (!verificationStatus.allowed) {
+         setShowVerificationModal(true);
+         return;
+      }
+
       setIsSubmitting(true);
 
       try {
@@ -176,6 +189,7 @@ export function MakeOfferModal({
    };
 
    return (
+      <>
       <Dialog open={open} onOpenChange={onOpenChange}>
          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
@@ -472,5 +486,43 @@ export function MakeOfferModal({
             </Form>
          </DialogContent>
       </Dialog>
+
+      {/* Verification required: Aadhaar, PAN, Bank */}
+      <Dialog open={showVerificationModal} onOpenChange={setShowVerificationModal}>
+         <DialogContent>
+            <DialogHeader>
+               <DialogTitle>Verification required to apply</DialogTitle>
+               <DialogDescription>
+                  To submit an offer, your Aadhaar, PAN, and bank account must be
+                  verified. Please complete the following in your profile:
+               </DialogDescription>
+            </DialogHeader>
+            <ul className="list-disc list-inside text-sm text-secondary-700 space-y-1">
+               {verificationStatus.missing.map((item) => (
+                  <li key={item}>{item}</li>
+               ))}
+            </ul>
+            <div className="flex flex-col sm:flex-row gap-2 sm:justify-end pt-4">
+               <Button
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={() => setShowVerificationModal(false)}
+               >
+                  Close
+               </Button>
+               <Button
+                  className="w-full sm:w-auto"
+                  onClick={() => {
+                     setShowVerificationModal(false);
+                     onOpenChange(false);
+                     router.push("/profile?section=verifications");
+                  }}
+               >
+                  Complete verification
+               </Button>
+            </div>
+         </DialogContent>
+      </Dialog>
+      </>
    );
 }

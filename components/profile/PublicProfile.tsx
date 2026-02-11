@@ -102,8 +102,8 @@ export function PublicProfile({
       ? Math.round((actualStats.completedTasks / actualStats.totalTasks) * 100)
       : 0;
 
-   // TODO: Get actual on-time rate from backend when available
-   const onTimeRate = actualStats.completedTasks > 0 ? 95 : 0;
+   // On-time rate: only show when backend provides it; avoid dummy 95%
+   const onTimeRate = (stats as any)?.onTimeRate ?? null;
    
    const achievements = generateAchievements(user);
    const availability = getAvailabilityInfo(user);
@@ -169,20 +169,22 @@ export function PublicProfile({
                         )}
                      </div>
 
-                     {/* Rating and Reviews */}
+                     {/* Rating and Reviews - use actualStats so header matches stat cards and breakdown */}
                      <div className="flex items-center gap-4 mt-2 flex-wrap">
                         <div className="flex items-center gap-1">
                            <Star className="size-5 text-amber-400 fill-amber-400" />
                            <span className="text-base font-semibold text-gray-900">
-                              {user.rating?.toFixed(1) || "0.0"}
+                              {actualStats.rating != null && actualStats.rating > 0
+                                 ? actualStats.rating.toFixed(1)
+                                 : "0.0"}
                            </span>
                            <span className="text-sm text-gray-500">
-                              ({reviews.length || 0} reviews)
+                              ({actualStats.totalReviews ?? 0} reviews)
                            </span>
                         </div>
                         <Separator orientation="vertical" className="h-4" />
                         <span className="text-sm text-gray-600">
-                           <strong>{user.completedTasks || 0}</strong> tasks completed
+                           <strong>{actualStats.completedTasks ?? 0}</strong> tasks completed
                         </span>
                         <Separator orientation="vertical" className="h-4" />
                         <div className="flex items-center gap-1 text-sm text-gray-600">
@@ -204,10 +206,10 @@ export function PublicProfile({
                         </div>
                      )}
 
-                     {/* Member Since */}
+                     {/* Member Since - avoid showing future dates (backend/seed bug) */}
                      <div className="flex items-center gap-1.5 mt-1 text-sm text-gray-500">
                         <Calendar className="size-4" />
-                        <span>Member since {formatDate(user.createdAt)}</span>
+                        <span>Member since {formatMemberSince(user.createdAt)}</span>
                      </div>
 
                      {/* User Type Badge */}
@@ -360,7 +362,9 @@ export function PublicProfile({
                   <div className="p-2 rounded-full bg-white shadow-sm mb-3">
                      <Zap className="size-5 text-slate-700" />
                   </div>
-                  <div className="text-2xl font-semibold text-slate-900">{onTimeRate}%</div>
+                  <div className="text-2xl font-semibold text-slate-900">
+                     {onTimeRate != null && onTimeRate >= 0 ? `${onTimeRate}%` : "—"}
+                  </div>
                   <div className="text-xs font-medium text-slate-500 mt-1 uppercase tracking-wide">On-Time</div>
                </CardContent>
             </Card>
@@ -493,7 +497,7 @@ export function PublicProfile({
          <Card>
             <CardHeader>
                <CardTitle className="text-base">
-                  Reviews ({reviews.length || user.totalReviews || 0})
+                  Reviews ({actualStats.totalReviews ?? reviews.length ?? 0})
                </CardTitle>
             </CardHeader>
             <CardContent>
@@ -725,6 +729,15 @@ function formatDate(date?: Date | string): string {
       month: "short",
       day: "numeric",
    });
+}
+
+/** Avoid showing future "Member since" dates (e.g. bad backend/seed data). */
+function formatMemberSince(date?: Date | string): string {
+   if (!date) return "—";
+   const d = new Date(date);
+   const now = new Date();
+   if (d.getTime() > now.getTime()) return "Recently";
+   return formatDate(date);
 }
 
 export default PublicProfile;

@@ -29,6 +29,7 @@ import {
 
 import { api } from "@/lib/api";
 import { getErrorMessage, isNetworkError } from "@/lib/utils/errorUtils";
+import { getTaskPostingVerificationStatus } from "@/lib/utils/verificationGate";
 import { useAuth } from "@/lib/auth/context";
 import {
    Dialog,
@@ -245,8 +246,10 @@ export function TaskCreationFlow() {
    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
    const [retryCount, setRetryCount] = useState(0);
    const [showAuthModal, setShowAuthModal] = useState(false);
+   const [showVerificationModal, setShowVerificationModal] = useState(false);
    const { currentUser, userData } = useAuth();
    const isAuthenticated = Boolean(currentUser) || Boolean(userData);
+   const verificationStatus = getTaskPostingVerificationStatus(userData ?? null);
 
    const initialTitleFromQuery = searchParams.get("title") || "";
    const initialCategoryFromQuery = searchParams.get("category") || "";
@@ -424,6 +427,12 @@ export function TaskCreationFlow() {
             return;
          }
 
+         // Background check: Aadhaar, PAN, and bank must be verified to post a task
+         if (!verificationStatus.allowed) {
+            setShowVerificationModal(true);
+            return;
+         }
+
          // Prevent duplicate submissions
          if (isSubmitting) {
             return;
@@ -481,7 +490,7 @@ export function TaskCreationFlow() {
             setRetryCount(0);
          }
       },
-      [isSubmitting, isAuthenticated, createTaskWithRetry, router, form]
+      [isSubmitting, isAuthenticated, verificationStatus.allowed, createTaskWithRetry, router, form]
    );
 
    // Save draft handler
@@ -622,6 +631,42 @@ export function TaskCreationFlow() {
                      onClick={handleAuthLogin}
                   >
                      Log in
+                  </Button>
+               </DialogFooter>
+            </DialogContent>
+         </Dialog>
+
+         {/* Verification required: Aadhaar, PAN, Bank */}
+         <Dialog open={showVerificationModal} onOpenChange={setShowVerificationModal}>
+            <DialogContent>
+               <DialogHeader>
+                  <DialogTitle>Verification required to post a task</DialogTitle>
+                  <DialogDescription>
+                     To post a task, your Aadhaar, PAN, and bank account must be
+                     verified. Please complete the following in your profile:
+                  </DialogDescription>
+               </DialogHeader>
+               <ul className="list-disc list-inside text-sm text-secondary-700 space-y-1">
+                  {verificationStatus.missing.map((item) => (
+                     <li key={item}>{item}</li>
+                  ))}
+               </ul>
+               <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+                  <Button
+                     variant="outline"
+                     className="w-full sm:w-auto"
+                     onClick={() => setShowVerificationModal(false)}
+                  >
+                     Close
+                  </Button>
+                  <Button
+                     className="w-full sm:w-auto"
+                     onClick={() => {
+                        setShowVerificationModal(false);
+                        router.push("/profile?section=verifications");
+                     }}
+                  >
+                     Complete verification
                   </Button>
                </DialogFooter>
             </DialogContent>
