@@ -1,7 +1,7 @@
 import React from "react";
 import { categoriesApi } from "@/lib/api/endpoints/categories";
-import CategoryDetailClient from "@/components/categories/CategoryDetailClient";
-import { SubcategoryDetail } from "@/types/category";
+import PosterCategoryPageClient from "@/components/poster/PosterCategoryPageClient";
+import { PosterCategoryDetail, SubcategoryDetail } from "@/types/category";
 import { CategoryNotFound } from "@/components/shared/CategoryNotFound";
 
 interface ServiceSubcategoryPageProps {
@@ -61,9 +61,12 @@ export default async function ServiceSubcategoryPage({
       );
    }
 
-   const normalizedData = normalizeIncomeOpportunitiesData(subcategoryData);
+   const normalizedData = normalizeIncomeOpportunitiesData(
+      subcategoryData
+   ) as PosterCategoryDetail;
 
-   return <CategoryDetailClient category={normalizedData} />;
+   // Subcategory services pages are also poster-facing: reuse poster layout
+   return <PosterCategoryPageClient category={normalizedData} />;
 }
 
 export async function generateMetadata({

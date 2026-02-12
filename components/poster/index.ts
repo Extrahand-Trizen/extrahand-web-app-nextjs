@@ -1,0 +1,12 @@
+export { default as PosterHeroSection } from "./PosterHeroSection";
+export { default as PosterBestRatedAndReviewsSection } from "./PosterBestRatedAndReviewsSection";
+export { default as PosterBestRatedExperts } from "./PosterBestRatedExperts";
+export { default as PosterRecentReviewsAndCost } from "./PosterRecentReviewsAndCost";
+export { default as PosterWhatIsExtrahandSection } from "./PosterWhatIsExtrahandSection";
+export { default as PosterWhyHireSection } from "./PosterWhyHireSection";
+export { default as PosterTopQuestionsSection } from "./PosterTopQuestionsSection";
+export { default as PosterThreeColumnSection } from "./PosterThreeColumnSection";
+export { default as PosterWhatServicesIncludeSection } from "./PosterWhatServicesIncludeSection";
+export { default as PosterRecentTasksSection } from "./PosterRecentTasksSection";
+export { default as PosterFooter } from "./PosterFooter";
+export { default as PosterCategoryPageClient } from "./PosterCategoryPageClient";

@@ -413,7 +413,9 @@ export const LandingHeader: React.FC = () => {
                                                          const rawLabel = task.label || "";
                                                          const taskLabel =
                                                             activeRole === "tasker"
-                                                               ? rawLabel.replace(/ Tasks$/i, "")
+                                                               ? rawLabel
+                                                                    .replace(/\s+Tasks$/i, "")
+                                                                    .replace(/\s+Services$/i, "")
                                                                : rawLabel;
                                                          const taskSlug =
                                                             task.slug || slugify(rawLabel);
@@ -424,7 +426,9 @@ export const LandingHeader: React.FC = () => {
                                                                href={
                                                                   activeRole ===
                                                                   "poster"
-                                                                     ? "/coming-soon"
+                                                                     ? `/services/${encodeURIComponent(
+                                                                          taskSlug
+                                                                       )}`
                                                                      : `/task/${encodeURIComponent(
                                                                           taskSlug
                                                                        )}`
@@ -449,7 +453,7 @@ export const LandingHeader: React.FC = () => {
                                           <Link
                                              href={
                                                 activeRole === "poster"
-                                                   ? "/coming-soon"
+                                                   ? "/services"
                                                    : "/task"
                                              }
                                              className="text-sm font-medium text-primary-600 hover:underline"
@@ -746,7 +750,9 @@ export const LandingHeader: React.FC = () => {
                               const rawLabel = task.label || "";
                               const taskLabel =
                                  mobileActiveRole === "tasker"
-                                    ? rawLabel.replace(/ Tasks$/i, "")
+                                    ? rawLabel
+                                         .replace(/\s+Tasks$/i, "")
+                                         .replace(/\s+Services$/i, "")
                                     : rawLabel;
                               const taskSlug = task.slug || slugify(rawLabel);
 
@@ -755,7 +761,9 @@ export const LandingHeader: React.FC = () => {
                                     key={taskSlug}
                                     href={
                                        mobileActiveRole === "poster"
-                                          ? "/coming-soon"
+                                          ? `/services/${encodeURIComponent(
+                                               taskSlug
+                                            )}`
                                           : `/task/${encodeURIComponent(
                                                taskSlug
                                             )}`
@@ -776,7 +784,7 @@ export const LandingHeader: React.FC = () => {
                         <Link
                            href={
                               mobileActiveRole === "poster"
-                                 ? "/coming-soon"
+                                 ? "/services"
                                  : "/task"
                            }
                            className="block w-full text-center py-3 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg border border-primary-200"

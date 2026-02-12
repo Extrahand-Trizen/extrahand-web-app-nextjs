@@ -15,6 +15,7 @@ interface HeroSectionProps {
    breadcrumbHome?: string;
    breadcrumbCategory?: string;
    breadcrumbCategoryLink?: string;
+   showBreadcrumbs?: boolean;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
@@ -26,6 +27,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
    breadcrumbHome = "Home",
    breadcrumbCategory = "Categories",
    breadcrumbCategoryLink = "/categories",
+   showBreadcrumbs = true,
 }) => {
    return (
       <section className="relative w-full bg-slate-900">
@@ -49,12 +51,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   />
                )
             ) : (
-               <Image
-                  src="/assets/images/default.png"
-                  alt="Default"
-                  className="h-full w-full"
-                  fill
-               />
+               <div className="h-full w-full bg-slate-900" />
             )}
             {/* Dark overlay - solid, no gradient */}
             <div className="absolute inset-0 bg-slate-900/70" />
@@ -64,36 +61,40 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="pt-8 pb-16 md:pt-12 md:pb-24 lg:pt-16 lg:pb-32">
                {/* Breadcrumb */}
-               <nav className="mb-6 md:mb-8">
-                  <ol className="flex items-center gap-2 text-sm text-white/70">
-                     <li>
-                        <Link
-                           href="/"
-                           className="hover:text-white transition-colors"
-                        >
-                           {breadcrumbHome}
-                        </Link>
-                     </li>
-                     <ChevronRight className="w-4 h-4" />
-                     <li>
-                        <Link
-                           href={breadcrumbCategoryLink}
-                           className="hover:text-white transition-colors"
-                        >
-                           {breadcrumbCategory}
-                        </Link>
-                     </li>
-                     <ChevronRight className="w-4 h-4" />
-                     <li className="text-white font-medium">{categoryName}</li>
-                  </ol>
-               </nav>
+               {showBreadcrumbs && (
+                  <nav className="mb-6 md:mb-8">
+                     <ol className="flex items-center gap-2 text-sm text-white/70">
+                        <li>
+                           <Link
+                              href="/"
+                              className="hover:text-white transition-colors"
+                           >
+                              {breadcrumbHome}
+                           </Link>
+                        </li>
+                        <ChevronRight className="w-4 h-4" />
+                        <li>
+                           <Link
+                              href={breadcrumbCategoryLink}
+                              className="hover:text-white transition-colors"
+                           >
+                              {breadcrumbCategory}
+                           </Link>
+                        </li>
+                        <ChevronRight className="w-4 h-4" />
+                        <li className="text-white font-medium">
+                           {categoryName}
+                        </li>
+                     </ol>
+                  </nav>
+               )}
 
                {/* Main Content Grid */}
                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-start">
                   {/* Left Content */}
                   <div className="space-y-6">
                      <h1 
-                        className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white tracking-tight break-words whitespace-normal block"
+                        className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white tracking-tight wrap-break-word whitespace-normal block"
                         style={{ 
                            lineHeight: '2',
                            display: 'block',

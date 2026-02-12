@@ -213,3 +213,82 @@ export interface CategoryDetail extends Category {
 }
 
 export type SubcategoryDetail = CategoryDetail;
+
+/** Poster (Services) category – "As A Poster" page data from content-admin */
+export interface PosterTopTasker {
+   name: string;
+   location?: string;
+   rating?: string;
+   reviewsCount?: string;
+   tasksCount?: string;
+   priceLabel?: string;
+   latestReviewText?: string;
+   isVerified?: boolean;
+   isTopRated?: boolean;
+   profileImage?: string;
+}
+
+export interface PosterReview {
+   reviewerName: string;
+   reviewerLocation?: string;
+   price?: string;
+   text: string;
+   jobType?: string;
+}
+
+export interface PosterWhyBookFeature {
+   title: string;
+   description?: string;
+}
+
+export interface PosterWhatTheyDoSection {
+   heading: string;
+   body: string;
+}
+
+export interface PosterStaticTask {
+   title: string;
+   price?: string;
+   location?: string;
+   date?: string;
+   description?: string;
+   profileImage?: string;
+   rating?: string;
+}
+
+/** Category with optional poster-specific fields (from content-admin API) */
+export interface PosterCategoryFields {
+   categoryType?: string;
+   reviewsCount?: string;
+   topTaskers?: PosterTopTasker[];
+   reviews?: PosterReview[];
+   whyBookTitle?: string;
+   whyBookDescription?: string;
+   whyBookFeatures?: PosterWhyBookFeature[];
+   questionsTitle?: string;
+   questions?: Question[];
+   categoryServicesList?: string[];
+   relatedServicesNearMe?: string[];
+   topLocationsList?: string[];
+   relatedLocations?: string[];
+   whatTheyDoTitle?: string;
+   whatTheyDoSections?: PosterWhatTheyDoSection[];
+   staticTasks?: PosterStaticTask[];
+   staticTasksSectionDescription?: string;
+   posterCostTitle?: string;
+   posterCostLow?: string;
+   posterCostMedian?: string;
+   posterCostHigh?: string;
+   posterCostTasksCount?: string;
+   posterAvgRating?: string;
+   posterAvgReviewsCount?: string;
+   posterRatingBreakdown?: {
+      fiveStar?: number;
+      fourStar?: number;
+      threeStar?: number;
+      twoStar?: number;
+      oneStar?: number;
+   };
+}
+
+export type PosterCategoryDetail = CategoryDetail & PosterCategoryFields;

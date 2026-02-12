@@ -10,6 +10,24 @@ interface CategoriesClientProps {
    viewType?: "jobs" | "services" | "task";
 }
 
+// Tasker-facing label cleanup
+const cleanTaskerCategoryName = (name: string): string =>
+   name
+      .trim()
+      // remove trailing "Tasks", "Task", "Services", "Service" (with optional space before/after)
+      .replace(/\s+(Tasks?|Services?)\s*$/i, "");
+
+// Poster-facing label: plain category name without trailing suffixes
+const cleanPosterCategoryName = (name: string): string => {
+   const base = name
+      .trim()
+      // strip any trailing "Tasks"/"Task"
+      .replace(/\s+Tasks?\s*$/i, "")
+      // strip any existing trailing "Services"/"Service"
+      .replace(/\s+Services?\s*$/i, "");
+   return base;
+};
+
 const CategoriesClient: React.FC<CategoriesClientProps> = ({
    categories = [],
    viewType = "jobs",
@@ -40,13 +58,16 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                // Sidebar display label
                let displayName: string;
                if (viewType === "jobs") {
-                  // Tasker view: show clean category name without "Tasks" suffix
-                  displayName = category.name.replace(/ Tasks$/i, "");
+                  // Tasker view: remove trailing "Tasks/Task/Services/Service"
+                  displayName = cleanTaskerCategoryName(category.name);
+               } else if (viewType === "services") {
+                  // Poster view: normalize to a single "Services" suffix
+                  displayName = cleanPosterCategoryName(category.name);
                } else {
-                  const suffix = viewType === "services" ? "Services" : "Task";
+                  // Generic task view
                   displayName = category.name.toLowerCase().endsWith("tasks")
-                     ? category.name.replace(/ Tasks$/i, ` ${suffix}`)
-                     : `${category.name} ${suffix}`;
+                     ? category.name
+                     : `${category.name} Task`;
                }
 
                return (
@@ -88,7 +109,9 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
             {categories.map((category) => {
                const categoryDisplayName =
                   viewType === "jobs"
-                     ? category.name.replace(/ Tasks$/i, "")
+                     ? cleanTaskerCategoryName(category.name)
+                     : viewType === "services"
+                     ? cleanPosterCategoryName(category.name)
                      : category.name.toLowerCase().endsWith("tasks")
                      ? category.name
                      : `${category.name} Task`;
@@ -113,9 +136,9 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                         {categoryDisplayName}
                      </Link>
 
-                     {/* Category Hero Image */}
-                     {category.heroImage ? (
-                        category.heroImage.startsWith("data:") ||
+                     {/* Category Hero Image (only if provided) */}
+                     {category.heroImage &&
+                        (category.heroImage.startsWith("data:") ||
                         category.heroImage.startsWith("http") ? (
                            <img
                               src={category.heroImage}
@@ -135,16 +158,7 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                               width={760}
                               height={400}
                            />
-                        )
-                     ) : (
-                        <Image
-                           className="w-full rounded-[14px] object-cover font-extrabold mb-8 sm:mb-10 mt-3 sm:mt-4 border border-[#e5e7eb]"
-                           src="/assets/images/default.png"
-                           alt={categoryDisplayName}
-                           width={760}
-                           height={400}
-                        />
-                     )}
+                        ))}
 
                      {/* Subcategories List - Below Image */}
                      {category.subcategories &&
@@ -152,26 +166,27 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                            <div className="flex flex-col gap-x-12 sm:gap-x-14 md:gap-x-16 gap-y-3 sm:gap-y-4">
                               {category.subcategories.map((subcategory) => {
                                  let subcategorySlug = subcategory.slug || "";
-                                 if (
-                                    subcategorySlug.startsWith(
-                                       `${category.slug}/`
-                                    )
-                                 ) {
-                                    subcategorySlug = subcategorySlug.replace(
-                                       `${category.slug}/`,
-                                       ""
+
+                                 // If API returns slugs like "category/subcategory",
+                                 // strip the duplicated category prefix once so
+                                 // URLs don't contain "category/category/subcategory".
+                                 const prefix = `${category.slug}/`;
+                                 if (subcategorySlug.startsWith(prefix)) {
+                                    subcategorySlug = subcategorySlug.slice(
+                                       prefix.length
                                     );
                                  }
-                                 const baseUrl =
-                                    viewType === "jobs"
-                                       ? "/task"
-                                       : viewType === "services"
-                                       ? "/services"
-                                       : "/categories";
+
                                  return (
                                     <Link
                                        key={subcategory._id || subcategory.slug}
-                                       href={`${baseUrl}/${category.slug}/${subcategorySlug}`}
+                                       href={
+                                          viewType === "jobs"
+                                             ? `/task/${category.slug}/${subcategorySlug}`
+                                             : viewType === "services"
+                                             ? `/services/${category.slug}/${subcategorySlug}`
+                                             : `/categories/${category.slug}/${subcategorySlug}`
+                                       }
                                        className="text-yellow-500 hover:text-yellow-600 hover:underline transition-colors duration-200 text-sm sm:text-base font-bold"
                                     >
                                        {subcategory.name}

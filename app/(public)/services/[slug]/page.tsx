@@ -1,7 +1,7 @@
 import React from "react";
 import { categoriesApi } from "@/lib/api/endpoints/categories";
-import CategoryDetailClient from "@/components/categories/CategoryDetailClient";
-import { CategoryDetail } from "@/types/category";
+import PosterCategoryPageClient from "@/components/poster/PosterCategoryPageClient";
+import { CategoryDetail, PosterCategoryDetail } from "@/types/category";
 import { CategoryNotFound } from "@/components/shared/CategoryNotFound";
 
 interface ServicePageProps {
@@ -48,15 +48,10 @@ export default async function ServicePage({ params }: ServicePageProps) {
       );
    }
 
-   const normalizedData = normalizeIncomeOpportunitiesData(categoryData);
+   const normalizedData = normalizeIncomeOpportunitiesData(categoryData) as PosterCategoryDetail;
 
-   return (
-      <CategoryDetailClient
-         category={normalizedData}
-         breadcrumbCategory="Services"
-         breadcrumbCategoryLink="/services"
-      />
-   );
+   // Services pages are poster-facing by design: always use the poster category layout
+   return <PosterCategoryPageClient category={normalizedData} />;
 }
 
 export async function generateMetadata({ params }: ServicePageProps) {
