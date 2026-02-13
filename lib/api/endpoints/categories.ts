@@ -67,8 +67,8 @@ export const categoriesApi = {
 
       if (!categories) return [];
 
-      // Return all categories (no filtering by isPublished)
-      return categories;
+      // Only return categories that are published (treat missing flag as published)
+      return categories.filter((cat) => cat.isPublished !== false);
    },
 
    /**

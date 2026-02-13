@@ -40,7 +40,6 @@ import { useAuth } from "@/lib/auth/context";
 import { UserMenu } from "./UserMenu";
 import { NotificationCenter } from "@/components/home";
 import { mockDashboardData } from "@/lib/data/mockDashboard";
-import { posterTaskTypes, taskerTaskTypes } from "@/lib/constants";
 import {
    categoriesApi,
    CategoriesListItem,
@@ -154,13 +153,9 @@ export const LandingHeader: React.FC = () => {
       ).filter((col) => col.length > 0);
    }, []);
 
-   const posterColumns = useMemo(
-      () => posterTaskTypes.map((col) => col.map((label) => ({ label }))),
-      []
-   );
-   const taskerColumns = useMemo(() => {
+   const apiColumns = useMemo(() => {
       if (!taskerCategories.length) {
-         return taskerTaskTypes.map((col) => col.map((label) => ({ label })));
+         return [] as { label: string; slug?: string }[][];
       }
 
       const items = taskerCategories.map((category) => ({
@@ -172,12 +167,12 @@ export const LandingHeader: React.FC = () => {
    }, [taskerCategories, toColumns]);
 
    const desktopCategories = useMemo(
-      () => (activeRole === "poster" ? posterColumns : taskerColumns),
-      [activeRole, posterColumns, taskerColumns]
+      () => apiColumns,
+      [apiColumns]
    );
    const mobileCategories = useMemo(
-      () => (mobileActiveRole === "poster" ? posterColumns : taskerColumns),
-      [mobileActiveRole, posterColumns, taskerColumns]
+      () => apiColumns,
+      [apiColumns]
    );
 
    // Show "How it works" only on the main landing page (/)

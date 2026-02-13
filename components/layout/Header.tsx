@@ -118,14 +118,12 @@ export const Header: React.FC = () => {
       const fetchCategories = async () => {
          try {
             const categoriesData = await categoriesApi.getCategories();
-            if (categoriesData && categoriesData.length > 0) {
-               // Extract category names from the API response
-               const categoryNames = categoriesData.map((cat) => cat.name);
-               setCategories(categoryNames);
-            }
+            const categoryNames = (categoriesData || []).map((cat) => cat.name);
+            setCategories(categoryNames);
          } catch (error) {
-            console.error('Error fetching categories:', error);
-            // Keep fallback categories on error
+            console.error("Error fetching categories:", error);
+            // Keep fallback categories on error only
+            setCategories(fallbackCategories);
          } finally {
             setCategoriesLoading(false);
          }
