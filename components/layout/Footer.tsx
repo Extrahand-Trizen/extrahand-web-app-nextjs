@@ -18,13 +18,15 @@ const footerColumns = [
     title: 'Company',
     links: [
       { label: 'About Us', href: '/coming-soon?type=info&label=About%20Us' },
-      { label: 'Careers', href: '/coming-soon?type=info&label=Careers' },
+      { label: 'Careers', href: '/careers' },
       { label: 'Media Enquiries', href: '/coming-soon?type=info&label=Media%20Enquiries' },
       { label: 'Community Guidelines', href: '/coming-soon?type=info&label=Community%20Guidelines' },
       { label: 'Tasker Principles', href: '/coming-soon?type=info&label=Tasker%20Principles' },
       { label: 'Terms & Conditions', href: '/terms-and-conditions' },
       { label: 'Privacy Policy', href: '/privacy-policy' },
-      { label: 'Contact Us', href: '/coming-soon?type=info&label=Contact%20Us' },
+      { label: 'Refund Policy', href: '/refund-policy' },
+      { label: 'Tasker Agreement', href: '/provider-agreement' },
+      { label: 'Contact Us', href: '/contact' },
     ],
   },
   {

@@ -407,10 +407,12 @@ export function TaskOffersSection({
                         )}
                         {otherApplications.map((application) => {
                      const user = application.applicantProfile || { 
-                        name: "Unknown User", 
+                        name: application.applicantId
+                           ? `User ${application.applicantId.slice(-4)}`
+                           : "Unknown User", 
                         rating: 0, 
                         totalReviews: 0,
-                        verified: false 
+                        photoURL: null,
                      };
 
                      return (
@@ -422,8 +424,16 @@ export function TaskOffersSection({
                               {/* Header: Avatar + Name + Time */}
                               <div className="flex items-center justify-between gap-3">
                                  <div className="flex gap-3">
-                                    <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-full bg-primary-500 flex items-center justify-center text-white text-lg md:text-xl font-bold shrink-0 shadow-md">
-                                       {user.name.charAt(0)}
+                                    <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-full bg-primary-500 flex items-center justify-center text-white text-lg md:text-xl font-bold shrink-0 shadow-md overflow-hidden">
+                                       {user.photoURL ? (
+                                          <img
+                                             src={user.photoURL}
+                                             alt={user.name}
+                                             className="w-full h-full object-cover"
+                                          />
+                                       ) : (
+                                          <span>{user.name.charAt(0)}</span>
+                                       )}
                                     </div>
 
                                     <div className="min-w-0">

@@ -38,13 +38,15 @@ const footerLinks = {
     title: "Company",
     links: [
       { label: "About Us", href: "/coming-soon?type=info&label=About%20Us" },
-      { label: "Careers", href: "/coming-soon?type=info&label=Careers" },
+      { label: "Careers", href: "/careers" },
       { label: "Press", href: "/coming-soon?type=info&label=Press" },
-      { label: "Contact", href: "/coming-soon?type=info&label=Contact" },
+      { label: "Contact", href: "/contact" },
       { label: "Help Center", href: "/coming-soon?type=info&label=Help%20Center" },
       { label: "FAQs", href: "/coming-soon?type=info&label=FAQs" },
       { label: "Privacy Policy", href: "/privacy-policy" },
       { label: "Terms and Conditions", href: "/terms-and-conditions" },
+      { label: "Refund Policy", href: "/refund-policy" },
+      { label: "Tasker Agreement", href: "/provider-agreement" },
       { label: "Community Guidelines", href: "/coming-soon?type=info&label=Community%20Guidelines" },
       { label: "Report an Issue", href: "/coming-soon?type=info&label=Report%20an%20Issue" },
     ],
@@ -262,7 +264,7 @@ export const LandingFooter: React.FC = () => {
                 Terms and Conditions
               </Link>
               <Link
-                href="/coming-soon?type=info&label=Cookie%20Policy" 
+                href="/cookie-policy" 
                 className="text-secondary-400 hover:text-white transition-colors"
               >
                 Cookie Policy
