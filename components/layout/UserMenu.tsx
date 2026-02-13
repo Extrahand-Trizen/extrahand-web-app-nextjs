@@ -62,7 +62,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
             <UserRound className="h-5 w-5" />
          </button>
          {open && (
-            <div className="absolute right-0 mt-3 w-64 rounded-2xl border border-secondary-100 bg-white p-3 shadow-xl">
+            <div className="absolute right-0 mt-3 w-64 rounded-2xl border border-secondary-100 bg-white p-3 shadow-xl z-50">
                <div className="mb-2 flex items-center gap-3 rounded-xl bg-secondary-50 px-3 py-2.5">
                   <span className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary-900 text-sm font-semibold text-white">
                      {initials}
