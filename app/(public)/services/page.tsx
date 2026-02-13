@@ -11,8 +11,10 @@ export default async function ServicesPage() {
    let categories: Category[] = [];
 
    try {
-      // Fetch all published categories from content-admin backend
-      const allCategories = await categoriesApi.getCategories();
+      // Fetch all categories so the list shows names even when unpublished
+      const allCategories = await categoriesApi.getCategories({
+         includeUnpublished: true,
+      });
 
       // Fetch subcategories for each category
       categories = await Promise.all(

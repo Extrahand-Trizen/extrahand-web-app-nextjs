@@ -22,85 +22,87 @@ const menuItems = [
    { label: "Become a Tasker", type: "button", route: "/earn-money" },
 ];
 
+type HeaderCategory = { name: string; isPublished?: boolean };
+
 // Fallback categories if API fails
-const fallbackCategories = [
-   "Accountants",
-   "Admin",
-   "Alterations",
-   "Appliances",
-   "Assembly",
-   "Auto Electricians",
-   "Bakers",
-   "Barbers",
-   "Beauticians",
-   "Bicycle Service",
-   "Bricklaying",
-   "Building & Construction",
-   "Business",
-   "Car Body Work",
-   "Car Detailing",
-   "Car Repair",
-   "Car Service",
-   "Carpentry",
-   "Cat Care",
-   "Catering",
-   "Chef",
-   "Cladding",
-   "Cleaning",
-   "Computers & IT",
-   "Concreting",
-   "Decking",
-   "Delivery",
-   "Design",
-   "Dog Care",
-   "Draftsman",
-   "Driving",
-   "Electricians",
-   "Entertainment",
-   "Events",
-   "Fencing",
-   "Flooring",
-   "Florist",
-   "Furniture Assembly",
-   "Gardening",
-   "Gate Installation",
-   "Hairdressers",
-   "Handyman",
-   "Heating & Cooling",
-   "Home",
-   "Automation And Security",
-   "Home Theatre",
-   "Interior Designer",
-   "Landscaping",
-   "Laundry",
-   "Lawn Care",
-   "Lessons",
-   "Locksmith",
-   "Makeup Artist",
-   "Marketing",
-   "Mobile Mechanic",
-   "Painting",
-   "Paving",
-   "Pet Care",
-   "Photographers",
-   "Plasterer",
-   "Plumbing",
-   "Pool Maintenance",
-   "Removals",
-   "Roofing",
-   "Sharpening",
-   "Staffing",
-   "Tailors",
-   "Tattoo Artists",
-   "Tiling",
-   "Tradesman",
-   "Tutoring",
-   "Wall Hanging & Mounting",
-   "Wallpapering",
-   "Waterproofing",
-   "Web",
-   "Wheel & Tyre Service",
-   "Writing",
+const fallbackCategories: HeaderCategory[] = [
+   { name: "Accountants", isPublished: true },
+   { name: "Admin", isPublished: true },
+   { name: "Alterations", isPublished: true },
+   { name: "Appliances", isPublished: true },
+   { name: "Assembly", isPublished: true },
+   { name: "Auto Electricians", isPublished: true },
+   { name: "Bakers", isPublished: true },
+   { name: "Barbers", isPublished: true },
+   { name: "Beauticians", isPublished: true },
+   { name: "Bicycle Service", isPublished: true },
+   { name: "Bricklaying", isPublished: true },
+   { name: "Building & Construction", isPublished: true },
+   { name: "Business", isPublished: true },
+   { name: "Car Body Work", isPublished: true },
+   { name: "Car Detailing", isPublished: true },
+   { name: "Car Repair", isPublished: true },
+   { name: "Car Service", isPublished: true },
+   { name: "Carpentry", isPublished: true },
+   { name: "Cat Care", isPublished: true },
+   { name: "Catering", isPublished: true },
+   { name: "Chef", isPublished: true },
+   { name: "Cladding", isPublished: true },
+   { name: "Cleaning", isPublished: true },
+   { name: "Computers & IT", isPublished: true },
+   { name: "Concreting", isPublished: true },
+   { name: "Decking", isPublished: true },
+   { name: "Delivery", isPublished: true },
+   { name: "Design", isPublished: true },
+   { name: "Dog Care", isPublished: true },
+   { name: "Draftsman", isPublished: true },
+   { name: "Driving", isPublished: true },
+   { name: "Electricians", isPublished: true },
+   { name: "Entertainment", isPublished: true },
+   { name: "Events", isPublished: true },
+   { name: "Fencing", isPublished: true },
+   { name: "Flooring", isPublished: true },
+   { name: "Florist", isPublished: true },
+   { name: "Furniture Assembly", isPublished: true },
+   { name: "Gardening", isPublished: true },
+   { name: "Gate Installation", isPublished: true },
+   { name: "Hairdressers", isPublished: true },
+   { name: "Handyman", isPublished: true },
+   { name: "Heating & Cooling", isPublished: true },
+   { name: "Home", isPublished: true },
+   { name: "Automation And Security", isPublished: true },
+   { name: "Home Theatre", isPublished: true },
+   { name: "Interior Designer", isPublished: true },
+   { name: "Landscaping", isPublished: true },
+   { name: "Laundry", isPublished: true },
+   { name: "Lawn Care", isPublished: true },
+   { name: "Lessons", isPublished: true },
+   { name: "Locksmith", isPublished: true },
+   { name: "Makeup Artist", isPublished: true },
+   { name: "Marketing", isPublished: true },
+   { name: "Mobile Mechanic", isPublished: true },
+   { name: "Painting", isPublished: true },
+   { name: "Paving", isPublished: true },
+   { name: "Pet Care", isPublished: true },
+   { name: "Photographers", isPublished: true },
+   { name: "Plasterer", isPublished: true },
+   { name: "Plumbing", isPublished: true },
+   { name: "Pool Maintenance", isPublished: true },
+   { name: "Removals", isPublished: true },
+   { name: "Roofing", isPublished: true },
+   { name: "Sharpening", isPublished: true },
+   { name: "Staffing", isPublished: true },
+   { name: "Tailors", isPublished: true },
+   { name: "Tattoo Artists", isPublished: true },
+   { name: "Tiling", isPublished: true },
+   { name: "Tradesman", isPublished: true },
+   { name: "Tutoring", isPublished: true },
+   { name: "Wall Hanging & Mounting", isPublished: true },
+   { name: "Wallpapering", isPublished: true },
+   { name: "Waterproofing", isPublished: true },
+   { name: "Web", isPublished: true },
+   { name: "Wheel & Tyre Service", isPublished: true },
+   { name: "Writing", isPublished: true },
 ];
 
 export const Header: React.FC = () => {
@@ -108,7 +110,9 @@ export const Header: React.FC = () => {
    const [activeItem, setActiveItem] = useState<string | null>(null);
    const [showCategories, setShowCategories] = useState(false);
    const [showMobileMenu, setShowMobileMenu] = useState(false);
-   const [categories, setCategories] = useState<string[]>(fallbackCategories);
+   const [categories, setCategories] = useState<HeaderCategory[]>(
+      fallbackCategories
+   );
    const [categoriesLoading, setCategoriesLoading] = useState(true);
    const dropdownRef = useRef<HTMLDivElement>(null);
    const mobileMenuRef = useRef<HTMLDivElement>(null);
@@ -117,9 +121,14 @@ export const Header: React.FC = () => {
    useEffect(() => {
       const fetchCategories = async () => {
          try {
-            const categoriesData = await categoriesApi.getCategories();
-            const categoryNames = (categoriesData || []).map((cat) => cat.name);
-            setCategories(categoryNames);
+            const categoriesData = await categoriesApi.getCategories({
+               includeUnpublished: true,
+            });
+            const categoryItems = (categoriesData || []).map((cat) => ({
+               name: cat.name,
+               isPublished: cat.isPublished,
+            }));
+            setCategories(categoryItems);
          } catch (error) {
             console.error("Error fetching categories:", error);
             // Keep fallback categories on error only
@@ -285,20 +294,33 @@ export const Header: React.FC = () => {
                                              (categories.length / 4) * (colIdx + 1)
                                           )
                                        )
-                                       .map((cat) => (
-                                          <li key={cat}>
-                                             <a
-                                                href="#"
-                                                onClick={(e) => {
-                                                   e.preventDefault();
-                                                   handleCategoryClick(cat);
-                                                }}
-                                                className="block text-secondary-700 no-underline px-2 py-1 text-sm rounded font-sans transition-colors duration-200 hover:bg-neutral-gray-100 cursor-pointer"
-                                             >
-                                                {cat}
-                                             </a>
-                                          </li>
-                                       ))}
+                                       .map((cat) => {
+                                          const isDisabled =
+                                             cat.isPublished === false;
+
+                                          return (
+                                             <li key={cat.name}>
+                                                {isDisabled ? (
+                                                   <span className="block text-secondary-400 px-2 py-1 text-sm rounded font-sans cursor-not-allowed">
+                                                      {cat.name}
+                                                   </span>
+                                                ) : (
+                                                   <a
+                                                      href="#"
+                                                      onClick={(e) => {
+                                                         e.preventDefault();
+                                                         handleCategoryClick(
+                                                            cat.name
+                                                         );
+                                                      }}
+                                                      className="block text-secondary-700 no-underline px-2 py-1 text-sm rounded font-sans transition-colors duration-200 hover:bg-neutral-gray-100 cursor-pointer"
+                                                   >
+                                                      {cat.name}
+                                                   </a>
+                                                )}
+                                             </li>
+                                          );
+                                       })}
                                  </ul>
                               ))
                            )}

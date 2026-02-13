@@ -126,13 +126,12 @@ export const LandingHeader: React.FC = () => {
       let isMounted = true;
 
       const loadTaskerCategories = async () => {
-         const categories = await categoriesApi.getCategories();
+         const categories = await categoriesApi.getCategories({
+            includeUnpublished: true,
+         });
          if (!isMounted) return;
 
-         const published = categories.filter(
-            (category) => category.isPublished !== false
-         );
-         const sorted = [...published].sort((a, b) =>
+         const sorted = [...categories].sort((a, b) =>
             a.name.localeCompare(b.name)
          );
          setTaskerCategories(sorted);
@@ -155,12 +154,13 @@ export const LandingHeader: React.FC = () => {
 
    const apiColumns = useMemo(() => {
       if (!taskerCategories.length) {
-         return [] as { label: string; slug?: string }[][];
+         return [] as { label: string; slug?: string; isPublished?: boolean }[][];
       }
 
       const items = taskerCategories.map((category) => ({
          label: category.name,
          slug: category.slug,
+         isPublished: category.isPublished,
       }));
 
       return toColumns(items, 4);
@@ -414,7 +414,6 @@ export const LandingHeader: React.FC = () => {
                                                                : rawLabel;
                                                          const taskSlug =
                                                             task.slug || slugify(rawLabel);
-
                                                          return (
                                                             <Link
                                                                key={taskSlug}
@@ -428,7 +427,12 @@ export const LandingHeader: React.FC = () => {
                                                                           taskSlug
                                                                        )}`
                                                                }
-                                                               className="block py-1 text-secondary-600 hover:text-secondary-900 hover:underline"
+                                                               className={cn(
+                                                                  "block py-1 hover:underline",
+                                                                  task.isPublished === false
+                                                                     ? "text-secondary-400"
+                                                                     : "text-secondary-600 hover:text-secondary-900"
+                                                               )}
                                                                onClick={() =>
                                                                   setIsCategoriesOpen(
                                                                      false
@@ -750,7 +754,6 @@ export const LandingHeader: React.FC = () => {
                                          .replace(/\s+Services$/i, "")
                                     : rawLabel;
                               const taskSlug = task.slug || slugify(rawLabel);
-
                               return (
                                  <Link
                                     key={taskSlug}
@@ -763,7 +766,12 @@ export const LandingHeader: React.FC = () => {
                                                taskSlug
                                             )}`
                                     }
-                                    className="block py-2 px-3 text-sm text-secondary-600 hover:bg-secondary-50 hover:text-secondary-900 rounded-lg"
+                                    className={cn(
+                                       "block py-2 px-3 text-sm rounded-lg",
+                                       task.isPublished === false
+                                          ? "text-secondary-400"
+                                          : "text-secondary-600 hover:bg-secondary-50 hover:text-secondary-900"
+                                    )}
                                     onClick={() => {
                                        setIsMobileCategoriesOpen(false);
                                        setIsMobileMenuOpen(false);

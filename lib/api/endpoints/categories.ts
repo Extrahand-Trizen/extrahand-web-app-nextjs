@@ -16,32 +16,52 @@ async function fetchContentAdmin<T>(
    path: string,
    options: RequestInit = {}
 ): Promise<T | null> {
-   const url = `${CONTENT_ADMIN_URL}${path}`;
+   const isClient = typeof window !== "undefined";
+   const baseUrls = isClient
+      ? ["/api/content-admin", CONTENT_ADMIN_URL]
+      : [CONTENT_ADMIN_URL];
 
-   try {
-      console.log(`📦 Fetching from content-admin: ${url}`);
+   for (const baseUrl of baseUrls) {
+      const url = `${baseUrl}${path}`;
 
-      const res = await fetch(url, {
-         ...options,
-         headers: {
-            "Content-Type": "application/json",
-            ...options.headers,
-         },
-         cache: "no-store", // Always get fresh data for SSR
-      });
+      try {
+         console.log(`📦 Fetching from content-admin: ${url}`);
 
-      if (!res.ok) {
-         console.error(`❌ Content-admin API error: ${res.status} ${res.statusText}`);
+         const res = await fetch(url, {
+            ...options,
+            headers: {
+               "Content-Type": "application/json",
+               ...options.headers,
+            },
+            cache: "no-store", // Always get fresh data for SSR
+         });
+
+         if (!res.ok) {
+            if (res.status === 404 && baseUrl === "/api/content-admin") {
+               continue;
+            }
+            if (res.status === 404) {
+               return null;
+            }
+            console.error(
+               `❌ Content-admin API error: ${res.status} ${res.statusText}`
+            );
+            return null;
+         }
+
+         const data = await res.json();
+         console.log(`✅ Content-admin API success: ${path}`);
+         return data as T;
+      } catch (error) {
+         if (baseUrl === "/api/content-admin") {
+            continue;
+         }
+         console.error(`❌ Content-admin fetch error for ${path}:`, error);
          return null;
       }
-
-      const data = await res.json();
-      console.log(`✅ Content-admin API success: ${path}`);
-      return data as T;
-   } catch (error) {
-      console.error(`❌ Content-admin fetch error for ${path}:`, error);
-      return null;
    }
+
+   return null;
 }
 
 export interface CategoriesListItem {
@@ -51,7 +71,7 @@ export interface CategoriesListItem {
    heroImage?: string;
    heroTitle: string;
    heroDescription: string;
-   isPublished: boolean;
+   isPublished?: boolean;
    subcategories?: Subcategory[];
 }
 
@@ -60,12 +80,17 @@ export const categoriesApi = {
     * Get all categories (no filter - returns all categories)
     * @returns Array of categories or empty array on error
     */
-   async getCategories(): Promise<CategoriesListItem[]> {
+   async getCategories(
+      options: { includeUnpublished?: boolean } = {}
+   ): Promise<CategoriesListItem[]> {
+      const query = options.includeUnpublished ? "?includeUnpublished=true" : "";
       const categories = await fetchContentAdmin<CategoriesListItem[]>(
-         "/api/task-categories"
+         `/api/task-categories${query}`
       );
 
       if (!categories) return [];
+
+      if (options.includeUnpublished) return categories;
 
       // Only return categories that are published (treat missing flag as published)
       return categories.filter((cat) => cat.isPublished !== false);
