@@ -20,7 +20,12 @@ import {
    PreferencesSection,
    PrivacySection,
 } from "@/components/profile";
-import { DEFAULT_NOTIFICATION_SETTINGS } from "@/types/consent";
+import {
+   DEFAULT_NOTIFICATION_SETTINGS,
+   FrequencySettings,
+   CommunicationChannel,
+   NotificationSettingsState,
+} from "@/types/consent";
 import {
    Sheet,
    SheetContent,
@@ -32,6 +37,7 @@ import { profilesApi } from "@/lib/api/endpoints/profiles";
 import { reviewsApi } from "@/lib/api/endpoints/reviews";
 import { toast } from "sonner";
 import { privacyApi } from "@/lib/api/endpoints/privacy";
+import { notificationPreferencesApi } from "@/lib/api/endpoints/notificationPreferences";
 
 const VALID_SECTIONS: ProfileSection[] = [
    "overview",
@@ -58,17 +64,34 @@ const SECTION_TITLES: Record<ProfileSection, string> = {
    privacy: "Privacy",
 };
 
+   const DEFAULT_FREQUENCY: FrequencySettings = {
+      dailyDigest: false,
+      quietHours: {
+         enabled: false,
+         start: "22:00",
+         end: "08:00",
+         timezone: "Asia/Kolkata",
+      },
+      maxPerDay: 0,
+   };
+
 function ProfilePageContent() {
    const router = useRouter();
    const searchParams = useSearchParams();
    const { userData, loading: authLoading, refreshUserData, logout } = useAuth();
-   
+
    const [user, setUser] = useState<UserProfile | null>(userData);
    const [reviews, setReviews] = useState<Review[]>([]);
    const [workHistory, setWorkHistory] = useState<WorkHistoryItem[]>([]);
    const [loadingProfile, setLoadingProfile] = useState(false);
    const [profileError, setProfileError] = useState<string | null>(null);
    const [loadingReviews, setLoadingReviews] = useState(false);
+   const [notificationSettings, setNotificationSettings] =
+      useState<NotificationSettingsState>(DEFAULT_NOTIFICATION_SETTINGS);
+   const [notificationFrequency, setNotificationFrequency] =
+      useState<FrequencySettings>(DEFAULT_FREQUENCY);
+   const [notificationChannel, setNotificationChannel] =
+      useState<CommunicationChannel>("push");
    const [isMobile, setIsMobile] = useState(false);
    const [section, setSection] = useState<ProfileSection>("overview");
    const [navOpen, setNavOpen] = useState(false);
@@ -77,7 +100,7 @@ function ProfilePageContent() {
    useEffect(() => {
       const fetchProfileData = async () => {
          if (!userData?.uid) return;
-         
+
          setLoadingProfile(true);
          setProfileError(null);
          try {
@@ -97,38 +120,118 @@ function ProfilePageContent() {
       }
    }, [userData, toast]);
 
+   const normalizeNotificationSettings = (prefs: any): NotificationSettingsState => ({
+      push: {
+         enabled: prefs?.push?.enabled ?? DEFAULT_NOTIFICATION_SETTINGS.push.enabled,
+         taskUpdates: prefs?.push?.taskUpdates ?? DEFAULT_NOTIFICATION_SETTINGS.push.taskUpdates,
+         payments: prefs?.push?.payments ?? DEFAULT_NOTIFICATION_SETTINGS.push.payments,
+         promotions: prefs?.push?.promotions ?? DEFAULT_NOTIFICATION_SETTINGS.push.promotions,
+         reminders: prefs?.push?.reminders ?? DEFAULT_NOTIFICATION_SETTINGS.push.reminders,
+         system: prefs?.push?.system ?? DEFAULT_NOTIFICATION_SETTINGS.push.system,
+         transactional: prefs?.push?.transactional ?? DEFAULT_NOTIFICATION_SETTINGS.push.transactional,
+         taskReminders: prefs?.push?.taskReminders ?? DEFAULT_NOTIFICATION_SETTINGS.push.taskReminders,
+         keywordTaskAlerts: prefs?.push?.keywordTaskAlerts ?? DEFAULT_NOTIFICATION_SETTINGS.push.keywordTaskAlerts,
+         recommendedTaskAlerts:
+            prefs?.push?.recommendedTaskAlerts ??
+            DEFAULT_NOTIFICATION_SETTINGS.push.recommendedTaskAlerts,
+      },
+      email: {
+         enabled: prefs?.email?.enabled ?? DEFAULT_NOTIFICATION_SETTINGS.email.enabled,
+         taskUpdates: prefs?.email?.taskUpdates ?? DEFAULT_NOTIFICATION_SETTINGS.email.taskUpdates,
+         payments: prefs?.email?.payments ?? DEFAULT_NOTIFICATION_SETTINGS.email.payments,
+         promotions: prefs?.email?.promotions ?? DEFAULT_NOTIFICATION_SETTINGS.email.promotions,
+         reminders: prefs?.email?.reminders ?? DEFAULT_NOTIFICATION_SETTINGS.email.reminders,
+         system: prefs?.email?.system ?? DEFAULT_NOTIFICATION_SETTINGS.email.system,
+         marketing: prefs?.email?.marketing ?? DEFAULT_NOTIFICATION_SETTINGS.email.marketing,
+         transactional: prefs?.email?.transactional ?? DEFAULT_NOTIFICATION_SETTINGS.email.transactional,
+         taskReminders: prefs?.email?.taskReminders ?? DEFAULT_NOTIFICATION_SETTINGS.email.taskReminders,
+         keywordTaskAlerts: prefs?.email?.keywordTaskAlerts ?? DEFAULT_NOTIFICATION_SETTINGS.email.keywordTaskAlerts,
+         recommendedTaskAlerts:
+            prefs?.email?.recommendedTaskAlerts ??
+            DEFAULT_NOTIFICATION_SETTINGS.email.recommendedTaskAlerts,
+      },
+      sms: {
+         enabled: prefs?.sms?.enabled ?? DEFAULT_NOTIFICATION_SETTINGS.sms.enabled,
+         taskUpdates: prefs?.sms?.taskUpdates ?? DEFAULT_NOTIFICATION_SETTINGS.sms.taskUpdates,
+         payments: prefs?.sms?.payments ?? DEFAULT_NOTIFICATION_SETTINGS.sms.payments,
+         reminders: prefs?.sms?.reminders ?? DEFAULT_NOTIFICATION_SETTINGS.sms.reminders,
+      },
+   });
+
+   const normalizeFrequencySettings = (prefs: any): FrequencySettings => ({
+      dailyDigest: prefs?.frequency?.dailyDigest ?? DEFAULT_FREQUENCY.dailyDigest,
+      quietHours: {
+         enabled: prefs?.frequency?.quietHours?.enabled ?? DEFAULT_FREQUENCY.quietHours.enabled,
+         start: prefs?.frequency?.quietHours?.start ?? DEFAULT_FREQUENCY.quietHours.start,
+         end: prefs?.frequency?.quietHours?.end ?? DEFAULT_FREQUENCY.quietHours.end,
+         timezone: prefs?.frequency?.quietHours?.timezone ?? DEFAULT_FREQUENCY.quietHours.timezone,
+      },
+      maxPerDay: prefs?.frequency?.maxPerDay ?? DEFAULT_FREQUENCY.maxPerDay,
+   });
+
+   useEffect(() => {
+      const fetchNotificationPreferences = async () => {
+         if (!userData?.uid) return;
+
+         try {
+            const response = await notificationPreferencesApi.getPreferences();
+            const prefs = response?.data ?? response?.preferences ?? response;
+            if (!prefs) return;
+
+            setNotificationSettings(normalizeNotificationSettings(prefs));
+            setNotificationFrequency(normalizeFrequencySettings(prefs));
+            setNotificationChannel(
+               (prefs?.preferredChannel as CommunicationChannel) || "push"
+            );
+         } catch (error: any) {
+            console.error("Failed to fetch notification preferences:", error);
+         }
+      };
+
+      if (userData?.uid) {
+         fetchNotificationPreferences();
+      }
+   }, [userData?.uid]);
+
    // Fetch reviews
    useEffect(() => {
       const fetchReviews = async () => {
          if (!user?.uid) return;
-         
+
          setLoadingReviews(true);
          try {
             console.log("🔍 Fetching reviews for user:", user.uid);
             const response = await reviewsApi.getUserReviews(user.uid, { limit: 10 });
-            
+
             // Check if response has reviews array
             if (!response || !response.data || !Array.isArray(response.data)) {
                console.log("No reviews found or invalid response format");
                setReviews([]);
                return;
             }
-            
-            // Map API reviews to profile review format
-            const mappedReviews: Review[] = response.data.map((review: any) => ({
-               id: review._id,
-               taskId: review.taskId,
-               taskTitle: review.taskTitle || "Task",
-               reviewerId: review.reviewerUid,
-               reviewerName: review.reviewerName || "User",
-               reviewerPhoto: review.reviewerPhoto,
-               rating: review.rating,
-               comment: review.comment || "",
-               createdAt: new Date(review.createdAt),
-               role: "poster" as const, // Assuming reviews are from posters
-            }));
-            
-            console.log("✅ Reviews loaded:", mappedReviews.length);
+
+            // Map API reviews to profile review format - filter out reviews without real data
+            const mappedReviews: Review[] = response.data
+               .filter((review: any) => 
+                  review.reviewerName && 
+                  review.reviewerName.trim() !== "" &&
+                  review.rating > 0 &&
+                  review.taskTitle
+               )
+               .map((review: any) => ({
+                  id: review._id,
+                  taskId: review.taskId,
+                  taskTitle: review.taskTitle || "Task",
+                  reviewerId: review.reviewerUid,
+                  reviewerName: review.reviewerName,
+                  reviewerPhoto: review.reviewerPhoto,
+                  rating: review.rating,
+                  comment: review.comment || "",
+                  createdAt: new Date(review.createdAt),
+                  role: "poster" as const, // Assuming reviews are from posters
+               }));
+
+            console.log("✅ Reviews loaded (with real data only):", mappedReviews.length);
             setReviews(mappedReviews);
          } catch (error: any) {
             console.error("❌ Failed to fetch reviews (non-critical):", error.message || error);
@@ -144,21 +247,23 @@ function ProfilePageContent() {
       }
    }, [user?.uid]);
 
-   // Extract work history from profile data
+   // Extract work history from profile data - filter out dummy/empty entries
    useEffect(() => {
       if (user && (user as any).workHistory) {
          console.log('📦 Using work history from profile response:', (user as any).workHistory.length);
          const profileWorkHistory = (user as any).workHistory;
-         
-         // Map to WorkHistoryItem format
-         const mappedWorkHistory: WorkHistoryItem[] = profileWorkHistory.map((item: any) => ({
-            id: item._id,
-            taskTitle: item.title,
-            category: item.category,
-            completedDate: new Date(item.completedAt),
-            earnings: item.budget,
-         }));
-         
+
+         // Map to WorkHistoryItem format - filter out entries without valid data
+         const mappedWorkHistory: WorkHistoryItem[] = profileWorkHistory
+            .filter((item: any) => item.title && item.title.trim() !== '' && item.completedAt)
+            .map((item: any) => ({
+               id: item._id,
+               taskTitle: item.title,
+               category: item.category,
+               completedDate: new Date(item.completedAt),
+               earnings: item.budget,
+            }));
+
          setWorkHistory(mappedWorkHistory);
       } else {
          console.log('ℹ️ No work history in profile response');
@@ -189,7 +294,7 @@ function ProfilePageContent() {
          await profilesApi.upsertProfile(data);
          toast.success("Profile updated successfully");
          await refreshUserData();
-         
+
          // Refresh profile data
          const updatedProfile = await profilesApi.me();
          setUser(updatedProfile as UserProfile);
@@ -209,6 +314,9 @@ function ProfilePageContent() {
       loadingReviews,
       onNavigate: goTo,
       onSaveProfile: handleSaveProfile,
+      notificationSettings,
+      notificationFrequency,
+      notificationChannel,
       onVerify: async (t: string) => {
          router.push(
             {
@@ -219,9 +327,35 @@ function ProfilePageContent() {
             }[t] || "/profile/verify"
          );
       },
-      onSaveNotifications: async () => {
-         // TODO: Implement when notification settings API is available
-         toast.info("Notification settings will be saved once backend API is ready");
+      onSaveNotifications: async (
+         settings: NotificationSettingsState,
+         frequency?: FrequencySettings,
+         preferredChannel?: CommunicationChannel
+      ) => {
+         try {
+            const finalFrequency = frequency || DEFAULT_FREQUENCY;
+            const finalChannel = preferredChannel || "push";
+
+            await notificationPreferencesApi.updatePreferences({
+               push: settings.push,
+               email: settings.email,
+               sms: settings.sms,
+               preferredChannel: finalChannel,
+               frequency: finalFrequency,
+            });
+
+            setNotificationSettings(settings);
+            setNotificationFrequency(finalFrequency);
+            setNotificationChannel(finalChannel);
+
+            toast.success("Notification settings updated");
+         } catch (error: any) {
+            console.error("Failed to update notification settings:", error);
+            toast.error("Failed to update notification settings", {
+               description: error.message || "Please try again later.",
+            });
+            throw error;
+         }
       },
       onSavePreferences: async () => {
          // TODO: Implement when preferences API is available
@@ -382,8 +516,15 @@ interface Props {
    loadingReviews?: boolean;
    onNavigate: (s: ProfileSection) => void;
    onSaveProfile: (data?: Partial<UserProfile>) => Promise<void>;
+   notificationSettings: NotificationSettingsState;
+   notificationFrequency: FrequencySettings;
+   notificationChannel: CommunicationChannel;
    onVerify: (t: string) => Promise<void>;
-   onSaveNotifications: () => Promise<void>;
+   onSaveNotifications: (
+      settings: NotificationSettingsState,
+      frequency?: FrequencySettings,
+      preferredChannel?: CommunicationChannel
+   ) => Promise<void>;
    onSavePreferences: () => Promise<void>;
    onRevokeSession: () => Promise<void>;
    onRevokeAllSessions: () => Promise<void>;
@@ -444,18 +585,9 @@ function renderSection(s: ProfileSection, p: Props) {
       case "notifications":
          return (
             <NotificationsSection
-               settings={DEFAULT_NOTIFICATION_SETTINGS}
-               frequencySettings={{
-                  dailyDigest: false,
-                  quietHours: {
-                     enabled: false,
-                     start: "22:00",
-                     end: "08:00",
-                     timezone: "Asia/Kolkata",
-                  },
-                  maxPerDay: 0,
-               }}
-               preferredChannel="push"
+               settings={p.notificationSettings}
+               frequencySettings={p.notificationFrequency}
+               preferredChannel={p.notificationChannel}
                onSave={p.onSaveNotifications}
             />
          );

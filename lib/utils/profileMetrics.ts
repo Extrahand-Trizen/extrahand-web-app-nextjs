@@ -46,9 +46,9 @@ export function calculateProfileMetrics(user: UserProfile): ProfileMetrics {
     ? Math.round((user.completedTasks / user.totalTasks) * 100)
     : 0; // Show 0% when no tasks
 
-  // For now, use placeholder data - these would come from actual task queries
-  const onTimeRate = user.completedTasks > 0 ? 95 : 0; // Show 0% when no completed tasks
-  const avgResponseTime = user.completedTasks > 0 ? "< 2 hours" : "N/A"; // Only show if has tasks
+  // These should come from backend - don't show dummy data
+  const onTimeRate = 0; // Only show real data from backend
+  const avgResponseTime = "N/A"; // Only show real data from backend
   const repeatCustomerRate = 0; // Would calculate from task data
 
   return {
@@ -151,7 +151,7 @@ export function getAvailabilityInfo(user: UserProfile): AvailabilityInfo {
     isAvailable: user.isActive,
     status: user.isActive ? 'available' : 'unavailable',
     serviceAreas: user.location?.city ? [user.location.city] : [],
-    responseTime: "< 2 hours",
+    responseTime: "N/A", // Only show real data from backend
   };
 }
 

@@ -31,7 +31,7 @@ export default function UserProfilePage() {
    const [loading, setLoading] = useState(true);
    const [loadingReviews, setLoadingReviews] = useState(false);
    const [error, setError] = useState<string | null>(null);
-   
+
    const isOwnProfile = userData?.uid === userId || userData?._id === userId;
 
    useEffect(() => {
@@ -44,7 +44,7 @@ export default function UserProfilePage() {
             console.log("🔍 Fetching public profile for user:", userId);
             const profileData = await profilesApi.getPublicProfile(userId);
             console.log("✅ Profile fetched:", profileData);
-            
+
             setUser(profileData as UserProfile);
          } catch (err: any) {
             console.error("❌ Failed to load profile:", err);
@@ -67,21 +67,28 @@ export default function UserProfilePage() {
       if (user && (user as any).reviews) {
          console.log('📦 Using reviews from profile response:', (user as any).reviews.length);
          const profileReviews = (user as any).reviews;
-         
-         // Map to Review format if needed
-         const mappedReviews: Review[] = profileReviews.map((review: any) => ({
-            id: review._id,
-            taskId: review.taskId,
-            taskTitle: review.taskTitle || review.title || "Task",
-            reviewerId: review.reviewerId || review.reviewerUid,
-            reviewerName: review.reviewerName || "User",
-            reviewerPhoto: review.reviewerPhoto,
-            rating: review.rating,
-            comment: review.comment || "",
-            createdAt: new Date(review.createdAt),
-            role: "poster" as const,
-         }));
-         
+
+         // Map to Review format - filter out reviews without real data
+         const mappedReviews: Review[] = profileReviews
+            .filter((review: any) => 
+               review.reviewerName && 
+               review.reviewerName.trim() !== "" &&
+               review.rating > 0 &&
+               review.taskTitle
+            )
+            .map((review: any) => ({
+               id: review._id,
+               taskId: review.taskId,
+               taskTitle: review.taskTitle || review.title || "Task",
+               reviewerId: review.reviewerId || review.reviewerUid,
+               reviewerName: review.reviewerName,
+               reviewerPhoto: review.reviewerPhoto,
+               rating: review.rating,
+               comment: review.comment || "",
+               createdAt: new Date(review.createdAt),
+               role: "poster" as const,
+            }));
+
          setReviews(mappedReviews);
          setLoadingReviews(false);
       } else {
@@ -89,21 +96,23 @@ export default function UserProfilePage() {
          setReviews([]);
          setLoadingReviews(false);
       }
-      
-      // Extract work history from profile response
+
+      // Extract work history from profile response - filter out dummy/empty entries
       if (user && (user as any).workHistory) {
          console.log('📦 Using work history from profile response:', (user as any).workHistory.length);
          const profileWorkHistory = (user as any).workHistory;
-         
-         // Map to WorkHistoryItem format
-         const mappedWorkHistory: WorkHistoryItem[] = profileWorkHistory.map((item: any) => ({
-            id: item._id,
-            taskTitle: item.title,
-            category: item.category,
-            completedDate: new Date(item.completedAt),
-            earnings: item.budget,
-         }));
-         
+
+         // Map to WorkHistoryItem format - filter out entries without valid data
+         const mappedWorkHistory: WorkHistoryItem[] = profileWorkHistory
+            .filter((item: any) => item.title && item.title.trim() !== '' && item.completedAt)
+            .map((item: any) => ({
+               id: item._id,
+               taskTitle: item.title,
+               category: item.category,
+               completedDate: new Date(item.completedAt),
+               earnings: item.budget,
+            }));
+
          setWorkHistory(mappedWorkHistory);
       } else {
          console.log('ℹ️ No work history in profile response');
@@ -113,7 +122,7 @@ export default function UserProfilePage() {
 
    const handleShare = async () => {
       const url = window.location.href;
-      
+
       if (navigator.share) {
          try {
             await navigator.share({
@@ -222,7 +231,7 @@ export default function UserProfilePage() {
                   reviews={reviews}
                   workHistory={workHistory}
                />
-               
+
                {loadingReviews && (
                   <div className="mt-4 flex items-center justify-center">
                      <LoadingSpinner size="sm" />

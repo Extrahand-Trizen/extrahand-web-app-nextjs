@@ -174,6 +174,13 @@ export function NotificationsSection({
             onToggle={() => toggleSection("push")}
          >
             <NotificationToggle
+               label="Transactional"
+               description="Important confirmations and account actions"
+               checked={localSettings.push.transactional}
+               onChange={(v) => updateChannelSetting("push", "transactional", v)}
+               disabled={!localSettings.push.enabled}
+            />
+            <NotificationToggle
                label="Task Updates"
                description="Status changes, new offers, task completions"
                checked={localSettings.push.taskUpdates}
@@ -192,6 +199,27 @@ export function NotificationsSection({
                description="Task deadlines and upcoming appointments"
                checked={localSettings.push.reminders}
                onChange={(v) => updateChannelSetting("push", "reminders", v)}
+               disabled={!localSettings.push.enabled}
+            />
+            <NotificationToggle
+               label="Task Reminders"
+               description="Task-specific reminder alerts"
+               checked={localSettings.push.taskReminders}
+               onChange={(v) => updateChannelSetting("push", "taskReminders", v)}
+               disabled={!localSettings.push.enabled}
+            />
+            <NotificationToggle
+               label="Keyword Task Alerts"
+               description="Alerts for tasks matching your keywords"
+               checked={localSettings.push.keywordTaskAlerts}
+               onChange={(v) => updateChannelSetting("push", "keywordTaskAlerts", v)}
+               disabled={!localSettings.push.enabled}
+            />
+            <NotificationToggle
+               label="Recommended Task Alerts"
+               description="Personalized task recommendations"
+               checked={localSettings.push.recommendedTaskAlerts}
+               onChange={(v) => updateChannelSetting("push", "recommendedTaskAlerts", v)}
                disabled={!localSettings.push.enabled}
             />
             <NotificationToggle
@@ -221,6 +249,13 @@ export function NotificationsSection({
             onToggle={() => toggleSection("email")}
          >
             <NotificationToggle
+               label="Transactional"
+               description="Important confirmations and account actions"
+               checked={localSettings.email.transactional}
+               onChange={(v) => updateChannelSetting("email", "transactional", v)}
+               disabled={!localSettings.email.enabled}
+            />
+            <NotificationToggle
                label="Task Updates"
                description="Status changes and new offers"
                checked={localSettings.email.taskUpdates}
@@ -239,6 +274,34 @@ export function NotificationsSection({
                description="Task deadlines and follow-ups"
                checked={localSettings.email.reminders}
                onChange={(v) => updateChannelSetting("email", "reminders", v)}
+               disabled={!localSettings.email.enabled}
+            />
+            <NotificationToggle
+               label="Task Reminders"
+               description="Task-specific reminder alerts"
+               checked={localSettings.email.taskReminders}
+               onChange={(v) => updateChannelSetting("email", "taskReminders", v)}
+               disabled={!localSettings.email.enabled}
+            />
+            <NotificationToggle
+               label="Keyword Task Alerts"
+               description="Alerts for tasks matching your keywords"
+               checked={localSettings.email.keywordTaskAlerts}
+               onChange={(v) => updateChannelSetting("email", "keywordTaskAlerts", v)}
+               disabled={!localSettings.email.enabled}
+            />
+            <NotificationToggle
+               label="Recommended Task Alerts"
+               description="Personalized task recommendations"
+               checked={localSettings.email.recommendedTaskAlerts}
+               onChange={(v) => updateChannelSetting("email", "recommendedTaskAlerts", v)}
+               disabled={!localSettings.email.enabled}
+            />
+            <NotificationToggle
+               label="System Alerts"
+               description="Security and account notifications"
+               checked={localSettings.email.system}
+               onChange={(v) => updateChannelSetting("email", "system", v)}
                disabled={!localSettings.email.enabled}
             />
             <NotificationToggle

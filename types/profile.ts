@@ -188,12 +188,20 @@ export interface NotificationPreferences {
       marketing: boolean;
       accountAlerts: boolean;
       weeklyDigest: boolean;
+      transactional?: boolean;
+      taskReminders?: boolean;
+      keywordTaskAlerts?: boolean;
+      recommendedTaskAlerts?: boolean;
    };
    push: {
       taskUpdates: boolean;
       newMessages: boolean;
       marketing: boolean;
       accountAlerts: boolean;
+      transactional?: boolean;
+      taskReminders?: boolean;
+      keywordTaskAlerts?: boolean;
+      recommendedTaskAlerts?: boolean;
    };
    inApp: {
       taskUpdates: boolean;
@@ -203,6 +211,8 @@ export interface NotificationPreferences {
    sms: {
       taskUpdates: boolean;
       accountAlerts: boolean;
+      transactional?: boolean;
+      taskReminders?: boolean;
    };
 }
 

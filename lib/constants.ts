@@ -1,5 +1,5 @@
-// Mega-menu task types organized into columns (poster-facing)
-export const posterTaskTypes: string[][] = [
+// Mega-menu task types organized into columns
+export const taskTypes: string[][] = [
    [
       "Accountant",
       "Admin Assistant",
@@ -91,9 +91,3 @@ export const posterTaskTypes: string[][] = [
       "Yoga Instructor",
    ],
 ];
-
-// Tasker-facing categories now use the full list for parity with posters.
-export const taskerTaskTypes: string[][] = posterTaskTypes;
-
-// Backward compatibility alias
-export const taskTypes = posterTaskTypes;

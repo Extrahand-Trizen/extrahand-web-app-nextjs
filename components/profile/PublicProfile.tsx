@@ -63,7 +63,7 @@ export function PublicProfile({
          try {
             const userId = user._id || user.uid;
             if (!userId) return;
-            
+
             console.log("📊 Fetching stats for user:", userId);
             const statsResponse = await profilesApi.getProfileStats(userId);
             console.log("✅ Stats fetched:", statsResponse);
@@ -97,14 +97,14 @@ export function PublicProfile({
    const completionRate = actualStats.totalTasks > 0
       ? Math.round((actualStats.completedTasks / actualStats.totalTasks) * 100)
       : 0;
-   
+
    const successRate = actualStats.totalTasks > 0
       ? Math.round((actualStats.completedTasks / actualStats.totalTasks) * 100)
       : 0;
 
    // On-time rate: only show when backend provides it; avoid dummy 95%
    const onTimeRate = (stats as any)?.onTimeRate ?? null;
-   
+
    const achievements = generateAchievements(user);
    const availability = getAvailabilityInfo(user);
 
@@ -150,11 +150,11 @@ export function PublicProfile({
                                  className={cn(
                                     "capitalize text-xs",
                                     user.verificationBadge === "verified" &&
-                                       "bg-green-100 text-green-700",
+                                    "bg-green-100 text-green-700",
                                     user.verificationBadge === "trusted" &&
-                                       "bg-blue-100 text-blue-700",
+                                    "bg-blue-100 text-blue-700",
                                     user.verificationBadge === "basic" &&
-                                       "bg-gray-100 text-gray-700"
+                                    "bg-gray-100 text-gray-700"
                                  )}
                               >
                                  <Shield className="size-3 mr-1" />
@@ -390,8 +390,8 @@ export function PublicProfile({
             </Card>
          </div>
 
-         {/* Rating Breakdowns - Professional Grid */}
-         {stats && (stats as any).ratingBreakdowns && (
+         {/* Rating Breakdowns - Professional Grid - Only show if there are actual reviews */}
+         {stats && (stats as any).ratingBreakdowns && actualStats.totalReviews > 0 && (
             <div className="mt-8">
                <div className="flex items-center gap-2 mb-4">
                   <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider">Performance Breakdown</h3>
@@ -399,12 +399,12 @@ export function PublicProfile({
                      {actualStats.totalReviews} {actualStats.totalReviews === 1 ? 'Review' : 'Reviews'}
                   </span>
                </div>
-               
+
                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                   {Object.entries((stats as any).ratingBreakdowns).map(([key, value]: [string, any]) => {
                      const percentage = (value / 5) * 100;
                      const getIcon = (category: string) => {
-                        switch(category) {
+                        switch (category) {
                            case 'communication': return MessageCircle;
                            case 'quality': return BadgeCheck;
                            case 'timeliness': return Clock;
@@ -414,7 +414,7 @@ export function PublicProfile({
                         }
                      };
                      const Icon = getIcon(key);
-                     
+
                      return (
                         <div key={key} className="flex items-center gap-4 group">
                            <div className="p-2 rounded-md bg-slate-50 text-slate-600 group-hover:bg-slate-100 transition-colors">
@@ -429,8 +429,8 @@ export function PublicProfile({
                                  </div>
                               </div>
                               <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                 <div 
-                                    className="h-full bg-slate-800 rounded-full" 
+                                 <div
+                                    className="h-full bg-slate-800 rounded-full"
                                     style={{ width: `${percentage}%` }}
                                  />
                               </div>
@@ -493,15 +493,15 @@ export function PublicProfile({
             </CardContent>
          </Card>
 
-         {/* Reviews Section */}
-         <Card>
-            <CardHeader>
-               <CardTitle className="text-base">
-                  Reviews ({actualStats.totalReviews ?? reviews.length ?? 0})
-               </CardTitle>
-            </CardHeader>
-            <CardContent>
-               {reviews.length > 0 ? (
+         {/* Reviews Section - Only show if there are real reviews */}
+         {reviews.length > 0 && (
+            <Card>
+               <CardHeader>
+                  <CardTitle className="text-base">
+                     Reviews ({reviews.length})
+                  </CardTitle>
+               </CardHeader>
+               <CardContent>
                   <div className="relative">
                      <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                         {reviews.map((review) => (
@@ -511,14 +511,9 @@ export function PublicProfile({
                         ))}
                      </div>
                   </div>
-               ) : (
-                  <div className="py-8 text-center">
-                     <ThumbsUp className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                     <p className="text-sm text-gray-500">No reviews yet</p>
-                  </div>
-               )}
-            </CardContent>
-         </Card>
+               </CardContent>
+            </Card>
+         )}
 
          {/* Work History */}
          {workHistory.length > 0 && (

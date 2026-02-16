@@ -80,7 +80,11 @@ export type NotificationCategory =
    | "promotions" // Deals, offers, discounts
    | "reminders" // Task reminders, deadlines
    | "system" // Security alerts, account updates
-   | "marketing"; // Newsletters, product updates
+   | "marketing" // Newsletters, product updates
+   | "transactional" // Critical confirmations
+   | "task_reminders" // Task-specific reminders
+   | "keyword_task_alerts" // Keyword matches
+   | "recommended_task_alerts"; // Recommended tasks
 
 // ============================================
 // Marketing Consent Types
@@ -241,6 +245,10 @@ export interface NotificationSettingsState {
       promotions: boolean;
       reminders: boolean;
       system: boolean;
+      transactional: boolean;
+      taskReminders: boolean;
+      keywordTaskAlerts: boolean;
+      recommendedTaskAlerts: boolean;
    };
    email: {
       enabled: boolean;
@@ -248,7 +256,12 @@ export interface NotificationSettingsState {
       payments: boolean;
       promotions: boolean;
       reminders: boolean;
+      system: boolean;
       marketing: boolean;
+      transactional: boolean;
+      taskReminders: boolean;
+      keywordTaskAlerts: boolean;
+      recommendedTaskAlerts: boolean;
    };
    sms: {
       enabled: boolean;
@@ -327,6 +340,10 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettingsState = {
       promotions: false,
       reminders: true,
       system: true,
+      transactional: true,
+      taskReminders: true,
+      keywordTaskAlerts: true,
+      recommendedTaskAlerts: true,
    },
    email: {
       enabled: true,
@@ -334,7 +351,12 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettingsState = {
       payments: true,
       promotions: false,
       reminders: false,
+      system: true,
       marketing: false,
+      transactional: true,
+      taskReminders: true,
+      keywordTaskAlerts: true,
+      recommendedTaskAlerts: true,
    },
    sms: {
       enabled: true,
@@ -357,24 +379,24 @@ export const SUPPORTED_LANGUAGES: {
    value: SupportedLanguage;
    label: string;
 }[] = [
-   { value: "en", label: "English" },
-   { value: "hi", label: "हिन्दी (Hindi)" },
-   { value: "ta", label: "தமிழ் (Tamil)" },
-   { value: "te", label: "తెలుగు (Telugu)" },
-   { value: "kn", label: "ಕನ್ನಡ (Kannada)" },
-   { value: "ml", label: "മലയാളം (Malayalam)" },
-   { value: "mr", label: "मराठी (Marathi)" },
-   { value: "bn", label: "বাংলা (Bengali)" },
-   { value: "gu", label: "ગુજરાતી (Gujarati)" },
-   { value: "pa", label: "ਪੰਜਾਬੀ (Punjabi)" },
-];
+      { value: "en", label: "English" },
+      { value: "hi", label: "हिन्दी (Hindi)" },
+      { value: "ta", label: "தமிழ் (Tamil)" },
+      { value: "te", label: "తెలుగు (Telugu)" },
+      { value: "kn", label: "ಕನ್ನಡ (Kannada)" },
+      { value: "ml", label: "മലയാളം (Malayalam)" },
+      { value: "mr", label: "मराठी (Marathi)" },
+      { value: "bn", label: "বাংলা (Bengali)" },
+      { value: "gu", label: "ગુજરાતી (Gujarati)" },
+      { value: "pa", label: "ਪੰਜਾਬੀ (Punjabi)" },
+   ];
 
 export const COMMUNICATION_CHANNELS: {
    value: CommunicationChannel;
    label: string;
 }[] = [
-   { value: "push", label: "Push Notifications" },
-   { value: "email", label: "Email" },
-   { value: "sms", label: "SMS" },
-   { value: "whatsapp", label: "WhatsApp" },
-];
+      { value: "push", label: "Push Notifications" },
+      { value: "email", label: "Email" },
+      { value: "sms", label: "SMS" },
+      { value: "whatsapp", label: "WhatsApp" },
+   ];
