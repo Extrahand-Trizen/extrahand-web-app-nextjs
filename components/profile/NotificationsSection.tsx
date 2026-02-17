@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -63,6 +63,11 @@ export function NotificationsSection({
    const [isSaving, setIsSaving] = useState(false);
    const [hasChanges, setHasChanges] = useState(false);
    const [expandedSections, setExpandedSections] = useState<string[]>(["push"]);
+   const [keywordInput, setKeywordInput] = useState("");
+   const [keywordAlerts, setKeywordAlerts] = useState<string[]>([]);
+   const keywordAlertsEnabled =
+      (localSettings.push.enabled && localSettings.push.keywordTaskAlerts) ||
+      (localSettings.email.enabled && localSettings.email.keywordTaskAlerts);
 
    const toggleSection = (section: string) => {
       setExpandedSections((prev) =>
@@ -70,6 +75,42 @@ export function NotificationsSection({
             ? prev.filter((s) => s !== section)
             : [...prev, section]
       );
+   };
+
+   useEffect(() => {
+      if (typeof window === "undefined") return;
+      const stored = window.localStorage.getItem("notificationKeywordAlerts");
+      if (!stored) return;
+      try {
+         const parsed = JSON.parse(stored);
+         if (Array.isArray(parsed)) {
+            setKeywordAlerts(parsed.filter((k) => typeof k === "string"));
+         }
+      } catch (error) {
+         console.error("Failed to parse keyword alerts from storage:", error);
+      }
+   }, []);
+
+   const persistKeywordAlerts = (next: string[]) => {
+      setKeywordAlerts(next);
+      if (typeof window !== "undefined") {
+         window.localStorage.setItem(
+            "notificationKeywordAlerts",
+            JSON.stringify(next)
+         );
+      }
+   };
+
+   const addKeywordAlert = () => {
+      const trimmed = keywordInput.trim().toLowerCase();
+      if (!trimmed || trimmed.length < 2 || trimmed.length > 30) return;
+      if (keywordAlerts.includes(trimmed) || keywordAlerts.length >= 10) return;
+      persistKeywordAlerts([...keywordAlerts, trimmed]);
+      setKeywordInput("");
+   };
+
+   const removeKeywordAlert = (keyword: string) => {
+      persistKeywordAlerts(keywordAlerts.filter((k) => k !== keyword));
    };
 
    const updateChannelSetting = <K extends keyof NotificationSettingsState>(
@@ -352,6 +393,82 @@ export function NotificationsSection({
                disabled={!localSettings.sms.enabled}
             />
          </NotificationChannel>
+
+         {/* Keyword Task Alerts */}
+         <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5">
+            <div className="flex items-start justify-between gap-4">
+               <div className="flex-1 min-w-0">
+                  <Label className="text-xs sm:text-sm font-medium text-gray-900">
+                     Keyword Task Alerts
+                  </Label>
+                  <p className="text-[10px] sm:text-xs text-gray-500 mt-1">
+                     Add keywords to get alerts when matching tasks are posted
+                  </p>
+               </div>
+               <Badge
+                  variant="secondary"
+                  className={cn(
+                     "text-[10px] sm:text-xs shrink-0",
+                     keywordAlertsEnabled
+                        ? "bg-green-50 text-green-700"
+                        : "bg-gray-100 text-gray-500"
+                  )}
+               >
+                  {keywordAlertsEnabled ? "On" : "Off"}
+               </Badge>
+            </div>
+
+            <div className="mt-3 sm:mt-4 flex items-center gap-2">
+               <input
+                  type="text"
+                  value={keywordInput}
+                  onChange={(e) => setKeywordInput(e.target.value)}
+                  onKeyDown={(e) => {
+                     if (e.key === "Enter") {
+                        e.preventDefault();
+                        addKeywordAlert();
+                     }
+                  }}
+                  placeholder="e.g., plumbing, AC repair"
+                  disabled={!keywordAlertsEnabled}
+                  className="flex-1 h-9 px-3 text-xs sm:text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent disabled:bg-gray-50"
+               />
+               <Button
+                  type="button"
+                  size="sm"
+                  onClick={addKeywordAlert}
+                  disabled={!keywordAlertsEnabled}
+               >
+                  Add
+               </Button>
+            </div>
+
+            <p className="text-[10px] sm:text-xs text-gray-500 mt-2">
+               Max 10 keywords, 2-30 characters each. Saved on this device.
+            </p>
+
+            {keywordAlerts.length > 0 && (
+               <div className="flex flex-wrap gap-2 mt-3">
+                  {keywordAlerts.map((keyword) => (
+                     <Badge
+                        key={keyword}
+                        variant="secondary"
+                        className="text-[10px] sm:text-xs bg-gray-100 text-gray-700"
+                     >
+                        {keyword}
+                        <button
+                           type="button"
+                           onClick={() => removeKeywordAlert(keyword)}
+                           className="ml-1 text-gray-600 hover:text-gray-900"
+                           aria-label={`Remove ${keyword}`}
+                        >
+                           x
+                        </button>
+                     </Badge>
+                  ))}
+               </div>
+            )}
+         </div>
 
          {/* Quiet Hours & Frequency */}
          <div className="bg-white rounded-lg border border-gray-200">

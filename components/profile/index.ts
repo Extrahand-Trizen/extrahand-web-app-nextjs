@@ -20,5 +20,12 @@ export { SecuritySection } from "./SecuritySection";
 export { PreferencesSection } from "./PreferencesSection";
 export { PrivacySection } from "./PrivacySection";
 
+// Referral and Credits Components
+export { default as ReferralDashboard } from "./ReferralDashboard";
+export { default as CreditsSection } from "./CreditsSection";
+
+// Badge Display
+export { default as BadgeDisplay } from "./BadgeDisplay";
+
 // Re-export verification components
 export * from "./verification";

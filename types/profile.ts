@@ -283,7 +283,10 @@ export type ProfileSection =
    | "addresses"
    | "notifications"
    | "security"
-   | "privacy";
+   | "privacy"
+   | "referrals"
+   | "credits"
+   | "batch-jobs";
 
 
 export interface ProfileNavItem {

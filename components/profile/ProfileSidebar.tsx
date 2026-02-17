@@ -20,6 +20,9 @@ import {
    ChevronRight,
    MapPin,
    BriefcaseBusiness,
+   TrendingUp,
+   Wallet,
+   Activity,
 } from "lucide-react";
 import { ProfileSection } from "@/types/profile";
 
@@ -78,6 +81,30 @@ const navItems: ProfileNavItem[] = [
       label: "Notifications",
       icon: <Bell className="w-5 h-5" />,
       description: "Communication",
+   },
+   {
+      id: "security",
+      label: "Security",
+      icon: <Lock className="w-5 h-5" />,
+      description: "Sessions & safety",
+   },
+   {
+      id: "referrals",
+      label: "Referral Program",
+      icon: <TrendingUp className="w-5 h-5" />,
+      description: "Earn & share",
+   },
+   {
+      id: "credits",
+      label: "Credits & Earnings",
+      icon: <Wallet className="w-5 h-5" />,
+      description: "Balance & history",
+   },
+   {
+      id: "batch-jobs",
+      label: "Batch Jobs",
+      icon: <Activity className="w-5 h-5" />,
+      description: "System logs",
    },
 ];
 

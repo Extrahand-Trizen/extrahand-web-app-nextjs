@@ -427,7 +427,7 @@ export function TaskCreationFlow() {
             return;
          }
 
-         // Background check: Aadhaar, PAN, and bank must be verified to post a task
+         // Background check: Aadhaar must be verified to post a task
          if (!verificationStatus.allowed) {
             setShowVerificationModal(true);
             return;
@@ -636,14 +636,14 @@ export function TaskCreationFlow() {
             </DialogContent>
          </Dialog>
 
-         {/* Verification required: Aadhaar, PAN, Bank */}
+         {/* Verification required: Aadhaar */}
          <Dialog open={showVerificationModal} onOpenChange={setShowVerificationModal}>
             <DialogContent>
                <DialogHeader>
                   <DialogTitle>Verification required to post a task</DialogTitle>
                   <DialogDescription>
-                     To post a task, your Aadhaar, PAN, and bank account must be
-                     verified. Please complete the following in your profile:
+                     To post a task, your Aadhaar must be verified. Please
+                     complete the following in your profile:
                   </DialogDescription>
                </DialogHeader>
                <ul className="list-disc list-inside text-sm text-secondary-700 space-y-1">

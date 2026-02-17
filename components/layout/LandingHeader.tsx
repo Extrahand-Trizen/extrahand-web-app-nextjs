@@ -39,8 +39,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/context";
 import { UserMenu } from "./UserMenu";
 import { NotificationCenter } from "@/components/home";
-import { mockDashboardData } from "@/lib/data/mockDashboard";
 import { taskTypes } from "@/lib/constants";
+import type { UserCurrentStatus } from "@/types/dashboard";
 
 const USER_MENU_ITEMS = [
    { label: "Home", route: "/home" },
@@ -85,6 +85,13 @@ const GuestCtaButtons = ({ onBecomeTasker }: { onBecomeTasker: () => void }) => 
       </Button>
    </>
 );
+
+const emptyStatus: UserCurrentStatus = {
+   activeTasks: [],
+   pendingOffers: [],
+   activeChats: [],
+   pendingPayments: [],
+};
 
 export const LandingHeader: React.FC = () => {
    const router = useRouter();
@@ -398,7 +405,7 @@ export const LandingHeader: React.FC = () => {
                      ) : (
                         <>
                            <NotificationCenter
-                              status={mockDashboardData.currentStatus}
+                              status={emptyStatus}
                            />
 
                            <UserMenu

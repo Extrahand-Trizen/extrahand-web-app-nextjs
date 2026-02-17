@@ -19,6 +19,8 @@ import {
    SecuritySection,
    PreferencesSection,
    PrivacySection,
+   ReferralDashboard,
+   CreditsSection,
 } from "@/components/profile";
 import {
    DEFAULT_NOTIFICATION_SETTINGS,
@@ -50,6 +52,9 @@ const VALID_SECTIONS: ProfileSection[] = [
    "notifications",
    "security",
    "privacy",
+   "referrals",
+   "credits",
+   "batch-jobs",
 ];
 const SECTION_TITLES: Record<ProfileSection, string> = {
    overview: "Account",
@@ -62,6 +67,9 @@ const SECTION_TITLES: Record<ProfileSection, string> = {
    notifications: "Notifications",
    security: "Security",
    privacy: "Privacy",
+   referrals: "Referral Program",
+   credits: "Credits & Earnings",
+   "batch-jobs": "Batch Jobs",
 };
 
    const DEFAULT_FREQUENCY: FrequencySettings = {
@@ -284,9 +292,14 @@ function ProfilePageContent() {
    }, []);
 
    const goTo = useCallback((s: ProfileSection) => {
-      setSection(s);
       setNavOpen(false);
-      window.history.pushState({}, "", `?section=${s}`);
+      setSection(s);
+      // Use replace instead of push to avoid navigation issues
+      if (typeof window !== 'undefined') {
+         const url = new URL(window.location.href);
+         url.searchParams.set('section', s);
+         window.history.replaceState(null, '', url.toString());
+      }
    }, []);
 
    const handleSaveProfile = async (data: Partial<UserProfile>) => {
@@ -638,6 +651,12 @@ function renderSection(s: ProfileSection, p: Props) {
                onSave={p.onUpdatePrivacy}
             />
          );
+      case "referrals":
+         return <ReferralDashboard />;
+      case "credits":
+         return <CreditsSection onNavigateToReferral={() => p.onNavigate("referrals")} />;
+      // case "batch-jobs":
+      //    return <BatchJobLogs />;
       // business-verification section removed - now integrated into verifications section
       default:
          return <ProfileOverview user={p.user} onNavigate={p.onNavigate} />;

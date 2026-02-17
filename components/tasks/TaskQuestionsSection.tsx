@@ -222,7 +222,7 @@ export function TaskQuestionsSection({ taskId, isOwner }: TaskQuestionsSectionPr
                         {/* Question */}
                         <div className="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
                            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-primary-500 flex items-center justify-center text-white text-sm sm:text-base font-bold shrink-0 shadow-sm">
-                              {asker.name.charAt(0)}
+                              {(asker.name || "U").charAt(0)}
                            </div>
 
                            <div className="flex-1 min-w-0">

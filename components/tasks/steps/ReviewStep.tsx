@@ -36,14 +36,35 @@ interface ReviewStepProps {
    isSubmitting: boolean;
 }
 
-const CATEGORIES: Record<string, { label: string; icon: string }> = {
-   cleaning: { label: "Cleaning", icon: "🧹" },
-   repair: { label: "Repairs", icon: "🔧" },
-   delivery: { label: "Delivery", icon: "📦" },
-   assembly: { label: "Assembly", icon: "🔨" },
-   gardening: { label: "Gardening", icon: "🌱" },
-   petcare: { label: "Pet Care", icon: "🐕" },
-   other: { label: "Other", icon: "✨" },
+const CATEGORIES: Record<string, { label: string }> = {
+   "home-cleaning": { label: "Home Cleaning" },
+   "deep-cleaning": { label: "Deep Cleaning" },
+   plumbing: { label: "Plumbing" },
+   electrical: { label: "Electrical" },
+   carpenter: { label: "Carpenter" },
+   painting: { label: "Painting" },
+   "ac-repair": { label: "AC Repair & Service" },
+   "appliance-repair": { label: "Appliance Repair" },
+   "pest-control": { label: "Pest Control" },
+   "car-washing": { label: "Car Washing / Car Cleaning" },
+   "moving-packers": { label: "Moving / Packers & Movers" },
+   "delivery-pickup": { label: "Delivery / Pickup" },
+   gardening: { label: "Gardening" },
+   handyperson: { label: "Handyperson / General Repairs" },
+   "furniture-assembly": { label: "Furniture Assembly" },
+   "security-patrol": { label: "Security Patrol / Watchman" },
+   "beauty-services": { label: "Beauty Services" },
+   "massage-spa": { label: "Massage / Spa" },
+   "fitness-trainers": { label: "Fitness Trainers" },
+   tutors: { label: "Tutors" },
+   "it-support": { label: "IT Support / Laptop Repair" },
+   "photographer-videographer": { label: "Photographer / Videographer" },
+   "event-services": { label: "Event Services" },
+   "pet-services": { label: "Pet Services" },
+   "driver-chauffeur": { label: "Driver / Chauffeur" },
+   "cooking-home-chef": { label: "Cooking / Home Chef" },
+   "laundry-ironing": { label: "Laundry / Ironing" },
+   other: { label: "Other" },
 };
 
 const URGENCY_OPTIONS: Record<string, { label: string; surcharge: number }> = {
@@ -73,7 +94,7 @@ export function ReviewStep({
       );
    }
 
-   const category = CATEGORIES[data.category] || { label: "Other", icon: "✨" };
+   const category = CATEGORIES[data.category] || { label: "Other" };
    const urgency = URGENCY_OPTIONS[data.urgency] || {
       label: "Standard",
       surcharge: 0,
@@ -126,7 +147,6 @@ export function ReviewStep({
             <div className="space-y-3">
                <div>
                   <div className="flex items-center gap-2 mb-1">
-                     <span className="text-xl md:text-2xl">{category.icon}</span>
                      <span className="text-sm md:text-base font-medium text-gray-900">
                         {category.label}
                      </span>

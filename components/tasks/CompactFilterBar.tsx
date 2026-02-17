@@ -131,7 +131,7 @@ export const SearchFilter = ({ value, onChange }) => {
 
 export const CategoryFilter = ({ filters, onFilterChange }) => {
    const [open, setOpen] = useState(false);
-   const CATEGORIES = serviceCategories.map((c) => c.id);
+   const CATEGORIES = serviceCategories;
 
    const toggleCategory = (category: string) => {
       const updated = filters.categories.includes(category)
@@ -163,14 +163,14 @@ export const CategoryFilter = ({ filters, onFilterChange }) => {
                <div className="grid grid-cols-2 gap-1 max-h-[60vh] overflow-y-auto px-2">
                   {CATEGORIES.map((cat) => (
                      <label
-                        key={cat}
+                        key={cat.id}
                         className="flex items-center gap-2 p-1 hover:bg-secondary-50 rounded-md cursor-pointer"
                      >
                         <Checkbox
-                           checked={filters.categories.includes(cat)}
-                           onCheckedChange={() => toggleCategory(cat)}
+                           checked={filters.categories.includes(cat.id)}
+                           onCheckedChange={() => toggleCategory(cat.id)}
                         />
-                        <span className="text-sm">{cat}</span>
+                        <span className="text-sm">{cat.name}</span>
                      </label>
                   ))}
                </div>
@@ -220,7 +220,7 @@ export const LocationFilter = ({ filters, onFilterChange }) => {
                className="min-w-[220px] flex items-center gap-2 text-sm"
             >
                <span className="truncate">
-                  {filters.suburb || "50km Mumbai MH 400104"}
+                  {filters.suburb || "50km Hyderabad TG 500081"}
                </span>
                <ChevronDown className="h-4 w-4 ml-auto" />
             </Button>

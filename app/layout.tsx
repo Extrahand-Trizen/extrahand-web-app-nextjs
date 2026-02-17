@@ -5,6 +5,7 @@ import { AuthProvider } from "@/lib/auth/context";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { Toaster } from "@/components/ui/sonner";
 import { SocketProvider } from "@/lib/socket/SocketProvider";
+import { QueryProvider } from "@/components/providers/QueryProvider";
 
 const inter = Inter({
    subsets: ["latin"],
@@ -32,12 +33,14 @@ export default function RootLayout({
             suppressHydrationWarning
          >
             <ErrorBoundary>
-               <AuthProvider>
-                  <SocketProvider>
-                     <Toaster />
-                     {children}
-                  </SocketProvider>
-               </AuthProvider>
+               <QueryProvider>
+                  <AuthProvider>
+                     <SocketProvider>
+                        <Toaster />
+                        {children}
+                     </SocketProvider>
+                  </AuthProvider>
+               </QueryProvider>
             </ErrorBoundary>
          </body>
       </html>

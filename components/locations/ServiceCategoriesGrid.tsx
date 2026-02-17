@@ -43,7 +43,9 @@ export function ServiceCategoriesGrid({
                   >
                      <div className="bg-white border border-gray-200 rounded-lg p-6 hover:border-blue-500 hover:shadow-md transition-all">
                         {/* Icon */}
-                        <div className="text-3xl mb-3">{category.icon}</div>
+                        {category.icon ? (
+                           <div className="text-3xl mb-3">{category.icon}</div>
+                        ) : null}
 
                         {/* Content */}
                         <h3 className="text-base font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">

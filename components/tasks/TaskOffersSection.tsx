@@ -327,7 +327,7 @@ export function TaskOffersSection({
                               <div className="flex items-center justify-between gap-3">
                                  <div className="flex gap-3">
                                     <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-green-600 flex items-center justify-center text-white text-lg md:text-xl font-bold shrink-0 shadow-md">
-                                       {(acceptedApplication.applicantProfile?.name || "U").charAt(0)}
+                                       {((acceptedApplication.applicantProfile?.name) || "U").charAt(0)}
                                     </div>
                                     <div className="min-w-0">
                                        <div className="flex items-center gap-2">
@@ -406,13 +406,13 @@ export function TaskOffersSection({
                            <h3 className="font-semibold text-secondary-700 text-sm mb-2">Other Offers</h3>
                         )}
                         {otherApplications.map((application) => {
-                     const user = application.applicantProfile || { 
-                        name: application.applicantId
-                           ? `User ${application.applicantId.slice(-4)}`
-                           : "Unknown User", 
-                        rating: 0, 
-                        totalReviews: 0,
-                        photoURL: null,
+                     const user = {
+                        ...application.applicantProfile,
+                        name: application.applicantProfile?.name || 
+                              (application.applicantId ? `User ${application.applicantId.slice(-4)}` : "Unknown User"),
+                        rating: application.applicantProfile?.rating || 0,
+                        totalReviews: application.applicantProfile?.totalReviews || 0,
+                        photoURL: application.applicantProfile?.photoURL || null,
                      };
 
                      return (
@@ -428,11 +428,11 @@ export function TaskOffersSection({
                                        {user.photoURL ? (
                                           <img
                                              src={user.photoURL}
-                                             alt={user.name}
+                                             alt={user.name || "User"}
                                              className="w-full h-full object-cover"
                                           />
                                        ) : (
-                                          <span>{user.name.charAt(0)}</span>
+                                          <span>{(user.name || "U").charAt(0)}</span>
                                        )}
                                     </div>
 

@@ -26,43 +26,37 @@ interface TaskBasicsStepProps {
 }
 
 const CATEGORIES = [
-   { id: "cleaning", label: "Cleaning", icon: "🧹" },
-   { id: "repair", label: "Repairs", icon: "🔧" },
-   { id: "assembly", label: "Assembly", icon: "🔨" },
-   { id: "gardening", label: "Gardening", icon: "🌱" },
-   { id: "petcare", label: "Pet Care", icon: "🐕" },
-   { id: "other", label: "Other", icon: "✨" },
+   { id: "home-cleaning", label: "Home Cleaning" },
+   { id: "deep-cleaning", label: "Deep Cleaning" },
+   { id: "plumbing", label: "Plumbing" },
+   { id: "electrical", label: "Electrical" },
+   { id: "carpenter", label: "Carpenter" },
+   { id: "painting", label: "Painting" },
+   { id: "ac-repair", label: "AC Repair & Service" },
+   { id: "appliance-repair", label: "Appliance Repair" },
+   { id: "pest-control", label: "Pest Control" },
+   { id: "car-washing", label: "Car Washing / Car Cleaning" },
+   { id: "moving-packers", label: "Moving / Packers & Movers" },
+   { id: "delivery-pickup", label: "Delivery / Pickup" },
+   { id: "gardening", label: "Gardening" },
+   { id: "handyperson", label: "Handyperson / General Repairs" },
+   { id: "furniture-assembly", label: "Furniture Assembly" },
+   { id: "security-patrol", label: "Security Patrol / Watchman" },
+   { id: "beauty-services", label: "Beauty Services" },
+   { id: "massage-spa", label: "Massage / Spa" },
+   { id: "fitness-trainers", label: "Fitness Trainers" },
+   { id: "tutors", label: "Tutors" },
+   { id: "it-support", label: "IT Support / Laptop Repair" },
+   { id: "photographer-videographer", label: "Photographer / Videographer" },
+   { id: "event-services", label: "Event Services" },
+   { id: "pet-services", label: "Pet Services" },
+   { id: "driver-chauffeur", label: "Driver / Chauffeur" },
+   { id: "cooking-home-chef", label: "Cooking / Home Chef" },
+   { id: "laundry-ironing", label: "Laundry / Ironing" },
+   { id: "other", label: "Other" },
 ];
 
 const SUBCATEGORIES: Record<string, string[]> = {
-   cleaning: [
-      "House Cleaning",
-      "Office Cleaning",
-      "Deep Cleaning",
-      "Move-out Cleaning",
-      "Car Wash",
-   ],
-   repair: ["Plumbing", "Electrical", "Appliance Repair", "Carpentry", "Painting"],
-   assembly: [
-      "Furniture Assembly",
-      "TV Mounting",
-      "Shelf Installation",
-      "Equipment Setup",
-   ],
-   gardening: [
-      "Lawn Mowing",
-      "Weeding",
-      "Plant Care",
-      "Trimming",
-      "Garden Cleanup",
-   ],
-   petcare: [
-      "Dog Walking",
-      "Pet Sitting",
-      "Pet Grooming",
-      "Vet Visit",
-      "Pet Feeding",
-   ],
    other: [],
 };
 
@@ -222,8 +216,7 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
                                  }
                               `}
                            >
-                              <div className="flex items-center gap-3">
-                                 <span className="text-2xl md:text-3xl">{cat.icon}</span>
+                              <div className="flex items-center">
                                  <span className="text-sm font-medium text-gray-900">
                                     {cat.label}
                                  </span>
