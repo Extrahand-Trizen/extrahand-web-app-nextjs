@@ -11,28 +11,25 @@ export default async function JobsPage() {
    let categories: Category[] = [];
 
    try {
-      // Fetch all categories so the list shows names even when unpublished
+      // Fetch all categories - they now include subcategories from the backend
       const allCategories = await categoriesApi.getCategories({
          includeUnpublished: true,
       });
 
-      // Fetch subcategories for each category
-      categories = await Promise.all(
-         allCategories.map(async (cat) => {
-            const subcategories = await categoriesApi.getSubcategories(cat.slug);
-            return {
-               _id: cat._id,
-               name: cat.name,
-               slug: cat.slug,
-               heroImage: cat.heroImage,
-               heroTitle: cat.heroTitle,
-               heroDescription: cat.heroDescription,
-               subcategories: subcategories as Subcategory[],
-            };
-         })
-      );
+      // Map categories to ensure proper structure
+      if (Array.isArray(allCategories)) {
+         categories = allCategories.map((cat: any) => ({
+            _id: cat._id || "",
+            name: cat.name || "",
+            slug: cat.slug || "",
+            heroImage: cat.heroImage || "",
+            heroTitle: cat.heroTitle || "",
+            heroDescription: cat.heroDescription || "",
+            subcategories: Array.isArray(cat.subcategories) ? cat.subcategories : [],
+         }));
+      }
    } catch (error) {
-      console.error("Error fetching categories from content-admin:", error);
+      console.error("Error fetching categories from content-admin");
    }
 
    return <CategoriesClient categories={categories} viewType="jobs" />;

@@ -39,7 +39,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/context";
 import { UserMenu } from "./UserMenu";
 import { NotificationCenter } from "@/components/home";
-import { taskTypes } from "@/lib/constants";
+import { taskTypes, taskerTypes, posterTypes } from "@/lib/constants";
 import type { UserCurrentStatus } from "@/types/dashboard";
 
 const USER_MENU_ITEMS = [
@@ -288,11 +288,11 @@ export const LandingHeader: React.FC = () => {
                                                    className={cn(
                                                       "w-full text-left rounded-lg border p-2.5 transition-colors",
                                                       activeRole === "tasker"
-                                                         ? "bg-blue-50 border-blue-200"
+                                                         ? "bg-primary-50 border-primary-200"
                                                          : "bg-white border-secondary-200 hover:bg-secondary-50"
                                                    )}
                                                 >
-                                                   <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">
+                                                   <span className="text-xs font-semibold text-primary-600 uppercase tracking-wide">
                                                       As a Tasker
                                                    </span>
                                                    <p className="text-xs text-secondary-600 mt-0.5">
@@ -325,7 +325,7 @@ export const LandingHeader: React.FC = () => {
 
                                           {/* Task types grid */}
                                           <div className="flex-1 grid grid-cols-4 gap-x-4 gap-y-0.5 text-sm max-h-[360px] overflow-y-auto">
-                                             {taskTypes.map((col, colIdx) => (
+                                             {(activeRole === "tasker" ? taskerTypes : posterTypes).map((col, colIdx) => (
                                                 <div
                                                    key={colIdx}
                                                    className="space-y-0.5"
@@ -629,11 +629,11 @@ export const LandingHeader: React.FC = () => {
                                  className={cn(
                                     "w-full text-left rounded-lg border p-2 transition-colors",
                                     mobileActiveRole === "tasker"
-                                       ? "bg-blue-50 border-blue-200"
+                                       ? "bg-primary-50 border-primary-200"
                                        : "bg-white border-secondary-200"
                                  )}
                               >
-                                 <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">
+                                 <span className="text-xs font-semibold text-primary-600 uppercase tracking-wide">
                                     As a Tasker
                                  </span>
                                  <p className="text-[10px] text-secondary-600 mt-0.5">
@@ -662,7 +662,7 @@ export const LandingHeader: React.FC = () => {
 
                         {/* Categories List */}
                         <div className="max-h-[50vh] overflow-y-auto space-y-1 mb-4">
-                           {taskTypes.flat().map((task) => (
+                           {(mobileActiveRole === "tasker" ? taskerTypes : posterTypes).flat().map((task) => (
                               <Link
                                  key={task}
                                  href={
