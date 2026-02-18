@@ -10,7 +10,7 @@ import { useRouter, useParams } from "next/navigation";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { PublicProfile } from "@/components/profile";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MessageCircle, Flag, Share2 } from "lucide-react";
+import { ArrowLeft, MessageCircle, Flag, Share2, Briefcase } from "lucide-react";
 import { UserProfile } from "@/types/user";
 import { Review, WorkHistoryItem } from "@/types/profile";
 import Link from "next/link";
@@ -18,6 +18,7 @@ import { profilesApi } from "@/lib/api/endpoints/profiles";
 import { reviewsApi } from "@/lib/api/endpoints/reviews";
 import { useAuth } from "@/lib/auth/context";
 import { toast } from "sonner";
+import { ShareModal } from "@/components/shared/ShareModal";
 
 export default function UserProfilePage() {
    const router = useRouter();
@@ -31,6 +32,7 @@ export default function UserProfilePage() {
    const [loading, setLoading] = useState(true);
    const [loadingReviews, setLoadingReviews] = useState(false);
    const [error, setError] = useState<string | null>(null);
+   const [shareOpen, setShareOpen] = useState(false);
 
    const isOwnProfile = userData?.uid === userId || userData?._id === userId;
 
@@ -134,13 +136,7 @@ export default function UserProfilePage() {
             console.log("Share cancelled");
          }
       } else {
-         // Fallback: Copy to clipboard
-         try {
-            await navigator.clipboard.writeText(url);
-            toast.success("Profile link copied to clipboard!");
-         } catch (err) {
-            toast.error("Failed to copy link");
-         }
+         setShareOpen(true);
       }
    };
 
@@ -196,6 +192,13 @@ export default function UserProfilePage() {
                   </Button>
                   {!isOwnProfile && (
                      <>
+                        <Link href={`/profile/${userId}/tasks`}>
+                           <Button variant="outline" size="sm">
+                              <Briefcase className="w-4 h-4 mr-2" />
+                              <span className="hidden md:inline">Portfolio</span>
+                              <span className="md:hidden">Tasks</span>
+                           </Button>
+                        </Link>
                         <Link href={`/chat`}>
                            <Button variant="default" size="sm">
                               <MessageCircle className="w-4 h-4 mr-2" />
@@ -242,6 +245,16 @@ export default function UserProfilePage() {
                )}
             </div>
          </main>
+
+         {/* Share Modal */}
+         <ShareModal
+            isOpen={shareOpen}
+            onClose={() => setShareOpen(false)}
+            title="Profile"
+            description={`Share ${user?.name}'s profile`}
+            url={typeof window !== "undefined" ? window.location.href : ""}
+            shareText={`Check out ${user?.name}'s profile on ExtraHand!`}
+         />
       </div>
    );
 }

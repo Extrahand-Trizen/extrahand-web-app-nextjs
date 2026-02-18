@@ -35,6 +35,8 @@ import {
    type Achievement,
 } from "@/lib/utils/profileMetrics";
 import { profilesApi } from "@/lib/api/endpoints/profiles";
+import { getUserBadge } from "@/lib/api/badge";
+import { UserBadge } from "@/components/ui/user-badge";
 
 interface PublicProfileProps {
    user: UserProfile;
@@ -57,6 +59,27 @@ export function PublicProfile({
       totalReviews: number;
       rating: number;
    } | null>(null);
+   
+   // Fetch badge info
+   const [badge, setBadge] = useState<{ currentBadge: string; uid: string } | null>(null);
+
+   useEffect(() => {
+      async function fetchBadge() {
+         try {
+            const uid = user.uid;
+            if (!uid) return;
+
+            console.log("🎖️ Fetching badge for user:", uid);
+            const badgeData = await getUserBadge(uid);
+            console.log("✅ Badge fetched:", badgeData);
+            setBadge(badgeData);
+         } catch (error: any) {
+            console.warn("⚠️ Failed to fetch badge:", error.message);
+         }
+      }
+
+      fetchBadge();
+   }, [user.uid]);
 
    useEffect(() => {
       async function fetchStats() {
@@ -143,6 +166,15 @@ export function PublicProfile({
                         <h1 className="text-xl md:text-2xl font-semibold text-gray-900">
                            {user.name}
                         </h1>
+                        {/* Badge Display */}
+                        {badge && (
+                           <UserBadge 
+                              badge={badge.currentBadge as any} 
+                              size="md" 
+                              showLabel 
+                              clickable 
+                           />
+                        )}
                         {user.verificationBadge &&
                            user.verificationBadge !== "none" && (
                               <Badge

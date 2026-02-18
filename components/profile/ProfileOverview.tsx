@@ -21,6 +21,7 @@ import {
    Shield,
    Briefcase,
    MapPin,
+   Award,
 } from "lucide-react";
 import { UserProfile } from "@/types/user";
 import { ProfileSection } from "@/types/profile";
@@ -201,6 +202,12 @@ export function ProfileOverview({ user, onNavigate }: ProfileOverviewProps) {
                         : "pending"
                   }
                   onClick={() => onNavigate("verifications")}
+               />
+               <QuickActionItem
+                  icon={<Award className="w-4 h-4 sm:w-5 sm:h-5" />}
+                  title="View Badges"
+                  description="Check your reputation and badges"
+                  onClick={() => onNavigate("badges")}
                />
                <QuickActionItem
                   icon={<CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />}

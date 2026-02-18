@@ -285,8 +285,7 @@ export type ProfileSection =
    | "security"
    | "privacy"
    | "referrals"
-   | "credits"
-   | "batch-jobs";
+   | "badges";
 
 
 export interface ProfileNavItem {

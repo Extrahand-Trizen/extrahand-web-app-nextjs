@@ -66,7 +66,8 @@ export const referralsApi = {
    * GET /api/v1/referral/dashboard
    */
   async getDashboard(): Promise<ReferralDashboard> {
-    return fetchWithAuth('referral/dashboard');
+    const response = await fetchWithAuth('referral/dashboard');
+    return response.data || response;
   },
 
   /**
@@ -74,7 +75,29 @@ export const referralsApi = {
    * GET /api/v1/referral/code
    */
   async getReferralCode(): Promise<ReferralCode> {
-    return fetchWithAuth('referral/code');
+    const response = await fetchWithAuth('referral/code');
+    return response.data || response;
+  },
+
+  /**
+   * Apply a referral code (for new users)
+   * POST /api/v1/user/referral/apply
+   */
+  async applyReferralCode(referralCode: string): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      referralCode: string;
+      status: string;
+      expiresAt: Date;
+      potentialReward: number;
+    };
+  }> {
+    const response = await fetchWithAuth('user/referral/apply', {
+      method: 'POST',
+      body: JSON.stringify({ referralCode }),
+    });
+    return response.data || response;
   },
 
   /**
@@ -82,7 +105,8 @@ export const referralsApi = {
    * GET /api/v1/referral/credits/balance
    */
   async getCreditBalance(): Promise<{ balance: number; currency: string }> {
-    return fetchWithAuth('referral/credits/balance');
+    const response = await fetchWithAuth('referral/credits/balance');
+    return response.data || response;
   },
 
   /**
@@ -109,7 +133,8 @@ export const referralsApi = {
     if (params?.page) query.append('page', params.page.toString());
 
     const url = `referral/credits/transactions${query.toString() ? '?' + query.toString() : ''}`;
-    return fetchWithAuth(url);
+    const response = await fetchWithAuth(url);
+    return response.data || response;
   },
 
   /**
@@ -118,7 +143,8 @@ export const referralsApi = {
    */
   async getReferralInfo(): Promise<ReferrerInfo | null> {
     try {
-      return fetchWithAuth('referral/info');
+      const response = await fetchWithAuth('referral/info');
+      return response.data || response;
     } catch (error: any) {
       if (error.status === 404) {
         return null; // User not referred
@@ -140,10 +166,11 @@ export const referralsApi = {
       status: string;
     };
   }> {
-    return fetchWithAuth('referral/credits/withdraw', {
+    const response = await fetchWithAuth('referral/credits/withdraw', {
       method: 'POST',
       body: JSON.stringify({ amount }),
     });
+    return response.data || response;
   },
 
   /**
@@ -154,10 +181,11 @@ export const referralsApi = {
     success: boolean;
     transaction: CreditTransaction;
   }> {
-    return fetchWithAuth('referral/credits/gift', {
+    const response = await fetchWithAuth('referral/credits/gift', {
       method: 'POST',
       body: JSON.stringify({ recipientUid, amount, message }),
     });
+    return response.data || response;
   },
 
   /**
@@ -184,7 +212,8 @@ export const referralsApi = {
     if (params?.page) query.append('page', params.page.toString());
 
     const url = `referral/batch-jobs/logs${query.toString() ? '?' + query.toString() : ''}`;
-    return fetchWithAuth(url);
+    const response = await fetchWithAuth(url);
+    return response.data || response;
   },
 
   /**
@@ -197,6 +226,7 @@ export const referralsApi = {
     lastVerificationBatch?: Date;
     nextScheduledRun?: Date;
   }> {
-    return fetchWithAuth('referral/batch-jobs/status');
+    const response = await fetchWithAuth('referral/batch-jobs/status');
+    return response.data || response;
   },
 };

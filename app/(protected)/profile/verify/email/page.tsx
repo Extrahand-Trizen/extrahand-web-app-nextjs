@@ -18,7 +18,6 @@ import {
    Mail,
    Lock,
    AlertCircle,
-   ArrowLeft,
    CheckCircle2,
    Shield,
    Clock,
@@ -222,18 +221,9 @@ export default function EmailVerificationPage() {
          <header className="sticky top-0 z-10 bg-white/90 backdrop-blur-lg border-b border-slate-100">
             <div className="max-w-5xl mx-auto px-4 sm:px-6">
                <div className="flex items-center h-14 sm:h-16">
-                  {showBack && (
-                     <button
-                        onClick={handleBack}
-                        className="p-2 -ml-2 rounded-full hover:bg-slate-100 transition-colors"
-                     >
-                        <ArrowLeft className="w-5 h-5 text-slate-600" />
-                     </button>
-                  )}
                   <h1 className="flex-1 text-center text-sm sm:text-base font-semibold text-slate-900">
                      Email Verification
                   </h1>
-                  {showBack && <div className="w-9" />}
                </div>
                {!["success", "error"].includes(state.step) && (
                   <div className="pb-3">

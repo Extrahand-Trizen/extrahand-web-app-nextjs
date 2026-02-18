@@ -21,8 +21,7 @@ import {
    MapPin,
    BriefcaseBusiness,
    TrendingUp,
-   Wallet,
-   Activity,
+   Award,
 } from "lucide-react";
 import { ProfileSection } from "@/types/profile";
 
@@ -95,16 +94,10 @@ const navItems: ProfileNavItem[] = [
       description: "Earn & share",
    },
    {
-      id: "credits",
-      label: "Credits & Earnings",
-      icon: <Wallet className="w-5 h-5" />,
-      description: "Balance & history",
-   },
-   {
-      id: "batch-jobs",
-      label: "Batch Jobs",
-      icon: <Activity className="w-5 h-5" />,
-      description: "System logs",
+      id: "badges",
+      label: "Badges",
+      icon: <Award className="w-5 h-5" />,
+      description: "Your reputation",
    },
 ];
 

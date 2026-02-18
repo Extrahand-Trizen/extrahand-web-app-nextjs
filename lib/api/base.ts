@@ -4,6 +4,7 @@
  */
 
 import axios, { AxiosInstance, AxiosError } from 'axios';
+import { auth } from '@/lib/auth/firebase';
 
 let apiInstance: AxiosInstance | null = null;
 
@@ -28,12 +29,21 @@ export function createApiClient(): AxiosInstance {
 
   // Add request interceptor to attach auth token
   apiInstance.interceptors.request.use(
-    (config) => {
-      // Get token from localStorage, cookies, or session storage
-      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-      
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+    async (config) => {
+      // Get token from Firebase Auth
+      if (typeof window !== 'undefined') {
+        try {
+          const user = auth.currentUser;
+          if (user) {
+            const token = await user.getIdToken();
+            config.headers.Authorization = `Bearer ${token}`;
+            console.log('🔐 Auth token attached to request');
+          } else {
+            console.warn('⚠️ No authenticated user found');
+          }
+        } catch (error) {
+          console.error('❌ Failed to get auth token:', error);
+        }
       }
 
       return config;
@@ -49,11 +59,8 @@ export function createApiClient(): AxiosInstance {
     (error: AxiosError) => {
       // Handle specific error codes
       if (error.response?.status === 401) {
-        // Token expired or invalid
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('authToken');
-          window.location.href = '/login';
-        }
+        // Token expired or invalid - don't auto-redirect, let components handle it
+        console.error('Authentication error:', error.message);
       }
 
       if (error.response?.status === 403) {

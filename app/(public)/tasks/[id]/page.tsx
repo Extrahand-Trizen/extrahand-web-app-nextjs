@@ -15,6 +15,7 @@ import {
    ArrowRight,
    CheckCircle,
    Shield,
+   Share2,
 } from "lucide-react";
 import { TaskDetailsHeader } from "@/components/tasks/TaskDetailsHeader";
 import { TaskDetailsMain } from "@/components/tasks/TaskDetailsMain";
@@ -29,6 +30,7 @@ import { useUserStore } from "@/lib/state/userStore";
 import type { Task } from "@/types/task";
 import { applicationsApi } from "@/lib/api/endpoints/applications";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
+import { ShareModal } from "@/components/shared/ShareModal";
 
 const formatDate = (date: Date | string | undefined) => {
    if (!date) return "Flexible";
@@ -51,6 +53,7 @@ export default function TaskDetailsPage() {
    const [activeTab, setActiveTab] = useState<"offers" | "questions">("offers");
    const [showFixedCTA, setShowFixedCTA] = useState(false);
    const [showMakeOfferModal, setShowMakeOfferModal] = useState(false);
+   const [shareOpen, setShareOpen] = useState(false);
    
    const [scrollY, setScrollY] = useState(0);
    const isMobile = useIsMobile();
@@ -150,17 +153,42 @@ export default function TaskDetailsPage() {
    const budgetAmount =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
 
+   const handleShare = async () => {
+      const url = window.location.href;
+
+      if (navigator.share) {
+         try {
+            await navigator.share({
+               title: task?.title || "Task on ExtraHand",
+               text: `Check out this task on ExtraHand: ${task?.title}`,
+               url: url,
+            });
+         } catch (err) {
+            console.log("Share cancelled");
+         }
+      } else {
+         setShareOpen(true);
+      }
+   };
+
    return (
       <div className="min-h-screen bg-linear-to-b from-secondary-50 to-white pb-24 md:pb-0">
-         {/* Back Button */}
+         {/* Back Button & Share */}
          <div className="bg-white/80 backdrop-blur-sm border-b border-secondary-100">
-            <div className="max-w-7xl mx-auto px-4 md:px-6 py-3">
+            <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
                <button
                   onClick={() => router.back()}
                   className="flex items-center text-secondary-500 hover:text-secondary-900 transition-colors"
                >
                   <ChevronLeft className="w-5 h-5 mr-1" />
                   <span className="text-sm font-medium">Back</span>
+               </button>
+               <button
+                  onClick={handleShare}
+                  className="flex items-center gap-2 px-3 py-1.5 text-secondary-500 hover:text-secondary-900 hover:bg-secondary-100 rounded-lg transition-colors"
+               >
+                  <Share2 className="w-4 h-4" />
+                  <span className="text-sm font-medium hidden md:inline">Share</span>
                </button>
             </div>
          </div>
@@ -247,6 +275,18 @@ export default function TaskDetailsPage() {
                task={task}
                open={showMakeOfferModal}
                onOpenChange={setShowMakeOfferModal}
+            />
+         )}
+
+         {/* Share Modal */}
+         {task && (
+            <ShareModal
+               isOpen={shareOpen}
+               onClose={() => setShareOpen(false)}
+               title="Task"
+               description={task.title}
+               url={typeof window !== "undefined" ? window.location.href : ""}
+               shareText={`Check out this task: "${task.title}" on ExtraHand!`}
             />
          )}
       </div>

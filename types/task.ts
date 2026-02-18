@@ -25,7 +25,10 @@ export interface Task {
   priority: 'low' | 'normal' | 'high';
   requesterId: string;
   creatorUid?: string; // Firebase UID of task creator
+  requesterUid?: string; // Firebase UID of requester (for badge fetching)
   requesterName: string;
+  requesterBadge?: 'none' | 'basic' | 'verified' | 'trusted' | 'elite'; // Poster's verification badge
+  requesterVerificationTier?: number; // Poster's verification tier (0-3)
   assignedTo?: string;
   assigneeUid?: string;
   assignedToName?: string;

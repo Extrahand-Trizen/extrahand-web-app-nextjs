@@ -1,17 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import {
-   ArrowLeft,
    CheckCircle2,
    Loader2,
    Shield,
    Smartphone,
+   Gift,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -52,7 +52,9 @@ interface SignupFormProps {
 
 export function SignupForm({ onSuccess }: SignupFormProps) {
    const router = useRouter();
+   const searchParams = useSearchParams();
    const [isSubmitting, setIsSubmitting] = useState(false);
+   const [referralCode, setReferralCode] = useState<string | null>(null);
 
    const form = useForm<PhoneAuthFormData>({
       resolver: zodResolver(phoneAuthSchema),
@@ -63,6 +65,19 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
          agreeTerms: false,
       },
    });
+
+   // Capture referral code from URL on mount
+   useEffect(() => {
+      const refCode = searchParams.get('ref');
+      if (refCode) {
+         setReferralCode(refCode.toUpperCase());
+         // Store in sessionStorage for later use after profile creation
+         sessionStorage.setItem('pendingReferralCode', refCode.toUpperCase());
+         toast.success('Referral code applied!', {
+            description: `You'll earn rewards when you complete your first task.`,
+         });
+      }
+   }, [searchParams]);
 
    const onSubmit = async (data: PhoneAuthFormData) => {
       setIsSubmitting(true);
@@ -169,14 +184,8 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
                {/* Signup Form */}
                <Card className="w-full shadow-none border-0 bg-transparent lg:bg-card lg:shadow-sm lg:border lg:rounded-xl">
                   <CardHeader className="space-y-4 px-4 lg:px-6">
-                     {/* Back button and Logo */}
-                     <div className="relative flex items-center justify-center mb-2">
-                        <Link
-                           href="/"
-                           className="absolute left-0 inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-                        >
-                           <ArrowLeft className="h-4 w-4" />
-                        </Link>
+                     {/* Logo */}
+                     <div className="flex items-center justify-center mb-2">
                         <Image
                            src="/assets/images/logo.png"
                            alt="Extrahand"
@@ -195,6 +204,23 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
                   </CardHeader>
 
                   <CardContent className="space-y-6 px-4 lg:px-6">
+                     {/* Referral Code Banner */}
+                     {referralCode && (
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg p-4">
+                           <div className="flex items-center gap-3">
+                              <Gift className="h-5 w-5 text-green-600 shrink-0" />
+                              <div>
+                                 <p className="font-semibold text-green-900">
+                                    Referral Code: {referralCode}
+                                 </p>
+                                 <p className="text-sm text-green-700">
+                                    Complete your first task to earn rewards!
+                                 </p>
+                              </div>
+                           </div>
+                        </div>
+                     )}
+
                      {/* Form */}
                      <Form {...form}>
                         <form

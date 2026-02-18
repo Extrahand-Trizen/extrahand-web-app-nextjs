@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { MapPin, Clock, MessageSquare, Tag, Calendar } from "lucide-react";
+import { MapPin, Clock, MessageSquare, Tag, Calendar, User } from "lucide-react";
 import type { Task } from "@/types/task";
+import { UserBadge } from "@/components/ui/user-badge";
 
 interface TaskCardProps {
    task: Task;
@@ -108,6 +109,15 @@ export function TaskCard({ task, isSelected = false, onClick }: TaskCardProps) {
          <h3 className="md:text-lg font-bold text-secondary-900 mb-2 line-clamp-2 group-hover:text-primary-600 transition-colors">
             {task.title}
          </h3>
+
+         {/* Poster Info with Badge */}
+         <div className="flex items-center gap-2 mb-2 text-xs text-secondary-600">
+            <User className="size-3" />
+            <span>Posted by {task.requesterName}</span>
+            {task.requesterBadge && task.requesterBadge !== 'none' && (
+               <UserBadge badge={task.requesterBadge} size="sm" showLabel clickable />
+            )}
+         </div>
 
          {/* Description */}
          {task.description && (

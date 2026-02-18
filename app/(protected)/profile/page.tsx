@@ -19,8 +19,6 @@ import {
    SecuritySection,
    PreferencesSection,
    PrivacySection,
-   ReferralDashboard,
-   CreditsSection,
 } from "@/components/profile";
 import {
    DEFAULT_NOTIFICATION_SETTINGS,
@@ -53,8 +51,7 @@ const VALID_SECTIONS: ProfileSection[] = [
    "security",
    "privacy",
    "referrals",
-   "credits",
-   "batch-jobs",
+   "badges",
 ];
 const SECTION_TITLES: Record<ProfileSection, string> = {
    overview: "Account",
@@ -68,8 +65,7 @@ const SECTION_TITLES: Record<ProfileSection, string> = {
    security: "Security",
    privacy: "Privacy",
    referrals: "Referral Program",
-   credits: "Credits & Earnings",
-   "batch-jobs": "Batch Jobs",
+   badges: "Badges",
 };
 
    const DEFAULT_FREQUENCY: FrequencySettings = {
@@ -281,8 +277,19 @@ function ProfilePageContent() {
 
    useEffect(() => {
       const s = searchParams.get("section") as ProfileSection;
-      if (s && VALID_SECTIONS.includes(s)) setSection(s);
-   }, [searchParams]);
+      if (s && VALID_SECTIONS.includes(s)) {
+         // Redirect to dashboard for referrals and badges
+         if (s === 'referrals') {
+            router.push('/dashboard/referrals');
+            return;
+         }
+         if (s === 'badges') {
+            router.push('/dashboard/badges');
+            return;
+         }
+         setSection(s);
+      }
+   }, [searchParams, router]);
 
    useEffect(() => {
       const check = () => setIsMobile(window.innerWidth < 1024);
@@ -293,6 +300,19 @@ function ProfilePageContent() {
 
    const goTo = useCallback((s: ProfileSection) => {
       setNavOpen(false);
+      
+      // Redirect to dashboard pages for referrals and badges
+      if (s === 'referrals') {
+         console.log('🔄 Navigating to /dashboard/referrals');
+         router.push('/dashboard/referrals');
+         return;
+      }
+      if (s === 'badges') {
+         console.log('🔄 Navigating to /dashboard/badges');
+         router.push('/dashboard/badges');
+         return;
+      }
+      
       setSection(s);
       // Use replace instead of push to avoid navigation issues
       if (typeof window !== 'undefined') {
@@ -300,7 +320,7 @@ function ProfilePageContent() {
          url.searchParams.set('section', s);
          window.history.replaceState(null, '', url.toString());
       }
-   }, []);
+   }, [router]);
 
    const handleSaveProfile = async (data: Partial<UserProfile>) => {
       try {
@@ -651,12 +671,10 @@ function renderSection(s: ProfileSection, p: Props) {
                onSave={p.onUpdatePrivacy}
             />
          );
+      // referrals and badges redirect to dashboard pages - see goTo function
       case "referrals":
-         return <ReferralDashboard />;
-      case "credits":
-         return <CreditsSection onNavigateToReferral={() => p.onNavigate("referrals")} />;
-      // case "batch-jobs":
-      //    return <BatchJobLogs />;
+      case "badges":
+         return null; // These redirect to dashboard, shouldn't render here
       // business-verification section removed - now integrated into verifications section
       default:
          return <ProfileOverview user={p.user} onNavigate={p.onNavigate} />;

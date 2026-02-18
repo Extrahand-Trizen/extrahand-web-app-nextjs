@@ -5,29 +5,40 @@
 import { createApiClient } from './base';
 import type { BadgeInfo, BadgeProgressData, VerificationRecord } from '@/types/badge';
 
-const api = createApiClient();
-
 /**
  * Get user's badge information
  */
 export async function getBadgeInfo(): Promise<BadgeInfo> {
-  const response = await api.get('/badge/my-badge');
-  return response.data;
+  const api = createApiClient();
+  const response = await api.get('/user/badge');
+  return response.data.data;
+}
+
+/**
+ * Get any user's badge information by UID (public endpoint)
+ * Used for displaying badges on profiles, task listings, etc.
+ */
+export async function getUserBadge(uid: string): Promise<{ userId: string; uid: string; currentBadge: string; name: string; badgeUpgradedAt?: string }> {
+  const api = createApiClient();
+  const response = await api.get(`/user/badge/public/${uid}`);
+  return response.data.data;
 }
 
 /**
  * Get badge progress details
  */
 export async function getBadgeProgress(): Promise<BadgeProgressData> {
-  const response = await api.get('/badge/progress');
-  return response.data;
+  const api = createApiClient();
+  const response = await api.get('/user/badge/progress');
+  return response.data.data;
 }
 
 /**
  * Get all badge information (levels, thresholds)
  */
-export async function getAllBadgeInfo(): Promise<any> {
-  const response = await api.get('/badge/all-badges');
+export async function getAllBadgeInfo(): Promise<unknown> {
+  const api = createApiClient();
+  const response = await api.get('/user/badge/all-badges');
   return response.data;
 }
 
@@ -40,7 +51,8 @@ export async function checkBadgeUpgrade(): Promise<{
   newBadge?: string;
   message: string;
 }> {
-  const response = await api.post('/badge/check-upgrade');
+  const api = createApiClient();
+  const response = await api.post('/user/badge/check-upgrade');
   return response.data;
 }
 
@@ -52,7 +64,8 @@ export async function getPlatformFee(): Promise<{
   badge: string;
   message: string;
 }> {
-  const response = await api.get('/badge/platform-fee');
+  const api = createApiClient();
+  const response = await api.get('/user/badge/platform-fee');
   return response.data;
 }
 
@@ -60,7 +73,8 @@ export async function getPlatformFee(): Promise<{
  * Get user's verification records
  */
 export async function getVerificationRecords(): Promise<VerificationRecord[]> {
-  const response = await api.get('/badge/verifications');
+  const api = createApiClient();
+  const response = await api.get('/user/badge/verifications');
   return response.data;
 }
 
@@ -77,7 +91,8 @@ export async function applyForEliteBadge(
     formData.append(`document_${index}`, doc);
   });
 
-  const response = await api.post('/badge/apply-elite', formData, {
+  const api = createApiClient();
+  const response = await api.post('/user/badge/apply-elite', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -95,15 +110,17 @@ export async function getEliteBadgeStatus(): Promise<{
   appliedAt?: number;
   reviewedAt?: number;
 }> {
-  const response = await api.get('/badge/elite-status');
+  const api = createApiClient();
+  const response = await api.get('/user/badge/elite-status');
   return response.data;
 }
 
 /**
  * Get badge comparison
  */
-export async function getBadgeComparison(): Promise<any> {
-  const response = await api.get('/badge/comparison');
+export async function getBadgeComparison(): Promise<unknown> {
+  const api = createApiClient();
+  const response = await api.get('/user/badge/comparison');
   return response.data;
 }
 

@@ -1,6 +1,5 @@
 /**
- * Next.js Proxy (formerly Middleware) for route protection
- * Next.js 16+: file convention `proxy.ts` and exported `proxy()`
+ * Next.js Middleware for route protection
  */
 
 import { NextResponse } from "next/server";
@@ -24,6 +23,7 @@ const protectedRoutes = [
    "/chat",
    "/applications",
    "/payments",
+   "/dashboard",
 ];
 
 function isPublicPath(pathname: string) {
@@ -91,7 +91,7 @@ function checkAuthenticated(req: NextRequest): boolean {
    );
 }
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
    const { pathname } = request.nextUrl;
 
    const authenticated = checkAuthenticated(request);

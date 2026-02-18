@@ -52,6 +52,33 @@ export interface BadgeProgressData {
   ratingProgress: number;
   platformFeePercentage: number;
   history: BadgeHistory[];
+  reputationBreakdown?: {
+    verifications: number;
+    performance: number;
+    reviews: number;
+    reliability: number;
+    total: number;
+  };
+  badgeRequirements?: Record<string, {
+    minReputation: number;
+    minTasks: number;
+    minRating: number;
+    minReviews: number;
+    responseTime?: string;
+    completionRate?: number;
+    description: string;
+  }>;
+  verifications?: {
+    count: number;
+    breakdown?: Record<string, {
+      status: 'pending' | 'verified' | 'rejected' | 'expired';
+      points: number;
+    }>;
+    list?: Array<{
+      type: 'email' | 'phone' | 'aadhaar' | 'pan' | 'bank';
+      status: 'pending' | 'verified' | 'rejected' | 'expired';
+    }>;
+  };
 }
 
 export interface BadgeDisplayProps {

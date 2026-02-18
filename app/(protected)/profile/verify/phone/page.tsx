@@ -18,7 +18,6 @@ import {
    Phone,
    Lock,
    AlertCircle,
-   ArrowLeft,
    CheckCircle2,
    Shield,
    Clock,
@@ -477,12 +476,6 @@ export default function PhoneVerificationPage() {
          {/* Header */}
          <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-lg border-b border-gray-100">
             <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-3">
-               <button
-                  onClick={handleBack}
-                  className="p-2 -ml-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
-               >
-                  <ArrowLeft className="w-5 h-5" />
-               </button>
                <h1 className="text-base font-semibold text-gray-900">
                   Phone Verification
                </h1>
