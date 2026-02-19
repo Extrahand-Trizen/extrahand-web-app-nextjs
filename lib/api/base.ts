@@ -1,10 +1,12 @@
 /**
  * Base API Client Configuration
  * Handles all API requests with authentication and error handling
+ * Uses NEXT_PUBLIC_API_BASE_URL (e.g. API gateway) so production uses env, not localhost.
  */
 
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { auth } from '@/lib/auth/firebase';
+import { getApiBaseUrl } from '@/lib/config';
 
 let apiInstance: AxiosInstance | null = null;
 
@@ -17,7 +19,8 @@ export function createApiClient(): AxiosInstance {
     return apiInstance;
   }
 
-  const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api/v1';
+  const apiBase = getApiBaseUrl().replace(/\/$/, '');
+  const baseURL = `${apiBase}/api/v1`;
 
   apiInstance = axios.create({
     baseURL,
