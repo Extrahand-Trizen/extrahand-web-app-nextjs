@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,6 +38,8 @@ interface LoginFormProps {
 
 export function LoginForm({ onSuccess }: LoginFormProps) {
    const router = useRouter();
+   const searchParams = useSearchParams();
+   const redirectTo = searchParams.get("next") || "/home";
    const [isSubmitting, setIsSubmitting] = useState(false);
 
    const form = useForm<PhoneLoginFormData>({
@@ -64,11 +66,10 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
          if (onSuccess) {
             onSuccess(formattedPhone);
          } else {
-            router.push(
-               `/otp-verification?phone=${encodeURIComponent(
-                  formattedPhone
-               )}&type=login`
-            );
+            const otpUrl = `/otp-verification?phone=${encodeURIComponent(
+               formattedPhone
+            )}&type=login&next=${encodeURIComponent(redirectTo)}`;
+            router.push(otpUrl);
          }
       } catch {
          toast.error("Failed to send OTP", {

@@ -10,12 +10,14 @@ export default function OTPVerificationPage() {
    const phone = rawPhone ? formatPhoneNumber(rawPhone) : "";
    const userName = searchParams.get("name") || "";
    const authType = (searchParams.get("type") || "login") as "login" | "signup";
+   const redirectTo = searchParams.get("next") || "/home";
 
    return (
       <OTPVerificationForm
          phone={phone}
          userName={userName}
          authType={authType}
+         redirectTo={redirectTo}
       />
    );
 }
