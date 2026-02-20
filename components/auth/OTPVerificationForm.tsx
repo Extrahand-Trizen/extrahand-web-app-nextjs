@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { useOTP } from "@/hooks/useOTP";
 import { authApi } from "@/lib/api/endpoints/auth";
+import { referralsApi } from "@/lib/api/endpoints/referrals";
 import { useAuth } from "@/lib/auth/context";
 import { sessionManager } from "@/lib/auth/session";
 import { setOTPAuthInProgress } from "@/lib/auth/authFlowState";
@@ -82,6 +83,25 @@ export function OTPVerificationForm({
    const isVerifyingRef = useRef(false); // Prevent duplicate verification attempts
 
    const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+   const applyPendingReferralCode = useCallback(async () => {
+      if (authType !== "signup" || typeof window === "undefined") return;
+      const pendingReferralCode = sessionStorage.getItem("pendingReferralCode");
+      if (!pendingReferralCode) return;
+      try {
+         await referralsApi.applyReferralCode(pendingReferralCode);
+         sessionStorage.removeItem("pendingReferralCode");
+         toast.success("Referral code applied!", {
+            description: "Complete a task worth ₹500+ to unlock rewards.",
+         });
+      } catch (error: any) {
+         console.error("Failed to apply referral code:", error);
+         sessionStorage.removeItem("pendingReferralCode");
+         toast.error("Could not apply referral code", {
+            description: "You can apply it later from your profile.",
+         });
+      }
+   }, [authType]);
 
    // Initial auto-send OTP
    useEffect(() => {
@@ -274,6 +294,7 @@ export function OTPVerificationForm({
             setOTPAuthInProgress(false);
             await new Promise((r) => setTimeout(r, 200));
             await refreshUserData();
+            await applyPendingReferralCode();
             setIsVerified(true);
             clearSession();
             isVerifyingRef.current = false;
@@ -322,6 +343,7 @@ export function OTPVerificationForm({
             setOTPAuthInProgress(false);
             await new Promise((r) => setTimeout(r, 200));
             await refreshUserData();
+            await applyPendingReferralCode();
             setIsVerified(true);
             clearSession();
             isVerifyingRef.current = false;
@@ -429,6 +451,9 @@ export function OTPVerificationForm({
 
          // Now fetch the full profile from backend (cookies are set)
          await refreshUserData();
+
+         // Apply referral code if user signed up with one
+         await applyPendingReferralCode();
 
          // 5. Success!
          setIsVerified(true);

@@ -63,19 +63,19 @@ export interface BatchJobLog {
 export const referralsApi = {
   /**
    * Get referral dashboard with stats and recent transactions
-   * GET /api/v1/referral/dashboard
+   * GET /api/v1/user/referral-dashboard
    */
   async getDashboard(): Promise<ReferralDashboard> {
-    const response = await fetchWithAuth('referral/dashboard');
+    const response = await fetchWithAuth('user/referral-dashboard');
     return response.data || response;
   },
 
   /**
    * Get referral code for current user
-   * GET /api/v1/referral/code
+   * GET /api/v1/user/referral-code
    */
   async getReferralCode(): Promise<ReferralCode> {
-    const response = await fetchWithAuth('referral/code');
+    const response = await fetchWithAuth('user/referral-code');
     return response.data || response;
   },
 
@@ -102,16 +102,16 @@ export const referralsApi = {
 
   /**
    * Get credit balance for current user
-   * GET /api/v1/referral/credits/balance
+   * GET /api/v1/user/credits/balance
    */
   async getCreditBalance(): Promise<{ balance: number; currency: string }> {
-    const response = await fetchWithAuth('referral/credits/balance');
+    const response = await fetchWithAuth('user/credits/balance');
     return response.data || response;
   },
 
   /**
    * Get transaction history
-   * GET /api/v1/referral/credits/transactions
+   * GET /api/v1/user/credits/transactions
    */
   async getTransactions(
     params?: {
@@ -132,18 +132,18 @@ export const referralsApi = {
     if (params?.limit) query.append('limit', params.limit.toString());
     if (params?.page) query.append('page', params.page.toString());
 
-    const url = `referral/credits/transactions${query.toString() ? '?' + query.toString() : ''}`;
+    const url = `user/credits/transactions${query.toString() ? '?' + query.toString() : ''}`;
     const response = await fetchWithAuth(url);
     return response.data || response;
   },
 
   /**
    * Get referral info for a specific user (if referred)
-   * GET /api/v1/referral/info
+   * GET /api/v1/user/referral-dashboard (reuses dashboard data)
    */
   async getReferralInfo(): Promise<ReferrerInfo | null> {
     try {
-      const response = await fetchWithAuth('referral/info');
+      const response = await fetchWithAuth('user/referral-dashboard');
       return response.data || response;
     } catch (error: any) {
       if (error.status === 404) {
@@ -155,7 +155,7 @@ export const referralsApi = {
 
   /**
    * Withdraw credits
-   * POST /api/v1/referral/credits/withdraw
+   * POST /api/v1/user/credits/withdraw
    */
   async withdrawCredits(amount: number): Promise<{
     success: boolean;
@@ -166,7 +166,7 @@ export const referralsApi = {
       status: string;
     };
   }> {
-    const response = await fetchWithAuth('referral/credits/withdraw', {
+    const response = await fetchWithAuth('user/credits/withdraw', {
       method: 'POST',
       body: JSON.stringify({ amount }),
     });
@@ -175,13 +175,13 @@ export const referralsApi = {
 
   /**
    * Gift credits to another user
-   * POST /api/v1/referral/credits/gift
+   * POST /api/v1/user/credits/gift
    */
   async giftCredits(recipientUid: string, amount: number, message?: string): Promise<{
     success: boolean;
     transaction: CreditTransaction;
   }> {
-    const response = await fetchWithAuth('referral/credits/gift', {
+    const response = await fetchWithAuth('user/credits/gift', {
       method: 'POST',
       body: JSON.stringify({ recipientUid, amount, message }),
     });
@@ -189,8 +189,8 @@ export const referralsApi = {
   },
 
   /**
-   * Get batch job logs (admin only, but can be accessed for general info)
-   * GET /api/v1/referral/batch-jobs/logs
+   * Get batch job logs (mock in gateway)
+   * GET /api/v1/user/batch-jobs/logs
    */
   async getBatchJobLogs(
     params?: {
@@ -211,14 +211,14 @@ export const referralsApi = {
     if (params?.limit) query.append('limit', params.limit.toString());
     if (params?.page) query.append('page', params.page.toString());
 
-    const url = `referral/batch-jobs/logs${query.toString() ? '?' + query.toString() : ''}`;
+    const url = `user/batch-jobs/logs${query.toString() ? '?' + query.toString() : ''}`;
     const response = await fetchWithAuth(url);
     return response.data || response;
   },
 
   /**
    * Get last execution time of batch jobs
-   * GET /api/v1/referral/batch-jobs/status
+   * GET /api/v1/user/batch-jobs/status
    */
   async getBatchJobStatus(): Promise<{
     lastDailyBadgeCheck?: Date;
@@ -226,7 +226,7 @@ export const referralsApi = {
     lastVerificationBatch?: Date;
     nextScheduledRun?: Date;
   }> {
-    const response = await fetchWithAuth('referral/batch-jobs/status');
+    const response = await fetchWithAuth('user/batch-jobs/status');
     return response.data || response;
   },
 };

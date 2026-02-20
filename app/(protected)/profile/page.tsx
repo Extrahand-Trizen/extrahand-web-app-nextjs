@@ -20,6 +20,8 @@ import {
    PreferencesSection,
    PrivacySection,
 } from "@/components/profile";
+import ReferralDashboardSimple from "@/components/profile/ReferralDashboardSimple";
+import BadgeDisplaySimple from "@/components/profile/BadgeDisplaySimple";
 import {
    DEFAULT_NOTIFICATION_SETTINGS,
    FrequencySettings,
@@ -278,18 +280,9 @@ function ProfilePageContent() {
    useEffect(() => {
       const s = searchParams.get("section") as ProfileSection;
       if (s && VALID_SECTIONS.includes(s)) {
-         // Redirect to dashboard for referrals and badges
-         if (s === 'referrals') {
-            router.push('/dashboard/referrals');
-            return;
-         }
-         if (s === 'badges') {
-            router.push('/dashboard/badges');
-            return;
-         }
          setSection(s);
       }
-   }, [searchParams, router]);
+   }, [searchParams]);
 
    useEffect(() => {
       const check = () => setIsMobile(window.innerWidth < 1024);
@@ -300,27 +293,13 @@ function ProfilePageContent() {
 
    const goTo = useCallback((s: ProfileSection) => {
       setNavOpen(false);
-      
-      // Redirect to dashboard pages for referrals and badges
-      if (s === 'referrals') {
-         console.log('🔄 Navigating to /dashboard/referrals');
-         router.push('/dashboard/referrals');
-         return;
-      }
-      if (s === 'badges') {
-         console.log('🔄 Navigating to /dashboard/badges');
-         router.push('/dashboard/badges');
-         return;
-      }
-      
       setSection(s);
-      // Use replace instead of push to avoid navigation issues
       if (typeof window !== 'undefined') {
          const url = new URL(window.location.href);
          url.searchParams.set('section', s);
          window.history.replaceState(null, '', url.toString());
       }
-   }, [router]);
+   }, []);
 
    const handleSaveProfile = async (data: Partial<UserProfile>) => {
       try {
@@ -671,10 +650,20 @@ function renderSection(s: ProfileSection, p: Props) {
                onSave={p.onUpdatePrivacy}
             />
          );
-      // referrals and badges redirect to dashboard pages - see goTo function
       case "referrals":
+         return (
+            <div>
+               <h2 className="text-xl font-semibold text-gray-900 mb-4">Referral Program</h2>
+               <ReferralDashboardSimple className="mb-12" />
+            </div>
+         );
       case "badges":
-         return null; // These redirect to dashboard, shouldn't render here
+         return (
+            <div>
+               <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Badges</h2>
+               <BadgeDisplaySimple className="mb-12" />
+            </div>
+         );
       // business-verification section removed - now integrated into verifications section
       default:
          return <ProfileOverview user={p.user} onNavigate={p.onNavigate} />;

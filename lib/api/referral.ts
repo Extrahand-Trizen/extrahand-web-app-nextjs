@@ -136,7 +136,7 @@ export async function requestCreditWithdrawal(
 export async function checkReferralQualification(
   referralCode: string
 ): Promise<{ canQualify: boolean; message: string }> {
-  const response = await api.get('/referral/check-qualification', {
+  const response = await api.get('/user/referral/check-qualification', {
     params: { code: referralCode },
   });
   return response.data;
@@ -151,7 +151,7 @@ export async function getPublicReferralInfo(code: string): Promise<{
   referrerRating: number;
   benefitDescription: string;
 }> {
-  const response = await api.get(`/referral/public/${code}`);
+  const response = await api.get(`/user/referral/public/${code}`);
   return response.data;
 }
 

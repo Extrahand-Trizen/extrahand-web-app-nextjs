@@ -103,7 +103,7 @@ export function UserBadge({
 
   if (clickable) {
     return (
-      <Link href="/dashboard/badges" onClick={(e) => e.stopPropagation()}>
+      <Link href="/profile?section=badges" onClick={(e) => e.stopPropagation()}>
         {badgeContent}
       </Link>
     );
