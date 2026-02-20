@@ -115,5 +115,33 @@ export const profilesApi = {
   }> {
     return fetchPublic(`profiles/${userId}/stats`);
   },
-};
 
+  /**
+   * Update category alerts
+   * PUT /api/v1/profiles/me/category-alerts
+   */
+  async updateCategoryAlerts(categories: Array<{ slug: string; name: string }>): Promise<{
+    success: boolean;
+    data: {
+      categories: Array<{ slug: string; name: string }>;
+    };
+  }> {
+    return fetchWithAuth('profiles/me/category-alerts', {
+      method: 'PUT',
+      body: JSON.stringify({ categories }),
+    });
+  },
+
+  /**
+   * Get category alerts
+   * GET /api/v1/profiles/me/category-alerts
+   */
+  async getCategoryAlerts(): Promise<{
+    success: boolean;
+    data: {
+      categories: Array<{ slug: string; name: string }>;
+    };
+  }> {
+    return fetchWithAuth('profiles/me/category-alerts');
+  }
+};

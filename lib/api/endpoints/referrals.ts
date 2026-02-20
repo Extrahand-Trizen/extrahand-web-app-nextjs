@@ -9,7 +9,6 @@ export interface ReferralDashboard {
   referralCode: string;
   referralLink: string;
   totalReferrals: number;
-  pendingReferrals: number;
   successfulReferrals: number;
   failedReferrals: number;
   totalEarnings: number;

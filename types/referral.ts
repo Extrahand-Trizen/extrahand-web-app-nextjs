@@ -44,7 +44,6 @@ export interface CreditTransaction {
 export interface ReferralStats {
   totalReferrals: number;
   qualifiedReferrals: number;
-  pendingReferrals: number;
   expiredReferrals: number;
   totalCreditsEarned: number;
   currentCreditBalance: number;

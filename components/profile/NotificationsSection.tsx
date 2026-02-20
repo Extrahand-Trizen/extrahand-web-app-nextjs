@@ -26,6 +26,38 @@ import {
    COMMUNICATION_CHANNELS,
 } from "@/types/consent";
 
+// Same categories as used in task posting
+const KEYWORD_CATEGORIES = [
+   { name: "Home Cleaning", slug: "home-cleaning" },
+   { name: "Deep Cleaning", slug: "deep-cleaning" },
+   { name: "Plumbing", slug: "plumbing" },
+   { name: "Electrical", slug: "electrical" },
+   { name: "Carpenter", slug: "carpenter" },
+   { name: "Painting", slug: "painting" },
+   { name: "AC Repair & Service", slug: "ac-repair" },
+   { name: "Appliance Repair", slug: "appliance-repair" },
+   { name: "Pest Control", slug: "pest-control" },
+   { name: "Car Washing / Car Cleaning", slug: "car-washing" },
+   { name: "Moving / Packers & Movers", slug: "moving-packers" },
+   { name: "Delivery / Pickup", slug: "delivery-pickup" },
+   { name: "Gardening", slug: "gardening" },
+   { name: "Handyperson / General Repairs", slug: "handyperson" },
+   { name: "Furniture Assembly", slug: "furniture-assembly" },
+   { name: "Security Patrol / Watchman", slug: "security-patrol" },
+   { name: "Beauty Services", slug: "beauty-services" },
+   { name: "Massage / Spa", slug: "massage-spa" },
+   { name: "Fitness Trainers", slug: "fitness-trainers" },
+   { name: "Tutors", slug: "tutors" },
+   { name: "IT Support / Laptop Repair", slug: "it-support" },
+   { name: "Photographer / Videographer", slug: "photographer-videographer" },
+   { name: "Event Services", slug: "event-services" },
+   { name: "Pet Services", slug: "pet-services" },
+   { name: "Driver / Chauffeur", slug: "driver-chauffeur" },
+   { name: "Cooking / Home Chef", slug: "cooking-home-chef" },
+   { name: "Laundry / Ironing", slug: "laundry-ironing" },
+   { name: "Other", slug: "other" },
+];
+
 interface NotificationsSectionProps {
    settings?: NotificationSettingsState;
    frequencySettings?: FrequencySettings;
@@ -65,6 +97,10 @@ export function NotificationsSection({
    const [expandedSections, setExpandedSections] = useState<string[]>(["push"]);
    const [keywordInput, setKeywordInput] = useState("");
    const [keywordAlerts, setKeywordAlerts] = useState<string[]>([]);
+   const [categories, setCategories] = useState<Array<{ name: string; slug: string }>>([]);
+   const [filteredCategories, setFilteredCategories] = useState<Array<{ name: string; slug: string }>>([]);
+   const [showDropdown, setShowDropdown] = useState(false);
+
    const keywordAlertsEnabled =
       (localSettings.push.enabled && localSettings.push.keywordTaskAlerts) ||
       (localSettings.email.enabled && localSettings.email.keywordTaskAlerts);
@@ -77,6 +113,7 @@ export function NotificationsSection({
       );
    };
 
+   // Load keyword alerts from localStorage
    useEffect(() => {
       if (typeof window === "undefined") return;
       const stored = window.localStorage.getItem("notificationKeywordAlerts");
@@ -91,6 +128,37 @@ export function NotificationsSection({
       }
    }, []);
 
+   // Set initial categories from constant
+   useEffect(() => {
+      setCategories(KEYWORD_CATEGORIES);
+      console.log('✅ Categories loaded:', KEYWORD_CATEGORIES);
+   }, []);
+
+   // Filter categories based on input
+   useEffect(() => {
+      console.log('🔍 Filtering with input:', {keywordInput, categoriesCount: categories.length, keywordAlertsCount: keywordAlerts.length});
+      if (!keywordInput.trim()) {
+         setFilteredCategories([]);
+         setShowDropdown(false);
+         return;
+      }
+
+      const query = keywordInput.toLowerCase();
+      const filtered = categories
+         .filter(
+            (cat) =>
+               cat.name.toLowerCase().startsWith(query) &&
+               !keywordAlerts.includes(cat.name.toLowerCase())
+         )
+         .slice(0, 8); // Show max 8 suggestions
+
+      console.log('✅ Filtered result:', {query, filtered});
+      setFilteredCategories(filtered);
+      setShowDropdown(filtered.length > 0);
+   }, [keywordInput, categories, keywordAlerts]);
+
+
+
    const persistKeywordAlerts = (next: string[]) => {
       setKeywordAlerts(next);
       if (typeof window !== "undefined") {
@@ -101,12 +169,13 @@ export function NotificationsSection({
       }
    };
 
-   const addKeywordAlert = () => {
-      const trimmed = keywordInput.trim().toLowerCase();
-      if (!trimmed || trimmed.length < 2 || trimmed.length > 30) return;
-      if (keywordAlerts.includes(trimmed) || keywordAlerts.length >= 10) return;
-      persistKeywordAlerts([...keywordAlerts, trimmed]);
+   const addKeywordAlert = (categoryName?: string) => {
+      const nameToAdd = categoryName || keywordInput.trim().toLowerCase();
+      if (!nameToAdd || nameToAdd.length < 2 || nameToAdd.length > 30) return;
+      if (keywordAlerts.includes(nameToAdd) || keywordAlerts.length >= 10) return;
+      persistKeywordAlerts([...keywordAlerts, nameToAdd]);
       setKeywordInput("");
+      setShowDropdown(false);
    };
 
    const removeKeywordAlert = (keyword: string) => {
@@ -155,6 +224,7 @@ export function NotificationsSection({
       setIsSaving(true);
       try {
          await onSave(localSettings, localFrequency, localChannel);
+
          setHasChanges(false);
       } catch (error) {
          console.error("Failed to save notification settings:", error);
@@ -257,13 +327,6 @@ export function NotificationsSection({
                disabled={!localSettings.push.enabled}
             />
             <NotificationToggle
-               label="Recommended Task Alerts"
-               description="Personalized task recommendations"
-               checked={localSettings.push.recommendedTaskAlerts}
-               onChange={(v) => updateChannelSetting("push", "recommendedTaskAlerts", v)}
-               disabled={!localSettings.push.enabled}
-            />
-            <NotificationToggle
                label="System Alerts"
                description="Security and account notifications"
                checked={localSettings.push.system}
@@ -329,13 +392,6 @@ export function NotificationsSection({
                description="Alerts for tasks matching your keywords"
                checked={localSettings.email.keywordTaskAlerts}
                onChange={(v) => updateChannelSetting("email", "keywordTaskAlerts", v)}
-               disabled={!localSettings.email.enabled}
-            />
-            <NotificationToggle
-               label="Recommended Task Alerts"
-               description="Personalized task recommendations"
-               checked={localSettings.email.recommendedTaskAlerts}
-               onChange={(v) => updateChannelSetting("email", "recommendedTaskAlerts", v)}
                disabled={!localSettings.email.enabled}
             />
             <NotificationToggle
@@ -418,33 +474,65 @@ export function NotificationsSection({
                </Badge>
             </div>
 
-            <div className="mt-3 sm:mt-4 flex items-center gap-2">
-               <input
-                  type="text"
-                  value={keywordInput}
-                  onChange={(e) => setKeywordInput(e.target.value)}
-                  onKeyDown={(e) => {
-                     if (e.key === "Enter") {
-                        e.preventDefault();
-                        addKeywordAlert();
-                     }
-                  }}
-                  placeholder="e.g., plumbing, AC repair"
-                  disabled={!keywordAlertsEnabled}
-                  className="flex-1 h-9 px-3 text-xs sm:text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent disabled:bg-gray-50"
-               />
-               <Button
-                  type="button"
-                  size="sm"
-                  onClick={addKeywordAlert}
-                  disabled={!keywordAlertsEnabled}
-               >
-                  Add
-               </Button>
+            <div className="mt-3 sm:mt-4 relative">
+               <div className="flex items-center gap-2">
+                  <div className="flex-1 relative">
+                     <input
+                        type="text"
+                        value={keywordInput}
+                        onChange={(e) => setKeywordInput(e.target.value)}
+                        onKeyDown={(e) => {
+                           if (e.key === "Enter" && !showDropdown) {
+                              e.preventDefault();
+                              addKeywordAlert();
+                           } else if (e.key === "Enter" && filteredCategories.length > 0) {
+                              e.preventDefault();
+                              addKeywordAlert(filteredCategories[0].name.toLowerCase());
+                           } else if (e.key === "Escape") {
+                              setShowDropdown(false);
+                           }
+                        }}
+                        onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+                        placeholder="e.g., plumbing, AC repair"
+                        disabled={!keywordAlertsEnabled}
+                        className="w-full h-9 px-3 text-xs sm:text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent disabled:bg-gray-50"
+                     />
+
+                     {/* Suggestions Dropdown */}
+                     {showDropdown && filteredCategories.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                           {filteredCategories.map((cat) => (
+                              <button
+                                 key={cat.slug}
+                                 type="button"
+                                 onClick={() => addKeywordAlert(cat.name.toLowerCase())}
+                                 className="w-full px-3 py-2 text-left text-xs sm:text-sm hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                              >
+                                 {cat.name}
+                              </button>
+                           ))}
+                        </div>
+                     )}
+                  </div>
+                  <Button
+                     type="button"
+                     size="sm"
+                     onClick={() => {
+                        if (filteredCategories.length > 0) {
+                           addKeywordAlert(filteredCategories[0].name.toLowerCase());
+                        } else {
+                           addKeywordAlert();
+                        }
+                     }}
+                     disabled={!keywordAlertsEnabled}
+                  >
+                     Add
+                  </Button>
+               </div>
             </div>
 
-            <p className="text-[10px] sm:text-xs text-gray-500 mt-2">
-               Max 10 keywords, 2-30 characters each. Saved on this device.
+            <p className="text-[10px] sm:text-xs text-gray-500 mt-3">
+               Start typing to see category suggestions. Max 10 keywords. Saved on this device.
             </p>
 
             {keywordAlerts.length > 0 && (

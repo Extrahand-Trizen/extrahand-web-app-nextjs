@@ -135,19 +135,23 @@ export function MyApplicationsContent({
          });
 
          setApplications(filtered);
-         // Notify parent of count change
-         onCountChange?.(filtered.length);
       } catch (err) {
          console.error("Error fetching applications:", err);
          setError(getErrorMessage(err));
       } finally {
          setLoading(false);
       }
-   }, [searchQuery, statusFilter, sortBy, page, onCountChange]);
+   }, [searchQuery, statusFilter, sortBy]);
 
+   // Call onCountChange when applications load
    useEffect(() => {
       fetchApplications();
-   }, [fetchApplications]);
+   }, [statusFilter]);
+
+   // Notify parent of count change when applications change
+   useEffect(() => {
+      onCountChange?.(applications.length);
+   }, [applications, onCountChange]);
 
    // Handlers
    const handleViewTask = (taskId: string) => {
