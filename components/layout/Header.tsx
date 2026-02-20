@@ -206,7 +206,7 @@ export const Header: React.FC = () => {
    const rightMenu = menuItems.slice(4);
 
    return (
-      <header className="w-full max-w-full flex flex-row items-center justify-between px-6 md:px-8 lg:px-12 bg-white relative z-[1000] -mt-1 h-16 overflow-x-hidden">
+      <header className="w-full max-w-full flex flex-row items-center justify-between px-6 md:px-8 lg:px-12 bg-white relative z-40 -mt-1 h-16 overflow-x-hidden">
          {/* Left: Logo */}
          <div className="flex flex-row items-center flex-shrink-0">
             <Link href="/" className="flex items-center gap-2">

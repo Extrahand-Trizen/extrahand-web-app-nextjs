@@ -38,8 +38,6 @@ const KEYWORD_CATEGORIES = [
    { name: "Appliance Repair", slug: "appliance-repair" },
    { name: "Pest Control", slug: "pest-control" },
    { name: "Car Washing / Car Cleaning", slug: "car-washing" },
-   { name: "Moving / Packers & Movers", slug: "moving-packers" },
-   { name: "Delivery / Pickup", slug: "delivery-pickup" },
    { name: "Gardening", slug: "gardening" },
    { name: "Handyperson / General Repairs", slug: "handyperson" },
    { name: "Furniture Assembly", slug: "furniture-assembly" },

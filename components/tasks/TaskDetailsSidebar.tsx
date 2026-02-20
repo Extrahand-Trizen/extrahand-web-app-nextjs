@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Shield, CheckCircle, Star } from "lucide-react";
 import type { Task } from "@/types/task";
-import { MakeOfferModal } from "./offers/MakeOfferModal";
 import Link from "next/link";
 import { getUserBadge } from "@/lib/api/badge";
 import { UserBadge } from "@/components/ui/user-badge";
@@ -12,10 +11,10 @@ import { UserBadge } from "@/components/ui/user-badge";
 interface TaskDetailsSidebarProps {
    task: Task;
    isOwner?: boolean;
+   onMakeOffer?: () => void;
 }
 
-export function TaskDetailsSidebar({ task, isOwner = false }: TaskDetailsSidebarProps) {
-   const [showMakeOfferModal, setShowMakeOfferModal] = useState(false);
+export function TaskDetailsSidebar({ task, isOwner = false, onMakeOffer }: TaskDetailsSidebarProps) {
    
    // Fetch requester badge
    const [requesterBadge, setRequesterBadge] = useState<{ currentBadge: string } | null>(null);
@@ -70,7 +69,7 @@ export function TaskDetailsSidebar({ task, isOwner = false }: TaskDetailsSidebar
             {task.status === "open" && !isOwner && (
                <div className="space-y-2">
                   <Button
-                     onClick={() => setShowMakeOfferModal(true)}
+                     onClick={onMakeOffer}
                      className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold h-12 rounded-xl shadow-sm hover:shadow-md transition-all"
                   >
                      Make an Offer
@@ -96,7 +95,7 @@ export function TaskDetailsSidebar({ task, isOwner = false }: TaskDetailsSidebar
                   <span className="text-secondary-600">Duration</span>
                   <span className="font-semibold text-secondary-900">
                      {task.estimatedDuration
-                        ? `${task.estimatedDuration}h`
+                        ? `${Math.floor(task.estimatedDuration / 24)}d ${(task.estimatedDuration % 24).toFixed(0)}h`
                         : "Flexible"}
                   </span>
                </div>
@@ -190,13 +189,6 @@ export function TaskDetailsSidebar({ task, isOwner = false }: TaskDetailsSidebar
                </div>
             </div>
          </div>
-
-         {/* Make Offer Modal */}
-         <MakeOfferModal
-            task={task}
-            open={showMakeOfferModal}
-            onOpenChange={setShowMakeOfferModal}
-         />
       </div>
    );
 }

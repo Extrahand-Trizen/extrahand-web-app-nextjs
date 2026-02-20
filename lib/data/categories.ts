@@ -86,20 +86,6 @@ export const serviceCategories: ServiceCategory[] = [
       gradient: "from-slate-500 via-gray-500 to-zinc-500",
    },
    {
-      id: "moving-packers",
-      name: "Moving / Packers & Movers",
-      description: "Packers, movers, and relocation help",
-      icon: "",
-      gradient: "from-slate-500 via-gray-500 to-zinc-500",
-   },
-   {
-      id: "delivery-pickup",
-      name: "Delivery / Pickup",
-      description: "Pickup, drop, and local delivery",
-      icon: "",
-      gradient: "from-slate-500 via-gray-500 to-zinc-500",
-   },
-   {
       id: "gardening",
       name: "Gardening",
       description: "Garden maintenance and landscaping",

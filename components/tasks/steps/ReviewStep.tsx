@@ -47,8 +47,6 @@ const CATEGORIES: Record<string, { label: string }> = {
    "appliance-repair": { label: "Appliance Repair" },
    "pest-control": { label: "Pest Control" },
    "car-washing": { label: "Car Washing / Car Cleaning" },
-   "moving-packers": { label: "Moving / Packers & Movers" },
-   "delivery-pickup": { label: "Delivery / Pickup" },
    gardening: { label: "Gardening" },
    handyperson: { label: "Handyperson / General Repairs" },
    "furniture-assembly": { label: "Furniture Assembly" },
@@ -192,7 +190,10 @@ export function ReviewStep({
                {data.estimatedDuration && (
                   <div className="flex items-center gap-2 text-xs md:text-sm text-gray-600">
                      <Clock className="w-4 h-4" />
-                     <span>Estimated {data.estimatedDuration} hours</span>
+                     <span>
+                        Estimated {Math.floor(data.estimatedDuration / 24)} days{" "}
+                        {(data.estimatedDuration % 24).toFixed(1)} hours
+                     </span>
                   </div>
                )}
             </div>

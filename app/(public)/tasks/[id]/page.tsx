@@ -171,6 +171,19 @@ export default function TaskDetailsPage() {
       }
    };
 
+   const handleMakeOffer = () => {
+      // Check if user is logged in before opening the offer modal
+      if (!currentUser) {
+         // Redirect to login with the current task page as the return URL
+         const currentPath = `/tasks/${taskId}`;
+         router.push(`/login?next=${encodeURIComponent(currentPath)}`);
+         return;
+      }
+      
+      // User is logged in, open the modal
+      setShowMakeOfferModal(true);
+   };
+
    return (
       <div className="min-h-screen bg-linear-to-b from-secondary-50 to-white pb-24 md:pb-0">
          {/* Back Button & Share */}
@@ -195,7 +208,7 @@ export default function TaskDetailsPage() {
 
          {/* Header Component */}
          <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 lg:py-6">
-            <TaskDetailsHeader task={task} showMobileCTA={isMobile} />
+            <TaskDetailsHeader task={task} showMobileCTA={isMobile} onMakeOffer={handleMakeOffer} />
          </div>
 
          {/* Main Content */}
@@ -237,7 +250,7 @@ export default function TaskDetailsPage() {
                               taskId={taskId}
                               isOwner={isOwner}
                               userProfile={userProfile}
-                              onMakeOffer={() => setShowMakeOfferModal(true)}
+                              onMakeOffer={handleMakeOffer}
                               taskCategory={task?.category}
                            />
                         ) : (
@@ -249,7 +262,7 @@ export default function TaskDetailsPage() {
 
                {/* Right Sidebar - Desktop Only */}
                <div className="hidden lg:block">
-                  <TaskDetailsSidebar task={task} isOwner={isOwner} />
+                  <TaskDetailsSidebar task={task} isOwner={isOwner} onMakeOffer={handleMakeOffer} />
                </div>
             </div>
          </div>
@@ -259,7 +272,7 @@ export default function TaskDetailsPage() {
             <div className="fixed bottom-0 left-0 right-0 lg:hidden bg-white border-t border-secondary-200 shadow-xl animate-in slide-in-from-bottom-0 duration-300">
                <div className="max-w-7xl mx-auto px-4 py-3">
                   <Button
-                     onClick={() => setShowMakeOfferModal(true)}
+                     onClick={handleMakeOffer}
                      className="w-full bg-primary-600 hover:bg-primary-700 text-white h-10 font-semibold rounded-xl flex items-center justify-center gap-2"
                   >
                      Make an Offer

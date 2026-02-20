@@ -7,11 +7,13 @@ import type { Task } from "@/types/task";
 interface TaskDetailsHeaderProps {
    task: Task;
    showMobileCTA?: boolean;
+   onMakeOffer?: () => void;
 }
 
 export function TaskDetailsHeader({
    task,
    showMobileCTA = false,
+   onMakeOffer,
 }: TaskDetailsHeaderProps) {
    const budgetAmount =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
@@ -177,8 +179,12 @@ export function TaskDetailsHeader({
                      )}
                   </div>
                </div>
-               {task.status === "open" && (
-                  <Button className="bg-primary-600 hover:bg-primary-700 text-white h-10 font-semibold rounded-xl shadow-sm" size="lg">
+               {task.status === "open" && onMakeOffer && (
+                  <Button 
+                     onClick={onMakeOffer}
+                     className="bg-primary-600 hover:bg-primary-700 text-white h-10 font-semibold rounded-xl shadow-sm" 
+                     size="lg"
+                  >
                      Make an Offer
                   </Button>
                )}

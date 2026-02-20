@@ -34,6 +34,7 @@ import {
    FormLabel,
    FormMessage,
    FormControl,
+   FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -220,7 +221,7 @@ export function MakeOfferModal({
                               <Input
                                  type="number"
                                  placeholder="Enter your proposed budget"
-                                 value={field.value ?? ""}
+                                 value={field.value || ""}
                                  onChange={(e) =>
                                     field.onChange(
                                        e.target.value === ""
@@ -232,6 +233,9 @@ export function MakeOfferModal({
                                  className="h-11"
                               />
                            </FormControl>
+                           <FormDescription className="text-xs text-secondary-600">
+                              Minimum budget is ₹50
+                           </FormDescription>
                            <FormMessage />
                         </FormItem>
                      )}
@@ -270,26 +274,53 @@ export function MakeOfferModal({
                         render={({ field }) => (
                            <FormItem>
                               <FormLabel className="text-xs text-secondary-600">
-                                 Estimated Duration (hours)
+                                 Estimated Duration
                               </FormLabel>
                               <FormControl>
-                                 <Input
-                                    type="number"
-                                    step="0.5"
-                                    min="0.5"
-                                    max="168"
-                                    placeholder="e.g., 4"
-                                    value={field.value ?? ""}
-                                    onChange={(e) =>
-                                       field.onChange(
-                                          e.target.value === ""
-                                             ? undefined
-                                             : Number(e.target.value)
-                                       )
-                                    }
-                                    onBlur={field.onBlur}
-                                    className="h-10"
-                                 />
+                                 <div className="flex items-center gap-3">
+                                    <div className="flex-1">
+                                       <div className="flex items-center gap-2">
+                                          <Input
+                                             type="number"
+                                             placeholder="0"
+                                             min="0"
+                                             max="365"
+                                             step="1"
+                                             className="h-10 text-sm flex-1"
+                                             value={field.value && Math.floor(field.value / 24) > 0 ? Math.floor(field.value / 24) : ""}
+                                             onChange={(e) => {
+                                                const days = e.target.value ? parseFloat(e.target.value) : 0;
+                                                const hours = field.value ? (field.value % 24) : 0;
+                                                field.onChange(days * 24 + hours || undefined);
+                                             }}
+                                          />
+                                          <span className="text-xs text-secondary-600 font-medium min-w-fit">
+                                             days
+                                          </span>
+                                       </div>
+                                    </div>
+                                    <div className="flex-1">
+                                       <div className="flex items-center gap-2">
+                                          <Input
+                                             type="number"
+                                             placeholder="0"
+                                             min="0"
+                                             max="23"
+                                             step="1"
+                                             className="h-10 text-sm flex-1"
+                                             value={field.value && Math.floor(field.value % 24) > 0 ? Math.floor(field.value % 24) : ""}
+                                             onChange={(e) => {
+                                                const hours = e.target.value ? parseFloat(e.target.value) : 0;
+                                                const days = field.value ? Math.floor(field.value / 24) : 0;
+                                                field.onChange(days * 24 + hours || undefined);
+                                             }}
+                                          />
+                                          <span className="text-xs text-secondary-600 font-medium min-w-fit">
+                                             hours
+                                          </span>
+                                       </div>
+                                    </div>
+                                 </div>
                               </FormControl>
                               <FormMessage />
                            </FormItem>

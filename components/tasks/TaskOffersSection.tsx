@@ -215,7 +215,8 @@ export function TaskOffersSection({
                      <div className="flex justify-between text-sm">
                         <span className="text-secondary-600">Estimated Time:</span>
                         <span className="font-semibold text-secondary-900">
-                           {myApplication.proposedTime.estimatedDuration} hours
+                           {Math.floor(myApplication.proposedTime.estimatedDuration / 24)}d{" "}
+                           {(myApplication.proposedTime.estimatedDuration % 24).toFixed(0)}h
                         </span>
                      </div>
                   )}

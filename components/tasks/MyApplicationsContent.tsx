@@ -6,7 +6,7 @@
  * Used within the Tasks page tabs
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -32,7 +32,7 @@ export function MyApplicationsContent({
    const router = useRouter();
 
    // State
-   const [applications, setApplications] = useState<TaskApplication[]>([]);
+   const [allApplications, setAllApplications] = useState<TaskApplication[]>([]);
    const [tasks, setTasks] = useState<Map<string, Task>>(new Map());
    const [loading, setLoading] = useState(true);
    const [error, setError] = useState<string | null>(null);
@@ -46,16 +46,79 @@ export function MyApplicationsContent({
       string | null
    >(null);
 
+   // Client-side filtering and sorting
+   const filteredApplications = useMemo(() => {
+      let result = [...allApplications];
+
+      // Status filter
+      if (statusFilter !== "all") {
+         result = result.filter((app) => app.status === statusFilter);
+      }
+
+      // Search filter
+      if (searchQuery.trim()) {
+         const query = searchQuery.toLowerCase();
+         result = result.filter((app: any) => {
+            const task = typeof app.taskId === "object" ? app.taskId : null;
+            return (
+               (app.coverLetter && app.coverLetter.toLowerCase().includes(query)) ||
+               (app.relevantExperience && app.relevantExperience.some((exp: string) =>
+                  exp.toLowerCase().includes(query)
+               )) ||
+               (task &&
+                  ((task.title && task.title.toLowerCase().includes(query)) ||
+                     (task.description && task.description.toLowerCase().includes(query)) ||
+                     (task.category && task.category.toLowerCase().includes(query))))
+            );
+         });
+      }
+
+      // Sort
+      result.sort((a: any, b: any) => {
+         switch (sortBy) {
+            case "recent":
+               return (
+                  new Date(b.createdAt).getTime() -
+                  new Date(a.createdAt).getTime()
+               );
+            case "oldest":
+               return (
+                  new Date(a.createdAt).getTime() -
+                  new Date(b.createdAt).getTime()
+               );
+            case "budget-high":
+               return (b.proposedBudget?.amount || 0) - (a.proposedBudget?.amount || 0);
+            case "budget-low":
+               return (a.proposedBudget?.amount || 0) - (b.proposedBudget?.amount || 0);
+            case "status":
+               const statusOrder: Record<ApplicationStatus, number> = {
+                  pending: 1,
+                  accepted: 2,
+                  rejected: 3,
+                  withdrawn: 4,
+               };
+               return statusOrder[a.status as ApplicationStatus] - statusOrder[b.status as ApplicationStatus];
+            default:
+               return 0;
+         }
+      });
+
+      return result;
+   }, [allApplications, searchQuery, statusFilter, sortBy]);
+
+   // Notify parent of count change when applications change
+   useEffect(() => {
+      onCountChange?.(filteredApplications.length);
+   }, [filteredApplications.length, onCountChange]);
+
    // Fetch applications
    const fetchApplications = useCallback(async () => {
       setLoading(true);
       setError(null);
 
       try {
-         // Fetch from real API
-         const response = await applicationsApi.getMyApplications(
-            statusFilter !== "all" ? statusFilter : undefined
-         );
+         // Fetch from real API (fetch all, filter client-side)
+         const response = await applicationsApi.getMyApplications();
          
          console.log("✅ My applications response:", response);
          
@@ -83,75 +146,19 @@ export function MyApplicationsContent({
          });
          setTasks(taskMap);
 
-         // Apply client-side filters since API already filtered by status
-         let filtered = [...apps];
-
-         // Search filter (client-side)
-         if (searchQuery.trim()) {
-            const query = searchQuery.toLowerCase();
-            filtered = filtered.filter((app: any) => {
-               const task = typeof app.taskId === "object" ? app.taskId : null;
-               return (
-                  (app.coverLetter && app.coverLetter.toLowerCase().includes(query)) ||
-                  (app.relevantExperience && app.relevantExperience.some((exp: string) =>
-                     exp.toLowerCase().includes(query)
-                  )) ||
-                  (task &&
-                     ((task.title && task.title.toLowerCase().includes(query)) ||
-                        (task.description && task.description.toLowerCase().includes(query)) ||
-                        (task.category && task.category.toLowerCase().includes(query))))
-               );
-            });
-         }
-
-         // Sort (client-side)
-         filtered.sort((a: any, b: any) => {
-            switch (sortBy) {
-               case "recent":
-                  return (
-                     new Date(b.createdAt).getTime() -
-                     new Date(a.createdAt).getTime()
-                  );
-               case "oldest":
-                  return (
-                     new Date(a.createdAt).getTime() -
-                     new Date(b.createdAt).getTime()
-                  );
-               case "budget-high":
-                  return (b.proposedBudget?.amount || 0) - (a.proposedBudget?.amount || 0);
-               case "budget-low":
-                  return (a.proposedBudget?.amount || 0) - (b.proposedBudget?.amount || 0);
-               case "status":
-                  const statusOrder: Record<ApplicationStatus, number> = {
-                     pending: 1,
-                     accepted: 2,
-                     rejected: 3,
-                     withdrawn: 4,
-                  };
-                  return statusOrder[a.status as ApplicationStatus] - statusOrder[b.status as ApplicationStatus];
-               default:
-                  return 0;
-            }
-         });
-
-         setApplications(filtered);
+         setAllApplications(apps);
       } catch (err) {
          console.error("Error fetching applications:", err);
          setError(getErrorMessage(err));
       } finally {
          setLoading(false);
       }
-   }, [searchQuery, statusFilter, sortBy]);
+   }, []); // No dependencies - only fetch once
 
-   // Call onCountChange when applications load
+   // Call on mount
    useEffect(() => {
       fetchApplications();
-   }, [statusFilter]);
-
-   // Notify parent of count change when applications change
-   useEffect(() => {
-      onCountChange?.(applications.length);
-   }, [applications, onCountChange]);
+   }, [fetchApplications]);
 
    // Handlers
    const handleViewTask = (taskId: string) => {
@@ -170,15 +177,13 @@ export function MyApplicationsContent({
          });
 
          // Update local state
-         setApplications((prev) => {
-            const updated = prev.map((app) =>
+         setAllApplications((prev) =>
+            prev.map((app) =>
                app._id === applicationId
                   ? { ...app, status: "withdrawn" as const }
                   : app
-            );
-            onCountChange?.(updated.length);
-            return updated;
-         });
+            )
+         );
 
          toast.success("Application withdrawn successfully");
       } catch (err) {
@@ -220,12 +225,12 @@ export function MyApplicationsContent({
                      </Button>
                   </div>
                </div>
-            ) : applications.length === 0 ? (
+            ) : filteredApplications.length === 0 ? (
                <MyApplicationsEmptyState hasFilters={hasFilters} />
             ) : (
                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
                   <div className="space-y-4 sm:space-y-6">
-                     {applications.map((application) => {
+                     {filteredApplications.map((application) => {
                         // Handle case where taskId might be null or not populated
                         if (!application.taskId) {
                            console.warn("Application missing taskId:", application._id);
@@ -254,10 +259,10 @@ export function MyApplicationsContent({
                   </div>
 
                   {/* Pagination (for future use) */}
-                  {applications.length > 10 && (
+                  {filteredApplications.length > 10 && (
                      <div className="flex flex-col sm:flex-row items-center justify-between mt-6 sm:mt-8 pt-6 border-t border-secondary-200 gap-4">
                         <p className="text-sm text-secondary-600">
-                           Showing {applications.length} applications
+                           Showing {filteredApplications.length} applications
                         </p>
                         <div className="flex gap-2">
                            <Button
@@ -272,7 +277,7 @@ export function MyApplicationsContent({
                            <Button
                               variant="outline"
                               size="sm"
-                              disabled={applications.length < 10}
+                              disabled={filteredApplications.length < 10}
                               onClick={() => setPage((p) => p + 1)}
                            >
                               Next
