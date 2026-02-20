@@ -104,7 +104,11 @@ export function middleware(request: NextRequest) {
    // If already authenticated, avoid auth pages
    if (authenticated && isAuthPath(pathname)) {
       const url = request.nextUrl.clone();
-      url.pathname = "/home";
+      // Check if there's a redirect destination
+      const next = request.nextUrl.searchParams.get("next");
+      url.pathname = next || "/home";
+      // Clear the search params to avoid carrying over "next" parameter
+      url.search = "";
       return NextResponse.redirect(url);
    }
 

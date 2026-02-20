@@ -5,7 +5,7 @@
  * Summary view of account status, stats, and quick actions
  */
 
-import React from "react";
+import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -22,9 +22,14 @@ import {
    Briefcase,
    MapPin,
    Award,
+   Share2,
+   Copy,
+   ExternalLink,
 } from "lucide-react";
 import { UserProfile } from "@/types/user";
 import { ProfileSection } from "@/types/profile";
+import { ShareModal } from "@/components/shared/ShareModal";
+import { toast } from "sonner";
 
 interface ProfileOverviewProps {
    user: UserProfile;
@@ -32,6 +37,49 @@ interface ProfileOverviewProps {
 }
 
 export function ProfileOverview({ user, onNavigate }: ProfileOverviewProps) {
+   const [shareOpen, setShareOpen] = useState(false);
+   
+   // Generate the public profile URL
+   const getProfileUrl = () => {
+      if (typeof window !== "undefined") {
+         const userId = user.uid || user._id;
+         return `${window.location.origin}/profile/${userId}`;
+      }
+      return "";
+   };
+
+   const handleShare = async () => {
+      const url = getProfileUrl();
+
+      if (navigator.share) {
+         try {
+            await navigator.share({
+               title: `${user.name}'s Profile on ExtraHand`,
+               text: `Check out ${user.name}'s profile on ExtraHand`,
+               url: url,
+            });
+         } catch (err) {
+            console.log("Share cancelled");
+         }
+      } else {
+         setShareOpen(true);
+      }
+   };
+
+   const handleCopyLink = async () => {
+      const url = getProfileUrl();
+      try {
+         await navigator.clipboard.writeText(url);
+         toast.success("Profile link copied to clipboard!");
+      } catch (err) {
+         toast.error("Failed to copy link");
+      }
+   };
+
+   const handleOpenProfile = () => {
+      const url = getProfileUrl();
+      window.open(url, '_blank');
+   };
    const completionPercentage = calculateCompletionPercentage(user);
    const verificationItems = getVerificationStatus(user);
    const verifiedCount = verificationItems.filter(
@@ -113,8 +161,56 @@ export function ProfileOverview({ user, onNavigate }: ProfileOverviewProps) {
                      >
                         Edit
                      </Button>
+                     <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleShare}
+                        className="text-xs h-8 px-3"
+                     >
+                        <Share2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1.5" />
+                        <span className="hidden sm:inline">Share</span>
+                     </Button>
                   </div>
                </div>
+            </div>
+         </div>
+
+         {/* Shareable Profile Link */}
+         <div className="bg-linear-to-br from-primary-50 to-blue-50 rounded-lg border border-primary-100 p-4 sm:p-5">
+            <div className="flex items-center gap-2 mb-3">
+               <Share2 className="w-4 h-4 sm:w-5 sm:h-5 text-primary-600" />
+               <h3 className="text-xs sm:text-sm font-medium text-gray-900">
+                  Share Your Profile
+               </h3>
+            </div>
+            <p className="text-[10px] sm:text-xs text-gray-600 mb-3">
+               Share your profile link with others to showcase your reputation and completed tasks
+            </p>
+            <div className="flex items-center gap-2 bg-white rounded-lg border border-gray-200 p-2">
+               <input
+                  type="text"
+                  value={getProfileUrl()}
+                  readOnly
+                  className="flex-1 bg-transparent text-xs sm:text-sm text-gray-700 outline-none min-w-0 truncate"
+               />
+               <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCopyLink}
+                  className="h-8 px-2 shrink-0"
+                  title="Copy link"
+               >
+                  <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+               </Button>
+               <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleOpenProfile}
+                  className="h-8 px-2 shrink-0"
+                  title="Open in new tab"
+               >
+                  <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+               </Button>
             </div>
          </div>
 
@@ -247,6 +343,16 @@ export function ProfileOverview({ user, onNavigate }: ProfileOverviewProps) {
                />
             </div>
          </div>
+
+         {/* Share Modal */}
+         <ShareModal
+            isOpen={shareOpen}
+            onClose={() => setShareOpen(false)}
+            title="Profile"
+            description={`Share ${user.name}'s profile`}
+            url={getProfileUrl()}
+            shareText={`Check out ${user.name}'s profile on ExtraHand!`}
+         />
       </div>
    );
 }
