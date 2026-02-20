@@ -170,7 +170,7 @@ export default function UserProfilePage() {
 
    return (
       <div className="flex flex-col min-h-screen bg-gray-50">
-         {/* Top Bar with Actions */}
+         {/* Top Navigation */}
          <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
             <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
                <button
@@ -180,46 +180,45 @@ export default function UserProfilePage() {
                   <ArrowLeft className="w-4 h-4" />
                   Back
                </button>
-               <div className="flex items-center gap-2">
+            </div>
+         </div>
+
+         {/* Action Buttons Card */}
+         <div className="max-w-7xl mx-auto px-4 py-6 w-full">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5">
+               <div className="flex items-center gap-2 flex-wrap">
                   <Button
-                     variant="ghost"
+                     variant="outline"
                      size="sm"
                      onClick={handleShare}
-                     className="text-gray-600"
+                     className="text-xs h-8 px-3"
                   >
-                     <Share2 className="w-4 h-4" />
-                     <span className="hidden md:inline ml-2">Share</span>
+                     <Share2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1.5" />
+                     <span className="hidden sm:inline">Share</span>
                   </Button>
                   {!isOwnProfile && (
                      <>
                         <Link href={`/profile/${userId}/tasks`}>
-                           <Button variant="outline" size="sm">
-                              <Briefcase className="w-4 h-4 mr-2" />
-                              <span className="hidden md:inline">Portfolio</span>
-                              <span className="md:hidden">Tasks</span>
+                           <Button variant="outline" size="sm" className="text-xs h-8 px-3">
+                              <Briefcase className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1.5" />
+                              <span className="hidden sm:inline">Portfolio</span>
                            </Button>
                         </Link>
                         <Link href={`/chat`}>
-                           <Button variant="default" size="sm">
-                              <MessageCircle className="w-4 h-4 mr-2" />
-                              Message
+                           <Button variant="outline" size="sm" className="text-xs h-8 px-3">
+                              <MessageCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1.5" />
+                              <span className="hidden sm:inline">Message</span>
                            </Button>
                         </Link>
                         <Button
-                           variant="ghost"
-                           size="icon"
-                           className="text-gray-400 hover:text-red-600"
+                           variant="outline"
+                           size="sm"
+                           className="text-xs h-8 px-3 text-gray-400 hover:text-red-600"
                         >
-                           <Flag className="w-4 h-4" />
+                           <Flag className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                           <span className="hidden sm:inline ml-1.5">Report</span>
                         </Button>
                      </>
-                  )}
-                  {isOwnProfile && (
-                     <Link href="/profile?section=edit-profile">
-                        <Button variant="outline" size="sm">
-                           Edit Profile
-                        </Button>
-                     </Link>
                   )}
                </div>
             </div>
