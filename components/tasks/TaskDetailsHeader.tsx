@@ -35,6 +35,25 @@ export function TaskDetailsHeader({
       return null;
    };
 
+   // Calculate partial assignment status for recurring tasks
+   const getRecurringAssignmentBadge = () => {
+      if (!task.recurring?.enabled || !task.schedule || task.schedule.length === 0) {
+         return null;
+      }
+      
+      const assignedCount = task.schedule.filter(s => s.status === "assigned").length;
+      const totalCount = task.schedule.length;
+      
+      if (assignedCount > 0 && assignedCount < totalCount) {
+         return (
+            <span className="inline-flex items-center px-1 md:px-2 py-0.5 rounded text-[9px] md:text-xs font-medium bg-amber-100 text-amber-800">
+               {assignedCount}/{totalCount} Dates Assigned
+            </span>
+         );
+      }
+      return null;
+   };
+
    const getUrgencyBadge = () => {
       if (task.urgency === "urgent") {
          return (
@@ -89,6 +108,7 @@ export function TaskDetailsHeader({
          {/* Badges & Category */}
          <div className="flex flex-wrap items-center gap-2 mb-3 lg:mb-4">
             {getStatusBadge()}
+            {getRecurringAssignmentBadge()}
             {getUrgencyBadge()}
             <span className="inline-flex items-center px-1 md:px-2 py-0.5 rounded text-[10px] md:text-xs font-medium bg-secondary-100 text-secondary-700">
                <Tag className="size-2 md:size-3 mr-1" />

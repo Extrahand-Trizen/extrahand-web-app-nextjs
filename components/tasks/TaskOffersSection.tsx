@@ -382,9 +382,14 @@ export function TaskOffersSection({
                                        </div>
                                        <div className="text-right">
                                           <div className="text-xl font-bold text-green-700 mb-1">
-                                             ₹{acceptedApplication.proposedBudget.amount.toLocaleString()}
+                                             ₹{(acceptedApplication.proposedBudget.amount * (acceptedApplication.selectedDates?.length || 1)).toLocaleString()}
                                           </div>
-                                          {acceptedApplication.proposedTime?.estimatedDuration && (
+                                          {acceptedApplication.selectedDates && acceptedApplication.selectedDates.length > 0 && (
+                                             <div className="text-xs text-secondary-500">
+                                                ₹{acceptedApplication.proposedBudget.amount} × {acceptedApplication.selectedDates.length} days
+                                             </div>
+                                          )}
+                                          {acceptedApplication.proposedTime?.estimatedDuration && !acceptedApplication.selectedDates?.length && (
                                              <div className="text-xs text-secondary-500">
                                                 Est. {acceptedApplication.proposedTime.estimatedDuration}h
                                              </div>
@@ -501,8 +506,13 @@ export function TaskOffersSection({
                                  <div className="text-right">
                                     <div className="text-lg font-bold text-primary-600 mb-1">
                                        ₹
-                                       {application.proposedBudget.amount.toLocaleString()}
+                                       {(application.proposedBudget.amount * (application.selectedDates?.length || 1)).toLocaleString()}
                                     </div>
+                                    {application.selectedDates && application.selectedDates.length > 0 && (
+                                       <div className="text-xs text-secondary-400 font-medium mb-1">
+                                          ₹{application.proposedBudget.amount} × {application.selectedDates.length} days
+                                       </div>
+                                    )}
                                     <div className="flex items-center gap-2 justify-end">
                                        <span className="text-xs text-secondary-400 font-medium">
                                           {getTimeAgo(application.createdAt)}
