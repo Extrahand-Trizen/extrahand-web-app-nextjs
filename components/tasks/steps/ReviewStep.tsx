@@ -40,6 +40,7 @@ const CATEGORIES: Record<string, { label: string }> = {
    "home-cleaning": { label: "Home Cleaning" },
    "deep-cleaning": { label: "Deep Cleaning" },
    plumbing: { label: "Plumbing" },
+   "water-tanker-services": { label: "Water & Tanker Services" },
    electrical: { label: "Electrical" },
    carpenter: { label: "Carpenter" },
    painting: { label: "Painting" },

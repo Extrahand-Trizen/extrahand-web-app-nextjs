@@ -37,6 +37,13 @@ export const serviceCategories: ServiceCategory[] = [
       gradient: "from-slate-500 via-gray-500 to-zinc-500",
    },
    {
+      id: "water-tanker-services",
+      name: "Water & Tanker Services",
+      description: "Water supply, tankers, and bulk delivery",
+      icon: "",
+      gradient: "from-slate-500 via-gray-500 to-zinc-500",
+   },
+   {
       id: "electrical",
       name: "Electrical",
       description: "Wiring, fixtures, and electrical repairs",

@@ -58,9 +58,28 @@ export function LocationScheduleStep({
    const scheduledTimeStart = form.watch("scheduledTimeStart");
    const scheduledTimeEnd = form.watch("scheduledTimeEnd");
    const location = form.watch("location");
+   const category = form.watch("category");
    const recurringEnabled = form.watch("recurringEnabled");
    const recurringStartDate = form.watch("recurringStartDate");
    const recurringEndDate = form.watch("recurringEndDate");
+
+   const recurringEligibleCategories = [
+      "home-cleaning",
+      "deep-cleaning",
+      "gardening",
+      "pest-control",
+      "laundry-ironing",
+      "cooking-home-chef",
+      "beauty-services",
+      "massage-spa",
+      "fitness-trainers",
+      "tutors",
+      "pet-services",
+      "car-washing",
+      "water-tanker-services",
+   ];
+
+   const canUseRecurring = recurringEligibleCategories.includes(category || "");
 
 
    // Minimum date is today at midnight
@@ -106,6 +125,15 @@ export function LocationScheduleStep({
          form.setValue("scheduledTimeEnd", newEnd);
       }
    }, [scheduledTimeStart, scheduledTimeEnd, form]);
+
+   useEffect(() => {
+      if (!canUseRecurring && recurringEnabled) {
+         form.setValue("recurringEnabled", false);
+         form.setValue("recurringStartDate", null);
+         form.setValue("recurringEndDate", null);
+         form.setValue("recurringFrequency", "daily");
+      }
+   }, [canUseRecurring, recurringEnabled, form]);
 
    const handleQuickDate = (daysOffset: number) => {
       const date = addDays(new Date(), daysOffset);
@@ -193,10 +221,13 @@ export function LocationScheduleStep({
                         </button>
                         <button
                            type="button"
-                           onClick={() => field.onChange(true)}
+                           disabled={!canUseRecurring}
+                           onClick={() => canUseRecurring && field.onChange(true)}
                            className={cn(
                               "flex-1 h-10 rounded-lg border-2 text-sm font-medium transition-all",
-                              field.value
+                              !canUseRecurring
+                                 ? "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
+                                 : field.value
                                  ? "border-primary-600 bg-primary-50 text-primary-600"
                                  : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
                            )}
@@ -205,6 +236,11 @@ export function LocationScheduleStep({
                         </button>
                      </div>
                   </FormControl>
+                  {!canUseRecurring && (
+                     <FormDescription className="text-xs text-gray-500">
+                        Recurring schedule is available for select services only.
+                     </FormDescription>
+                  )}
                </FormItem>
             )}
          />
