@@ -37,6 +37,7 @@ interface PaymentConfirmationModalProps {
     proposedBudget: {
       amount: number;
     };
+    selectedDates?: Array<Date | string>;
   };
   posterUid: string;
   onSuccess: (escrowId: string, paymentId: string) => void;
@@ -58,7 +59,9 @@ export function PaymentConfirmationModal({
   const [error, setError] = useState<string | null>(null);
   const [escrowId, setEscrowId] = useState<string | null>(null);
 
-  const amount = application.proposedBudget.amount;
+  const selectedDatesCount = application.selectedDates?.length ?? 0;
+  const baseAmount = application.proposedBudget.amount;
+  const amount = baseAmount * (selectedDatesCount || 1);
 
   // Calculate fees when modal opens (category-aware for correct GST/fees)
   useEffect(() => {
@@ -230,7 +233,11 @@ export function PaymentConfirmationModal({
                 {/* Fee Breakdown */}
                 <div className="border rounded-lg p-4 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Task Amount</span>
+                    <span className="text-gray-600">
+                      {selectedDatesCount > 1
+                        ? `Task Amount (${formatCurrency(baseAmount)} × ${selectedDatesCount} days)`
+                        : "Task Amount"}
+                    </span>
                     <span className="font-medium">{formatCurrency(amount)}</span>
                   </div>
 

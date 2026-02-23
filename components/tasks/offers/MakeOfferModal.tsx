@@ -105,6 +105,19 @@ export function MakeOfferModal({
    const relevantExperience = form.watch("relevantExperience") || [];
    const portfolio = form.watch("portfolio") || [];
    const selectedDates = form.watch("selectedDates") || [];
+   const openDates = openSchedule.map((entry) => new Date(entry.date));
+
+   const setSelectedDates = (dates: Date[]) => {
+      form.setValue("selectedDates", dates, { shouldValidate: true });
+   };
+
+   const selectWeekdays = () => {
+      setSelectedDates(openDates.filter((date) => ![0, 6].includes(date.getDay())));
+   };
+
+   const selectWeekends = () => {
+      setSelectedDates(openDates.filter((date) => [0, 6].includes(date.getDay())));
+   };
 
    const addExperience = () => {
       const trimmed = experienceInput.trim();
@@ -234,7 +247,44 @@ export function MakeOfferModal({
                                     Select dates you can take
                                  </FormLabel>
                                  <FormControl>
-                                    <div className="space-y-2 max-h-48 overflow-y-auto rounded-lg border border-secondary-200 p-3">
+                                    <div className="space-y-2">
+                                       {openSchedule.length > 0 && (
+                                          <div className="flex flex-wrap gap-2">
+                                             <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setSelectedDates(openDates)}
+                                             >
+                                                Select all
+                                             </Button>
+                                             <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setSelectedDates([])}
+                                             >
+                                                Clear
+                                             </Button>
+                                             <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={selectWeekdays}
+                                             >
+                                                Weekdays
+                                             </Button>
+                                             <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={selectWeekends}
+                                             >
+                                                Weekends
+                                             </Button>
+                                          </div>
+                                       )}
+                                       <div className="max-h-48 overflow-y-auto rounded-lg border border-secondary-200 p-3">
                                        {openSchedule.length === 0 && (
                                           <p className="text-xs text-secondary-500">
                                              No open dates available right now.
@@ -277,6 +327,7 @@ export function MakeOfferModal({
                                              </label>
                                           );
                                        })}
+                                       </div>
                                     </div>
                                  </FormControl>
                                  <FormDescription className="text-xs text-secondary-600">

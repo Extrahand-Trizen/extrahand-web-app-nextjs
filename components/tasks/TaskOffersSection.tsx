@@ -645,6 +645,7 @@ export function TaskOffersSection({
                   id: selectedApplication._id,
                   applicantId: selectedApplication.applicantId as string,
                   proposedBudget: selectedApplication.proposedBudget,
+                  selectedDates: selectedApplication.selectedDates,
                }}
                posterUid={currentUser?.uid ?? ""}
                onSuccess={handlePaymentSuccess}
