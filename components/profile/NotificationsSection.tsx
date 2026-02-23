@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { CategoryAlerts } from "@/components/profile/CategoryAlerts";
 import {
    Bell,
    Mail,
@@ -25,6 +26,8 @@ import {
    CommunicationChannel,
    COMMUNICATION_CHANNELS,
 } from "@/types/consent";
+import { profilesApi } from "@/lib/api/endpoints/profiles";
+import type { CategoriesListItem } from "@/lib/api/endpoints/categories";
 
 // Same categories as used in task posting
 const KEYWORD_CATEGORIES = [
@@ -98,6 +101,7 @@ export function NotificationsSection({
    const [categories, setCategories] = useState<Array<{ name: string; slug: string }>>([]);
    const [filteredCategories, setFilteredCategories] = useState<Array<{ name: string; slug: string }>>([]);
    const [showDropdown, setShowDropdown] = useState(false);
+   const [selectedCategories, setSelectedCategories] = useState<CategoriesListItem[]>([]);
 
    const keywordAlertsEnabled =
       (localSettings.push.enabled && localSettings.push.keywordTaskAlerts) ||
@@ -124,6 +128,120 @@ export function NotificationsSection({
       } catch (error) {
          console.error("Failed to parse keyword alerts from storage:", error);
       }
+   }, []);
+
+   // Load category alerts from localStorage
+   useEffect(() => {
+      if (typeof window === "undefined") return;
+      const stored = window.localStorage.getItem("notificationCategoryAlerts");
+      if (!stored) return;
+      try {
+         const parsed = JSON.parse(stored);
+         if (Array.isArray(parsed)) {
+            setSelectedCategories(
+               parsed.filter(
+                  (c) => c && typeof c.slug === "string" && typeof c.name === "string"
+               )
+            );
+         }
+      } catch (error) {
+         console.error("Failed to parse category alerts from storage:", error);
+      }
+   }, []);
+
+   // Sync alerts from backend (keywords + categories)
+   useEffect(() => {
+      let isMounted = true;
+
+      const loadAlerts = async () => {
+         try {
+            const localKeywordStore = typeof window !== "undefined"
+               ? window.localStorage.getItem("notificationKeywordAlerts")
+               : null;
+            const localCategoryStore = typeof window !== "undefined"
+               ? window.localStorage.getItem("notificationCategoryAlerts")
+               : null;
+
+            const localKeywords = localKeywordStore
+               ? (() => {
+                    try {
+                       const parsed = JSON.parse(localKeywordStore);
+                       return Array.isArray(parsed) ? parsed : [];
+                    } catch {
+                       return [];
+                    }
+                 })()
+               : [];
+
+            const localCategories = localCategoryStore
+               ? (() => {
+                    try {
+                       const parsed = JSON.parse(localCategoryStore);
+                       return Array.isArray(parsed) ? parsed : [];
+                    } catch {
+                       return [];
+                    }
+                 })()
+               : [];
+
+            const [keywordRes, categoryRes] = await Promise.allSettled([
+               profilesApi.getKeywordAlerts(),
+               profilesApi.getCategoryAlerts(),
+            ]);
+
+            if (keywordRes.status === "fulfilled") {
+               const keywords = keywordRes.value?.data?.keywords;
+               if (Array.isArray(keywords) && isMounted) {
+                  const resolvedKeywords = keywords.length > 0 ? keywords : localKeywords;
+                  setKeywordAlerts(resolvedKeywords);
+                  if (typeof window !== "undefined") {
+                     window.localStorage.setItem(
+                        "notificationKeywordAlerts",
+                        JSON.stringify(resolvedKeywords)
+                     );
+                  }
+                  if (keywords.length === 0 && localKeywords.length > 0) {
+                     profilesApi.updateKeywordAlerts(localKeywords).catch((error) =>
+                        console.error("Failed to sync local keywords:", error)
+                     );
+                  }
+               }
+            }
+
+            if (categoryRes.status === "fulfilled") {
+               const categoriesFromApi = categoryRes.value?.data?.categories;
+               if (Array.isArray(categoriesFromApi) && isMounted) {
+                  const resolvedCategories = categoriesFromApi.length > 0
+                     ? categoriesFromApi
+                     : localCategories;
+                  setSelectedCategories(resolvedCategories as CategoriesListItem[]);
+                  if (typeof window !== "undefined") {
+                     window.localStorage.setItem(
+                        "notificationCategoryAlerts",
+                        JSON.stringify(resolvedCategories)
+                     );
+                  }
+                  if (categoriesFromApi.length === 0 && localCategories.length > 0) {
+                     profilesApi.updateCategoryAlerts(
+                        localCategories.map((c: any) => ({
+                           slug: c.slug,
+                           name: c.name,
+                        }))
+                     ).catch((error) =>
+                        console.error("Failed to sync local categories:", error)
+                     );
+                  }
+               }
+            }
+         } catch (error) {
+            console.error("Failed to load alert preferences:", error);
+         }
+      };
+
+      loadAlerts();
+      return () => {
+         isMounted = false;
+      };
    }, []);
 
    // Set initial categories from constant
@@ -159,6 +277,7 @@ export function NotificationsSection({
 
    const persistKeywordAlerts = (next: string[]) => {
       setKeywordAlerts(next);
+      setHasChanges(true);
       if (typeof window !== "undefined") {
          window.localStorage.setItem(
             "notificationKeywordAlerts",
@@ -178,6 +297,29 @@ export function NotificationsSection({
 
    const removeKeywordAlert = (keyword: string) => {
       persistKeywordAlerts(keywordAlerts.filter((k) => k !== keyword));
+   };
+
+   const persistCategoryAlerts = (next: CategoriesListItem[]) => {
+      setSelectedCategories(next);
+      setHasChanges(true);
+      if (typeof window !== "undefined") {
+         window.localStorage.setItem(
+            "notificationCategoryAlerts",
+            JSON.stringify(next)
+         );
+      }
+   };
+
+   const addCategoryAlert = (category: CategoriesListItem) => {
+      if (selectedCategories.find((c) => c.slug === category.slug)) return;
+      if (selectedCategories.length >= 10) return;
+      persistCategoryAlerts([...selectedCategories, category]);
+   };
+
+   const removeCategoryAlert = (categorySlug: string) => {
+      persistCategoryAlerts(
+         selectedCategories.filter((c) => c.slug !== categorySlug)
+      );
    };
 
    const updateChannelSetting = <K extends keyof NotificationSettingsState>(
@@ -222,6 +364,13 @@ export function NotificationsSection({
       setIsSaving(true);
       try {
          await onSave(localSettings, localFrequency, localChannel);
+
+         await Promise.allSettled([
+            profilesApi.updateKeywordAlerts(keywordAlerts),
+            profilesApi.updateCategoryAlerts(
+               selectedCategories.map((c) => ({ slug: c.slug, name: c.name }))
+            ),
+         ]);
 
          setHasChanges(false);
       } catch (error) {
@@ -555,6 +704,14 @@ export function NotificationsSection({
                </div>
             )}
          </div>
+
+         {/* Category Alerts */}
+         <CategoryAlerts
+            enabled={keywordAlertsEnabled}
+            onAddCategory={addCategoryAlert}
+            onRemoveCategory={removeCategoryAlert}
+            selectedCategories={selectedCategories}
+         />
 
          {/* Quiet Hours & Frequency */}
          <div className="bg-white rounded-lg border border-gray-200">

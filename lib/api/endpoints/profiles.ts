@@ -143,5 +143,34 @@ export const profilesApi = {
     };
   }> {
     return fetchWithAuth('profiles/me/category-alerts');
+  },
+
+  /**
+   * Update keyword alerts
+   * PUT /api/v1/profiles/me/keyword-alerts
+   */
+  async updateKeywordAlerts(keywords: string[]): Promise<{
+    success: boolean;
+    data: {
+      keywords: string[];
+    };
+  }> {
+    return fetchWithAuth('profiles/me/keyword-alerts', {
+      method: 'PUT',
+      body: JSON.stringify({ keywords }),
+    });
+  },
+
+  /**
+   * Get keyword alerts
+   * GET /api/v1/profiles/me/keyword-alerts
+   */
+  async getKeywordAlerts(): Promise<{
+    success: boolean;
+    data: {
+      keywords: string[];
+    };
+  }> {
+    return fetchWithAuth('profiles/me/keyword-alerts');
   }
 };

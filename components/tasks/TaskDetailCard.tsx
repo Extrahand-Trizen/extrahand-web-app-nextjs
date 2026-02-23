@@ -33,6 +33,7 @@ export function TaskDetailCard({ task, onClose }: TaskDetailCardProps) {
       typeof task.budget === "object" ? task.budget.amount : task.budget;
    const budgetNegotiable =
       typeof task.budget === "object" ? task.budget.negotiable : false;
+   const categoryLabel = task.categoryLabel || task.subcategory || task.category;
 
    const getTimeAgo = (date: Date) => {
       const now = new Date();
@@ -122,7 +123,7 @@ export function TaskDetailCard({ task, onClose }: TaskDetailCardProps) {
                      className="text-xs font-medium border-gray-200"
                   >
                      <Tag className="w-3 h-3 mr-1" />
-                     {task.category}
+                     {categoryLabel}
                   </Badge>
                </div>
 

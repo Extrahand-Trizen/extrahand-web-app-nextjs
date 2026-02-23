@@ -17,6 +17,7 @@ export function TaskDetailsHeader({
 }: TaskDetailsHeaderProps) {
    const budgetAmount =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
+   const categoryLabel = task.categoryLabel || task.subcategory || task.category;
 
    const getStatusBadge = () => {
       if (task.status === "open") {
@@ -112,7 +113,7 @@ export function TaskDetailsHeader({
             {getUrgencyBadge()}
             <span className="inline-flex items-center px-1 md:px-2 py-0.5 rounded text-[10px] md:text-xs font-medium bg-secondary-100 text-secondary-700">
                <Tag className="size-2 md:size-3 mr-1" />
-               {task.category}
+               {categoryLabel}
             </span>
          </div>
 

@@ -39,6 +39,7 @@ export function TaskDetailsSidebar({ task, isOwner = false, onMakeOffer }: TaskD
 
    const budgetAmount =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
+   const categoryLabel = task.categoryLabel || task.subcategory || task.category;
 
    // Extract requester data from task (already populated by backend)
    // Note: task.requesterId is a MongoDB ObjectId, not a UID
@@ -88,7 +89,7 @@ export function TaskDetailsSidebar({ task, isOwner = false, onMakeOffer }: TaskD
                <div className="flex justify-between items-center">
                   <span className="text-secondary-600">Category</span>
                   <span className="font-semibold text-secondary-900">
-                     {task.category}
+                     {categoryLabel}
                   </span>
                </div>
                <div className="flex justify-between items-center">

@@ -51,6 +51,36 @@ const MAX_RETRY_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 1000;
 const DRAFT_KEY = "taskDraft";
 
+const CATEGORY_LABELS: Record<string, string> = {
+   "home-cleaning": "Home Cleaning",
+   "deep-cleaning": "Deep Cleaning",
+   plumbing: "Plumbing",
+   "water-tanker-services": "Water & Tanker Services",
+   electrical: "Electrical",
+   carpenter: "Carpenter",
+   painting: "Painting",
+   "ac-repair": "AC Repair & Service",
+   "appliance-repair": "Appliance Repair",
+   "pest-control": "Pest Control",
+   "car-washing": "Car Washing / Car Cleaning",
+   gardening: "Gardening",
+   handyperson: "Handyperson / General Repairs",
+   "furniture-assembly": "Furniture Assembly",
+   "security-patrol": "Security Patrol / Watchman",
+   "beauty-services": "Beauty Services",
+   "massage-spa": "Massage / Spa",
+   "fitness-trainers": "Fitness Trainers",
+   tutors: "Tutors",
+   "it-support": "IT Support / Laptop Repair",
+   "photographer-videographer": "Photographer / Videographer",
+   "event-services": "Event Services",
+   "pet-services": "Pet Services",
+   "driver-chauffeur": "Driver / Chauffeur",
+   "cooking-home-chef": "Cooking / Home Chef",
+   "laundry-ironing": "Laundry / Ironing",
+   other: "Other",
+};
+
 // ============================================================================
 // Utility Functions
 // ============================================================================
@@ -160,6 +190,11 @@ const transformFormDataToTask = (
       title: formData.title,
       description: formData.description,
       category: formData.category,
+      categorySlug: formData.category,
+      categoryLabel:
+         formData.category === "other"
+         ? formData.subcategory || CATEGORY_LABELS.other
+         : CATEGORY_LABELS[formData.category] || undefined,
       subcategory: formData.subcategory || undefined,
       requirements: formData.requirements,
       estimatedDuration: formData.estimatedDuration || undefined,

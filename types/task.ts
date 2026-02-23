@@ -8,6 +8,8 @@ export interface Task {
   title: string;
   description: string;
   category: string;
+  categorySlug?: string;
+  categoryLabel?: string;
   subcategory?: string;
   budget: number | { amount: number; currency: string; negotiable: boolean };
   budgetType: 'fixed' | 'hourly' | 'negotiable';
