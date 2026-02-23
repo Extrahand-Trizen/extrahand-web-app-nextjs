@@ -70,6 +70,8 @@ export function MakeOfferModal({
    const [showVerificationModal, setShowVerificationModal] = useState(false);
    const [experienceInput, setExperienceInput] = useState("");
    const [portfolioInput, setPortfolioInput] = useState("");
+   const [rangeStart, setRangeStart] = useState("");
+   const [rangeEnd, setRangeEnd] = useState("");
    const verificationStatus = getOfferSubmissionVerificationStatus(userData ?? null);
 
    const taskBudget =
@@ -106,6 +108,34 @@ export function MakeOfferModal({
    const portfolio = form.watch("portfolio") || [];
    const selectedDates = form.watch("selectedDates") || [];
    const openDates = openSchedule.map((entry) => new Date(entry.date));
+   const openDatesSorted = [...openDates].sort((a, b) => a.getTime() - b.getTime());
+   const minOpenDate = openDatesSorted[0];
+   const maxOpenDate = openDatesSorted[openDatesSorted.length - 1];
+
+   const toDateInputValue = (date?: Date) => {
+      if (!date) return "";
+      return date.toISOString().slice(0, 10);
+   };
+
+   const normalizeDate = (date: Date) =>
+      new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+   const applyRangeSelection = (startValue: string, endValue: string) => {
+      if (!startValue || !endValue) return;
+      const start = new Date(`${startValue}T00:00:00`);
+      const end = new Date(`${endValue}T00:00:00`);
+      const startDay = normalizeDate(start);
+      const endDay = normalizeDate(end);
+      const rangeStartDate = startDay <= endDay ? startDay : endDay;
+      const rangeEndDate = startDay <= endDay ? endDay : startDay;
+
+      const next = openDates.filter((date) => {
+         const day = normalizeDate(date);
+         return day >= rangeStartDate && day <= rangeEndDate;
+      });
+
+      setSelectedDates(next);
+   };
 
    const setSelectedDates = (dates: Date[]) => {
       form.setValue("selectedDates", dates, { shouldValidate: true });
@@ -249,39 +279,77 @@ export function MakeOfferModal({
                                  <FormControl>
                                     <div className="space-y-2">
                                        {openSchedule.length > 0 && (
-                                          <div className="flex flex-wrap gap-2">
-                                             <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => setSelectedDates(openDates)}
-                                             >
-                                                Select all
-                                             </Button>
-                                             <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => setSelectedDates([])}
-                                             >
-                                                Clear
-                                             </Button>
-                                             <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={selectWeekdays}
-                                             >
-                                                Weekdays
-                                             </Button>
-                                             <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={selectWeekends}
-                                             >
-                                                Weekends
-                                             </Button>
+                                          <div className="space-y-2">
+                                             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                                <div>
+                                                   <FormLabel className="text-xs text-secondary-600">
+                                                      Start date
+                                                   </FormLabel>
+                                                   <Input
+                                                      type="date"
+                                                      value={rangeStart}
+                                                      min={toDateInputValue(minOpenDate)}
+                                                      max={toDateInputValue(maxOpenDate)}
+                                                      onChange={(event) => {
+                                                         const value = event.target.value;
+                                                         setRangeStart(value);
+                                                         applyRangeSelection(value, rangeEnd);
+                                                      }}
+                                                      className="h-9 text-sm"
+                                                   />
+                                                </div>
+                                                <div>
+                                                   <FormLabel className="text-xs text-secondary-600">
+                                                      End date
+                                                   </FormLabel>
+                                                   <Input
+                                                      type="date"
+                                                      value={rangeEnd}
+                                                      min={toDateInputValue(minOpenDate)}
+                                                      max={toDateInputValue(maxOpenDate)}
+                                                      onChange={(event) => {
+                                                         const value = event.target.value;
+                                                         setRangeEnd(value);
+                                                         applyRangeSelection(rangeStart, value);
+                                                      }}
+                                                      className="h-9 text-sm"
+                                                   />
+                                                </div>
+                                             </div>
+                                             <div className="flex flex-wrap gap-2">
+                                                <Button
+                                                   type="button"
+                                                   variant="outline"
+                                                   size="sm"
+                                                   onClick={() => setSelectedDates(openDates)}
+                                                >
+                                                   Select all
+                                                </Button>
+                                                <Button
+                                                   type="button"
+                                                   variant="outline"
+                                                   size="sm"
+                                                   onClick={() => setSelectedDates([])}
+                                                >
+                                                   Clear
+                                                </Button>
+                                                <Button
+                                                   type="button"
+                                                   variant="outline"
+                                                   size="sm"
+                                                   onClick={selectWeekdays}
+                                                >
+                                                   Weekdays
+                                                </Button>
+                                                <Button
+                                                   type="button"
+                                                   variant="outline"
+                                                   size="sm"
+                                                   onClick={selectWeekends}
+                                                >
+                                                   Weekends
+                                                </Button>
+                                             </div>
                                           </div>
                                        )}
                                        <div className="max-h-48 overflow-y-auto rounded-lg border border-secondary-200 p-3">

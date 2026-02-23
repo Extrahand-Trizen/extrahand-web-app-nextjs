@@ -220,9 +220,20 @@ export function TaskOffersSection({
                   <div className="flex justify-between text-sm">
                      <span className="text-secondary-600">Proposed Budget:</span>
                      <span className="font-semibold text-secondary-900">
-                        ₹{myApplication.proposedBudget?.amount?.toLocaleString() || 0}
+                        ₹{(
+                           (myApplication.proposedBudget?.amount || 0) *
+                           (myApplication.selectedDates?.length || 1)
+                        ).toLocaleString()}
                      </span>
                   </div>
+                  {myApplication.selectedDates && myApplication.selectedDates.length > 0 && (
+                     <div className="flex justify-between text-xs text-secondary-500">
+                        <span>Calculation:</span>
+                        <span>
+                           ₹{myApplication.proposedBudget?.amount || 0} × {myApplication.selectedDates.length} days
+                        </span>
+                     </div>
+                  )}
                   {myApplication.proposedTime?.estimatedDuration && (
                      <div className="flex justify-between text-sm">
                         <span className="text-secondary-600">Estimated Time:</span>
