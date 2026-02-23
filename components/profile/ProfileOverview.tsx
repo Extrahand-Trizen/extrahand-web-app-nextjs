@@ -138,7 +138,7 @@ export function ProfileOverview({ user, onNavigate }: ProfileOverviewProps) {
                         View Profile
                      </Button>
                      <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         onClick={() => onNavigate("edit-profile")}
                         className="text-xs h-8 px-3"

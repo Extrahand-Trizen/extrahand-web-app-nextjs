@@ -75,6 +75,13 @@ export function MakeOfferModal({
    const taskBudget =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
 
+   const isRecurring = Boolean(
+      task.recurring?.enabled && Array.isArray(task.schedule) && task.schedule.length > 0
+   );
+   const openSchedule = Array.isArray(task.schedule)
+      ? task.schedule.filter((entry) => entry.status === "open")
+      : [];
+
    const form = useForm<CreateApplicationFormData>({
       resolver: zodResolver(createApplicationSchema),
       defaultValues: {
@@ -88,6 +95,7 @@ export function MakeOfferModal({
             flexible: true,
             estimatedDuration: task.estimatedDuration ?? undefined,
          },
+         selectedDates: [],
          coverLetter: "",
          relevantExperience: [],
          portfolio: [],
@@ -96,6 +104,7 @@ export function MakeOfferModal({
 
    const relevantExperience = form.watch("relevantExperience") || [];
    const portfolio = form.watch("portfolio") || [];
+   const selectedDates = form.watch("selectedDates") || [];
 
    const addExperience = () => {
       const trimmed = experienceInput.trim();
@@ -135,6 +144,11 @@ export function MakeOfferModal({
    const onSubmit = async (data: CreateApplicationFormData) => {
       if (isSubmitting) return;
 
+      if (isRecurring && (!data.selectedDates || data.selectedDates.length === 0)) {
+         toast.error("Please select at least one date");
+         return;
+      }
+
       // Background check: Aadhaar, PAN, and bank must be verified to apply
       if (!verificationStatus.allowed) {
          setShowVerificationModal(true);
@@ -156,6 +170,7 @@ export function MakeOfferModal({
                flexible: data.proposedTime.flexible,
                estimatedDuration: data.proposedTime.estimatedDuration,
             },
+            selectedDates: data.selectedDates?.length ? data.selectedDates : undefined,
             coverLetter: data.coverLetter,
             relevantExperience: data.relevantExperience,
             portfolio: data.portfolio,
@@ -208,6 +223,71 @@ export function MakeOfferModal({
                   className="space-y-6"
                >
                   {/* Proposed Budget */}
+                     {isRecurring && (
+                        <FormField
+                           control={form.control}
+                           name="selectedDates"
+                           render={() => (
+                              <FormItem>
+                                 <FormLabel className="flex items-center gap-2 text-sm font-semibold text-secondary-900">
+                                    <Calendar className="w-4 h-4" />
+                                    Select dates you can take
+                                 </FormLabel>
+                                 <FormControl>
+                                    <div className="space-y-2 max-h-48 overflow-y-auto rounded-lg border border-secondary-200 p-3">
+                                       {openSchedule.length === 0 && (
+                                          <p className="text-xs text-secondary-500">
+                                             No open dates available right now.
+                                          </p>
+                                       )}
+                                       {openSchedule.map((entry) => {
+                                          const entryDate = new Date(entry.date);
+                                          const key = entryDate.toISOString();
+                                          const isChecked = selectedDates.some(
+                                             (d: Date) => new Date(d).toDateString() === entryDate.toDateString()
+                                          );
+
+                                          return (
+                                             <label
+                                                key={key}
+                                                className="flex items-center gap-3 text-xs text-secondary-700"
+                                             >
+                                                <Checkbox
+                                                   checked={isChecked}
+                                                   onCheckedChange={(checked) => {
+                                                      const next = checked
+                                                         ? [...selectedDates, entryDate]
+                                                         : selectedDates.filter(
+                                                              (d: Date) =>
+                                                                 new Date(d).toDateString() !==
+                                                                 entryDate.toDateString()
+                                                           );
+                                                      form.setValue("selectedDates", next, {
+                                                         shouldValidate: true,
+                                                      });
+                                                   }}
+                                                />
+                                                <span>
+                                                   {entryDate.toLocaleDateString("en-US", {
+                                                      weekday: "short",
+                                                      month: "short",
+                                                      day: "numeric",
+                                                   })}
+                                                </span>
+                                             </label>
+                                          );
+                                       })}
+                                    </div>
+                                 </FormControl>
+                                 <FormDescription className="text-xs text-secondary-600">
+                                    Choose one or more dates from the poster&apos;s range.
+                                 </FormDescription>
+                                 <FormMessage />
+                              </FormItem>
+                           )}
+                        />
+                     )}
+
                   <FormField
                      control={form.control}
                      name="proposedBudget.amount"

@@ -28,6 +28,7 @@ export const createApplicationSchema = z
             flexible: z.boolean(),
          })
          .optional(),
+      selectedDates: z.array(z.date()).max(366).optional(),
       coverLetter: z
          .string()
          .max(1000, "Cover letter must be less than 1000 characters")

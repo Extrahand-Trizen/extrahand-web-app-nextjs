@@ -38,6 +38,20 @@ export interface Task {
   scheduledDate?: Date;
   scheduledTime?: string;
   flexibility: 'strict' | 'flexible' | 'anytime';
+  recurring?: {
+    enabled: boolean;
+    frequency: 'daily' | 'weekly' | 'custom';
+    startDate?: Date;
+    endDate?: Date;
+    requireApproval?: boolean;
+    minCommitment?: number;
+  };
+  schedule?: Array<{
+    date: Date;
+    status: 'open' | 'reserved' | 'assigned' | 'completed' | 'cancelled';
+    assigneeId?: string | null;
+    assigneeUid?: string | null;
+  }>;
   requirements?: string[];
   attachments?: Array<{
     type: string;

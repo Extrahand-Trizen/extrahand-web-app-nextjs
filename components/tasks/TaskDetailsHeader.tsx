@@ -62,6 +62,11 @@ export function TaskDetailsHeader({
       });
    };
 
+   const formatRange = (start?: Date | string, end?: Date | string) => {
+      if (!start || !end) return null;
+      return `${formatDate(start)} - ${formatDate(end)}`;
+   };
+
    const getTimeAgo = (date: Date | string | undefined) => {
       if (!date) return "Recently";
       const now = new Date();
@@ -152,7 +157,9 @@ export function TaskDetailsHeader({
                   <span className="font-medium">When</span>
                </div>
                <p className="text-xs md:text-sm font-semibold text-secondary-900 truncate">
-                  {task.scheduledDate
+                  {task.recurring?.enabled
+                     ? formatRange(task.recurring.startDate, task.recurring.endDate) || "Flexible"
+                     : task.scheduledDate
                      ? formatDate(task.scheduledDate)
                      : "Flexible"}
                </p>

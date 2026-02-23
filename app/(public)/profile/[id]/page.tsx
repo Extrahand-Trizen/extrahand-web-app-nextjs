@@ -10,7 +10,7 @@ import { useRouter, useParams } from "next/navigation";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { PublicProfile } from "@/components/profile";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MessageCircle, Flag, Share2, Briefcase } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { UserProfile } from "@/types/user";
 import { Review, WorkHistoryItem } from "@/types/profile";
 import Link from "next/link";
@@ -18,7 +18,7 @@ import { profilesApi } from "@/lib/api/endpoints/profiles";
 import { reviewsApi } from "@/lib/api/endpoints/reviews";
 import { useAuth } from "@/lib/auth/context";
 import { toast } from "sonner";
-import { ShareModal } from "@/components/shared/ShareModal";
+
 
 export default function UserProfilePage() {
    const router = useRouter();
@@ -32,7 +32,6 @@ export default function UserProfilePage() {
    const [loading, setLoading] = useState(true);
    const [loadingReviews, setLoadingReviews] = useState(false);
    const [error, setError] = useState<string | null>(null);
-   const [shareOpen, setShareOpen] = useState(false);
 
    const isOwnProfile = userData?.uid === userId || userData?._id === userId;
 
@@ -122,23 +121,7 @@ export default function UserProfilePage() {
       }
    }, [user]);
 
-   const handleShare = async () => {
-      const url = window.location.href;
 
-      if (navigator.share) {
-         try {
-            await navigator.share({
-               title: `${user?.name}'s Profile on ExtraHand`,
-               text: `Check out ${user?.name}'s profile on ExtraHand`,
-               url: url,
-            });
-         } catch (err) {
-            console.log("Share cancelled");
-         }
-      } else {
-         setShareOpen(true);
-      }
-   };
 
    if (loading) {
       return (
@@ -183,47 +166,6 @@ export default function UserProfilePage() {
             </div>
          </div>
 
-         {/* Action Buttons Card */}
-         <div className="max-w-7xl mx-auto px-4 py-6 w-full">
-            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5">
-               <div className="flex items-center gap-2 flex-wrap">
-                  <Button
-                     variant="outline"
-                     size="sm"
-                     onClick={handleShare}
-                     className="text-xs h-8 px-3"
-                  >
-                     <Share2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1.5" />
-                     <span className="hidden sm:inline">Share</span>
-                  </Button>
-                  {!isOwnProfile && (
-                     <>
-                        <Link href={`/profile/${userId}/tasks`}>
-                           <Button variant="outline" size="sm" className="text-xs h-8 px-3">
-                              <Briefcase className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1.5" />
-                              <span className="hidden sm:inline">Portfolio</span>
-                           </Button>
-                        </Link>
-                        <Link href={`/chat`}>
-                           <Button variant="outline" size="sm" className="text-xs h-8 px-3">
-                              <MessageCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1.5" />
-                              <span className="hidden sm:inline">Message</span>
-                           </Button>
-                        </Link>
-                        <Button
-                           variant="outline"
-                           size="sm"
-                           className="text-xs h-8 px-3 text-gray-400 hover:text-red-600"
-                        >
-                           <Flag className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                           <span className="hidden sm:inline ml-1.5">Report</span>
-                        </Button>
-                     </>
-                  )}
-               </div>
-            </div>
-         </div>
-
          {/* Profile Content */}
          <main className="flex-1 py-6">
             <div className="max-w-7xl mx-auto px-4">
@@ -245,15 +187,6 @@ export default function UserProfilePage() {
             </div>
          </main>
 
-         {/* Share Modal */}
-         <ShareModal
-            isOpen={shareOpen}
-            onClose={() => setShareOpen(false)}
-            title="Profile"
-            description={`Share ${user?.name}'s profile`}
-            url={typeof window !== "undefined" ? window.location.href : ""}
-            shareText={`Check out ${user?.name}'s profile on ExtraHand!`}
-         />
       </div>
    );
 }

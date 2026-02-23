@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Star, CheckCircle, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import Image from "next/image";
 import {
    Select,
    SelectContent,
@@ -22,7 +23,7 @@ interface TaskOffersSectionProps {
    taskId: string;
    isOwner?: boolean;
    onApplicationsCountChange?: (count: number) => void;
-   userProfile?: any | null;
+   userProfile?: Record<string, unknown> | null;
    onMakeOffer?: () => void;
    taskCategory?: string;
 }
@@ -43,6 +44,16 @@ const getTimeAgo = (date: Date | string | undefined): string => {
       return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
    if (diffDays === 1) return "Yesterday";
    return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+};
+
+const formatSelectedDates = (dates?: Array<Date | string>) => {
+   if (!dates || dates.length === 0) return null;
+   const formatted = dates
+      .map((value) => new Date(value))
+      .filter((d) => !Number.isNaN(d.getTime()))
+      .map((d) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" }));
+   if (formatted.length <= 3) return formatted.join(", ");
+   return `${formatted.slice(0, 3).join(", ")} +${formatted.length - 3}`;
 };
 
 export function TaskOffersSection({
@@ -83,8 +94,9 @@ export function TaskOffersSection({
             
             // Show applications
             setApplications(apps);
-         } catch (error: any) {
-            console.error("Error loading applications:", error);
+         } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Unknown error";
+            console.error("Error loading applications:", message);
             setApplications([]);
          } finally {
             setLoading(false);
@@ -110,13 +122,13 @@ export function TaskOffersSection({
       setShowPaymentModal(true);
    };
 
-   const handlePaymentSuccess = async (escrowId: string, paymentId: string) => {
+   const handlePaymentSuccess = async () => {
       try {
          if (!selectedApplication) return;
 
          // Update application status to accepted after payment
          await applicationsApi.updateApplicationStatus(selectedApplication._id, {
-            status: "accepted" as any,
+            status: "accepted",
          });
 
          toast.success("Payment successful!", {
@@ -161,14 +173,14 @@ export function TaskOffersSection({
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
    });
 
-   // Find accepted application to show prominently for task owners
-   const acceptedApplication = isOwner 
-      ? applications.find(app => app.status === "accepted")
-      : null;
+   // Find accepted applications to show prominently for task owners
+   const acceptedApplications = isOwner
+      ? applications.filter((app) => app.status === "accepted")
+      : [];
 
-   // Filter out the accepted application from sorted list if it exists (shown separately)
-   const otherApplications = acceptedApplication 
-      ? sortedApplications.filter(app => app._id !== acceptedApplication._id)
+   // Filter out accepted applications from sorted list if they exist (shown separately)
+   const otherApplications = isOwner
+      ? sortedApplications.filter((app) => app.status !== "accepted")
       : sortedApplications;
 
    if (loading) {
@@ -217,6 +229,14 @@ export function TaskOffersSection({
                         <span className="font-semibold text-secondary-900">
                            {Math.floor(myApplication.proposedTime.estimatedDuration / 24)}d{" "}
                            {(myApplication.proposedTime.estimatedDuration % 24).toFixed(0)}h
+                        </span>
+                     </div>
+                  )}
+                  {myApplication.selectedDates && myApplication.selectedDates.length > 0 && (
+                     <div className="flex justify-between text-sm">
+                        <span className="text-secondary-600">Selected Dates:</span>
+                        <span className="font-semibold text-secondary-900">
+                           {formatSelectedDates(myApplication.selectedDates)}
                         </span>
                      </div>
                   )}
@@ -316,86 +336,100 @@ export function TaskOffersSection({
             ) : (
                <div className="space-y-3">
                   {/* Accepted Offer Section - Show prominently at the top */}
-                  {acceptedApplication && (
+                  {acceptedApplications.length > 0 && (
                      <div className="mb-6">
                         <div className="flex items-center gap-2 mb-3">
                            <CheckCircle className="w-5 h-5 text-green-600" />
-                           <h3 className="font-bold text-green-800">Accepted Offer</h3>
+                           <h3 className="font-bold text-green-800">Accepted Offers</h3>
                         </div>
-                        <div className="p-4 md:p-6 rounded-xl bg-green-50 border-2 border-green-200">
-                           <div className="flex flex-col gap-4">
-                              {/* Header: Avatar + Name + Budget */}
-                              <div className="flex items-center justify-between gap-3">
-                                 <div className="flex gap-3">
-                                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-green-600 flex items-center justify-center text-white text-lg md:text-xl font-bold shrink-0 shadow-md">
-                                       {((acceptedApplication.applicantProfile?.name) || "U").charAt(0)}
-                                    </div>
-                                    <div className="min-w-0">
-                                       <div className="flex items-center gap-2">
-                                          <h3 className="font-bold text-secondary-900 text-sm sm:text-base truncate">
-                                             {acceptedApplication.applicantProfile?.name || "Unknown User"}
-                                          </h3>
-                                          <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-semibold">
-                                             Assigned
-                                          </span>
-                                       </div>
-                                       <div className="flex items-center gap-2 text-xs text-secondary-500 mt-1">
-                                          <div className="flex items-center gap-1">
-                                             <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                                             <span className="font-semibold text-secondary-900">
-                                                {acceptedApplication.applicantProfile?.rating > 0 
-                                                   ? acceptedApplication.applicantProfile.rating.toFixed(1) 
-                                                   : "New"}
-                                             </span>
+                        <div className="space-y-3">
+                           {acceptedApplications.map((acceptedApplication) => (
+                              <div
+                                 key={acceptedApplication._id}
+                                 className="p-4 md:p-6 rounded-xl bg-green-50 border-2 border-green-200"
+                              >
+                                 <div className="flex flex-col gap-4">
+                                    {/* Header: Avatar + Name + Budget */}
+                                    <div className="flex items-center justify-between gap-3">
+                                       <div className="flex gap-3">
+                                          <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-green-600 flex items-center justify-center text-white text-lg md:text-xl font-bold shrink-0 shadow-md">
+                                             {((acceptedApplication.applicantProfile?.name) || "U").charAt(0)}
                                           </div>
-                                          <span className="text-secondary-300">•</span>
-                                          <span>
-                                             {acceptedApplication.applicantProfile?.totalReviews || 0} reviews
-                                          </span>
+                                          <div className="min-w-0">
+                                             <div className="flex items-center gap-2">
+                                                <h3 className="font-bold text-secondary-900 text-sm sm:text-base truncate">
+                                                   {acceptedApplication.applicantProfile?.name || "Unknown User"}
+                                                </h3>
+                                                <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-semibold">
+                                                   Assigned
+                                                </span>
+                                             </div>
+                                             <div className="flex items-center gap-2 text-xs text-secondary-500 mt-1">
+                                                <div className="flex items-center gap-1">
+                                                   <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                                                   <span className="font-semibold text-secondary-900">
+                                                      {acceptedApplication.applicantProfile?.rating > 0
+                                                         ? acceptedApplication.applicantProfile.rating.toFixed(1)
+                                                         : "New"}
+                                                   </span>
+                                                </div>
+                                                <span className="text-secondary-300">•</span>
+                                                <span>
+                                                   {acceptedApplication.applicantProfile?.totalReviews || 0} reviews
+                                                </span>
+                                             </div>
+                                          </div>
+                                       </div>
+                                       <div className="text-right">
+                                          <div className="text-xl font-bold text-green-700 mb-1">
+                                             ₹{acceptedApplication.proposedBudget.amount.toLocaleString()}
+                                          </div>
+                                          {acceptedApplication.proposedTime?.estimatedDuration && (
+                                             <div className="text-xs text-secondary-500">
+                                                Est. {acceptedApplication.proposedTime.estimatedDuration}h
+                                             </div>
+                                          )}
                                        </div>
                                     </div>
-                                 </div>
-                                 <div className="text-right">
-                                    <div className="text-xl font-bold text-green-700 mb-1">
-                                       ₹{acceptedApplication.proposedBudget.amount.toLocaleString()}
-                                    </div>
-                                    {acceptedApplication.proposedTime?.estimatedDuration && (
-                                       <div className="text-xs text-secondary-500">
-                                          Est. {acceptedApplication.proposedTime.estimatedDuration}h
-                                       </div>
+
+                                    {/* Selected Dates */}
+                                    {acceptedApplication.selectedDates && acceptedApplication.selectedDates.length > 0 && (
+                                       <p className="text-xs text-green-900">
+                                          Dates: {formatSelectedDates(acceptedApplication.selectedDates)}
+                                       </p>
                                     )}
+
+                                    {/* Cover Letter */}
+                                    {acceptedApplication.coverLetter && (
+                                       <p className="text-sm text-secondary-700 leading-relaxed">
+                                          {acceptedApplication.coverLetter}
+                                       </p>
+                                    )}
+
+                                    {/* Actions */}
+                                    <div className="flex gap-2 flex-wrap">
+                                       <Link href={`/profile/${acceptedApplication.applicantId}`}>
+                                          <Button
+                                             size="sm"
+                                             variant="outline"
+                                             className="border-green-300 text-green-700 hover:bg-green-50 rounded-lg text-xs font-medium"
+                                          >
+                                             View Profile
+                                          </Button>
+                                       </Link>
+                                       <Link href={`/chat?chatId=chat_${taskId}`}>
+                                          <Button
+                                             size="sm"
+                                             className="bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-semibold"
+                                          >
+                                             <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
+                                             Message Tasker
+                                          </Button>
+                                       </Link>
+                                    </div>
                                  </div>
                               </div>
-
-                              {/* Cover Letter */}
-                              {acceptedApplication.coverLetter && (
-                                 <p className="text-sm text-secondary-700 leading-relaxed">
-                                    {acceptedApplication.coverLetter}
-                                 </p>
-                              )}
-
-                              {/* Actions */}
-                              <div className="flex gap-2 flex-wrap">
-                                 <Link href={`/profile/${acceptedApplication.applicantId}`}>
-                                    <Button
-                                       size="sm"
-                                       variant="outline"
-                                       className="border-green-300 text-green-700 hover:bg-green-50 rounded-lg text-xs font-medium"
-                                    >
-                                       View Profile
-                                    </Button>
-                                 </Link>
-                                 <Link href={`/chat?chatId=chat_${taskId}`}>
-                                    <Button
-                                       size="sm"
-                                       className="bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-semibold"
-                                    >
-                                       <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
-                                       Message Tasker
-                                    </Button>
-                                 </Link>
-                              </div>
-                           </div>
+                           ))}
                         </div>
                      </div>
                   )}
@@ -403,7 +437,7 @@ export function TaskOffersSection({
                   {/* Other Applications - Show below the accepted one */}
                   {otherApplications.length > 0 && (
                      <>
-                        {acceptedApplication && (
+                        {acceptedApplications.length > 0 && (
                            <h3 className="font-semibold text-secondary-700 text-sm mb-2">Other Offers</h3>
                         )}
                         {otherApplications.map((application) => {
@@ -427,9 +461,11 @@ export function TaskOffersSection({
                                  <div className="flex gap-3">
                                     <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-full bg-primary-500 flex items-center justify-center text-white text-lg md:text-xl font-bold shrink-0 shadow-md overflow-hidden">
                                        {user.photoURL ? (
-                                          <img
+                                          <Image
                                              src={user.photoURL}
                                              alt={user.name || "User"}
+                                             width={64}
+                                             height={64}
                                              className="w-full h-full object-cover"
                                           />
                                        ) : (
@@ -502,6 +538,11 @@ export function TaskOffersSection({
                                              .estimatedDuration
                                        }
                                        h
+                                    </span>
+                                 )}
+                                 {application.selectedDates && application.selectedDates.length > 0 && (
+                                    <span>
+                                       Dates: {formatSelectedDates(application.selectedDates)}
                                     </span>
                                  )}
                                  {application.proposedBudget.isNegotiable && (
@@ -582,7 +623,12 @@ export function TaskOffersSection({
                }}
                task={{
                   id: taskId,
-                  title: (selectedApplication.taskId as any)?.title || "Task",
+                  title:
+                     typeof selectedApplication.taskId === "object" &&
+                     selectedApplication.taskId !== null &&
+                     "title" in selectedApplication.taskId
+                        ? String((selectedApplication.taskId as { title?: string }).title || "Task")
+                        : "Task",
                   category: taskCategory,
                }}
                application={{

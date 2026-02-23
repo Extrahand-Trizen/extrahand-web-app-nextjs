@@ -19,7 +19,7 @@ import {
    FormLabel,
    FormMessage,
 } from "@/components/ui/form";
-import { format } from "date-fns";
+import { format, differenceInCalendarDays } from "date-fns";
 import {
    MapPin,
    Calendar,
@@ -100,6 +100,11 @@ export function ReviewStep({
    const totalBudget =
       data.budgetType === "fixed" && data.budget
          ? data.budget + urgency.surcharge
+         : null;
+
+   const recurringDays =
+      data.recurringEnabled && data.recurringStartDate && data.recurringEndDate
+         ? differenceInCalendarDays(data.recurringEndDate, data.recurringStartDate) + 1
          : null;
 
    return (
@@ -234,7 +239,14 @@ export function ReviewStep({
                <div className="flex items-center gap-3">
                   <Calendar className="size-4 md:size-5 text-gray-400" />
                   <span className="text-xs md:text-sm text-gray-900">
-                     {data.scheduledDate
+                     {data.recurringEnabled
+                        ? data.recurringStartDate && data.recurringEndDate
+                           ? `${format(data.recurringStartDate, "MMM d, yyyy")} - ${format(
+                                data.recurringEndDate,
+                                "MMM d, yyyy"
+                             )} (${recurringDays} days)`
+                           : "Date range not set"
+                        : data.scheduledDate
                         ? format(data.scheduledDate, "EEEE, MMMM d, yyyy")
                         : "Date not set"}
                   </span>

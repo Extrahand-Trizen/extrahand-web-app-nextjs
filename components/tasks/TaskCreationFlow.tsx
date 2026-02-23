@@ -84,6 +84,8 @@ const normalizeDraft = (raw: any): TaskFormData => {
       reviveDate(draft.scheduledTimeStart) || INITIAL_FORM_DATA.scheduledTimeStart;
    draft.scheduledTimeEnd =
       reviveDate(draft.scheduledTimeEnd) || INITIAL_FORM_DATA.scheduledTimeEnd;
+   draft.recurringStartDate = reviveDate(draft.recurringStartDate);
+   draft.recurringEndDate = reviveDate(draft.recurringEndDate);
 
    // Normalize attachments uploadedAt fields
    if (Array.isArray(draft.attachments)) {
@@ -180,6 +182,14 @@ const transformFormDataToTask = (
       scheduledTimeStart: formatTimeToString(formData.scheduledTimeStart),
       scheduledTimeEnd: formatTimeToString(formData.scheduledTimeEnd),
       flexibility: mapFlexibilityToBackend(formData.flexibility),
+      recurring: formData.recurringEnabled
+         ? {
+              enabled: true,
+              frequency: formData.recurringFrequency,
+              startDate: formData.recurringStartDate || undefined,
+              endDate: formData.recurringEndDate || undefined,
+           }
+         : undefined,
       // Budget - required field, must be a number
       budgetType: formData.budgetType,
       budget,
@@ -228,6 +238,10 @@ const INITIAL_FORM_DATA: TaskFormData = {
       return date;
    })(),
    flexibility: "flexible",
+   recurringEnabled: false,
+   recurringStartDate: null,
+   recurringEndDate: null,
+   recurringFrequency: "daily",
    budgetType: "fixed",
    budget: null,
    urgency: "standard",
