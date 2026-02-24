@@ -243,7 +243,6 @@ export interface NotificationSettingsState {
       taskUpdates: boolean;
       payments: boolean;
       promotions: boolean;
-      reminders: boolean;
       system: boolean;
       transactional: boolean;
       taskReminders: boolean;
@@ -255,7 +254,6 @@ export interface NotificationSettingsState {
       taskUpdates: boolean;
       payments: boolean;
       promotions: boolean;
-      reminders: boolean;
       system: boolean;
       marketing: boolean;
       transactional: boolean;
@@ -267,7 +265,6 @@ export interface NotificationSettingsState {
       enabled: boolean;
       taskUpdates: boolean;
       payments: boolean;
-      reminders: boolean;
    };
 }
 
@@ -338,7 +335,6 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettingsState = {
       taskUpdates: true,
       payments: true,
       promotions: false,
-      reminders: true,
       system: true,
       transactional: true,
       taskReminders: true,
@@ -350,7 +346,6 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettingsState = {
       taskUpdates: true,
       payments: true,
       promotions: false,
-      reminders: false,
       system: true,
       marketing: false,
       transactional: true,
@@ -362,7 +357,6 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettingsState = {
       enabled: true,
       taskUpdates: true,
       payments: true,
-      reminders: false,
    },
 };
 

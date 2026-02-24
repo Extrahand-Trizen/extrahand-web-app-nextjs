@@ -49,6 +49,7 @@ export function TaskDetailsCard({ task }: TaskDetailsCardProps) {
       typeof task.budget === "object" ? task.budget.amount : task.budget;
    const budgetCurrency =
       typeof task.budget === "object" ? task.budget.currency : "INR";
+   const categoryLabel = task.categoryLabel || task.subcategory || task.category;
 
    const formatDate = (date: Date | string | undefined) => {
       if (!date) return "Not scheduled";
@@ -71,8 +72,8 @@ export function TaskDetailsCard({ task }: TaskDetailsCardProps) {
                label="Category"
                value={
                   <div className="flex items-center gap-2">
-                     <span>{task.category}</span>
-                     {task.subcategory && (
+                     <span>{categoryLabel}</span>
+                     {task.subcategory && task.subcategory !== categoryLabel && (
                         <span className="text-secondary-500">
                            • {task.subcategory}
                         </span>

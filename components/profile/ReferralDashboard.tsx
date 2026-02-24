@@ -181,10 +181,7 @@ export default function ReferralDashboardComponent({ className = '' }: ReferralD
               <p className="text-gray-600 text-sm font-medium mb-2">Total Referrals</p>
               <p className="text-3xl font-bold text-gray-900">{dashboardData.stats.totalReferrals}</p>
             </div>
-            <div className="bg-white rounded-lg shadow-md p-6 border-t-4 border-yellow-500">
-              <p className="text-gray-600 text-sm font-medium mb-2">Pending</p>
-              <p className="text-3xl font-bold text-gray-900">{dashboardData.stats.pendingReferrals}</p>
-            </div>
+
             <div className="bg-white rounded-lg shadow-md p-6 border-t-4 border-green-500">
               <p className="text-gray-600 text-sm font-medium mb-2">Qualified</p>
               <p className="text-3xl font-bold text-gray-900">{dashboardData.stats.qualifiedReferrals}</p>

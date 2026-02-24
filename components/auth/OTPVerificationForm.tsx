@@ -38,6 +38,7 @@ interface OTPVerificationFormProps {
    phone: string;
    userName?: string;
    authType?: "login" | "signup";
+   redirectTo?: string;
    onSuccess?: () => void;
    onSkip?: () => void;
 }
@@ -56,6 +57,7 @@ export function OTPVerificationForm({
    phone,
    userName = "",
    authType = "login",
+   redirectTo = "/home",
    onSuccess,
    onSkip,
 }: OTPVerificationFormProps) {
@@ -306,7 +308,7 @@ export function OTPVerificationForm({
             );
             setTimeout(() => {
                if (onSuccess) onSuccess();
-               else router.push("/home");
+               else router.push(redirectTo);
             }, 1000);
          } catch (err: any) {
             setOTPAuthInProgress(false);
@@ -320,7 +322,7 @@ export function OTPVerificationForm({
          return;
       }
 
-      // Dev bypass: LOCAL_TEST + dummy phone → backend completeOTPDev (no Firebase)
+      // This duplicate block should be removed - keeping for now but updating redirect
       if (isLocalTestMode() && isTestPhone(phone)) {
          try {
             setOTPAuthInProgress(true);
@@ -355,7 +357,7 @@ export function OTPVerificationForm({
             );
             setTimeout(() => {
                if (onSuccess) onSuccess();
-               else router.push("/home");
+               else router.push(redirectTo);
             }, 1000);
          } catch (err: any) {
             setOTPAuthInProgress(false);
@@ -473,7 +475,7 @@ export function OTPVerificationForm({
             if (onSuccess) {
                onSuccess();
             } else {
-               router.push("/home");
+               router.push(redirectTo);
             }
          }, 1000);
       } catch (error: any) {
@@ -521,7 +523,7 @@ export function OTPVerificationForm({
       if (onSkip) {
          onSkip();
       } else {
-         router.push("/home");
+         router.push(redirectTo);
       }
    };
 

@@ -115,5 +115,62 @@ export const profilesApi = {
   }> {
     return fetchPublic(`profiles/${userId}/stats`);
   },
-};
 
+  /**
+   * Update category alerts
+   * PUT /api/v1/profiles/me/category-alerts
+   */
+  async updateCategoryAlerts(categories: Array<{ slug: string; name: string }>): Promise<{
+    success: boolean;
+    data: {
+      categories: Array<{ slug: string; name: string }>;
+    };
+  }> {
+    return fetchWithAuth('profiles/me/category-alerts', {
+      method: 'PUT',
+      body: JSON.stringify({ categories }),
+    });
+  },
+
+  /**
+   * Get category alerts
+   * GET /api/v1/profiles/me/category-alerts
+   */
+  async getCategoryAlerts(): Promise<{
+    success: boolean;
+    data: {
+      categories: Array<{ slug: string; name: string }>;
+    };
+  }> {
+    return fetchWithAuth('profiles/me/category-alerts');
+  },
+
+  /**
+   * Update keyword alerts
+   * PUT /api/v1/profiles/me/keyword-alerts
+   */
+  async updateKeywordAlerts(keywords: string[]): Promise<{
+    success: boolean;
+    data: {
+      keywords: string[];
+    };
+  }> {
+    return fetchWithAuth('profiles/me/keyword-alerts', {
+      method: 'PUT',
+      body: JSON.stringify({ keywords }),
+    });
+  },
+
+  /**
+   * Get keyword alerts
+   * GET /api/v1/profiles/me/keyword-alerts
+   */
+  async getKeywordAlerts(): Promise<{
+    success: boolean;
+    data: {
+      keywords: string[];
+    };
+  }> {
+    return fetchWithAuth('profiles/me/keyword-alerts');
+  }
+};

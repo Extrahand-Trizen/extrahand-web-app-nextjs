@@ -8,6 +8,8 @@ export interface Task {
   title: string;
   description: string;
   category: string;
+  categorySlug?: string;
+  categoryLabel?: string;
   subcategory?: string;
   budget: number | { amount: number; currency: string; negotiable: boolean };
   budgetType: 'fixed' | 'hourly' | 'negotiable';
@@ -38,6 +40,20 @@ export interface Task {
   scheduledDate?: Date;
   scheduledTime?: string;
   flexibility: 'strict' | 'flexible' | 'anytime';
+  recurring?: {
+    enabled: boolean;
+    frequency: 'daily' | 'weekly' | 'custom';
+    startDate?: Date;
+    endDate?: Date;
+    requireApproval?: boolean;
+    minCommitment?: number;
+  };
+  schedule?: Array<{
+    date: Date;
+    status: 'open' | 'reserved' | 'assigned' | 'completed' | 'cancelled';
+    assigneeId?: string | null;
+    assigneeUid?: string | null;
+  }>;
   requirements?: string[];
   attachments?: Array<{
     type: string;

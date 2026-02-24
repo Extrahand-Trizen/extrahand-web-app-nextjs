@@ -18,7 +18,7 @@ import React, {
    useMemo,
 } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
    Menu,
@@ -95,6 +95,7 @@ const emptyStatus: UserCurrentStatus = {
 
 export const LandingHeader: React.FC = () => {
    const router = useRouter();
+   const pathname = usePathname();
    const [isScrolled, setIsScrolled] = useState(false);
    const { currentUser, userData, logout } = useAuth();
    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -175,9 +176,15 @@ export const LandingHeader: React.FC = () => {
       setIsMobileMenuOpen(false);
 
       if (href.startsWith("#")) {
-         const element = document.querySelector(href);
-         if (element) {
-            element.scrollIntoView({ behavior: "smooth", block: "start" });
+         // If we're not on the home page, navigate there first
+         if (pathname !== "/") {
+            router.push("/" + href);
+         } else {
+            // We're already on home page, just scroll
+            const element = document.querySelector(href);
+            if (element) {
+               element.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
          }
       } else {
          router.push(href);
@@ -209,7 +216,7 @@ export const LandingHeader: React.FC = () => {
       <>
          <header
             className={cn(
-               "fixed top-0 left-0 right-0 z-[100] transition-all duration-300",
+               "fixed top-0 left-0 right-0 z-40 transition-all duration-300",
                isScrolled
                   ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-secondary-100"
                   : "bg-transparent"
@@ -236,7 +243,15 @@ export const LandingHeader: React.FC = () => {
                   {/* Desktop Navigation */}
                   <nav className="hidden lg:flex items-center gap-6">
                      <Link href="/tasks/new">
-                        <Button className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold shadow-sm">
+                        <Button 
+                           variant={pathname === "/tasks/new" ? "default" : "ghost"}
+                           className={cn(
+                              "font-semibold",
+                              pathname === "/tasks/new"
+                                 ? "bg-primary-500 hover:bg-primary-600 text-secondary-900 shadow-sm"
+                                 : "text-secondary-600 hover:text-secondary-900 hover:bg-secondary-50"
+                           )}
+                        >
                            Post a Task
                         </Button>
                      </Link>
@@ -387,13 +402,20 @@ export const LandingHeader: React.FC = () => {
                               )}
                            </div>
                         ) : (
-                           <button
+                           <Button
                               key={item.label}
                               onClick={() => handleNavClick(item.href)}
-                              className="text-sm font-medium text-secondary-600 hover:text-secondary-900 transition-colors"
+                              variant="ghost"
+                              size="sm"
+                              className={cn(
+                                 "font-semibold",
+                                 (pathname === item.href || (item.href === "#how-it-works" && pathname === "/"))
+                                    ? "bg-primary-500 hover:bg-primary-600 text-secondary-900 shadow-sm"
+                                    : "text-secondary-600 hover:text-secondary-900 hover:bg-secondary-50"
+                              )}
                            >
                               {item.label}
-                           </button>
+                           </Button>
                         )
                      )}
                   </nav>
@@ -538,14 +560,24 @@ export const LandingHeader: React.FC = () => {
                               </button>
                               <button
                                  onClick={() => handleNavClick("/discover")}
-                                 className="w-full flex items-center gap-3 px-3 py-2.5 text-secondary-700 hover:bg-secondary-50 rounded-lg transition-colors"
+                                 className={cn(
+                                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors",
+                                    pathname === "/discover"
+                                       ? "text-primary-600 bg-primary-50 font-semibold"
+                                       : "text-secondary-700 hover:bg-secondary-50"
+                                 )}
                               >
                                  <Briefcase className="w-4 h-4" />
                                  <span className="text-sm font-medium">Browse Tasks</span>
                               </button>
                               <button
                                  onClick={() => handleNavClick("#how-it-works")}
-                                 className="w-full flex items-center gap-3 px-3 py-2.5 text-secondary-700 hover:bg-secondary-50 rounded-lg transition-colors"
+                                 className={cn(
+                                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors",
+                                    pathname === "/"
+                                       ? "text-primary-600 bg-primary-50 font-semibold"
+                                       : "text-secondary-700 hover:bg-secondary-50"
+                                 )}
                               >
                                  <HelpCircle className="w-4 h-4" />
                                  <span className="text-sm font-medium">How it Works</span>
@@ -557,7 +589,14 @@ export const LandingHeader: React.FC = () => {
                            {/* CTA Section */}
                            <div className="px-2">
                               <Link href="/tasks/new" onClick={() => setIsMobileMenuOpen(false)}>
-                                 <button className="w-full flex items-center gap-3 px-3 py-2.5 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors font-semibold">
+                                 <button 
+                                    className={cn(
+                                       "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors font-semibold",
+                                       pathname === "/tasks/new"
+                                          ? "text-primary-600 bg-primary-50"
+                                          : "text-secondary-700 hover:bg-secondary-50"
+                                    )}
+                                 >
                                     <PlusCircle className="w-4 h-4" />
                                     <span className="text-sm">Post a Task</span>
                                  </button>

@@ -23,11 +23,12 @@ export const createApplicationSchema = z
             estimatedDuration: z
                .number()
                .min(0.5, "Minimum duration is 0.5 hours")
-               .max(168, "Maximum duration is 168 hours")
+               .max(8760, "Maximum duration is 1 year (8760 hours)")
                .optional(),
             flexible: z.boolean(),
          })
          .optional(),
+      selectedDates: z.array(z.date()).max(366).optional(),
       coverLetter: z
          .string()
          .max(1000, "Cover letter must be less than 1000 characters")

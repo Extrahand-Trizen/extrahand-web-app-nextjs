@@ -34,6 +34,7 @@ import {
    FormLabel,
    FormMessage,
    FormControl,
+   FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -69,10 +70,19 @@ export function MakeOfferModal({
    const [showVerificationModal, setShowVerificationModal] = useState(false);
    const [experienceInput, setExperienceInput] = useState("");
    const [portfolioInput, setPortfolioInput] = useState("");
+   const [rangeStart, setRangeStart] = useState("");
+   const [rangeEnd, setRangeEnd] = useState("");
    const verificationStatus = getOfferSubmissionVerificationStatus(userData ?? null);
 
    const taskBudget =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
+
+   const isRecurring = Boolean(
+      task.recurring?.enabled && Array.isArray(task.schedule) && task.schedule.length > 0
+   );
+   const openSchedule = Array.isArray(task.schedule)
+      ? task.schedule.filter((entry) => entry.status === "open")
+      : [];
 
    const form = useForm<CreateApplicationFormData>({
       resolver: zodResolver(createApplicationSchema),
@@ -87,6 +97,7 @@ export function MakeOfferModal({
             flexible: true,
             estimatedDuration: task.estimatedDuration ?? undefined,
          },
+         selectedDates: [],
          coverLetter: "",
          relevantExperience: [],
          portfolio: [],
@@ -95,6 +106,48 @@ export function MakeOfferModal({
 
    const relevantExperience = form.watch("relevantExperience") || [];
    const portfolio = form.watch("portfolio") || [];
+   const selectedDates = form.watch("selectedDates") || [];
+   const openDates = openSchedule.map((entry) => new Date(entry.date));
+   const openDatesSorted = [...openDates].sort((a, b) => a.getTime() - b.getTime());
+   const minOpenDate = openDatesSorted[0];
+   const maxOpenDate = openDatesSorted[openDatesSorted.length - 1];
+
+   const toDateInputValue = (date?: Date) => {
+      if (!date) return "";
+      return date.toISOString().slice(0, 10);
+   };
+
+   const normalizeDate = (date: Date) =>
+      new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+   const applyRangeSelection = (startValue: string, endValue: string) => {
+      if (!startValue || !endValue) return;
+      const start = new Date(`${startValue}T00:00:00`);
+      const end = new Date(`${endValue}T00:00:00`);
+      const startDay = normalizeDate(start);
+      const endDay = normalizeDate(end);
+      const rangeStartDate = startDay <= endDay ? startDay : endDay;
+      const rangeEndDate = startDay <= endDay ? endDay : startDay;
+
+      const next = openDates.filter((date) => {
+         const day = normalizeDate(date);
+         return day >= rangeStartDate && day <= rangeEndDate;
+      });
+
+      setSelectedDates(next);
+   };
+
+   const setSelectedDates = (dates: Date[]) => {
+      form.setValue("selectedDates", dates, { shouldValidate: true });
+   };
+
+   const selectWeekdays = () => {
+      setSelectedDates(openDates.filter((date) => ![0, 6].includes(date.getDay())));
+   };
+
+   const selectWeekends = () => {
+      setSelectedDates(openDates.filter((date) => [0, 6].includes(date.getDay())));
+   };
 
    const addExperience = () => {
       const trimmed = experienceInput.trim();
@@ -134,6 +187,11 @@ export function MakeOfferModal({
    const onSubmit = async (data: CreateApplicationFormData) => {
       if (isSubmitting) return;
 
+      if (isRecurring && (!data.selectedDates || data.selectedDates.length === 0)) {
+         toast.error("Please select at least one date");
+         return;
+      }
+
       // Background check: Aadhaar, PAN, and bank must be verified to apply
       if (!verificationStatus.allowed) {
          setShowVerificationModal(true);
@@ -155,6 +213,7 @@ export function MakeOfferModal({
                flexible: data.proposedTime.flexible,
                estimatedDuration: data.proposedTime.estimatedDuration,
             },
+            selectedDates: data.selectedDates?.length ? data.selectedDates : undefined,
             coverLetter: data.coverLetter,
             relevantExperience: data.relevantExperience,
             portfolio: data.portfolio,
@@ -207,6 +266,147 @@ export function MakeOfferModal({
                   className="space-y-6"
                >
                   {/* Proposed Budget */}
+                     {isRecurring && (
+                        <FormField
+                           control={form.control}
+                           name="selectedDates"
+                           render={() => (
+                              <FormItem>
+                                 <FormLabel className="flex items-center gap-2 text-sm font-semibold text-secondary-900">
+                                    <Calendar className="w-4 h-4" />
+                                    Select dates you can take
+                                 </FormLabel>
+                                 <FormControl>
+                                    <div className="space-y-2">
+                                       {openSchedule.length > 0 && (
+                                          <div className="space-y-2">
+                                             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                                <div>
+                                                   <FormLabel className="text-xs text-secondary-600">
+                                                      Start date
+                                                   </FormLabel>
+                                                   <Input
+                                                      type="date"
+                                                      value={rangeStart}
+                                                      min={toDateInputValue(minOpenDate)}
+                                                      max={toDateInputValue(maxOpenDate)}
+                                                      onChange={(event) => {
+                                                         const value = event.target.value;
+                                                         setRangeStart(value);
+                                                         applyRangeSelection(value, rangeEnd);
+                                                      }}
+                                                      className="h-9 text-sm"
+                                                   />
+                                                </div>
+                                                <div>
+                                                   <FormLabel className="text-xs text-secondary-600">
+                                                      End date
+                                                   </FormLabel>
+                                                   <Input
+                                                      type="date"
+                                                      value={rangeEnd}
+                                                      min={toDateInputValue(minOpenDate)}
+                                                      max={toDateInputValue(maxOpenDate)}
+                                                      onChange={(event) => {
+                                                         const value = event.target.value;
+                                                         setRangeEnd(value);
+                                                         applyRangeSelection(rangeStart, value);
+                                                      }}
+                                                      className="h-9 text-sm"
+                                                   />
+                                                </div>
+                                             </div>
+                                             <div className="flex flex-wrap gap-2">
+                                                <Button
+                                                   type="button"
+                                                   variant="outline"
+                                                   size="sm"
+                                                   onClick={() => setSelectedDates(openDates)}
+                                                >
+                                                   Select all
+                                                </Button>
+                                                <Button
+                                                   type="button"
+                                                   variant="outline"
+                                                   size="sm"
+                                                   onClick={() => setSelectedDates([])}
+                                                >
+                                                   Clear
+                                                </Button>
+                                                <Button
+                                                   type="button"
+                                                   variant="outline"
+                                                   size="sm"
+                                                   onClick={selectWeekdays}
+                                                >
+                                                   Weekdays
+                                                </Button>
+                                                <Button
+                                                   type="button"
+                                                   variant="outline"
+                                                   size="sm"
+                                                   onClick={selectWeekends}
+                                                >
+                                                   Weekends
+                                                </Button>
+                                             </div>
+                                          </div>
+                                       )}
+                                       <div className="max-h-48 overflow-y-auto rounded-lg border border-secondary-200 p-3">
+                                       {openSchedule.length === 0 && (
+                                          <p className="text-xs text-secondary-500">
+                                             No open dates available right now.
+                                          </p>
+                                       )}
+                                       {openSchedule.map((entry) => {
+                                          const entryDate = new Date(entry.date);
+                                          const key = entryDate.toISOString();
+                                          const isChecked = selectedDates.some(
+                                             (d: Date) => new Date(d).toDateString() === entryDate.toDateString()
+                                          );
+
+                                          return (
+                                             <label
+                                                key={key}
+                                                className="flex items-center gap-3 text-xs text-secondary-700"
+                                             >
+                                                <Checkbox
+                                                   checked={isChecked}
+                                                   onCheckedChange={(checked) => {
+                                                      const next = checked
+                                                         ? [...selectedDates, entryDate]
+                                                         : selectedDates.filter(
+                                                              (d: Date) =>
+                                                                 new Date(d).toDateString() !==
+                                                                 entryDate.toDateString()
+                                                           );
+                                                      form.setValue("selectedDates", next, {
+                                                         shouldValidate: true,
+                                                      });
+                                                   }}
+                                                />
+                                                <span>
+                                                   {entryDate.toLocaleDateString("en-US", {
+                                                      weekday: "short",
+                                                      month: "short",
+                                                      day: "numeric",
+                                                   })}
+                                                </span>
+                                             </label>
+                                          );
+                                       })}
+                                       </div>
+                                    </div>
+                                 </FormControl>
+                                 <FormDescription className="text-xs text-secondary-600">
+                                    Choose one or more dates from the poster&apos;s range.
+                                 </FormDescription>
+                                 <FormMessage />
+                              </FormItem>
+                           )}
+                        />
+                     )}
+
                   <FormField
                      control={form.control}
                      name="proposedBudget.amount"
@@ -220,7 +420,7 @@ export function MakeOfferModal({
                               <Input
                                  type="number"
                                  placeholder="Enter your proposed budget"
-                                 value={field.value ?? ""}
+                                 value={field.value || ""}
                                  onChange={(e) =>
                                     field.onChange(
                                        e.target.value === ""
@@ -232,6 +432,9 @@ export function MakeOfferModal({
                                  className="h-11"
                               />
                            </FormControl>
+                           <FormDescription className="text-xs text-secondary-600">
+                              Minimum budget is ₹50
+                           </FormDescription>
                            <FormMessage />
                         </FormItem>
                      )}
@@ -270,26 +473,53 @@ export function MakeOfferModal({
                         render={({ field }) => (
                            <FormItem>
                               <FormLabel className="text-xs text-secondary-600">
-                                 Estimated Duration (hours)
+                                 Estimated Duration
                               </FormLabel>
                               <FormControl>
-                                 <Input
-                                    type="number"
-                                    step="0.5"
-                                    min="0.5"
-                                    max="168"
-                                    placeholder="e.g., 4"
-                                    value={field.value ?? ""}
-                                    onChange={(e) =>
-                                       field.onChange(
-                                          e.target.value === ""
-                                             ? undefined
-                                             : Number(e.target.value)
-                                       )
-                                    }
-                                    onBlur={field.onBlur}
-                                    className="h-10"
-                                 />
+                                 <div className="flex items-center gap-3">
+                                    <div className="flex-1">
+                                       <div className="flex items-center gap-2">
+                                          <Input
+                                             type="number"
+                                             placeholder="0"
+                                             min="0"
+                                             max="365"
+                                             step="1"
+                                             className="h-10 text-sm flex-1"
+                                             value={field.value && Math.floor(field.value / 24) > 0 ? Math.floor(field.value / 24) : ""}
+                                             onChange={(e) => {
+                                                const days = e.target.value ? parseFloat(e.target.value) : 0;
+                                                const hours = field.value ? (field.value % 24) : 0;
+                                                field.onChange(days * 24 + hours || undefined);
+                                             }}
+                                          />
+                                          <span className="text-xs text-secondary-600 font-medium min-w-fit">
+                                             days
+                                          </span>
+                                       </div>
+                                    </div>
+                                    <div className="flex-1">
+                                       <div className="flex items-center gap-2">
+                                          <Input
+                                             type="number"
+                                             placeholder="0"
+                                             min="0"
+                                             max="23"
+                                             step="1"
+                                             className="h-10 text-sm flex-1"
+                                             value={field.value && Math.floor(field.value % 24) > 0 ? Math.floor(field.value % 24) : ""}
+                                             onChange={(e) => {
+                                                const hours = e.target.value ? parseFloat(e.target.value) : 0;
+                                                const days = field.value ? Math.floor(field.value / 24) : 0;
+                                                field.onChange(days * 24 + hours || undefined);
+                                             }}
+                                          />
+                                          <span className="text-xs text-secondary-600 font-medium min-w-fit">
+                                             hours
+                                          </span>
+                                       </div>
+                                    </div>
+                                 </div>
                               </FormControl>
                               <FormMessage />
                            </FormItem>

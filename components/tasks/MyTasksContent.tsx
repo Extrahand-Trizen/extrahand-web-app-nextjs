@@ -106,13 +106,9 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
       const count = filteredTasks.length;
       if (prevCountRef.current !== count) {
          prevCountRef.current = count;
-         // Use setTimeout to avoid setState during render
-         const timeoutId = setTimeout(() => {
-            onCountChange?.(count);
-         }, 0);
-         return () => clearTimeout(timeoutId);
+         onCountChange?.(count);
       }
-   }, [filteredTasks.length]); // Intentionally exclude onCountChange to prevent loops
+   }, [filteredTasks.length, onCountChange]);
 
    // Fetch tasks from API (no filters - we filter client-side)
    const fetchTasks = useCallback(async () => {

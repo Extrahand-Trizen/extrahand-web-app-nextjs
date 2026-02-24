@@ -30,6 +30,13 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { InteractiveLocationPicker } from "../../shared/InteractiveLocationPicker";
 import { DateTimePicker } from "@/components/shared";
+import {
+   Select,
+   SelectContent,
+   SelectItem,
+   SelectTrigger,
+   SelectValue,
+} from "@/components/ui/select";
 
 interface LocationScheduleStepProps {
    form: UseFormReturn<TaskFormData>;
@@ -51,6 +58,29 @@ export function LocationScheduleStep({
    const scheduledTimeStart = form.watch("scheduledTimeStart");
    const scheduledTimeEnd = form.watch("scheduledTimeEnd");
    const location = form.watch("location");
+   const category = form.watch("category");
+   const recurringEnabled = form.watch("recurringEnabled");
+   const recurringStartDate = form.watch("recurringStartDate");
+   const recurringEndDate = form.watch("recurringEndDate");
+
+   const recurringEligibleCategories = [
+      "home-cleaning",
+      "deep-cleaning",
+      "gardening",
+      "pest-control",
+      "laundry-ironing",
+      "cooking-home-chef",
+      "beauty-services",
+      "massage-spa",
+      "fitness-trainers",
+      "tutors",
+      "pet-services",
+      "car-washing",
+      "water-tanker-services",
+   ];
+
+   const canUseRecurring = recurringEligibleCategories.includes(category || "");
+
 
    // Minimum date is today at midnight
    const minDate = useMemo(() => startOfDay(new Date()), []);
@@ -95,6 +125,15 @@ export function LocationScheduleStep({
          form.setValue("scheduledTimeEnd", newEnd);
       }
    }, [scheduledTimeStart, scheduledTimeEnd, form]);
+
+   useEffect(() => {
+      if (!canUseRecurring && recurringEnabled) {
+         form.setValue("recurringEnabled", false);
+         form.setValue("recurringStartDate", null);
+         form.setValue("recurringEndDate", null);
+         form.setValue("recurringFrequency", "daily");
+      }
+   }, [canUseRecurring, recurringEnabled, form]);
 
    const handleQuickDate = (daysOffset: number) => {
       const date = addDays(new Date(), daysOffset);
@@ -162,74 +201,241 @@ export function LocationScheduleStep({
          {/* Date */}
          <FormField
             control={form.control}
-            name="scheduledDate"
+            name="recurringEnabled"
             render={({ field }) => (
                <FormItem>
-                  <FormLabel className="text-xs md:text-sm">Task date</FormLabel>
+                  <FormLabel className="text-xs md:text-sm">Schedule type</FormLabel>
                   <FormControl>
-                     <div className="space-y-2">
-                        {/* Quick date buttons */}
-                        <div className="grid grid-cols-4 gap-2">
-                           {QUICK_DATES.map((quick) => (
-                              <button
-                                 key={quick.value}
-                                 type="button"
-                                 onClick={() => handleQuickDate(quick.value)}
-                                 className={cn(
-                                    "h-10 rounded-lg border-2 text-sm font-medium transition-all",
-                                    scheduledDate &&
-                                       format(scheduledDate, "yyyy-MM-dd") ===
-                                          format(
-                                             addDays(new Date(), quick.value),
-                                             "yyyy-MM-dd"
-                                          )
-                                       ? "border-primary-600 bg-primary-50 text-primary-600"
-                                       : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                                 )}
-                              >
-                                 {quick.label}
-                              </button>
-                           ))}
-                        </div>
-
-                        {/* Calendar picker */}
-                        <Popover>
-                           <PopoverTrigger asChild>
-                              <Button
-                                 type="button"
-                                 variant="outline"
-                                 className={cn(
-                                    "w-full h-10 justify-start text-left font-normal",
-                                    !field.value && "text-gray-500"
-                                 )}
-                              >
-                                 <CalendarIcon className="mr-2 h-5 w-5" />
-                                 {field.value ? (
-                                    format(field.value, "PPP")
-                                 ) : (
-                                    <span>Pick a date</span>
-                                 )}
-                              </Button>
-                           </PopoverTrigger>
-                           <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                 mode="single"
-                                 selected={field.value}
-                                 onSelect={field.onChange}
-                                 disabled={(date) =>
-                                    date <
-                                    new Date(new Date().setHours(0, 0, 0, 0))
-                                 }
-                                 initialFocus
-                              />
-                           </PopoverContent>
-                        </Popover>
+                     <div className="flex gap-2">
+                        <button
+                           type="button"
+                           onClick={() => field.onChange(false)}
+                           className={cn(
+                              "flex-1 h-10 rounded-lg border-2 text-sm font-medium transition-all",
+                              !field.value
+                                 ? "border-primary-600 bg-primary-50 text-primary-600"
+                                 : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                           )}
+                        >
+                           One-time
+                        </button>
+                        <button
+                           type="button"
+                           disabled={!canUseRecurring}
+                           onClick={() => canUseRecurring && field.onChange(true)}
+                           className={cn(
+                              "flex-1 h-10 rounded-lg border-2 text-sm font-medium transition-all",
+                              !canUseRecurring
+                                 ? "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
+                                 : field.value
+                                 ? "border-primary-600 bg-primary-50 text-primary-600"
+                                 : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                           )}
+                        >
+                           Recurring
+                        </button>
                      </div>
                   </FormControl>
-                  <FormMessage />
+                  {!canUseRecurring && (
+                     <FormDescription className="text-xs text-gray-500">
+                        Recurring schedule is available for select services only.
+                     </FormDescription>
+                  )}
                </FormItem>
             )}
          />
+
+         {!recurringEnabled && (
+            <FormField
+               control={form.control}
+               name="scheduledDate"
+               render={({ field }) => (
+                  <FormItem>
+                     <FormLabel className="text-xs md:text-sm">Task date</FormLabel>
+                     <FormControl>
+                        <div className="space-y-2">
+                           {/* Quick date buttons */}
+                           <div className="grid grid-cols-4 gap-2">
+                              {QUICK_DATES.map((quick) => (
+                                 <button
+                                    key={quick.value}
+                                    type="button"
+                                    onClick={() => handleQuickDate(quick.value)}
+                                    className={cn(
+                                       "h-10 rounded-lg border-2 text-sm font-medium transition-all",
+                                       scheduledDate &&
+                                          format(scheduledDate, "yyyy-MM-dd") ===
+                                             format(
+                                                addDays(new Date(), quick.value),
+                                                "yyyy-MM-dd"
+                                             )
+                                          ? "border-primary-600 bg-primary-50 text-primary-600"
+                                          : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                                    )}
+                                 >
+                                    {quick.label}
+                                 </button>
+                              ))}
+                           </div>
+
+                           {/* Calendar picker */}
+                           <Popover>
+                              <PopoverTrigger asChild>
+                                 <Button
+                                    type="button"
+                                    variant="outline"
+                                    className={cn(
+                                       "w-full h-10 justify-start text-left font-normal",
+                                       !field.value && "text-gray-500"
+                                    )}
+                                 >
+                                    <CalendarIcon className="mr-2 h-5 w-5" />
+                                    {field.value ? (
+                                       format(field.value, "PPP")
+                                    ) : (
+                                       <span>Pick a date</span>
+                                    )}
+                                 </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                 <Calendar
+                                    mode="single"
+                                    selected={field.value}
+                                    onSelect={field.onChange}
+                                    disabled={(date) =>
+                                       date <
+                                       new Date(new Date().setHours(0, 0, 0, 0))
+                                    }
+                                    initialFocus
+                                 />
+                              </PopoverContent>
+                           </Popover>
+                        </div>
+                     </FormControl>
+                     <FormMessage />
+                  </FormItem>
+               )}
+            />
+         )}
+
+         {recurringEnabled && (
+            <div className="space-y-4">
+               <div className="grid gap-4 md:grid-cols-2">
+                  <FormField
+                     control={form.control}
+                     name="recurringStartDate"
+                     render={({ field }) => (
+                        <FormItem>
+                           <FormLabel className="text-xs md:text-sm">Start date</FormLabel>
+                           <FormControl>
+                              <Popover>
+                                 <PopoverTrigger asChild>
+                                    <Button
+                                       type="button"
+                                       variant="outline"
+                                       className={cn(
+                                          "w-full h-10 justify-start text-left font-normal",
+                                          !field.value && "text-gray-500"
+                                       )}
+                                    >
+                                       <CalendarIcon className="mr-2 h-5 w-5" />
+                                       {field.value ? (
+                                          format(field.value, "PPP")
+                                       ) : (
+                                          <span>Pick a start date</span>
+                                       )}
+                                    </Button>
+                                 </PopoverTrigger>
+                                 <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                       mode="single"
+                                       selected={field.value || undefined}
+                                       onSelect={field.onChange}
+                                       disabled={(date) =>
+                                          date <
+                                          new Date(new Date().setHours(0, 0, 0, 0))
+                                       }
+                                       initialFocus
+                                    />
+                                 </PopoverContent>
+                              </Popover>
+                           </FormControl>
+                           <FormMessage />
+                        </FormItem>
+                     )}
+                  />
+
+                  <FormField
+                     control={form.control}
+                     name="recurringEndDate"
+                     render={({ field }) => (
+                        <FormItem>
+                           <FormLabel className="text-xs md:text-sm">End date</FormLabel>
+                           <FormControl>
+                              <Popover>
+                                 <PopoverTrigger asChild>
+                                    <Button
+                                       type="button"
+                                       variant="outline"
+                                       className={cn(
+                                          "w-full h-10 justify-start text-left font-normal",
+                                          !field.value && "text-gray-500"
+                                       )}
+                                    >
+                                       <CalendarIcon className="mr-2 h-5 w-5" />
+                                       {field.value ? (
+                                          format(field.value, "PPP")
+                                       ) : (
+                                          <span>Pick an end date</span>
+                                       )}
+                                    </Button>
+                                 </PopoverTrigger>
+                                 <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                       mode="single"
+                                       selected={field.value || undefined}
+                                       onSelect={field.onChange}
+                                       disabled={(date) =>
+                                          date <
+                                          new Date(new Date().setHours(0, 0, 0, 0))
+                                       }
+                                       initialFocus
+                                    />
+                                 </PopoverContent>
+                              </Popover>
+                           </FormControl>
+                           <FormMessage />
+                        </FormItem>
+                     )}
+                  />
+               </div>
+
+               <FormField
+                  control={form.control}
+                  name="recurringFrequency"
+                  render={({ field }) => (
+                     <FormItem>
+                        <FormLabel className="text-xs md:text-sm">Frequency</FormLabel>
+                        <FormControl>
+                           <Select value={field.value} onValueChange={field.onChange}>
+                              <SelectTrigger className="h-10">
+                                 <SelectValue placeholder="Select frequency" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                 <SelectItem value="daily">Daily</SelectItem>
+                                 <SelectItem value="weekly">Weekly</SelectItem>
+                              </SelectContent>
+                           </Select>
+                        </FormControl>
+                     </FormItem>
+                  )}
+               />
+
+               <div className="bg-secondary-50 border border-secondary-100 rounded-lg p-3 text-xs text-secondary-600">
+                  Recurring tasks let taskers pick specific dates from your range.
+               </div>
+            </div>
+         )}
 
          {/* Start Date & Time */}
          <FormField

@@ -17,6 +17,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageUpload } from "../../shared/ImageUpload";
+import {
+   Dialog,
+   DialogContent,
+   DialogHeader,
+   DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { sanitizeString, sanitizeStringArray } from "@/lib/utils/sanitization";
 
@@ -29,6 +35,7 @@ const CATEGORIES = [
    { id: "home-cleaning", label: "Home Cleaning" },
    { id: "deep-cleaning", label: "Deep Cleaning" },
    { id: "plumbing", label: "Plumbing" },
+   { id: "water-tanker-services", label: "Water & Tanker Services" },
    { id: "electrical", label: "Electrical" },
    { id: "carpenter", label: "Carpenter" },
    { id: "painting", label: "Painting" },
@@ -36,8 +43,6 @@ const CATEGORIES = [
    { id: "appliance-repair", label: "Appliance Repair" },
    { id: "pest-control", label: "Pest Control" },
    { id: "car-washing", label: "Car Washing / Car Cleaning" },
-   { id: "moving-packers", label: "Moving / Packers & Movers" },
-   { id: "delivery-pickup", label: "Delivery / Pickup" },
    { id: "gardening", label: "Gardening" },
    { id: "handyperson", label: "Handyperson / General Repairs" },
    { id: "furniture-assembly", label: "Furniture Assembly" },
@@ -56,6 +61,36 @@ const CATEGORIES = [
    { id: "other", label: "Other" },
 ];
 
+const CATEGORY_TAGS: Record<string, string[]> = {
+   "home-cleaning": ["dusting", "mopping", "vacuuming", "bathrooms", "kitchens", "pet-friendly", "eco-friendly"],
+   "deep-cleaning": ["carpets", "windows", "bathrooms", "kitchens", "walls", "move-in", "move-out"],
+   "plumbing": ["leaks", "repairs", "installation", "drains", "faucets", "emergency", "licensed"],
+   "water-tanker-services": ["water-supply", "tanker", "drinking-water", "bulk", "emergency", "residential", "commercial"],
+   "electrical": ["wiring", "fixtures", "repairs", "switchboards", "emergency", "licensed", "solar"],
+   "carpenter": ["doors", "windows", "shelves", "cabinets", "repairs", "custom-work", "modular"],
+   "painting": ["interior", "exterior", "walls", "doors", "furniture", "touch-up", "eco-friendly"],
+   "ac-repair": ["repair", "servicing", "installation", "cleaning", "gas-refill", "emergency", "warranty"],
+   "appliance-repair": ["washing-machine", "refrigerator", "oven", "microwave", "dishwasher", "emergency"],
+   "pest-control": ["mosquitoes", "termites", "cockroaches", "rats", "bedbugs", "eco-friendly", "chemical-free"],
+   "car-washing": ["exterior", "interior", "polishing", "detailing", "deep-clean", "waterless", "mobile"],
+   "gardening": ["landscaping", "trimming", "planting", "watering", "pest-control", "maintenance", "design"],
+   "handyperson": ["repairs", "maintenance", "installation", "small-jobs", "tools-needed", "emergency"],
+   "furniture-assembly": ["ikea", "branded", "modular", "wardrobes", "beds", "shelves", "installation"],
+   "security-patrol": ["residential", "commercial", "night-duty", "event-security", "armed", "trained"],
+   "beauty-services": ["hair", "makeup", "nails", "facial", "threading", "bridal", "eco-friendly"],
+   "massage-spa": ["body-massage", "facial-massage", "head-massage", "aromatherapy", "reflexology", "couples"],
+   "fitness-trainers": ["cardio", "strength", "yoga", "pilates", "functional", "at-home", "group-classes"],
+   "tutors": ["math", "english", "science", "languages", "coding", "competitive-exams", "online"],
+   "it-support": ["hardware", "software", "virus-removal", "data-recovery", "networking", "troubleshooting"],
+   "photographer-videographer": ["wedding", "events", "portraits", "product", "editing", "drone", "streaming"],
+   "event-services": ["catering", "decoration", "dj", "venue", "planning", "coordination", "setup"],
+   "pet-services": ["grooming", "walking", "training", "sitting", "boarding", "health-check"],
+   "driver-chauffeur": ["daily-commute", "airport-drop", "intercity", "event-driver", "experienced"],
+   "cooking-home-chef": ["daily-meals", "meal-prep", "diet-specific", "vegan", "party-catering", "healthy"],
+   "laundry-ironing": ["regular", "dry-clean", "ironing", "pressing", "delicate", "express-service"],
+   "other": [],
+};
+
 const SUBCATEGORIES: Record<string, string[]> = {
    other: [],
 };
@@ -63,6 +98,7 @@ const SUBCATEGORIES: Record<string, string[]> = {
 export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
    const [requirementInput, setRequirementInput] = useState("");
    const [tagInput, setTagInput] = useState("");
+   const [showAllCategories, setShowAllCategories] = useState(false);
    const category = form.watch("category");
    const requirements = form.watch("requirements") || [];
    const tags = form.watch("tags") || [];
@@ -198,46 +234,114 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
                <FormItem>
                   <FormLabel className="text-xs md:text-sm">Category</FormLabel>
                   <FormControl>
-                     <div className="grid grid-cols-2 gap-3">
-                        {CATEGORIES.map((cat) => (
-                           <button
-                              key={cat.id}
-                              type="button"
-                              onClick={() => {
-                                 field.onChange(cat.id);
-                                 form.setValue("subcategory", "");
-                              }}
-                              className={`
-                                 relative h-16 rounded-xl border-2 p-3 text-left transition-all
-                                 ${
-                                    field.value === cat.id
-                                       ? "border-primary-600 bg-primary-50"
-                                       : "border-gray-200 bg-white hover:border-gray-300"
-                                 }
-                              `}
-                           >
-                              <div className="flex items-center">
-                                 <span className="text-sm font-medium text-gray-900">
-                                    {cat.label}
-                                 </span>
-                              </div>
-                              {field.value === cat.id && (
-                                 <div className="absolute top-2 right-2">
-                                    <svg
-                                       className="w-5 h-5 text-primary-600"
-                                       fill="currentColor"
-                                       viewBox="0 0 20 20"
-                                    >
-                                       <path
-                                          fillRule="evenodd"
-                                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                          clipRule="evenodd"
-                                       />
-                                    </svg>
+                     <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                           {CATEGORIES.slice(0, 4).map((cat) => (
+                              <button
+                                 key={cat.id}
+                                 type="button"
+                                 onClick={() => {
+                                    if (field.value === cat.id) {
+                                       field.onChange("");
+                                    } else {
+                                       field.onChange(cat.id);
+                                       form.setValue("subcategory", "");
+                                    }
+                                 }}
+                                 className={`
+                                    relative h-16 rounded-xl border-2 p-3 text-left transition-all
+                                    ${
+                                       field.value === cat.id
+                                          ? "border-primary-600 bg-primary-50"
+                                          : "border-gray-200 bg-white hover:border-gray-300"
+                                    }
+                                 `}
+                              >
+                                 <div className="flex items-center">
+                                    <span className="text-sm font-medium text-gray-900">
+                                       {cat.label}
+                                    </span>
                                  </div>
-                              )}
+                                 {field.value === cat.id && (
+                                    <div className="absolute top-2 right-2">
+                                       <svg
+                                          className="w-5 h-5 text-primary-600"
+                                          fill="currentColor"
+                                          viewBox="0 0 20 20"
+                                       >
+                                          <path
+                                             fillRule="evenodd"
+                                             d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                             clipRule="evenodd"
+                                          />
+                                       </svg>
+                                    </div>
+                                 )}
+                              </button>
+                           ))}
+                        </div>
+
+                        <Dialog open={showAllCategories} onOpenChange={setShowAllCategories}>
+                           <button
+                              type="button"
+                              onClick={() => setShowAllCategories(true)}
+                              className="w-full h-10 rounded-lg border-2 border-gray-300 bg-white text-sm font-medium text-gray-700 hover:border-gray-400 hover:bg-gray-50 transition-all"
+                           >
+                              View all categories
                            </button>
-                        ))}
+                           <DialogContent className="max-h-[80vh] overflow-y-auto">
+                              <DialogHeader>
+                                 <DialogTitle>Select Category</DialogTitle>
+                              </DialogHeader>
+                              <div className="grid grid-cols-2 gap-3 py-4">
+                                 {CATEGORIES.map((cat) => (
+                                    <button
+                                       key={cat.id}
+                                       type="button"
+                                       onClick={() => {
+                                          if (field.value === cat.id) {
+                                             field.onChange("");
+                                             setShowAllCategories(false);
+                                          } else {
+                                             field.onChange(cat.id);
+                                             form.setValue("subcategory", "");
+                                             setShowAllCategories(false);
+                                          }
+                                       }}
+                                       className={`
+                                          relative h-20 rounded-xl border-2 p-3 text-left transition-all
+                                          ${
+                                             field.value === cat.id
+                                                ? "border-primary-600 bg-primary-50"
+                                                : "border-gray-200 bg-white hover:border-gray-300"
+                                          }
+                                       `}
+                                    >
+                                       <div className="flex items-center">
+                                          <span className="text-sm font-medium text-gray-900">
+                                             {cat.label}
+                                          </span>
+                                       </div>
+                                       {field.value === cat.id && (
+                                          <div className="absolute top-2 right-2">
+                                             <svg
+                                                className="w-5 h-5 text-primary-600"
+                                                fill="currentColor"
+                                                viewBox="0 0 20 20"
+                                             >
+                                                <path
+                                                   fillRule="evenodd"
+                                                   d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                                   clipRule="evenodd"
+                                                />
+                                             </svg>
+                                          </div>
+                                       )}
+                                    </button>
+                                 ))}
+                              </div>
+                           </DialogContent>
+                        </Dialog>
                      </div>
                   </FormControl>
                   <FormMessage />
@@ -362,25 +466,48 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
                   <FormLabel className="text-xs md:text-sm">Estimated time needed (optional)</FormLabel>
                   <FormControl>
                      <div className="flex items-center gap-3">
-                        <Input
-                           type="number"
-                           placeholder="2"
-                           min="0.5"
-                           max="168"
-                           step="0.5"
-                           className="h-10 text-sm flex-1"
-                           value={field.value || ""}
-                           onChange={(e) =>
-                              field.onChange(
-                                 e.target.value
-                                    ? parseFloat(e.target.value)
-                                    : null
-                              )
-                           }
-                        />
-                        <span className="text-xs md:text-sm text-gray-600 font-medium">
-                           hours
-                        </span>
+                        <div className="flex-1">
+                           <div className="flex items-center gap-2">
+                              <Input
+                                 type="number"
+                                 placeholder="0"
+                                 min="0"
+                                 max="365"
+                                 step="1"
+                                 className="h-10 text-sm flex-1"
+                                 value={field.value && Math.floor(field.value / 24) > 0 ? Math.floor(field.value / 24) : ""}
+                                 onChange={(e) => {
+                                    const days = e.target.value ? parseFloat(e.target.value) : 0;
+                                    const hours = field.value ? (field.value % 24) : 0;
+                                    field.onChange(days * 24 + hours || null);
+                                 }}
+                              />
+                              <span className="text-xs text-gray-600 font-medium min-w-fit">
+                                 days
+                              </span>
+                           </div>
+                        </div>
+                        <div className="flex-1">
+                           <div className="flex items-center gap-2">
+                              <Input
+                                 type="number"
+                                 placeholder="0"
+                                 min="0"
+                                 max="23"
+                                 step="1"
+                                 className="h-10 text-sm flex-1"
+                                 value={field.value && Math.floor(field.value % 24) > 0 ? Math.floor(field.value % 24) : ""}
+                                 onChange={(e) => {
+                                    const hours = e.target.value ? parseFloat(e.target.value) : 0;
+                                    const days = field.value ? Math.floor(field.value / 24) : 0;
+                                    field.onChange(days * 24 + hours || null);
+                                 }}
+                              />
+                              <span className="text-xs text-gray-600 font-medium min-w-fit">
+                                 hours
+                              </span>
+                           </div>
+                        </div>
                      </div>
                   </FormControl>
                   <FormDescription className="text-xs">
@@ -395,52 +522,94 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
          <FormField
             control={form.control}
             name="tags"
-            render={({ field }) => (
-               <FormItem>
-                  <FormLabel className="text-xs md:text-sm">Tags (optional)</FormLabel>
-                  <FormControl>
-                     <div>
-                        <div className="relative">
-                           <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                           <Input
-                              value={tagInput}
-                              onChange={(e) => setTagInput(e.target.value)}
-                              onKeyDown={handleTagKeyDown}
-                              placeholder="Type and press Enter (2-20 chars)"
-                              className="h-10 text-sm pl-12"
-                              disabled={tags.length >= 5}
-                              maxLength={20}
-                           />
+            render={({ field }) => {
+               const categoryTags = category && CATEGORY_TAGS[category] ? CATEGORY_TAGS[category] : [];
+               
+               return (
+                  <FormItem>
+                     <FormLabel className="text-xs md:text-sm">Skills & Tags (optional)</FormLabel>
+                     <FormControl>
+                        <div className="space-y-3">
+                           {/* Preset category-based tags */}
+                           {categoryTags.length > 0 && (
+                              <div>
+                                 <p className="text-xs text-gray-600 font-medium mb-2">Suggested tags for this category:</p>
+                                 <div className="flex flex-wrap gap-2">
+                                    {categoryTags.map((suggestedTag) => (
+                                       <button
+                                          key={suggestedTag}
+                                          type="button"
+                                          onClick={() => {
+                                             if (!tags.includes(suggestedTag) && tags.length < 5) {
+                                                field.onChange([...tags, suggestedTag]);
+                                             }
+                                          }}
+                                          className={cn(
+                                             "px-3 py-1.5 rounded-full text-xs font-medium transition-all border-2",
+                                             tags.includes(suggestedTag)
+                                                ? "bg-primary-100 border-primary-600 text-primary-700 cursor-default"
+                                                : "bg-gray-100 border-gray-300 text-gray-700 hover:border-primary-400 cursor-pointer"
+                                          )}
+                                          disabled={tags.length >= 5 && !tags.includes(suggestedTag)}
+                                       >
+                                          {suggestedTag}
+                                       </button>
+                                    ))}
+                                 </div>
+                              </div>
+                           )}
+
+                           {/* Selected tags display */}
+                           {tags.length > 0 && (
+                              <div>
+                                 <p className="text-xs text-gray-600 font-medium mb-2">Selected tags ({tags.length}/5):</p>
+                                 <div className="flex flex-wrap gap-2">
+                                    {tags.map((tag, index) => (
+                                       <Badge
+                                          key={index}
+                                          className="h-7 px-3 text-xs bg-primary-600 text-white hover:bg-primary-700"
+                                       >
+                                          {tag}
+                                          <button
+                                             type="button"
+                                             onClick={() => removeTag(index)}
+                                             className="ml-1.5 hover:text-primary-100"
+                                             aria-label="Remove tag"
+                                          >
+                                             <X className="size-2 md:size-3" />
+                                          </button>
+                                       </Badge>
+                                    ))}
+                                 </div>
+                              </div>
+                           )}
+
+                           {/* Custom tag input (optional) */}
+                           {tags.length < 5 && (
+                              <div>
+                                 <p className="text-xs text-gray-600 font-medium mb-2">Or add a custom tag:</p>
+                                 <div className="relative">
+                                    <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                    <Input
+                                       value={tagInput}
+                                       onChange={(e) => setTagInput(e.target.value)}
+                                       onKeyDown={handleTagKeyDown}
+                                       placeholder="Type and press Enter (2-20 chars)"
+                                       className="h-10 text-sm pl-12"
+                                       maxLength={20}
+                                    />
+                                 </div>
+                              </div>
+                           )}
                         </div>
-                     </div>
-                  </FormControl>
-                  <FormDescription className="text-xs">
-                     Add keywords to help taskers find your task (max 5)
-                  </FormDescription>
-                  {tags.length > 0 && (
-                     <div className="flex flex-wrap gap-2 mt-1">
-                        {tags.map((tag, index) => (
-                           <Badge
-                              key={index}
-                              variant="secondary"
-                              className="h-7 px-3 text-xs bg-primary-50 text-primary-700 hover:bg-primary-100"
-                           >
-                              #{tag}
-                              <button
-                                 type="button"
-                                 onClick={() => removeTag(index)}
-                                 className="ml-1.5 hover:text-primary-900"
-                                 aria-label="Remove tag"
-                              >
-                                 <X className="size-2 md:size-3" />
-                              </button>
-                           </Badge>
-                        ))}
-                     </div>
-                  )}
-                  <FormMessage />
-               </FormItem>
-            )}
+                     </FormControl>
+                     <FormDescription className="text-xs">
+                        Select suggested tags or add custom ones to help taskers find your task
+                     </FormDescription>
+                     <FormMessage />
+                  </FormItem>
+               );
+            }}
          />
 
          {/* Priority */}

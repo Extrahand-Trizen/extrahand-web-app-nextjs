@@ -51,6 +51,36 @@ const MAX_RETRY_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 1000;
 const DRAFT_KEY = "taskDraft";
 
+const CATEGORY_LABELS: Record<string, string> = {
+   "home-cleaning": "Home Cleaning",
+   "deep-cleaning": "Deep Cleaning",
+   plumbing: "Plumbing",
+   "water-tanker-services": "Water & Tanker Services",
+   electrical: "Electrical",
+   carpenter: "Carpenter",
+   painting: "Painting",
+   "ac-repair": "AC Repair & Service",
+   "appliance-repair": "Appliance Repair",
+   "pest-control": "Pest Control",
+   "car-washing": "Car Washing / Car Cleaning",
+   gardening: "Gardening",
+   handyperson: "Handyperson / General Repairs",
+   "furniture-assembly": "Furniture Assembly",
+   "security-patrol": "Security Patrol / Watchman",
+   "beauty-services": "Beauty Services",
+   "massage-spa": "Massage / Spa",
+   "fitness-trainers": "Fitness Trainers",
+   tutors: "Tutors",
+   "it-support": "IT Support / Laptop Repair",
+   "photographer-videographer": "Photographer / Videographer",
+   "event-services": "Event Services",
+   "pet-services": "Pet Services",
+   "driver-chauffeur": "Driver / Chauffeur",
+   "cooking-home-chef": "Cooking / Home Chef",
+   "laundry-ironing": "Laundry / Ironing",
+   other: "Other",
+};
+
 // ============================================================================
 // Utility Functions
 // ============================================================================
@@ -84,6 +114,8 @@ const normalizeDraft = (raw: any): TaskFormData => {
       reviveDate(draft.scheduledTimeStart) || INITIAL_FORM_DATA.scheduledTimeStart;
    draft.scheduledTimeEnd =
       reviveDate(draft.scheduledTimeEnd) || INITIAL_FORM_DATA.scheduledTimeEnd;
+   draft.recurringStartDate = reviveDate(draft.recurringStartDate);
+   draft.recurringEndDate = reviveDate(draft.recurringEndDate);
 
    // Normalize attachments uploadedAt fields
    if (Array.isArray(draft.attachments)) {
@@ -158,6 +190,11 @@ const transformFormDataToTask = (
       title: formData.title,
       description: formData.description,
       category: formData.category,
+      categorySlug: formData.category,
+      categoryLabel:
+         formData.category === "other"
+         ? formData.subcategory || CATEGORY_LABELS.other
+         : CATEGORY_LABELS[formData.category] || undefined,
       subcategory: formData.subcategory || undefined,
       requirements: formData.requirements,
       estimatedDuration: formData.estimatedDuration || undefined,
@@ -175,11 +212,30 @@ const transformFormDataToTask = (
          pinCode: formData.location.pinCode,
          country: formData.location.country || "India",
       },
-      // Schedule - convert Date objects to time strings for backend
-      scheduledDate: formData.scheduledDate || undefined,
+      // Schedule - merge date and time into full datetime
+      scheduledDate: formData.scheduledDate && formData.scheduledTimeStart 
+         ? (() => {
+             const merged = new Date(formData.scheduledDate);
+             merged.setHours(
+               formData.scheduledTimeStart.getHours(),
+               formData.scheduledTimeStart.getMinutes(),
+               0,
+               0
+             );
+             return merged;
+           })()
+         : formData.scheduledDate || undefined,
       scheduledTimeStart: formatTimeToString(formData.scheduledTimeStart),
       scheduledTimeEnd: formatTimeToString(formData.scheduledTimeEnd),
       flexibility: mapFlexibilityToBackend(formData.flexibility),
+      recurring: formData.recurringEnabled
+         ? {
+              enabled: true,
+              frequency: formData.recurringFrequency,
+              startDate: formData.recurringStartDate || undefined,
+              endDate: formData.recurringEndDate || undefined,
+           }
+         : undefined,
       // Budget - required field, must be a number
       budgetType: formData.budgetType,
       budget,
@@ -228,6 +284,10 @@ const INITIAL_FORM_DATA: TaskFormData = {
       return date;
    })(),
    flexibility: "flexible",
+   recurringEnabled: false,
+   recurringStartDate: null,
+   recurringEndDate: null,
+   recurringFrequency: "daily",
    budgetType: "fixed",
    budget: null,
    urgency: "standard",

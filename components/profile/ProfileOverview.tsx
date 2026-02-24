@@ -5,7 +5,7 @@
  * Summary view of account status, stats, and quick actions
  */
 
-import React from "react";
+import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -22,9 +22,12 @@ import {
    Briefcase,
    MapPin,
    Award,
+   Share2,
 } from "lucide-react";
 import { UserProfile } from "@/types/user";
 import { ProfileSection } from "@/types/profile";
+import { ShareModal } from "@/components/shared/ShareModal";
+import { toast } from "sonner";
 
 interface ProfileOverviewProps {
    user: UserProfile;
@@ -32,6 +35,35 @@ interface ProfileOverviewProps {
 }
 
 export function ProfileOverview({ user, onNavigate }: ProfileOverviewProps) {
+   const [shareOpen, setShareOpen] = useState(false);
+
+   // Generate the public profile URL
+   const getProfileUrl = () => {
+      if (typeof window !== "undefined") {
+         const userId = user.uid || user._id;
+         return `${window.location.origin}/profile/${userId}`;
+      }
+      return "";
+   };
+
+   const handleShare = async () => {
+      const url = getProfileUrl();
+
+      if (navigator.share) {
+         try {
+            await navigator.share({
+               title: `${user.name}'s Profile on ExtraHand`,
+               text: `Check out ${user.name}'s profile on ExtraHand`,
+               url: url,
+            });
+         } catch (err) {
+            console.log("Share cancelled");
+         }
+      } else {
+         setShareOpen(true);
+      }
+   };
+
    const completionPercentage = calculateCompletionPercentage(user);
    const verificationItems = getVerificationStatus(user);
    const verifiedCount = verificationItems.filter(
@@ -106,12 +138,21 @@ export function ProfileOverview({ user, onNavigate }: ProfileOverviewProps) {
                         View Profile
                      </Button>
                      <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         onClick={() => onNavigate("edit-profile")}
                         className="text-xs h-8 px-3"
                      >
                         Edit
+                     </Button>
+                     <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleShare}
+                        className="text-xs h-8 px-3"
+                     >
+                        <Share2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1.5" />
+                        <span className="hidden sm:inline">Share</span>
                      </Button>
                   </div>
                </div>
@@ -247,6 +288,16 @@ export function ProfileOverview({ user, onNavigate }: ProfileOverviewProps) {
                />
             </div>
          </div>
+
+         {/* Share Modal */}
+         <ShareModal
+            isOpen={shareOpen}
+            onClose={() => setShareOpen(false)}
+            title="Profile"
+            description={`Share ${user.name}'s profile`}
+            url={getProfileUrl()}
+            shareText={`Check out ${user.name}'s profile on ExtraHand!`}
+         />
       </div>
    );
 }

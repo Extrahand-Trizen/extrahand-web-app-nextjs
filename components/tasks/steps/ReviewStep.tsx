@@ -19,7 +19,7 @@ import {
    FormLabel,
    FormMessage,
 } from "@/components/ui/form";
-import { format } from "date-fns";
+import { format, differenceInCalendarDays } from "date-fns";
 import {
    MapPin,
    Calendar,
@@ -40,6 +40,7 @@ const CATEGORIES: Record<string, { label: string }> = {
    "home-cleaning": { label: "Home Cleaning" },
    "deep-cleaning": { label: "Deep Cleaning" },
    plumbing: { label: "Plumbing" },
+   "water-tanker-services": { label: "Water & Tanker Services" },
    electrical: { label: "Electrical" },
    carpenter: { label: "Carpenter" },
    painting: { label: "Painting" },
@@ -47,8 +48,6 @@ const CATEGORIES: Record<string, { label: string }> = {
    "appliance-repair": { label: "Appliance Repair" },
    "pest-control": { label: "Pest Control" },
    "car-washing": { label: "Car Washing / Car Cleaning" },
-   "moving-packers": { label: "Moving / Packers & Movers" },
-   "delivery-pickup": { label: "Delivery / Pickup" },
    gardening: { label: "Gardening" },
    handyperson: { label: "Handyperson / General Repairs" },
    "furniture-assembly": { label: "Furniture Assembly" },
@@ -102,6 +101,11 @@ export function ReviewStep({
    const totalBudget =
       data.budgetType === "fixed" && data.budget
          ? data.budget + urgency.surcharge
+         : null;
+
+   const recurringDays =
+      data.recurringEnabled && data.recurringStartDate && data.recurringEndDate
+         ? differenceInCalendarDays(data.recurringEndDate, data.recurringStartDate) + 1
          : null;
 
    return (
@@ -192,7 +196,10 @@ export function ReviewStep({
                {data.estimatedDuration && (
                   <div className="flex items-center gap-2 text-xs md:text-sm text-gray-600">
                      <Clock className="w-4 h-4" />
-                     <span>Estimated {data.estimatedDuration} hours</span>
+                     <span>
+                        Estimated {Math.floor(data.estimatedDuration / 24)} days{" "}
+                        {(data.estimatedDuration % 24).toFixed(1)} hours
+                     </span>
                   </div>
                )}
             </div>
@@ -233,7 +240,14 @@ export function ReviewStep({
                <div className="flex items-center gap-3">
                   <Calendar className="size-4 md:size-5 text-gray-400" />
                   <span className="text-xs md:text-sm text-gray-900">
-                     {data.scheduledDate
+                     {data.recurringEnabled
+                        ? data.recurringStartDate && data.recurringEndDate
+                           ? `${format(data.recurringStartDate, "MMM d, yyyy")} - ${format(
+                                data.recurringEndDate,
+                                "MMM d, yyyy"
+                             )} (${recurringDays} days)`
+                           : "Date range not set"
+                        : data.scheduledDate
                         ? format(data.scheduledDate, "EEEE, MMMM d, yyyy")
                         : "Date not set"}
                   </span>

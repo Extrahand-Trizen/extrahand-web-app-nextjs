@@ -35,6 +35,7 @@ export function TaskTrackingHeader({
             return "Viewer";
       }
    };
+   const categoryLabel = task.categoryLabel || task.subcategory || task.category;
 
    return (
       <div className="bg-white/95 backdrop-blur-sm border-b border-secondary-100 sticky top-0 z-10">
@@ -83,7 +84,7 @@ export function TaskTrackingHeader({
                      <>
                         <span className="text-secondary-300">•</span>
                         <span className="text-secondary-500">
-                           {task.category}
+                           {categoryLabel}
                         </span>
                      </>
                   )}

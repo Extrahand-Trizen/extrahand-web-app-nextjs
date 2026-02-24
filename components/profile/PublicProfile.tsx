@@ -133,15 +133,6 @@ export function PublicProfile({
 
    return (
       <div className="max-w-7xl mx-auto space-y-6">
-         {/* Preview Banner (only for own profile) */}
-         {isOwnProfile && (
-            <div className="bg-primary-50 border border-primary-100 rounded-lg p-2 md:p-3">
-               <p className="text-xs md:text-sm text-primary-700">
-                  This is how your profile appears to others on ExtraHand
-               </p>
-            </div>
-         )}
-
          {/* Profile Header */}
          <Card>
             <CardContent className="p-6">

@@ -5,24 +5,66 @@
  * Displays tasks with two tabs: My Tasks and My Applications
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { MyTasksContent } from "@/components/tasks/MyTasksContent";
 import { MyApplicationsContent } from "@/components/tasks/MyApplicationsContent";
+import { tasksApi } from "@/lib/api/endpoints/tasks";
+import { applicationsApi } from "@/lib/api/endpoints/applications";
 
 export default function TasksPage() {
    const router = useRouter();
    const searchParams = useSearchParams();
-   const [tasksCount, setTasksCount] = useState<number>(0);
-   const [applicationsCount, setApplicationsCount] = useState<number>(0);
+   const [tasksCount, setTasksCount] = useState<number | null>(null);
+   const [applicationsCount, setApplicationsCount] = useState<number | null>(null);
 
    const activeTab = useMemo(() => {
       const tabParam = searchParams.get("tab");
       return tabParam === "myapplications" ? "myapplications" : "mytasks";
    }, [searchParams]);
+
+   // Fetch both counts on mount to ensure they're always available
+   useEffect(() => {
+      const fetchCounts = async () => {
+         try {
+            // Fetch both in parallel for faster loading
+            const [tasksResponse, appsResponse] = await Promise.all([
+               tasksApi.getMyTasks({ limit: 1 }),
+               applicationsApi.getMyApplications()
+            ]);
+
+            // Extract tasks count
+            const tasksData = tasksResponse as any;
+            const tasksTotal = tasksData?.meta?.total ?? 
+                              tasksData?.data?.meta?.total ?? 
+                              tasksData?.total ?? 
+                              (Array.isArray(tasksData) ? tasksData.length : 
+                               Array.isArray(tasksData?.data) ? tasksData.data.length :
+                               Array.isArray(tasksData?.data?.tasks) ? tasksData.data.tasks.length :
+                               Array.isArray(tasksData?.tasks) ? tasksData.tasks.length : 0);
+            
+            setTasksCount(tasksTotal);
+
+            // Extract applications count
+            const appsData = appsResponse as any;
+            const appsTotal = appsData?.meta?.total ?? 
+                             appsData?.data?.meta?.total ?? 
+                             appsData?.total ??
+                             (Array.isArray(appsData?.data) ? appsData.data.length :
+                              Array.isArray(appsData?.data?.applications) ? appsData.data.applications.length :
+                              Array.isArray(appsData?.applications) ? appsData.applications.length : 0);
+            
+            setApplicationsCount(appsTotal);
+         } catch (error) {
+            console.error("Error fetching counts:", error);
+         }
+      };
+
+      fetchCounts();
+   }, []);
 
    const handleTabChange = (value: string) => {
       router.push(`/tasks?tab=${value}`);
@@ -70,9 +112,11 @@ export default function TasksPage() {
                               className="px-3 py-2 rounded-lg border-b-2 border-transparent data-[state=active]:border-primary-600 data-[state=active]:text-primary-600 text-secondary-600 font-medium text-sm sm:text-base"
                            >
                               My Tasks
-                              <span className="ml-2 text-secondary-400">
-                                 {tasksCount}
-                              </span>
+                              {tasksCount !== null && tasksCount > 0 && (
+                                 <span className="ml-2 text-secondary-400">
+                                    {tasksCount}
+                                 </span>
+                              )}
                            </TabsTrigger>
 
                            <TabsTrigger
@@ -80,9 +124,11 @@ export default function TasksPage() {
                               className="px-3 py-2 rounded-lg border-b-2 border-transparent data-[state=active]:border-primary-600 data-[state=active]:text-primary-600 text-secondary-600 font-medium text-sm sm:text-base"
                            >
                               My Applications
-                              <span className="ml-2 text-secondary-400">
-                                 {applicationsCount}
-                              </span>
+                              {applicationsCount !== null && applicationsCount > 0 && (
+                                 <span className="ml-2 text-secondary-400">
+                                    {applicationsCount}
+                                 </span>
+                              )}
                            </TabsTrigger>
                         </TabsList>
                      </div>

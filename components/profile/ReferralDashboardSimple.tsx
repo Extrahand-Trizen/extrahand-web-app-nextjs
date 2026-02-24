@@ -72,7 +72,6 @@ export default function ReferralDashboardSimple({ className = '' }: ReferralSimp
 
   const totalReferrals = dashboard.totalReferrals || 0;
   const successfulReferrals = dashboard.successfulReferrals || 0;
-  const pendingReferrals = dashboard.pendingReferrals || 0;
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -135,7 +134,7 @@ export default function ReferralDashboardSimple({ className = '' }: ReferralSimp
       {/* Referrals Stats */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h3 className="text-xl font-bold text-gray-900 mb-4">Your Referrals</h3>
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="text-center p-4 bg-blue-50 rounded-lg">
             <p className="text-3xl font-bold text-blue-600">{totalReferrals}</p>
             <p className="text-sm text-gray-600">Total Referred</p>
@@ -143,10 +142,6 @@ export default function ReferralDashboardSimple({ className = '' }: ReferralSimp
           <div className="text-center p-4 bg-green-50 rounded-lg">
             <p className="text-3xl font-bold text-green-600">{successfulReferrals}</p>
             <p className="text-sm text-gray-600">Downloaded</p>
-          </div>
-          <div className="text-center p-4 bg-yellow-50 rounded-lg">
-            <p className="text-3xl font-bold text-yellow-600">{pendingReferrals}</p>
-            <p className="text-sm text-gray-600">Pending</p>
           </div>
         </div>
 

@@ -34,7 +34,6 @@ export async function getReferralDashboard(): Promise<ReferralDashboardData> {
     stats: {
       totalReferrals: data.totalReferrals || 0,
       qualifiedReferrals: data.successfulReferrals || 0,
-      pendingReferrals: data.pendingReferrals || 0,
       expiredReferrals: data.failedReferrals || 0,
       totalCreditsEarned: data.totalEarnings || 0,
       currentCreditBalance: data.creditBalance || 0,
@@ -54,7 +53,6 @@ export async function getReferralStats(): Promise<ReferralStats> {
   return {
     totalReferrals: data.totalReferrals || 0,
     qualifiedReferrals: data.successfulReferrals || 0,
-    pendingReferrals: data.pendingReferrals || 0,
     expiredReferrals: data.failedReferrals || 0,
     totalCreditsEarned: data.totalEarnings || 0,
     currentCreditBalance: data.creditBalance || 0,

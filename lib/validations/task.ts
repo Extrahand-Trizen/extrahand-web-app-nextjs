@@ -67,10 +67,27 @@ export const locationScheduleSchema = z
       scheduledTimeStart: z.date(),
       scheduledTimeEnd: z.date(),
       flexibility: z.enum(["exact", "flexible", "very_flexible"]),
+      recurringEnabled: z.boolean().default(false),
+      recurringStartDate: z.date().nullable().optional(),
+      recurringEndDate: z.date().nullable().optional(),
+      recurringFrequency: z.enum(["daily", "weekly"]).default("daily"),
    })
-   .refine((data) => data.scheduledDate !== null, {
+   .refine((data) => {
+      if (data.recurringEnabled) {
+        return data.recurringStartDate !== null && data.recurringEndDate !== null;
+      }
+      return data.scheduledDate !== null;
+   }, {
       message: "Please choose a date",
       path: ["scheduledDate"],
+   })
+   .refine((data) => {
+      if (!data.recurringEnabled) return true;
+      if (!data.recurringStartDate || !data.recurringEndDate) return false;
+      return data.recurringEndDate >= data.recurringStartDate;
+   }, {
+      message: "End date must be after start date",
+      path: ["recurringEndDate"],
    })
    .refine(
       (data) => {
