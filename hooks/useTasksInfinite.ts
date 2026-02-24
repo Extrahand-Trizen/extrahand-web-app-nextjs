@@ -10,15 +10,21 @@ export type TasksFilterParams = {
   suburb: string;
   remotely: boolean | null;
   sortBy: string;
+  minBudget?: number;
+  maxBudget?: number;
 };
 
 const TASKS_PER_PAGE = 20;
 
-export function useTasksInfinite(filters: TasksFilterParams) {
+export function useTasksInfinite(
+  filters: TasksFilterParams,
+  initialData?: TaskListResponse | null
+) {
   const userProfile = useUserStore((state) => state.user);
 
   return useInfiniteQuery<TaskListResponse>({
     queryKey: ["tasks", { ...filters, userId: userProfile?._id ?? null }],
+    initialPageParam: 1,
     queryFn: async ({ pageParam = 1 }) => {
       const params: any = {
         page: pageParam,
@@ -71,8 +77,14 @@ export function useTasksInfinite(filters: TasksFilterParams) {
       if (!p) return undefined;
       return p.page < p.pages ? p.page + 1 : undefined;
     },
+    // Seed the cache with server-fetched first page when available
+    initialData: initialData
+      ? {
+          pageParams: [1],
+          pages: [initialData],
+        }
+      : undefined,
     staleTime: 30_000,
-    keepPreviousData: true,
   });
 }
 
