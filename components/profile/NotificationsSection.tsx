@@ -453,13 +453,6 @@ export function NotificationsSection({
                disabled={!localSettings.push.enabled}
             />
             <NotificationToggle
-               label="Reminders"
-               description="Task deadlines and upcoming appointments"
-               checked={localSettings.push.reminders}
-               onChange={(v) => updateChannelSetting("push", "reminders", v)}
-               disabled={!localSettings.push.enabled}
-            />
-            <NotificationToggle
                label="Task Reminders"
                description="Task-specific reminder alerts"
                checked={localSettings.push.taskReminders}
@@ -518,13 +511,6 @@ export function NotificationsSection({
                description="Receipts and payment confirmations"
                checked={localSettings.email.payments}
                onChange={(v) => updateChannelSetting("email", "payments", v)}
-               disabled={!localSettings.email.enabled}
-            />
-            <NotificationToggle
-               label="Reminders"
-               description="Task deadlines and follow-ups"
-               checked={localSettings.email.reminders}
-               onChange={(v) => updateChannelSetting("email", "reminders", v)}
                disabled={!localSettings.email.enabled}
             />
             <NotificationToggle
@@ -588,13 +574,7 @@ export function NotificationsSection({
                onChange={(v) => updateChannelSetting("sms", "payments", v)}
                disabled={!localSettings.sms.enabled}
             />
-            <NotificationToggle
-               label="Reminders"
-               description="Critical task reminders"
-               checked={localSettings.sms.reminders}
-               onChange={(v) => updateChannelSetting("sms", "reminders", v)}
-               disabled={!localSettings.sms.enabled}
-            />
+
          </NotificationChannel>
 
          {/* Keyword Task Alerts */}

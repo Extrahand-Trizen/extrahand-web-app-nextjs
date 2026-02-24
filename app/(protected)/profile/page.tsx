@@ -132,7 +132,6 @@ function ProfilePageContent() {
          taskUpdates: prefs?.push?.taskUpdates ?? DEFAULT_NOTIFICATION_SETTINGS.push.taskUpdates,
          payments: prefs?.push?.payments ?? DEFAULT_NOTIFICATION_SETTINGS.push.payments,
          promotions: prefs?.push?.promotions ?? DEFAULT_NOTIFICATION_SETTINGS.push.promotions,
-         reminders: prefs?.push?.reminders ?? DEFAULT_NOTIFICATION_SETTINGS.push.reminders,
          system: prefs?.push?.system ?? DEFAULT_NOTIFICATION_SETTINGS.push.system,
          transactional: prefs?.push?.transactional ?? DEFAULT_NOTIFICATION_SETTINGS.push.transactional,
          taskReminders: prefs?.push?.taskReminders ?? DEFAULT_NOTIFICATION_SETTINGS.push.taskReminders,
@@ -146,7 +145,6 @@ function ProfilePageContent() {
          taskUpdates: prefs?.email?.taskUpdates ?? DEFAULT_NOTIFICATION_SETTINGS.email.taskUpdates,
          payments: prefs?.email?.payments ?? DEFAULT_NOTIFICATION_SETTINGS.email.payments,
          promotions: prefs?.email?.promotions ?? DEFAULT_NOTIFICATION_SETTINGS.email.promotions,
-         reminders: prefs?.email?.reminders ?? DEFAULT_NOTIFICATION_SETTINGS.email.reminders,
          system: prefs?.email?.system ?? DEFAULT_NOTIFICATION_SETTINGS.email.system,
          marketing: prefs?.email?.marketing ?? DEFAULT_NOTIFICATION_SETTINGS.email.marketing,
          transactional: prefs?.email?.transactional ?? DEFAULT_NOTIFICATION_SETTINGS.email.transactional,
@@ -160,7 +158,6 @@ function ProfilePageContent() {
          enabled: prefs?.sms?.enabled ?? DEFAULT_NOTIFICATION_SETTINGS.sms.enabled,
          taskUpdates: prefs?.sms?.taskUpdates ?? DEFAULT_NOTIFICATION_SETTINGS.sms.taskUpdates,
          payments: prefs?.sms?.payments ?? DEFAULT_NOTIFICATION_SETTINGS.sms.payments,
-         reminders: prefs?.sms?.reminders ?? DEFAULT_NOTIFICATION_SETTINGS.sms.reminders,
       },
    });
 
