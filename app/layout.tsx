@@ -6,6 +6,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { Toaster } from "@/components/ui/sonner";
 import { SocketProvider } from "@/lib/socket/SocketProvider";
 import { QueryProvider } from "@/components/providers/QueryProvider";
+import { FCMProvider } from "@/lib/firebase/FCMProvider";
 
 const inter = Inter({
    subsets: ["latin"],
@@ -35,10 +36,12 @@ export default function RootLayout({
             <ErrorBoundary>
                <QueryProvider>
                   <AuthProvider>
-                     <SocketProvider>
-                        <Toaster />
-                        {children}
-                     </SocketProvider>
+                     <FCMProvider>
+                        <SocketProvider>
+                           <Toaster />
+                           {children}
+                        </SocketProvider>
+                     </FCMProvider>
                   </AuthProvider>
                </QueryProvider>
             </ErrorBoundary>

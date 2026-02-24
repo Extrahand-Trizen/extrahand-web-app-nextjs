@@ -4,11 +4,13 @@
  * Notification Center Component
  * Bell icon with unread count and grouped notifications dropdown
  * Always visible, shows count when there are unread items
+ * Includes FCM in-app notifications
  */
 
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, MessageSquare, AlertCircle, CreditCard, X } from "lucide-react";
+import { Bell, MessageSquare, AlertCircle, CreditCard, X, BellRing } from "lucide-react";
+import { useFCM } from "@/lib/firebase/FCMProvider";
 import type {
    UserCurrentStatus,
    ActiveChatItem,
@@ -21,7 +23,7 @@ interface NotificationCenterProps {
 }
 
 interface NotificationGroup {
-   type: "messages" | "offers" | "payments";
+   type: "messages" | "offers" | "payments" | "system";
    label: string;
    icon: React.ElementType;
    items: Array<{
@@ -37,20 +39,41 @@ export function NotificationCenter({ status }: NotificationCenterProps) {
    const router = useRouter();
    const [isOpen, setIsOpen] = useState(false);
    const dropdownRef = useRef<HTMLDivElement>(null);
+   const { notifications: fcmNotifications, unreadCount: fcmUnreadCount, markAsRead } = useFCM();
 
-   // Calculate unread count
+   // Calculate unread count from status
    const unreadMessages = status.activeChats.filter((c) => c.unreadCount > 0);
    const unreadOffers = status.pendingOffers.filter(
       (o) => o.type === "received"
    );
    const unreadPayments = status.pendingPayments;
-   const totalUnread =
+   
+   // Total unread including FCM notifications
+   const statusUnreadCount =
       unreadMessages.reduce((sum, c) => sum + c.unreadCount, 0) +
       unreadOffers.length +
       unreadPayments.length;
+   
+   const totalUnread = statusUnreadCount + fcmUnreadCount;
 
    // Build notification groups
    const groups: NotificationGroup[] = [];
+
+   // Add FCM system notifications (task reminders, keyword alerts, etc.)
+   if (fcmNotifications.length > 0) {
+      groups.push({
+         type: "system",
+         label: "Notifications",
+         icon: BellRing,
+         items: fcmNotifications.map((notif) => ({
+            id: notif.id,
+            title: notif.title,
+            description: notif.body,
+            route: notif.data?.url || '/home',
+            timestamp: notif.timestamp,
+         })),
+      });
+   }
 
    if (unreadMessages.length > 0) {
       groups.push({
@@ -185,6 +208,10 @@ export function NotificationCenter({ status }: NotificationCenterProps) {
                                        <button
                                           key={item.id}
                                           onClick={() => {
+                                             // Mark FCM notification as read
+                                             if (group.type === "system") {
+                                                markAsRead(item.id);
+                                             }
                                              router.push(item.route);
                                              setIsOpen(false);
                                           }}
