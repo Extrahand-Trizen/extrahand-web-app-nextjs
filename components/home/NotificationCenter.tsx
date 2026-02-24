@@ -39,7 +39,7 @@ export function NotificationCenter({ status }: NotificationCenterProps) {
    const router = useRouter();
    const [isOpen, setIsOpen] = useState(false);
    const dropdownRef = useRef<HTMLDivElement>(null);
-   const { notifications: fcmNotifications, unreadCount: fcmUnreadCount, markAsRead } = useFCM();
+   const { notifications: fcmNotifications, unreadCount: fcmUnreadCount, markAsRead, requestPermission } = useFCM();
 
    // Calculate unread count from status
    const unreadMessages = status.activeChats.filter((c) => c.unreadCount > 0);
@@ -187,6 +187,12 @@ export function NotificationCenter({ status }: NotificationCenterProps) {
                         <p className="text-sm text-secondary-500">
                            No new notifications
                         </p>
+                        <button
+                           onClick={() => requestPermission()}
+                           className="mt-4 w-full bg-primary-500 hover:bg-primary-600 text-white text-xs font-medium py-2 px-3 rounded transition-colors"
+                        >
+                           Enable Notifications
+                        </button>
                      </div>
                   ) : (
                      <div className="divide-y divide-secondary-100">
