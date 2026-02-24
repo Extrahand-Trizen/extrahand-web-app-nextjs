@@ -212,8 +212,19 @@ const transformFormDataToTask = (
          pinCode: formData.location.pinCode,
          country: formData.location.country || "India",
       },
-      // Schedule - convert Date objects to time strings for backend
-      scheduledDate: formData.scheduledDate || undefined,
+      // Schedule - merge date and time into full datetime
+      scheduledDate: formData.scheduledDate && formData.scheduledTimeStart 
+         ? (() => {
+             const merged = new Date(formData.scheduledDate);
+             merged.setHours(
+               formData.scheduledTimeStart.getHours(),
+               formData.scheduledTimeStart.getMinutes(),
+               0,
+               0
+             );
+             return merged;
+           })()
+         : formData.scheduledDate || undefined,
       scheduledTimeStart: formatTimeToString(formData.scheduledTimeStart),
       scheduledTimeEnd: formatTimeToString(formData.scheduledTimeEnd),
       flexibility: mapFlexibilityToBackend(formData.flexibility),
