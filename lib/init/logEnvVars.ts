@@ -28,8 +28,8 @@ export function logEnvironmentVariables() {
     console.log('%c║   NEXT_PUBLIC_FIREBASE_APP_ID:', 'color: #ffff00;', process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '❌ NOT SET');
     console.log('%c║   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID:', 'color: #ffff00;', process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '❌ NOT SET');
     
-    const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
-    console.log('%c║   NEXT_PUBLIC_FIREBASE_VAPID_KEY:', 'color: #ffff00;', 
+    const vapidKey = process.env.NEXT_PUBLIC_VAPID_KEY;
+    console.log('%c║   NEXT_PUBLIC_VAPID_KEY:', 'color: #ffff00;', 
       vapidKey ? '✅ SET (' + vapidKey+ '...)' : '❌ NOT SET');
     
     // Page Info

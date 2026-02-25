@@ -8,13 +8,13 @@ import { app } from '@/lib/auth/firebase';
 
 // VAPID key for web push (should match your Firebase Console settings)
 // This is a public key and safe to expose
-const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
+const VAPID_KEY = process.env.NEXT_PUBLIC_VAPID_KEY;
 
 // Print environment variables for debugging
 if (typeof window !== 'undefined') {
   const timestamp = new Date().toLocaleTimeString();
   console.log('%c📋 FIREBASE MESSAGING MODULE LOADED [' + timestamp + ']', 'background: #ff6b6b; color: white; padding: 8px 12px; font-weight: bold;');
-  console.log('✅ NEXT_PUBLIC_FIREBASE_VAPID_KEY:', VAPID_KEY || '❌ NOT SET');
+  console.log('✅ NEXT_PUBLIC_VAPID_KEY:', VAPID_KEY || '❌ NOT SET');
   console.log('✅ NEXT_PUBLIC_NOTIFICATION_SERVICE_URL:', process.env.NEXT_PUBLIC_NOTIFICATION_SERVICE_URL || '❌ NOT SET');
   console.log('✅ NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL || '❌ NOT SET');
   console.log('✅ NEXT_PUBLIC_FIREBASE_PROJECT_ID:', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '❌ NOT SET');
@@ -26,7 +26,7 @@ if (typeof window !== 'undefined') {
 
 // Validate VAPID key at module load
 if (!VAPID_KEY && typeof window !== 'undefined') {
-  console.error('❌ NEXT_PUBLIC_FIREBASE_VAPID_KEY not found in environment variables');
+  console.error('❌ NEXT_PUBLIC_VAPID_KEY not found in environment variables');
   console.error('Make sure environment variables are set during build time');
 }
 
@@ -156,7 +156,7 @@ export const registerFCMToken = async (token: string, userId: string): Promise<b
     // Log Firebase environment configuration
     console.log('%c🔔 FIREBASE MESSAGING REGISTRATION FLOW', 'background: #51cf66; color: white; padding: 8px; font-weight: bold;');
     console.log('✅ VAPID_KEY available:', VAPID_KEY || 'NOT SET');
-    console.log('✅ VAPID_KEY from .env (NEXT_PUBLIC_FIREBASE_VAPID_KEY):', process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || 'NOT SET');
+    console.log('✅ VAPID_KEY from .env (NEXT_PUBLIC_VAPID_KEY):', process.env.NEXT_PUBLIC_VAPID_KEY || 'NOT SET');
     
     const notificationServiceUrl = process.env.NEXT_PUBLIC_NOTIFICATION_SERVICE_URL || 
       'https://extrahand-notification-service.apps.extrahand.in';
