@@ -664,6 +664,12 @@ export default function TaskTrackingPage() {
                      <StatusUpdateSection
                         task={task}
                         userRole={userRole}
+                        chatId={chatId}
+                        otherUserId={
+                           userRole === "poster"
+                              ? (task as any).assigneeId || null
+                              : task.requesterId || null
+                        }
                         onStatusUpdate={handleStatusUpdate}
                      />
                   )}
