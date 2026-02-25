@@ -76,7 +76,7 @@ export const chatsApi = {
     relatedTask?: string,
     relatedApplication?: string
   ): Promise<Chat> {
-    return fetchWithAuth('chats/start', {
+    const response = await fetchWithAuth('chats/start', {
       method: 'POST',
       body: JSON.stringify({
         otherUserId,
@@ -84,6 +84,8 @@ export const chatsApi = {
         relatedApplication,
       }),
     });
+    // API returns: { success, data: { chat } }
+    return response.data?.chat || response.data || response;
   },
 
   /**
@@ -142,7 +144,9 @@ export const chatsApi = {
    * GET /api/v1/chats/:chatId
    */
   async getChatDetails(chatId: string): Promise<Chat> {
-    return fetchWithAuth(`chats/${chatId}`);
+    const response = await fetchWithAuth(`chats/${chatId}`);
+    // API returns: { success, data: { chat } }
+    return response.data?.chat || response.data || response;
   },
 
   /**

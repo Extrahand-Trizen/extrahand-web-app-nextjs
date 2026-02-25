@@ -10,6 +10,7 @@ import { useSocket } from "@/lib/socket/SocketProvider";
 import { useChatSocket } from "@/lib/socket/hooks/useChatSocket";
 import { useUserStore } from "@/lib/state/userStore";
 import { formatDistanceToNow } from "date-fns";
+import { toast } from "sonner";
 
 export default function ChatPage() {
   const searchParams = useSearchParams();
@@ -84,6 +85,9 @@ export default function ChatPage() {
   const startNewChat = async (otherUserId: string, taskId?: string) => {
     try {
       const chat = await chatsApi.startChat(otherUserId, taskId);
+      if (!chat?.chatId) {
+        throw new Error("Chat creation failed");
+      }
       setChats((prev) => {
         const existingIndex = prev.findIndex(
           (c) => c.chatId === chat.chatId || c._id === chat._id
@@ -100,6 +104,9 @@ export default function ChatPage() {
       setShowMobileList(false);
     } catch (error) {
       console.error("Failed to start chat:", error);
+      toast.error("Unable to start chat", {
+        description: error instanceof Error ? error.message : "Please try again",
+      });
     }
   };
 
@@ -129,6 +136,9 @@ export default function ChatPage() {
       setShowMobileList(false);
     } catch (error) {
       console.error("Failed to start chat for task:", error);
+      toast.error("Unable to start task chat", {
+        description: error instanceof Error ? error.message : "Please try again",
+      });
     } finally {
       setLoading(false);
     }
@@ -153,6 +163,9 @@ export default function ChatPage() {
       setShowMobileList(false);
     } catch (error) {
       console.error("Failed to load chat details:", error);
+      toast.error("Unable to open chat", {
+        description: error instanceof Error ? error.message : "Please try again",
+      });
     }
   };
 
@@ -294,12 +307,8 @@ export default function ChatPage() {
   };
 
   const filteredChats = chats.filter((chat) => {
-    const otherParticipant = chat.otherParticipant;
-    if (!otherParticipant) return false;
-    
-    return otherParticipant.name
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
+    const name = chat.otherParticipant?.name || "Unknown";
+    return name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
   const formatMessageTime = (date: Date) => {
