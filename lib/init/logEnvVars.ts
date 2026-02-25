@@ -1,11 +1,15 @@
+import { isDevClient } from '@/lib/config';
+
 /**
  * Environment Variables Logger
- * This file logs environment variables immediately on import (before React hydration)
- * Import this at the top of your layout or app component
+ * Manual helper to log environment variables in development
  */
-
 export function logEnvironmentVariables() {
-  // Log immediately - this will show in console as soon as JavaScript loads
+  if (typeof window === 'undefined' || !isDevClient()) {
+    return;
+  }
+
+  // Log immediately - this will show in console as soon as JavaScript loads (dev only)
   if (typeof window !== 'undefined') {
     const timestamp = new Date().toLocaleTimeString();
     
@@ -41,6 +45,3 @@ export function logEnvironmentVariables() {
     console.log('%c╚════════════════════════════════════════════════════════╝\n', 'color: #00ff00; font-weight: bold; font-size: 12px;');
   }
 }
-
-// Call immediately on import
-logEnvironmentVariables();
