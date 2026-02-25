@@ -140,7 +140,7 @@ export const requestNotificationPermission = async (): Promise<string | null> =>
 export const registerFCMToken = async (token: string, userId: string): Promise<boolean> => {
   try {
     const notificationServiceUrl = process.env.NEXT_PUBLIC_NOTIFICATION_SERVICE_URL || 
-      'https://extrahandnotificationservice.llp.trizenventures.com';
+      'https://extrahand-notification-service.apps.extrahand.in';
     
     // Get Firebase Auth token for authentication
     const { auth } = await import('@/lib/auth/firebase');
