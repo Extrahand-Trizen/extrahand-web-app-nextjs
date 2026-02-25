@@ -5,7 +5,7 @@
 'use client';
 
 import { useEffect, useCallback, useRef, useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/lib/auth/context';
 import NotificationPollingService, {
   InAppNotification,
   NotificationResponse
