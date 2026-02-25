@@ -6,11 +6,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // Use API Gateway as the single entry point.
-// In production this should be set to the public API gateway URL.
-const API_GATEWAY_URL =
+// Normalize to avoid double slashes when env has trailing /.
+const RAW_API_GATEWAY_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   process.env.API_GATEWAY_URL ||
   'http://localhost:5000';
+const API_GATEWAY_URL = RAW_API_GATEWAY_URL.replace(/\/+$/, '');
 
 /**
  * GET /api/notifications
