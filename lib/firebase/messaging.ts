@@ -10,6 +10,17 @@ import { app } from '@/lib/auth/firebase';
 // This is a public key and safe to expose
 const VAPID_KEY = process.env.NEXT_PUBLIC_VAPID_KEY;
 
+// Print environment variables for debugging
+if (typeof window !== 'undefined') {
+  console.log('=== 📋 FIREBASE MESSAGING ENV VARIABLES ===');
+  console.log('NEXT_PUBLIC_VAPID_KEY:', VAPID_KEY ? '✅ Set (' + VAPID_KEY.substring(0, 20) + '...)' : '❌ NOT SET');
+  console.log('NEXT_PUBLIC_NOTIFICATION_SERVICE_URL:', process.env.NEXT_PUBLIC_NOTIFICATION_SERVICE_URL || '❌ NOT SET');
+  console.log('NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL || '❌ NOT SET');
+  console.log('NEXT_PUBLIC_FIREBASE_PROJECT_ID:', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '❌ NOT SET');
+  console.log('NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID:', process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '❌ NOT SET');
+  console.log('========================================');
+}
+
 // Validate VAPID key at module load
 if (!VAPID_KEY && typeof window !== 'undefined') {
   console.error('❌ NEXT_PUBLIC_VAPID_KEY not found in environment variables');
@@ -142,6 +153,10 @@ export const registerFCMToken = async (token: string, userId: string): Promise<b
     const notificationServiceUrl = process.env.NEXT_PUBLIC_NOTIFICATION_SERVICE_URL || 
       'https://extrahand-notification-service.apps.extrahand.in';
     
+    console.log('🔔 Registering FCM Token with URL:', notificationServiceUrl);
+    console.log('📍 Current page origin:', window.location.origin);
+    console.log('🔐 Token:', token.substring(0, 20) + '...');
+    
     // Get Firebase Auth token for authentication
     const { auth } = await import('@/lib/auth/firebase');
     const user = auth.currentUser;
@@ -153,7 +168,14 @@ export const registerFCMToken = async (token: string, userId: string): Promise<b
 
     const idToken = await user.getIdToken();
 
-    const response = await fetch(`${notificationServiceUrl}/api/v1/notifications/token`, {
+    const fetchUrl = `${notificationServiceUrl}/api/v1/notifications/token`;
+    console.log('📤 Making fetch request to:', fetchUrl);
+    console.log('📝 Request headers:', {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${idToken.substring(0, 20)}...`
+    });
+
+    const response = await fetch(fetchUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -167,8 +189,18 @@ export const registerFCMToken = async (token: string, userId: string): Promise<b
       })
     });
 
+    console.log('📨 Response status:', response.status);
+    console.log('📨 Response statusText:', response.statusText);
+    console.log('📨 Response headers:', {
+      'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+      'Access-Control-Allow-Credentials': response.headers.get('Access-Control-Allow-Credentials'),
+      'Content-Type': response.headers.get('Content-Type')
+    });
+
     if (!response.ok) {
+      const errorText = await response.text();
       console.error('❌ Failed to register FCM token:', response.statusText);
+      console.error('❌ Error response:', errorText);
       return false;
     }
 
@@ -176,6 +208,9 @@ export const registerFCMToken = async (token: string, userId: string): Promise<b
     return true;
   } catch (error) {
     console.error('❌ Error registering FCM token:', error);
+    if (error instanceof Error) {
+      console.error('❌ Error details:', error.message);
+    }
     return false;
   }
 };

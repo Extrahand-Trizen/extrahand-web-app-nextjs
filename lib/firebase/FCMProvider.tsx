@@ -7,6 +7,7 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useAuth } from '@/lib/auth/context';
+import { logEnvironmentVariables } from '@/lib/debug/envLogger';
 import {
   requestNotificationPermission,
   registerFCMToken,
@@ -67,6 +68,9 @@ export const FCMProvider: React.FC<FCMProviderProps> = ({ children }) => {
 
     const initializeFCM = async () => {
       try {
+        // Log environment variables for debugging
+        logEnvironmentVariables();
+        
         console.log('🚀 Initializing FCM for user:', userData.uid);
 
         // Check if permission was previously granted

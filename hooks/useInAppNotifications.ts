@@ -38,7 +38,8 @@ interface UseInAppNotificationsReturn {
 export const useInAppNotifications = (
   options?: UseInAppNotificationsOptions
 ): UseInAppNotificationsReturn => {
-  const { user } = useAuth();
+  const { currentUser, userData } = useAuth();
+  const userId = currentUser?.uid || userData?.uid;
   
   const [notifications, setNotifications] = useState<InAppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -52,10 +53,14 @@ export const useInAppNotifications = (
   useEffect(() => {
     if (pollingInitializedRef.current) return;
     
+    console.log('🚀 Initializing notification polling service');
+    
     NotificationPollingService.initialize({
       enabled: options?.enabled ?? true,
-      interval: options?.pollingInterval ?? 30000,
+      interval: options?.pollingInterval ?? 60000, // 1 minute
       onNotification: (notification) => {
+        console.log('📬 New notification received:', notification);
+        
         // Add notification to list
         setNotifications(prev => {
           const exists = prev.some(n => n.id === notification.id);
@@ -76,6 +81,7 @@ export const useInAppNotifications = (
         }
       },
       onError: (err) => {
+        console.error('❌ Polling error:', err);
         setError(err);
         if (options?.onError) {
           options.onError(err);
@@ -88,31 +94,41 @@ export const useInAppNotifications = (
 
   // Start polling when user is authenticated
   useEffect(() => {
-    if (!user?.uid || !pollingInitializedRef.current) return;
+    if (!userId || !pollingInitializedRef.current) {
+      console.log('⏸️ Polling not started - userId:', userId, 'initialized:', pollingInitializedRef.current);
+      return;
+    }
 
-    NotificationPollingService.startPolling(user.uid, options?.pollingInterval);
+    console.log('▶️ Starting notification polling for user:', userId);
+    NotificationPollingService.startPolling(userId, options?.pollingInterval);
 
     return () => {
       // Don't stop polling on unmount, just when component is removed
       // NotificationPollingService.stopPolling();
     };
-  }, [user?.uid, options?.pollingInterval]);
+  }, [userId, options?.pollingInterval]);
 
   // Fetch initial notifications
   const fetchNotifications = useCallback(
     async (limit: number = 50, skip: number = 0) => {
-      if (!user?.uid) return [];
+      if (!userId) {
+        console.log('⚠️ Cannot fetch notifications - no userId');
+        return [];
+      }
 
       try {
         setIsLoading(true);
         setError(null);
 
+        console.log('📡 Fetching notifications for user:', userId);
         const fetched = await NotificationPollingService.fetchNotifications(
-          user.uid,
+          userId,
           limit,
           skip,
           false
         );
+
+        console.log('✅ Fetched notifications:', fetched?.length || 0);
 
         if (fetched) {
           if (skip === 0) {
@@ -133,21 +149,23 @@ export const useInAppNotifications = (
         return [];
       } catch (err) {
         const error = err instanceof Error ? err : new Error('Failed to fetch notifications');
+        console.error('❌ Error fetching notifications:', error);
         setError(error);
         return [];
       } finally {
         setIsLoading(false);
       }
     },
-    [user?.uid]
+    [userId]
   );
 
   // Fetch notifications on mount
   useEffect(() => {
-    if (user?.uid && notifications.length === 0) {
+    if (userId && notifications.length === 0) {
+      console.log('📥 Initial fetch of notifications');
       fetchNotifications();
     }
-  }, [user?.uid, fetchNotifications, notifications.length]);
+  }, [userId, fetchNotifications, notifications.length]);
 
   // Mark notification as read
   const markAsRead = useCallback(
@@ -236,10 +254,13 @@ export const useInAppNotifications = (
 
   // Start polling
   const startPolling = useCallback((interval?: number) => {
-    if (user?.uid) {
-      NotificationPollingService.startPolling(user.uid, interval);
+    if (userId) {
+      console.log('▶️ Starting polling manually for user:', userId);
+      NotificationPollingService.startPolling(userId, interval);
+    } else {
+      console.warn('⚠️ Cannot start polling - no userId');
     }
-  }, [user?.uid]);
+  }, [userId]);
 
   return {
     notifications,
