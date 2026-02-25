@@ -4,10 +4,11 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_GATEWAY_URL =
+const RAW_API_GATEWAY_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   process.env.API_GATEWAY_URL ||
   'http://localhost:5000';
+const API_GATEWAY_URL = RAW_API_GATEWAY_URL.replace(/\/+$/, '');
 
 /**
  * PATCH /api/notifications/mark-all-read

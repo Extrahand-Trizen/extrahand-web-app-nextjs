@@ -5,10 +5,11 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_GATEWAY_URL =
+const RAW_API_GATEWAY_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   process.env.API_GATEWAY_URL ||
   'http://localhost:5000';
+const API_GATEWAY_URL = RAW_API_GATEWAY_URL.replace(/\/+$/, '');
 
 interface RouteParams {
   params: {
@@ -37,7 +38,7 @@ export async function PATCH(
     const cookieHeader = request.headers.get('cookie') ?? '';
 
     const response = await fetch(
-      `${NOTIFICATION_SERVICE_URL}/api/v1/notifications/in-app/${notificationId}/read`,
+      `${API_GATEWAY_URL}/api/v1/notifications/in-app/${notificationId}/read`,
       {
         method: 'PATCH',
         headers: {
