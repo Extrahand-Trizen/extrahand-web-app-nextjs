@@ -282,14 +282,14 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
                                        <FormLabel className="block text-sm font-normal text-gray-600 leading-snug">
                                           I agree to the{" "}
                                           <Link
-                                             href="/terms"
+                                             href="/terms-and-conditions"
                                              className="text-primary-500 hover:underline"
                                           >
-                                             Terms of Service
+                                             Terms and Services
                                           </Link>{" "}
                                           and{" "}
                                           <Link
-                                             href="/privacy"
+                                             href="/privacy-policy"
                                              className="text-primary-500 hover:underline"
                                           >
                                              Privacy Policy

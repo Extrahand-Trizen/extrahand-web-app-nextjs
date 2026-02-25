@@ -135,7 +135,26 @@ export default function ChatPage() {
       setLoading(true);
       const { chats: loadedChats } = await chatsApi.getChats();
       const hydratedChats = await hydrateChats(loadedChats);
-      setChats(hydratedChats);
+      
+      // Deduplicate chats by user pair (keep most recent one)
+      // This handles legacy data where multiple chats existed per user pair
+      const chatMap = new Map<string, Chat>();
+      hydratedChats.forEach((chat) => {
+        // Create a key from sorted participant IDs
+        const key = [...chat.participants].sort().join('_');
+        const existing = chatMap.get(key);
+        
+        // Keep the chat with the most recent message or newest creation
+        if (!existing || 
+            (chat.lastMessage?.timestamp && existing.lastMessage?.timestamp &&
+             new Date(chat.lastMessage.timestamp) > new Date(existing.lastMessage.timestamp)) ||
+            (!chat.lastMessage && !existing.lastMessage && 
+             new Date(chat.createdAt) > new Date(existing.createdAt))) {
+          chatMap.set(key, chat);
+        }
+      });
+      
+      setChats(Array.from(chatMap.values()));
     } catch (error) {
       console.error("Failed to load chats:", error);
     } finally {

@@ -79,11 +79,10 @@ const footerLinks = {
 };
 
 const socialLinks = [
-  { icon: Facebook, href: "/coming-soon?type=info&label=Facebook", label: "Facebook" },
-  { icon: Twitter, href: "/coming-soon?type=info&label=Twitter", label: "Twitter" },
-  { icon: Instagram, href: "/coming-soon?type=info&label=Instagram", label: "Instagram" },
-  { icon: Linkedin, href: "/coming-soon?type=info&label=LinkedIn", label: "LinkedIn" },
-  { icon: Youtube, href: "/coming-soon?type=info&label=YouTube", label: "YouTube" },
+  { icon: Facebook, href: "https://www.facebook.com/profile.php?id=61587931868799", label: "Facebook" },
+  { icon: Twitter, href: "https://x.com/ExtrahandI42141", label: "X (Twitter)" },
+  { icon: Instagram, href: "https://www.instagram.com/extrahand.in/", label: "Instagram" },
+  { icon: Youtube, href: "https://www.youtube.com/channel/UCHCIU5Qq0mEdGf8RgJIjCUw", label: "YouTube" },
 ];
 
 export const LandingFooter: React.FC = () => {
@@ -123,6 +122,8 @@ export const LandingFooter: React.FC = () => {
                 <a
                   key={social.label}
                   href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   aria-label={social.label}
                   className="size-8 md:size-10 rounded-full bg-secondary-800 hover:bg-secondary-700 flex items-center justify-center transition-colors"
                 >

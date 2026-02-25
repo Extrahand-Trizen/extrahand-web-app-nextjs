@@ -93,11 +93,12 @@ export const locationScheduleSchema = z
       (data) => {
          if (data.flexibility === "very_flexible") return true;
 
-         // Ensure end date/time is after start date/time
-         return data.scheduledTimeEnd > data.scheduledTimeStart;
+         // Ensure end date/time is after start date/time with minimum 30 minutes duration
+         const timeDiffMinutes = (data.scheduledTimeEnd.getTime() - data.scheduledTimeStart.getTime()) / (1000 * 60);
+         return timeDiffMinutes >= 30;
       },
       {
-         message: "End date & time must be after start date & time",
+         message: "End time must be at least 30 minutes after start time. Note: 12:30 AM is just after midnight (00:30).",
          path: ["scheduledTimeEnd"],
       }
    );
@@ -304,11 +305,12 @@ export const editTaskSchema = z
          )
             return true;
 
-         // Ensure end date/time is after start date/time
-         return data.scheduledTimeEnd > data.scheduledTimeStart;
+         // Ensure end date/time is after start date/time with minimum 30 minutes duration
+         const timeDiffMinutes = (data.scheduledTimeEnd.getTime() - data.scheduledTimeStart.getTime()) / (1000 * 60);
+         return timeDiffMinutes >= 30;
       },
       {
-         message: "End date & time must be after start date & time",
+         message: "End time must be at least 30 minutes after start time. Note: 12:30 AM is just after midnight (00:30).",
          path: ["scheduledTimeEnd"],
       }
    );

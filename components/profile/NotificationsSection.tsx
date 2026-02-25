@@ -401,23 +401,38 @@ export function NotificationsSection({
                Your primary channel for receiving important notifications
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-               {COMMUNICATION_CHANNELS.map((channel) => (
-                  <button
-                     key={channel.value}
-                     onClick={() => {
-                        setLocalChannel(channel.value);
-                        setHasChanges(true);
-                     }}
-                     className={cn(
-                        "px-3 py-2 rounded-lg border text-xs sm:text-sm font-medium transition-colors",
-                        localChannel === channel.value
-                           ? "border-primary-600 bg-primary-600 text-white"
-                           : "border-gray-200 text-gray-600 hover:border-gray-300"
-                     )}
-                  >
-                     {channel.label}
-                  </button>
-               ))}
+               {COMMUNICATION_CHANNELS.map((channel) => {
+                  const isComingSoon = channel.value === "sms" || channel.value === "whatsapp";
+                  return (
+                     <button
+                        key={channel.value}
+                        onClick={() => {
+                           if (!isComingSoon) {
+                              setLocalChannel(channel.value);
+                              setHasChanges(true);
+                           }
+                        }}
+                        disabled={isComingSoon}
+                        className={cn(
+                           "px-3 py-2 rounded-lg border text-xs sm:text-sm font-medium transition-colors relative",
+                           localChannel === channel.value && !isComingSoon
+                              ? "border-primary-600 bg-primary-600 text-white"
+                              : "border-gray-200 text-gray-600 hover:border-gray-300",
+                           isComingSoon && "opacity-50 cursor-not-allowed bg-gray-50"
+                        )}
+                     >
+                        {channel.label}
+                        {isComingSoon && (
+                           <Badge
+                              variant="secondary"
+                              className="absolute -top-2 -right-2 text-[8px] px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200"
+                           >
+                              Soon
+                           </Badge>
+                        )}
+                     </button>
+                  );
+               })}
             </div>
          </div>
 
@@ -437,6 +452,7 @@ export function NotificationsSection({
                checked={localSettings.push.transactional}
                onChange={(v) => updateChannelSetting("push", "transactional", v)}
                disabled={!localSettings.push.enabled}
+               comingSoon={true}
             />
             <NotificationToggle
                label="Task Updates"
@@ -451,6 +467,7 @@ export function NotificationsSection({
                checked={localSettings.push.payments}
                onChange={(v) => updateChannelSetting("push", "payments", v)}
                disabled={!localSettings.push.enabled}
+               comingSoon={true}
             />
             <NotificationToggle
                label="Task Reminders"
@@ -458,6 +475,7 @@ export function NotificationsSection({
                checked={localSettings.push.taskReminders}
                onChange={(v) => updateChannelSetting("push", "taskReminders", v)}
                disabled={!localSettings.push.enabled}
+               comingSoon={true}
             />
             <NotificationToggle
                label="Keyword Task Alerts"
@@ -479,6 +497,7 @@ export function NotificationsSection({
                checked={localSettings.push.promotions}
                onChange={(v) => updateChannelSetting("push", "promotions", v)}
                disabled={!localSettings.push.enabled}
+               comingSoon={true}
             />
          </NotificationChannel>
 
@@ -498,6 +517,7 @@ export function NotificationsSection({
                checked={localSettings.email.transactional}
                onChange={(v) => updateChannelSetting("email", "transactional", v)}
                disabled={!localSettings.email.enabled}
+               comingSoon={true}
             />
             <NotificationToggle
                label="Task Updates"
@@ -512,6 +532,7 @@ export function NotificationsSection({
                checked={localSettings.email.payments}
                onChange={(v) => updateChannelSetting("email", "payments", v)}
                disabled={!localSettings.email.enabled}
+               comingSoon={true}
             />
             <NotificationToggle
                label="Task Reminders"
@@ -519,6 +540,7 @@ export function NotificationsSection({
                checked={localSettings.email.taskReminders}
                onChange={(v) => updateChannelSetting("email", "taskReminders", v)}
                disabled={!localSettings.email.enabled}
+               comingSoon={true}
             />
             <NotificationToggle
                label="Keyword Task Alerts"
@@ -540,6 +562,7 @@ export function NotificationsSection({
                checked={localSettings.email.promotions}
                onChange={(v) => updateChannelSetting("email", "promotions", v)}
                disabled={!localSettings.email.enabled}
+               comingSoon={true}
             />
             <NotificationToggle
                label="Marketing"
@@ -566,6 +589,7 @@ export function NotificationsSection({
                checked={localSettings.sms.taskUpdates}
                onChange={(v) => updateChannelSetting("sms", "taskUpdates", v)}
                disabled={!localSettings.sms.enabled}
+               comingSoon={true}
             />
             <NotificationToggle
                label="Payment Alerts"
@@ -573,6 +597,7 @@ export function NotificationsSection({
                checked={localSettings.sms.payments}
                onChange={(v) => updateChannelSetting("sms", "payments", v)}
                disabled={!localSettings.sms.enabled}
+               comingSoon={true}
             />
 
          </NotificationChannel>
@@ -934,6 +959,7 @@ interface NotificationToggleProps {
    checked: boolean;
    onChange: (checked: boolean) => void;
    disabled?: boolean;
+   comingSoon?: boolean;
 }
 
 function NotificationToggle({
@@ -942,23 +968,34 @@ function NotificationToggle({
    checked,
    onChange,
    disabled,
+   comingSoon = false,
 }: NotificationToggleProps) {
    return (
       <div
          className={cn(
             "px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-4",
-            disabled && "opacity-50"
+            (disabled || comingSoon) && "opacity-50"
          )}
       >
          <div className="flex-1 min-w-0">
-            <p
-               className={cn(
-                  "text-xs sm:text-sm font-medium",
-                  disabled ? "text-gray-400" : "text-gray-900"
+            <div className="flex items-center gap-2">
+               <p
+                  className={cn(
+                     "text-xs sm:text-sm font-medium",
+                     disabled || comingSoon ? "text-gray-400" : "text-gray-900"
+                  )}
+               >
+                  {label}
+               </p>
+               {comingSoon && (
+                  <Badge
+                     variant="secondary"
+                     className="text-[8px] px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200"
+                  >
+                     Coming Soon
+                  </Badge>
                )}
-            >
-               {label}
-            </p>
+            </div>
             <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">
                {description}
             </p>
@@ -966,7 +1003,7 @@ function NotificationToggle({
          <Switch
             checked={checked}
             onCheckedChange={onChange}
-            disabled={disabled}
+            disabled={disabled || comingSoon}
             className="data-[state=checked]:bg-primary-600"
          />
       </div>

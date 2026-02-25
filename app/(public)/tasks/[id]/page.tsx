@@ -31,6 +31,7 @@ import type { Task } from "@/types/task";
 import { applicationsApi } from "@/lib/api/endpoints/applications";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
 import { ShareModal } from "@/components/shared/ShareModal";
+import { toast } from "sonner";
 
 const formatDate = (date: Date | string | undefined) => {
    if (!date) return "Flexible";
@@ -54,6 +55,8 @@ export default function TaskDetailsPage() {
    const [showFixedCTA, setShowFixedCTA] = useState(false);
    const [showMakeOfferModal, setShowMakeOfferModal] = useState(false);
    const [shareOpen, setShareOpen] = useState(false);
+   const [hasApplied, setHasApplied] = useState(false);
+   const [checkingApplication, setCheckingApplication] = useState(true);
    
    const [scrollY, setScrollY] = useState(0);
    const isMobile = useIsMobile();
@@ -106,6 +109,37 @@ export default function TaskDetailsPage() {
          fetchTask();
       }
    }, [taskId]);
+
+   // Check if user has already applied to this task
+   useEffect(() => {
+      const checkUserApplication = async () => {
+         if (!currentUser || !userProfile || !taskId) {
+            setHasApplied(false);
+            setCheckingApplication(false);
+            return;
+         }
+
+         setCheckingApplication(true);
+         try {
+            const response = await applicationsApi.getTaskApplications(taskId);
+            const apps = response.applications || [];
+            
+            // Check if current user has already applied
+            const userApplication = apps.find(
+               (app: any) => app.applicantId === userProfile._id
+            );
+            
+            setHasApplied(!!userApplication);
+         } catch (error) {
+            console.error("Error checking user application:", error);
+            setHasApplied(false);
+         } finally {
+            setCheckingApplication(false);
+         }
+      };
+
+      checkUserApplication();
+   }, [taskId, currentUser, userProfile]);
 
    useEffect(() => {
       const handleScroll = () => {
@@ -180,7 +214,23 @@ export default function TaskDetailsPage() {
          return;
       }
       
-      // User is logged in, open the modal
+      // Check if still loading application status
+      if (checkingApplication) {
+         toast.info("Please Wait", {
+            description: "Checking your application status..."
+         });
+         return;
+      }
+      
+      // Check if user has already applied
+      if (hasApplied) {
+         toast.error("Already Applied", {
+            description: "You have already submitted an offer for this task. Check the Offers section to view your application."
+         });
+         return;
+      }
+      
+      // User is logged in and hasn't applied, open the modal
       setShowMakeOfferModal(true);
    };
 
@@ -208,7 +258,13 @@ export default function TaskDetailsPage() {
 
          {/* Header Component */}
          <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 lg:py-6">
-            <TaskDetailsHeader task={task} showMobileCTA={isMobile} onMakeOffer={handleMakeOffer} />
+            <TaskDetailsHeader 
+               task={task} 
+               showMobileCTA={isMobile} 
+               onMakeOffer={handleMakeOffer}
+               hasApplied={hasApplied}
+               checkingApplication={checkingApplication}
+            />
          </div>
 
          {/* Main Content */}
@@ -252,6 +308,8 @@ export default function TaskDetailsPage() {
                               userProfile={userProfile}
                               onMakeOffer={handleMakeOffer}
                               taskCategory={task?.category}
+                              hasApplied={hasApplied}
+                              checkingApplication={checkingApplication}
                            />
                         ) : (
                            <TaskQuestionsSection taskId={taskId} isOwner={isOwner} />
@@ -262,7 +320,13 @@ export default function TaskDetailsPage() {
 
                {/* Right Sidebar - Desktop Only */}
                <div className="hidden lg:block">
-                  <TaskDetailsSidebar task={task} isOwner={isOwner} onMakeOffer={handleMakeOffer} />
+                  <TaskDetailsSidebar 
+                     task={task} 
+                     isOwner={isOwner} 
+                     onMakeOffer={handleMakeOffer}
+                     hasApplied={hasApplied}
+                     checkingApplication={checkingApplication}
+                  />
                </div>
             </div>
          </div>
@@ -273,10 +337,11 @@ export default function TaskDetailsPage() {
                <div className="max-w-7xl mx-auto px-4 py-3">
                   <Button
                      onClick={handleMakeOffer}
-                     className="w-full bg-primary-600 hover:bg-primary-700 text-white h-10 font-semibold rounded-xl flex items-center justify-center gap-2"
+                     disabled={hasApplied || checkingApplication}
+                     className="w-full bg-primary-600 hover:bg-primary-700 text-white h-10 font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                     Make an Offer
-                     <ArrowRight className="w-4 h-4" />
+                     {checkingApplication ? "Checking..." : hasApplied ? "Already Applied" : "Make an Offer"}
+                     {!checkingApplication && !hasApplied && <ArrowRight className="w-4 h-4" />}
                   </Button>
                </div>
             </div>
@@ -288,6 +353,10 @@ export default function TaskDetailsPage() {
                task={task}
                open={showMakeOfferModal}
                onOpenChange={setShowMakeOfferModal}
+               onSuccess={() => {
+                  setHasApplied(true);
+                  setShowMakeOfferModal(false);
+               }}
             />
          )}
 

@@ -44,7 +44,7 @@ export default function PhoneVerificationPage() {
       step: "input",
       phone: "",
       otp: "",
-      attemptsRemaining: 3,
+      attemptsRemaining: 5,
    });
 
    const [isLoading, setIsLoading] = useState(false);
@@ -103,7 +103,7 @@ export default function PhoneVerificationPage() {
          // TODO: Replace with actual API call
          await new Promise((r) => setTimeout(r, 1500));
          setState((p) => ({ ...p, step: "otp" }));
-         setOtpTimer(120); // 2 minutes for SMS OTP
+         setOtpTimer(600); // 10 minutes for SMS OTP
       } catch {
          setState((p) => ({
             ...p,
@@ -152,7 +152,7 @@ export default function PhoneVerificationPage() {
       setIsLoading(true);
       try {
          await new Promise((r) => setTimeout(r, 1500));
-         setOtpTimer(120);
+         setOtpTimer(600);
          setState((p) => ({ ...p, otp: "", error: undefined }));
       } catch {
          setState((p) => ({ ...p, error: "Failed to resend OTP." }));
@@ -346,7 +346,7 @@ export default function PhoneVerificationPage() {
          </div>
 
          {/* Attempts Warning */}
-         {state.attemptsRemaining < 3 && (
+         {state.attemptsRemaining < 5 && (
             <div className="flex items-center justify-center gap-2 text-sm text-amber-600 bg-amber-50 rounded-lg p-3">
                <Clock className="w-4 h-4" />
                {state.attemptsRemaining} attempts remaining
@@ -454,7 +454,7 @@ export default function PhoneVerificationPage() {
          </div>
 
          <div className="bg-red-50 rounded-xl p-4 text-sm text-red-700">
-            For security reasons, please wait 30 minutes before trying again.
+            For security reasons, please wait 10 minutes before trying again.
          </div>
 
          <Button

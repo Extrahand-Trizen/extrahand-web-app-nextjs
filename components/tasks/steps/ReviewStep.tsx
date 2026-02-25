@@ -372,14 +372,18 @@ export function ReviewStep({
                      <FormLabel className="inline text-xs md:text-sm font-normal text-gray-700 leading-relaxed cursor-pointer">
                         I agree to ExtraHand&apos;s{" "}
                         <a
-                           href="/terms"
+                           href="/terms-and-conditions"
+                           target="_blank"
+                           rel="noopener noreferrer"
                            className="inline text-primary-600 hover:underline"
                         >
-                           Terms of Service
+                           Terms and Services
                         </a>{" "}
                         and{" "}
                         <a
                            href="/guidelines"
+                           target="_blank"
+                           rel="noopener noreferrer"
                            className="inline text-primary-600 hover:underline"
                         >
                            Community Guidelines

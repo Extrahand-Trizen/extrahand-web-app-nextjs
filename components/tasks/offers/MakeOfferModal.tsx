@@ -420,20 +420,29 @@ export function MakeOfferModal({
                               <Input
                                  type="number"
                                  placeholder="Enter your proposed budget"
+                                 min="50"
+                                 max="50000"
                                  value={field.value || ""}
-                                 onChange={(e) =>
-                                    field.onChange(
-                                       e.target.value === ""
-                                          ? 0
-                                          : Number(e.target.value)
-                                    )
-                                 }
+                                 onChange={(e) => {
+                                    const val = e.target.value === ""
+                                       ? 0
+                                       : Number(e.target.value);
+                                    
+                                    // Enforce range: 50-50000
+                                    if (val < 50 && val !== 0) {
+                                       field.onChange(0);
+                                    } else if (val > 50000) {
+                                       field.onChange(50000);
+                                    } else {
+                                       field.onChange(val);
+                                    }
+                                 }}
                                  onBlur={field.onBlur}
                                  className="h-11"
                               />
                            </FormControl>
                            <FormDescription className="text-xs text-secondary-600">
-                              Minimum budget is ₹50
+                              Minimum ₹50, maximum ₹50,000
                            </FormDescription>
                            <FormMessage />
                         </FormItem>
@@ -485,12 +494,14 @@ export function MakeOfferModal({
                                              min="0"
                                              max="365"
                                              step="1"
+                                             inputMode="numeric"
                                              className="h-10 text-sm flex-1"
-                                             value={field.value && Math.floor(field.value / 24) > 0 ? Math.floor(field.value / 24) : ""}
+                                             value={field.value ? Math.floor(field.value / 24) : ""}
                                              onChange={(e) => {
-                                                const days = e.target.value ? parseFloat(e.target.value) : 0;
+                                                const days = e.target.value === "" ? 0 : parseFloat(e.target.value);
                                                 const hours = field.value ? (field.value % 24) : 0;
-                                                field.onChange(days * 24 + hours || undefined);
+                                                const total = days * 24 + hours;
+                                                field.onChange(total === 0 ? undefined : total);
                                              }}
                                           />
                                           <span className="text-xs text-secondary-600 font-medium min-w-fit">
@@ -506,12 +517,14 @@ export function MakeOfferModal({
                                              min="0"
                                              max="23"
                                              step="1"
+                                             inputMode="numeric"
                                              className="h-10 text-sm flex-1"
-                                             value={field.value && Math.floor(field.value % 24) > 0 ? Math.floor(field.value % 24) : ""}
+                                             value={field.value ? Math.floor(field.value % 24) : ""}
                                              onChange={(e) => {
-                                                const hours = e.target.value ? parseFloat(e.target.value) : 0;
+                                                const hours = e.target.value === "" ? 0 : parseFloat(e.target.value);
                                                 const days = field.value ? Math.floor(field.value / 24) : 0;
-                                                field.onChange(days * 24 + hours || undefined);
+                                                const total = days * 24 + hours;
+                                                field.onChange(total === 0 ? undefined : total);
                                              }}
                                           />
                                           <span className="text-xs text-secondary-600 font-medium min-w-fit">

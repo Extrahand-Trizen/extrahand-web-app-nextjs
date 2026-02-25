@@ -105,7 +105,6 @@ export const posterTypes: string[][] = [
       "Wedding Services",
       "Party Planning",
       "Entertainment Services",
-      "Photography",
       "Videography",
       "Graphic Design",
    ],

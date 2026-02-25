@@ -178,10 +178,10 @@ export const HeroSection: React.FC = () => {
                <div className="bg-white px-2 md:py-2 rounded-lg shadow-lg max-w-2xl mx-auto">
                <form
                   onSubmit={handleSearch}
-                  className="flex items-center gap-0"
+                  className="flex items-center gap-1 md:gap-2"
                >
                   {/* Location Input with Dropdown */}
-                  <div className="relative w-1/3">
+                  <div className="relative flex-1 md:w-1/3">
                      <div className="relative">
                         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 z-10" />
                         <Input
@@ -300,8 +300,6 @@ export const HeroSection: React.FC = () => {
 
                   {/* Task Search Input */}
                   <div className="relative flex-1">
-                     {/* Search icon aligned to the right end of the input */}
-                     <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                      <Input
                         type="text"
                         value={query}
@@ -312,23 +310,19 @@ export const HeroSection: React.FC = () => {
                            }
                         }}
                         placeholder="Try: Mount a TV, House cleaning..."
-                        className="h-10 pl-3 pr-10 border-0 rounded-l-none focus-visible:ring-0 focus-visible:ring-offset-0 text-xs md:text-sm"
+                        className="h-10 pl-3 pr-3 border-0 rounded-l-none focus-visible:ring-0 focus-visible:ring-offset-0 text-xs md:text-sm"
                         aria-label="Search tasks or describe what you need"
                      />
                   </div>
 
-                  {isMobile && (
-                     <button type="submit" onClick={handleSearch}>
-                        <div
-                           className={cn(
-                              "h-9 p-1 bg-primary-600 hover:bg-primary-700 rounded-lg flex items-center justify-center transition-colors",
-                              query ? "cursor-pointer" : "cursor-not-allowed"
-                           )}
-                        >
-                           <Search className="w-4 h-4 text-white" />
-                        </div>
-                     </button>
-                  )}
+                  {/* Search Button - Always visible */}
+                  <button 
+                     type="submit" 
+                     className="h-9 md:h-10 px-3 md:px-4 bg-primary-500 hover:bg-primary-600 rounded-lg flex items-center justify-center transition-colors shrink-0"
+                     aria-label="Search"
+                  >
+                     <Search className="w-4 h-4 md:w-5 md:h-5 text-white" />
+                  </button>
                </form>
             </div>
 
@@ -345,7 +339,12 @@ export const HeroSection: React.FC = () => {
                ].map((tag) => (
                   <button
                      key={tag}
-                     onClick={() => setQuery(tag)}
+                     onClick={() => {
+                        const searchParams = new URLSearchParams();
+                        searchParams.set("q", tag);
+                        if (location.trim()) searchParams.set("suburb", location.trim());
+                        router.push(`/discover?${searchParams.toString()}`);
+                     }}
                      className="px-3 md:px-4 py-1 md:py-2 rounded-full bg-white/20 hover:bg-white/30 text-white backdrop-blur-md text-xs md:text-sm font-medium transition-all border border-white/30"
                   >
                      {tag}
