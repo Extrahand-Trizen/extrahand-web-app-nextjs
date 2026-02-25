@@ -8,8 +8,13 @@ import { app } from '@/lib/auth/firebase';
 
 // VAPID key for web push (should match your Firebase Console settings)
 // This is a public key and safe to expose
-const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || 
-  'BKYxabcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ'; // Placeholder
+const VAPID_KEY = process.env.NEXT_PUBLIC_VAPID_KEY;
+
+// Validate VAPID key at module load
+if (!VAPID_KEY && typeof window !== 'undefined') {
+  console.error('❌ NEXT_PUBLIC_VAPID_KEY not found in environment variables');
+  console.error('Make sure environment variables are set during build time');
+}
 
 let messaging: Messaging | null = null;
 
@@ -90,6 +95,14 @@ export const requestNotificationPermission = async (): Promise<string | null> =>
       } catch (error) {
         console.error('❌ Service Worker registration failed:', error);
       }
+    }
+
+    // Validate VAPID key before attempting to get token
+    if (!VAPID_KEY) {
+      console.error('❌ Cannot get FCM token: VAPID key is missing');
+      console.error('💡 NEXT_PUBLIC_VAPID_KEY was not set during build time');
+      console.error('💡 Rebuild the application with environment variables present');
+      return null;
     }
 
     // Get FCM token
