@@ -157,8 +157,12 @@ export class NotificationPollingService {
         unreadOnly: unreadOnly.toString()
       });
 
+      const url = `/api/notifications?${params}`;
+      console.log('📡 Fetching notifications from:', url);
+      console.log('🔍 User ID:', userId);
+
       const response = await fetch(
-        `/api/notifications?${params}`,
+        url,
         {
           method: 'GET',
           headers: {
@@ -168,11 +172,20 @@ export class NotificationPollingService {
         }
       );
 
+      console.log('📊 Notification response status:', response.status, response.statusText);
+
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Notification fetch error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText
+        });
         throw new Error(`Failed to fetch notifications: ${response.statusText}`);
       }
 
       const data: NotificationResponse = await response.json();
+      console.log('✅ Notifications fetched successfully:', data.notifications?.length || 0);
       return data.notifications || [];
     } catch (error) {
       console.error('❌ Error fetching notifications:', error);

@@ -8,6 +8,7 @@ import { SocketProvider } from "@/lib/socket/SocketProvider";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { FCMProvider } from "@/lib/firebase/FCMProvider";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
+import { EnvironmentLogger } from "@/components/EnvironmentLogger";
 
 const inter = Inter({
    subsets: ["latin"],
@@ -34,6 +35,7 @@ export default function RootLayout({
             className={`${inter.variable} font-sans antialiased`}
             suppressHydrationWarning
          >
+            <EnvironmentLogger />
             <ErrorBoundary>
                <QueryProvider>
                   <AuthProvider>

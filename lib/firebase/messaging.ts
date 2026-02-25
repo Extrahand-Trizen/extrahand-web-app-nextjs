@@ -8,22 +8,25 @@ import { app } from '@/lib/auth/firebase';
 
 // VAPID key for web push (should match your Firebase Console settings)
 // This is a public key and safe to expose
-const VAPID_KEY = process.env.NEXT_PUBLIC_VAPID_KEY;
+const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
 
 // Print environment variables for debugging
 if (typeof window !== 'undefined') {
-  console.log('=== 📋 FIREBASE MESSAGING ENV VARIABLES ===');
-  console.log('NEXT_PUBLIC_VAPID_KEY:', VAPID_KEY ? '✅ Set (' + VAPID_KEY.substring(0, 20) + '...)' : '❌ NOT SET');
-  console.log('NEXT_PUBLIC_NOTIFICATION_SERVICE_URL:', process.env.NEXT_PUBLIC_NOTIFICATION_SERVICE_URL || '❌ NOT SET');
-  console.log('NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL || '❌ NOT SET');
-  console.log('NEXT_PUBLIC_FIREBASE_PROJECT_ID:', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '❌ NOT SET');
-  console.log('NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID:', process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '❌ NOT SET');
-  console.log('========================================');
+  const timestamp = new Date().toLocaleTimeString();
+  console.log('%c📋 FIREBASE MESSAGING MODULE LOADED [' + timestamp + ']', 'background: #ff6b6b; color: white; padding: 8px 12px; font-weight: bold;');
+  console.log('✅ NEXT_PUBLIC_FIREBASE_VAPID_KEY:', VAPID_KEY || '❌ NOT SET');
+  console.log('✅ NEXT_PUBLIC_NOTIFICATION_SERVICE_URL:', process.env.NEXT_PUBLIC_NOTIFICATION_SERVICE_URL || '❌ NOT SET');
+  console.log('✅ NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL || '❌ NOT SET');
+  console.log('✅ NEXT_PUBLIC_FIREBASE_PROJECT_ID:', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '❌ NOT SET');
+  console.log('✅ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID:', process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '❌ NOT SET');
+  console.log('✅ NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN:', process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || '❌ NOT SET');
+  console.log('✅ NEXT_PUBLIC_FIREBASE_APP_ID:', process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '❌ NOT SET');
+  console.log('%c========================================', 'background: #ff6b6b; color: white; padding: 8px;');
 }
 
 // Validate VAPID key at module load
 if (!VAPID_KEY && typeof window !== 'undefined') {
-  console.error('❌ NEXT_PUBLIC_VAPID_KEY not found in environment variables');
+  console.error('❌ NEXT_PUBLIC_FIREBASE_VAPID_KEY not found in environment variables');
   console.error('Make sure environment variables are set during build time');
 }
 
@@ -150,12 +153,17 @@ export const requestNotificationPermission = async (): Promise<string | null> =>
  */
 export const registerFCMToken = async (token: string, userId: string): Promise<boolean> => {
   try {
+    // Log Firebase environment configuration
+    console.log('%c🔔 FIREBASE MESSAGING REGISTRATION FLOW', 'background: #51cf66; color: white; padding: 8px; font-weight: bold;');
+    console.log('✅ VAPID_KEY available:', VAPID_KEY || 'NOT SET');
+    console.log('✅ VAPID_KEY from .env (NEXT_PUBLIC_FIREBASE_VAPID_KEY):', process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || 'NOT SET');
+    
     const notificationServiceUrl = process.env.NEXT_PUBLIC_NOTIFICATION_SERVICE_URL || 
       'https://extrahand-notification-service.apps.extrahand.in';
     
-    console.log('🔔 Registering FCM Token with URL:', notificationServiceUrl);
+    console.log('🔔 Notification Service URL:', notificationServiceUrl);
     console.log('📍 Current page origin:', window.location.origin);
-    console.log('🔐 Token:', token.substring(0, 20) + '...');
+    console.log('🔐 FCM Token:', token.substring(0, 20) + '...');
     
     // Get Firebase Auth token for authentication
     const { auth } = await import('@/lib/auth/firebase');
