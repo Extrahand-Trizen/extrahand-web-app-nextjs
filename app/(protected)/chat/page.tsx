@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Search, Send, ArrowLeft, MessageCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ export default function ChatPage() {
   const chatIdParam = searchParams.get("chatId");
   const otherUserIdParam = searchParams.get("otherUserId");
   const taskIdParam = searchParams.get("taskId");
+  const messageInputRef = useRef<HTMLInputElement | null>(null);
 
   // Load chats on mount
   useEffect(() => {
@@ -170,7 +171,11 @@ export default function ChatPage() {
   };
 
   const handleSelectChat = async (chat: Chat) => {
-    setSelectedChat(chat);
+    if (!chat.otherParticipant) {
+      await loadChatById(chat.chatId || chat._id);
+    } else {
+      setSelectedChat(chat);
+    }
     setShowMobileList(false);
     await loadMessages(chat.chatId);
     
@@ -193,6 +198,25 @@ export default function ChatPage() {
     try {
       const { messages: loadedMessages } = await chatsApi.getChatMessages(chatId);
       setMessages(loadedMessages);
+      if (!selectedChat?.otherParticipant && loadedMessages.length > 0) {
+        const otherMessage = loadedMessages.find(
+          (message) => message.senderId !== user?._id
+        );
+        if (otherMessage?.sender?.name) {
+          setSelectedChat((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  otherParticipant: {
+                    uid: otherMessage.sender.uid,
+                    name: otherMessage.sender.name,
+                    profileImage: otherMessage.sender.profileImage,
+                  },
+                }
+              : prev
+          );
+        }
+      }
     } catch (error) {
       console.error("Failed to load messages:", error);
     }
@@ -201,6 +225,9 @@ export default function ChatPage() {
   // Handle new messages from socket
   const handleNewSocketMessage = useCallback(
     (message: Message) => {
+      if (message.senderId === user?._id) {
+        return;
+      }
       if (message.chatId === selectedChat?.chatId) {
         setMessages((prev) => {
           // Avoid duplicates
@@ -265,6 +292,7 @@ export default function ChatPage() {
 
     setMessages((prev) => [...prev, tempMessage]);
     setMessageText("");
+    messageInputRef.current?.focus();
     setSending(true);
 
     try {
@@ -303,6 +331,7 @@ export default function ChatPage() {
       );
     } finally {
       setSending(false);
+      messageInputRef.current?.focus();
     }
   };
 
@@ -487,17 +516,17 @@ export default function ChatPage() {
         <div className="p-4 border-t border-secondary-200">
           <div className="flex items-center gap-2">
             <Input
+              ref={messageInputRef}
               type="text"
               placeholder="Type a message..."
               value={messageText}
               onChange={(e) => setMessageText(e.target.value)}
-              onKeyPress={(e) => {
+              onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   handleSendMessage();
                 }
               }}
-              disabled={sending}
               className="flex-1"
             />
             <Button
