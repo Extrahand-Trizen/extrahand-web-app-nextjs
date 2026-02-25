@@ -25,14 +25,6 @@ export async function PATCH(
 ) {
   try {
     const { notificationId } = params;
-    const authToken = request.cookies.get('authToken')?.value;
-
-    if (!authToken) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
 
     if (!notificationId) {
       return NextResponse.json(
@@ -46,14 +38,18 @@ export async function PATCH(
       {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        }
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include' // Browser automatically sends cookies
       }
     );
 
     if (!response.ok) {
-      throw new Error(`Notification service error: ${response.statusText}`);
+      console.error(`Notification service error: ${response.statusText}`);
+      return NextResponse.json(
+        { success: false, error: `Service error: ${response.statusText}` },
+        { status: response.status }
+      );
     }
 
     const data = await response.json();
@@ -80,14 +76,6 @@ export async function DELETE(
 ) {
   try {
     const { notificationId } = params;
-    const authToken = request.cookies.get('authToken')?.value;
-
-    if (!authToken) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
 
     if (!notificationId) {
       return NextResponse.json(
@@ -101,14 +89,18 @@ export async function DELETE(
       {
         method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        }
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include' // Browser automatically sends cookies
       }
     );
 
     if (!response.ok) {
-      throw new Error(`Notification service error: ${response.statusText}`);
+      console.error(`Notification service error: ${response.statusText}`);
+      return NextResponse.json(
+        { success: false, error: `Service error: ${response.statusText}` },
+        { status: response.status }
+      );
     }
 
     const data = await response.json();

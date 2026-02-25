@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { SocketProvider } from "@/lib/socket/SocketProvider";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { FCMProvider } from "@/lib/firebase/FCMProvider";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 
 const inter = Inter({
    subsets: ["latin"],
@@ -39,6 +40,7 @@ export default function RootLayout({
                      <FCMProvider>
                         <SocketProvider>
                            <Toaster />
+                           <NotificationCenter />
                            {children}
                         </SocketProvider>
                      </FCMProvider>

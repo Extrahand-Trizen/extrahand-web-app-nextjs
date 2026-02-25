@@ -15,16 +15,6 @@ const NOTIFICATION_SERVICE_URL =
  */
 export async function GET(request: NextRequest) {
   try {
-    // Get auth token from cookies
-    const authToken = request.cookies.get('authToken')?.value;
-    
-    if (!authToken) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     // Extract query parameters
     const { searchParams } = new URL(request.url);
     const limit = searchParams.get('limit') || '50';
@@ -32,20 +22,25 @@ export async function GET(request: NextRequest) {
     const unreadOnly = searchParams.get('unreadOnly') || 'false';
 
     // Call backend notification service
+    // Cookies are automatically sent via credentials: 'include'
     const response = await fetch(
       `${NOTIFICATION_SERVICE_URL}/api/v1/notifications/in-app?` +
       `limit=${limit}&skip=${skip}&unreadOnly=${unreadOnly}`,
       {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        }
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include' // Browser automatically sends cookies
       }
     );
 
     if (!response.ok) {
-      throw new Error(`Notification service error: ${response.statusText}`);
+      console.error(`Notification service error: ${response.statusText}`);
+      return NextResponse.json(
+        { success: false, error: `Service error: ${response.statusText}` },
+        { status: response.status }
+      );
     }
 
     const data = await response.json();
@@ -55,6 +50,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       { 
         success: false, 
+        notifications: [],
         error: error instanceof Error ? error.message : 'Failed to fetch notifications'
       },
       { status: 500 }

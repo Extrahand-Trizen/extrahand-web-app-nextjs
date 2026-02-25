@@ -14,28 +14,23 @@ const NOTIFICATION_SERVICE_URL =
  */
 export async function PATCH(request: NextRequest) {
   try {
-    const authToken = request.cookies.get('authToken')?.value;
-
-    if (!authToken) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const response = await fetch(
       `${NOTIFICATION_SERVICE_URL}/api/v1/notifications/in-app/mark-all-read`,
       {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        }
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include' // Browser automatically sends cookies
       }
     );
 
     if (!response.ok) {
-      throw new Error(`Notification service error: ${response.statusText}`);
+      console.error(`Notification service error: ${response.statusText}`);
+      return NextResponse.json(
+        { success: false, error: `Service error: ${response.statusText}` },
+        { status: response.status }
+      );
     }
 
     const data = await response.json();
