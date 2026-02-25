@@ -26,14 +26,17 @@ import {
    XCircle,
    RotateCcw,
    AlertTriangle,
+   MessageCircle,
 } from "lucide-react";
 import type { Task } from "@/types/task";
 import type { UserRole } from "@/types/tracking";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface StatusUpdateSectionProps {
    task: Task;
    userRole: UserRole;
+   chatId?: string | null;
    onStatusUpdate: (
       newStatus: Task["status"],
       reason?: string
@@ -43,8 +46,10 @@ interface StatusUpdateSectionProps {
 export function StatusUpdateSection({
    task,
    userRole,
+   chatId,
    onStatusUpdate,
 }: StatusUpdateSectionProps) {
+   const router = useRouter();
    const [isUpdating, setIsUpdating] = useState(false);
    const [cancelReason, setCancelReason] = useState("");
 
@@ -57,9 +62,23 @@ export function StatusUpdateSection({
          variant: "default" | "destructive" | "outline";
          requiresConfirmation: boolean;
          requiresReason?: boolean;
+         isMessageAction?: boolean;
       }> = [];
 
       if (userRole === "viewer") return actions;
+
+      // Add Message button for both poster and tasker (not viewers)
+      if (chatId && (userRole === "poster" || userRole === "tasker")) {
+         actions.push({
+            status: task.status, // Keep current status (this action doesn't change status)
+            label: "Message",
+            description: "Open chat to communicate with the other participant",
+            icon: <MessageCircle className="w-4 h-4" />,
+            variant: "outline",
+            requiresConfirmation: false,
+            isMessageAction: true,
+         });
+      }
 
       // Tasker actions
       if (userRole === "tasker") {
@@ -265,10 +284,17 @@ export function StatusUpdateSection({
                            : action.variant
                      }
                      className="w-full justify-start gap-2 text-sm md:text-base font-medium md:font-semibold"
-                     onClick={() => handleStatusUpdate(action.status)}
+                     onClick={() => {
+                        if (action.isMessageAction) {
+                           // Navigate to chat page
+                           router.push(`/chat?chatId=${chatId}&taskId=${task._id}`);
+                        } else {
+                           handleStatusUpdate(action.status);
+                        }
+                     }}
                      disabled={isUpdating}
                   >
-                     {isUpdating ? (
+                     {isUpdating && !action.isMessageAction ? (
                         <>
                            <Loader2 className="w-4 h-4 animate-spin" />
                            Updating...

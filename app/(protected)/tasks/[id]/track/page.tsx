@@ -664,6 +664,7 @@ export default function TaskTrackingPage() {
                      <StatusUpdateSection
                         task={task}
                         userRole={userRole}
+                        chatId={chatId}
                         onStatusUpdate={handleStatusUpdate}
                      />
                   )}
