@@ -229,3 +229,165 @@ export const getNotificationPermissionStatus = (): NotificationPermission | null
   }
   return Notification.permission;
 };
+
+/**
+ * ============================================================
+ * POLLING-BASED NOTIFICATIONS (Fallback to FCM)
+ * ============================================================
+ */
+
+import NotificationPollingService, { 
+  InAppNotification 
+} from '@/lib/notifications/pollingService';
+
+/**
+ * Initialize both FCM and polling notification systems
+ * @param userId User ID for polling setup
+ * @param pollingInterval Polling interval in milliseconds (default: 30000)
+ */
+export const initializeNotifications = async (
+  userId: string,
+  pollingInterval: number = 30000
+): Promise<void> => {
+  try {
+    console.log('🔔 Initializing notification systems...');
+
+    // Try FCM first
+    const fcmAvailable = areNotificationsSupported();
+    if (fcmAvailable) {
+      console.log('✅ FCM is supported, attempting to enable...');
+      const token = await requestNotificationPermission();
+      
+      if (token) {
+        const registered = await registerFCMToken(token, userId);
+        if (registered) {
+          console.log('✅ FCM notifications enabled');
+          // Set up foreground message listener
+          onForegroundMessage((payload) => {
+            console.log('📨 FCM message received:', payload);
+            // The message will be handled by the service worker for background
+          });
+        }
+      }
+    }
+
+    // Always set up polling as fallback
+    console.log('✅ Setting up polling notifications as fallback...');
+    NotificationPollingService.initialize({
+      enabled: true,
+      interval: pollingInterval,
+      onNotification: (notification) => {
+        console.log('📬 Polling notification received:', notification);
+        // Show toast notification
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification(notification.title, {
+            body: notification.body,
+            icon: '/logo.png',
+            tag: notification.id
+          });
+        }
+      },
+      onError: (error) => {
+        console.error('❌ Polling notification error:', error);
+      }
+    });
+
+    // Start polling
+    NotificationPollingService.startPolling(userId, pollingInterval);
+    console.log('✅ All notification systems initialized');
+  } catch (error) {
+    console.error('❌ Error initializing notifications:', error);
+    // Ensure polling is still active as fallback
+    NotificationPollingService.startPolling(userId, pollingInterval);
+  }
+};
+
+/**
+ * Stop all notification systems
+ */
+export const stopNotifications = (): void => {
+  try {
+    console.log('⏹️ Stopping notification systems...');
+    NotificationPollingService.stopPolling();
+    console.log('✅ Notification systems stopped');
+  } catch (error) {
+    console.error('❌ Error stopping notifications:', error);
+  }
+};
+
+/**
+ * Get notifications via polling/in-app API
+ * @param limit Number of notifications to fetch
+ * @param skip Number of notifications to skip (for pagination)
+ * @param unreadOnly Fetch only unread notifications
+ */
+export const getInAppNotifications = async (
+  limit: number = 50,
+  skip: number = 0,
+  unreadOnly: boolean = true
+): Promise<InAppNotification[]> => {
+  try {
+    const notifications = await NotificationPollingService.fetchNotifications(
+      '', // userId handled by API
+      limit,
+      skip,
+      unreadOnly
+    );
+    return notifications || [];
+  } catch (error) {
+    console.error('❌ Error fetching notifications:', error);
+    return [];
+  }
+};
+
+/**
+ * Mark notification as read
+ * @param notificationId Notification ID
+ */
+export const markNotificationAsRead = async (notificationId: string): Promise<boolean> => {
+  try {
+    return await NotificationPollingService.markAsRead(notificationId);
+  } catch (error) {
+    console.error('❌ Error marking notification as read:', error);
+    return false;
+  }
+};
+
+/**
+ * Delete notification
+ * @param notificationId Notification ID
+ */
+export const deleteInAppNotification = async (notificationId: string): Promise<boolean> => {
+  try {
+    return await NotificationPollingService.deleteNotification(notificationId);
+  } catch (error) {
+    console.error('❌ Error deleting notification:', error);
+    return false;
+  }
+};
+
+/**
+ * Get unread notification count
+ */
+export const getUnreadNotificationCount = async (): Promise<number> => {
+  try {
+    return await NotificationPollingService.getUnreadCount();
+  } catch (error) {
+    console.error('❌ Error fetching unread count:', error);
+    return 0;
+  }
+};
+
+/**
+ * Send a test notification (for debugging)
+ */
+export const sendTestNotification = (): void => {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('Test Notification', {
+      body: 'This is a test notification from ExtraHand',
+      icon: '/logo.png'
+    });
+  } else {
+    console.warn('⚠️ Notifications not available or permission denied');
+  }
+};
