@@ -26,6 +26,9 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showMobileList, setShowMobileList] = useState(true);
+  const chatIdParam = searchParams.get("chatId");
+  const otherUserIdParam = searchParams.get("otherUserId");
+  const taskIdParam = searchParams.get("taskId");
 
   // Load chats on mount
   useEffect(() => {
@@ -34,19 +37,37 @@ export default function ChatPage() {
 
   // Handle URL params to open specific chat
   useEffect(() => {
-    const chatId = searchParams.get("chatId");
-    const otherUserId = searchParams.get("otherUserId");
-    const taskId = searchParams.get("taskId");
-
-    if (chatId && chats.length > 0) {
-      const chat = chats.find((c) => c.chatId === chatId || c._id === chatId);
-      if (chat) {
-        handleSelectChat(chat);
-      }
-    } else if (otherUserId && !chatId) {
-      startNewChat(otherUserId, taskId || undefined);
+    // Priority 1: If taskId and otherUserId are provided, create/get chat for that user and task
+    if (taskIdParam && otherUserIdParam) {
+      startNewChat(otherUserIdParam, taskIdParam);
+      return;
     }
-  }, [searchParams, chats]);
+
+    // Priority 2: If taskId is provided (poster/tasker), start/get chat for that task
+    if (taskIdParam) {
+      startChatForTask(taskIdParam);
+      return;
+    }
+
+    // Priority 3: If only otherUserId is provided, start new direct chat
+    if (otherUserIdParam && !chatIdParam) {
+      startNewChat(otherUserIdParam, undefined);
+    }
+  }, [chatIdParam, otherUserIdParam, taskIdParam]);
+
+  // If chatId is provided without task/user params, select or fetch the chat
+  useEffect(() => {
+    if (!chatIdParam || taskIdParam || otherUserIdParam) return;
+    if (chats.length === 0) return;
+
+    const chat = chats.find((c) => c.chatId === chatIdParam || c._id === chatIdParam);
+    if (chat) {
+      handleSelectChat(chat);
+      return;
+    }
+
+    loadChatById(chatIdParam);
+  }, [chatIdParam, otherUserIdParam, taskIdParam, chats]);
 
   const loadChats = async () => {
     try {
@@ -63,12 +84,75 @@ export default function ChatPage() {
   const startNewChat = async (otherUserId: string, taskId?: string) => {
     try {
       const chat = await chatsApi.startChat(otherUserId, taskId);
-      setChats((prev) => [chat, ...prev]);
+      setChats((prev) => {
+        const existingIndex = prev.findIndex(
+          (c) => c.chatId === chat.chatId || c._id === chat._id
+        );
+        if (existingIndex >= 0) {
+          const updated = [...prev];
+          updated[existingIndex] = chat;
+          return updated;
+        }
+        return [chat, ...prev];
+      });
       setSelectedChat(chat);
-      loadMessages(chat.chatId);
+      await loadMessages(chat.chatId);
       setShowMobileList(false);
     } catch (error) {
       console.error("Failed to start chat:", error);
+    }
+  };
+
+  const startChatForTask = async (taskId: string) => {
+    try {
+      setLoading(true);
+      const { chat } = await chatsApi.startChatForTask(taskId);
+      
+      // Add/update chat in list
+      setChats((prev) => {
+        const existingIndex = prev.findIndex(
+          (c) => c.chatId === chat.chatId || c.relatedTask === taskId
+        );
+        if (existingIndex >= 0) {
+          // Update existing chat
+          const updated = [...prev];
+          updated[existingIndex] = chat;
+          return updated;
+        } else {
+          // Add new chat at the top
+          return [chat, ...prev];
+        }
+      });
+
+      setSelectedChat(chat);
+      await loadMessages(chat.chatId);
+      setShowMobileList(false);
+    } catch (error) {
+      console.error("Failed to start chat for task:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadChatById = async (chatId: string) => {
+    try {
+      const chat = await chatsApi.getChatDetails(chatId);
+      setChats((prev) => {
+        const existingIndex = prev.findIndex(
+          (c) => c.chatId === chat.chatId || c._id === chat._id
+        );
+        if (existingIndex >= 0) {
+          const updated = [...prev];
+          updated[existingIndex] = chat;
+          return updated;
+        }
+        return [chat, ...prev];
+      });
+      setSelectedChat(chat);
+      await loadMessages(chat.chatId);
+      setShowMobileList(false);
+    } catch (error) {
+      console.error("Failed to load chat details:", error);
     }
   };
 

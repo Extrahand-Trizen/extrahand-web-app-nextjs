@@ -37,6 +37,7 @@ interface StatusUpdateSectionProps {
    task: Task;
    userRole: UserRole;
    chatId?: string | null;
+   otherUserId?: string | null;
    onStatusUpdate: (
       newStatus: Task["status"],
       reason?: string
@@ -47,6 +48,7 @@ export function StatusUpdateSection({
    task,
    userRole,
    chatId,
+   otherUserId,
    onStatusUpdate,
 }: StatusUpdateSectionProps) {
    const router = useRouter();
@@ -68,7 +70,7 @@ export function StatusUpdateSection({
       if (userRole === "viewer") return actions;
 
       // Add Message button for both poster and tasker (not viewers)
-      if (chatId && (userRole === "poster" || userRole === "tasker")) {
+      if (userRole === "poster" || userRole === "tasker") {
          actions.push({
             status: task.status, // Keep current status (this action doesn't change status)
             label: "Message",
@@ -277,7 +279,7 @@ export function StatusUpdateSection({
 
                return (
                   <Button
-                     key={action.status}
+                     key={`${action.status}-${action.label}`}
                      variant={
                         action.variant === "default"
                            ? "outline"
@@ -286,8 +288,11 @@ export function StatusUpdateSection({
                      className="w-full justify-start gap-2 text-sm md:text-base font-medium md:font-semibold"
                      onClick={() => {
                         if (action.isMessageAction) {
-                           // Navigate to chat page
-                           router.push(`/chat?chatId=${chatId}&taskId=${task._id}`);
+                           const params = new URLSearchParams();
+                           if (task._id) params.set("taskId", task._id);
+                           if (chatId) params.set("chatId", chatId);
+                           if (otherUserId) params.set("otherUserId", otherUserId);
+                           router.push(`/chat?${params.toString()}`);
                         } else {
                            handleStatusUpdate(action.status);
                         }

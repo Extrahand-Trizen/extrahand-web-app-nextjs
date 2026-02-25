@@ -433,7 +433,9 @@ export function TaskOffersSection({
                                              View Profile
                                           </Button>
                                        </Link>
-                                       <Link href={`/chat?chatId=chat_${taskId}`}>
+                                       <Link
+                                          href={`/chat?taskId=${taskId}&otherUserId=${acceptedApplication.applicantId}`}
+                                       >
                                           <Button
                                              size="sm"
                                              className="bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-semibold"
@@ -602,7 +604,9 @@ export function TaskOffersSection({
                                     </Button>
                                  </Link>
 
-                                 <Link href={`/chat?chatId=chat_${taskId}`}>
+                                 <Link
+                                    href={`/chat?taskId=${taskId}&otherUserId=${application.applicantId}`}
+                                 >
                                     <Button
                                        size="sm"
                                        variant="outline"
