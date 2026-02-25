@@ -1,10 +1,11 @@
+import { isDevClient } from '@/lib/config';
+
 /**
  * Environment Variables Logger
- * Logs all PUBLIC environment variables in browser console for debugging
+ * Logs PUBLIC environment variables for debugging (dev-only)
  */
-
 export const logEnvironmentVariables = () => {
-  if (typeof window === 'undefined') {
+  if (typeof window === 'undefined' || !isDevClient()) {
     return;
   }
 
@@ -39,8 +40,4 @@ export const logEnvironmentVariables = () => {
   console.log('%c===========================================', 'background: #1e90ff; color: white; padding: 5px 10px; border-radius: 3px;');
 };
 
-// Call immediately if in browser
-if (typeof window !== 'undefined') {
-  // Use setTimeout to ensure logging happens after console is ready
-  setTimeout(logEnvironmentVariables, 100);
-}
+// Do not auto-log in production; keep this as a manual dev helper

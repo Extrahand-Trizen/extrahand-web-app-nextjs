@@ -5,13 +5,14 @@
 
 import { getMessaging, getToken, onMessage, Messaging, MessagePayload } from 'firebase/messaging';
 import { app } from '@/lib/auth/firebase';
+import { isDevClient } from '@/lib/config';
 
 // VAPID key for web push (should match your Firebase Console settings)
 // This is a public key and safe to expose
 const VAPID_KEY = process.env.NEXT_PUBLIC_VAPID_KEY;
 
-// Print environment variables for debugging
-if (typeof window !== 'undefined') {
+// Print environment variables for debugging (development only)
+if (typeof window !== 'undefined' && isDevClient()) {
   const timestamp = new Date().toLocaleTimeString();
   console.log('%c📋 FIREBASE MESSAGING MODULE LOADED [' + timestamp + ']', 'background: #ff6b6b; color: white; padding: 8px 12px; font-weight: bold;');
   console.log('✅ NEXT_PUBLIC_VAPID_KEY:', VAPID_KEY || '❌ NOT SET');
@@ -156,13 +157,17 @@ export const registerFCMToken = async (token: string, userId: string): Promise<b
     // Log Firebase environment configuration
     console.log('%c🔔 FIREBASE MESSAGING REGISTRATION FLOW', 'background: #51cf66; color: white; padding: 8px; font-weight: bold;');
     console.log('✅ VAPID_KEY available:', VAPID_KEY || 'NOT SET');
-    console.log('✅ VAPID_KEY from .env (NEXT_PUBLIC_VAPID_KEY):', process.env.NEXT_PUBLIC_VAPID_KEY || 'NOT SET');
+    if (isDevClient()) {
+      console.log('✅ VAPID_KEY from .env (NEXT_PUBLIC_VAPID_KEY):', process.env.NEXT_PUBLIC_VAPID_KEY || 'NOT SET');
+    }
     
     const notificationServiceUrl = process.env.NEXT_PUBLIC_NOTIFICATION_SERVICE_URL || 
       'https://extrahand-notification-service.apps.extrahand.in';
     
-    console.log('🔔 Notification Service URL:', notificationServiceUrl);
-    console.log('📍 Current page origin:', window.location.origin);
+    if (isDevClient()) {
+      console.log('🔔 Notification Service URL:', notificationServiceUrl);
+      console.log('📍 Current page origin:', window.location.origin);
+    }
     console.log('🔐 FCM Token:', token.substring(0, 20) + '...');
     
     // Get Firebase Auth token for authentication

@@ -5,9 +5,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const NOTIFICATION_SERVICE_URL = 
-  process.env.NEXT_PUBLIC_NOTIFICATION_SERVICE_URL || 
-  'https://extrahandnotificationservice.llp.trizenventures.com';
+// Use API Gateway as the single entry point.
+// In production this should be set to the public API gateway URL.
+const API_GATEWAY_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  process.env.API_GATEWAY_URL ||
+  'http://localhost:5000';
 
 /**
  * GET /api/notifications
@@ -21,17 +24,20 @@ export async function GET(request: NextRequest) {
     const skip = searchParams.get('skip') || '0';
     const unreadOnly = searchParams.get('unreadOnly') || 'false';
 
-    // Call backend notification service
-    // Cookies are automatically sent via credentials: 'include'
+    // Forward cookies from the incoming request so the API gateway
+    // receives the accessToken / session cookies.
+    const cookieHeader = request.headers.get('cookie') ?? '';
+
+    // Call API Gateway -> Notification Service
     const response = await fetch(
-      `${NOTIFICATION_SERVICE_URL}/api/v1/notifications/in-app?` +
+      `${API_GATEWAY_URL}/api/v1/notifications/in-app?` +
       `limit=${limit}&skip=${skip}&unreadOnly=${unreadOnly}`,
       {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include' // Browser automatically sends cookies
+          'Content-Type': 'application/json',
+          ...(cookieHeader && { cookie: cookieHeader })
+        }
       }
     );
 
@@ -65,22 +71,15 @@ export async function GET(request: NextRequest) {
 export async function GET_UNREAD(request: NextRequest) {
   if (request.nextUrl.pathname.includes('unread-count')) {
     try {
-      const authToken = request.cookies.get('authToken')?.value;
-      
-      if (!authToken) {
-        return NextResponse.json(
-          { success: false, error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
+      const cookieHeader = request.headers.get('cookie') ?? '';
 
       const response = await fetch(
-        `${NOTIFICATION_SERVICE_URL}/api/v1/notifications/in-app/unread-count`,
+        `${API_GATEWAY_URL}/api/v1/notifications/in-app/unread-count`,
         {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`
+            ...(cookieHeader && { cookie: cookieHeader })
           }
         }
       );

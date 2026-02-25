@@ -5,9 +5,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const NOTIFICATION_SERVICE_URL = 
-  process.env.NEXT_PUBLIC_NOTIFICATION_SERVICE_URL || 
-  'https://extrahandnotificationservice.llp.trizenventures.com';
+const API_GATEWAY_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  process.env.API_GATEWAY_URL ||
+  'http://localhost:5000';
 
 interface RouteParams {
   params: {
@@ -33,14 +34,16 @@ export async function PATCH(
       );
     }
 
+    const cookieHeader = request.headers.get('cookie') ?? '';
+
     const response = await fetch(
       `${NOTIFICATION_SERVICE_URL}/api/v1/notifications/in-app/${notificationId}/read`,
       {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include' // Browser automatically sends cookies
+          'Content-Type': 'application/json',
+          ...(cookieHeader && { cookie: cookieHeader })
+        }
       }
     );
 
@@ -84,14 +87,16 @@ export async function DELETE(
       );
     }
 
+    const cookieHeader = request.headers.get('cookie') ?? '';
+
     const response = await fetch(
-      `${NOTIFICATION_SERVICE_URL}/api/v1/notifications/in-app/${notificationId}`,
+      `${API_GATEWAY_URL}/api/v1/notifications/in-app/${notificationId}`,
       {
         method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include' // Browser automatically sends cookies
+          'Content-Type': 'application/json',
+          ...(cookieHeader && { cookie: cookieHeader })
+        }
       }
     );
 
