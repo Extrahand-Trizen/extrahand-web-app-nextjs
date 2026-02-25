@@ -45,7 +45,7 @@ export class NotificationPollingService {
   private static pollingIntervalId: NodeJS.Timeout | null = null;
   private static config: PollConfig = {
     enabled: true,
-    interval: 30000, // 30 seconds default
+    interval: 60000, // 1 minute default
     maxRetries: 3,
     backoffMultiplier: 1.5
   };
