@@ -189,6 +189,17 @@ export function TaskOffersSection({
       ? sortedApplications.filter((app) => app.status !== "accepted")
       : sortedApplications;
 
+   // Find user's own application by comparing applicantId with userProfile._id
+   const myApplication = !isOwner && userProfile
+      ? applications.find((app) => app.applicantId === (userProfile as any)._id)
+      : null;
+
+   // Inform parent whether current user has an application
+   useEffect(() => {
+      if (!onHasAppliedChange) return;
+      onHasAppliedChange(!!myApplication);
+   }, [myApplication, onHasAppliedChange]);
+
    if (loading) {
       return (
          <div className="p-4 md:p-8 flex items-center justify-center py-16">
@@ -199,17 +210,6 @@ export function TaskOffersSection({
          </div>
       );
    }
-
-   // Find user's own application by comparing applicantId with userProfile._id
-   const myApplication = !isOwner && userProfile 
-      ? applications.find(app => app.applicantId === (userProfile as any)._id)
-      : null;
-
-   // Inform parent whether current user has an application
-   useEffect(() => {
-      if (!onHasAppliedChange) return;
-      onHasAppliedChange(!!myApplication);
-   }, [myApplication, onHasAppliedChange]);
 
    // If not owner and has application, show their own application
    if (!isOwner && myApplication) {
