@@ -319,34 +319,12 @@ export const initializeNotifications = async (
       }
     }
 
-    // Always set up polling as fallback
-    console.log('✅ Setting up polling notifications as fallback...');
-    NotificationPollingService.initialize({
-      enabled: true,
-      interval: pollingInterval,
-      onNotification: (notification) => {
-        console.log('📬 Polling notification received:', notification);
-        // Show toast notification
-        if ('Notification' in window && Notification.permission === 'granted') {
-          new Notification(notification.title, {
-            body: notification.body,
-            icon: '/logo.png',
-            tag: notification.id
-          });
-        }
-      },
-      onError: (error) => {
-        console.error('❌ Polling notification error:', error);
-      }
-    });
-
-    // Start polling
-    NotificationPollingService.startPolling(userId, pollingInterval);
-    console.log('✅ All notification systems initialized');
+    // Polling disabled for now
+    // NotificationPollingService.initialize({ ... });
+    // NotificationPollingService.startPolling(userId, pollingInterval);
+    console.log('✅ Notification systems initialized (polling disabled)');
   } catch (error) {
     console.error('❌ Error initializing notifications:', error);
-    // Ensure polling is still active as fallback
-    NotificationPollingService.startPolling(userId, pollingInterval);
   }
 };
 

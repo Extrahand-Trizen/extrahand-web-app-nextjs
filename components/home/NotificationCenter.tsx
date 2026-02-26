@@ -9,10 +9,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, MessageSquare, AlertCircle, CreditCard, X, BellRing } from "lucide-react";
-import { useFCM } from "@/lib/firebase/FCMProvider";
-import { useNotificationStore } from "@/lib/state/notificationStore";
-import { useAuth } from "@/lib/auth/context";
+import { Bell, MessageSquare, AlertCircle, CreditCard, X } from "lucide-react";
 import type { UserCurrentStatus } from "@/types/dashboard";
 
 interface NotificationCenterProps {
@@ -36,89 +33,23 @@ export function NotificationCenter({ status }: NotificationCenterProps) {
    const router = useRouter();
    const [isOpen, setIsOpen] = useState(false);
    const dropdownRef = useRef<HTMLDivElement>(null);
-   const { currentUser } = useAuth();
-   const {
-      notifications: fcmNotifications,
-      unreadCount: fcmUnreadCount,
-      markAsRead,
-      clearAll: clearFcmNotifications,
-   } = useFCM();
-   const {
-      notifications: inAppNotifications,
-      unreadCount: inAppUnreadCount,
-      isLoading: inAppLoading,
-      fetchNotifications,
-      markAsRead: markInAppAsRead,
-      markAllAsRead: markAllInAppAsRead,
-      markAllAsReadOptimistic,
-   } = useNotificationStore();
 
-   // Fetch in-app notifications when user is logged in (on mount and when opening the bell)
-   useEffect(() => {
-      if (currentUser?.uid) {
-         fetchNotifications(50, 0);
-      }
-   }, [currentUser?.uid, fetchNotifications]);
+   // In-app notifications and mark-all-read disabled for now; modal kept empty
+   const statusUnreadCount =
+      status.activeChats.filter((c) => c.unreadCount > 0).reduce((sum, c) => sum + c.unreadCount, 0) +
+      status.pendingOffers.filter((o) => o.type === "received").length +
+      status.pendingPayments.length;
 
-   // When user opens the bell: clear badge immediately (optimistic), then persist via API
-   useEffect(() => {
-      if (!isOpen || !currentUser?.uid) return;
-      clearFcmNotifications();
-      markAllAsReadOptimistic(); // Badge → 0 and all marked read in UI immediately
-      markAllInAppAsRead().then(() => {
-         fetchNotifications(50, 0);
-      });
-   }, [isOpen, currentUser?.uid, fetchNotifications, markAllInAppAsRead, markAllAsReadOptimistic, clearFcmNotifications]);
+   const totalUnread = statusUnreadCount;
 
-   // Calculate unread count from status
+   // Build notification groups (in-app and FCM disabled for now; modal empty)
+   const groups: NotificationGroup[] = [];
+
    const unreadMessages = status.activeChats.filter((c) => c.unreadCount > 0);
    const unreadOffers = status.pendingOffers.filter(
       (o) => o.type === "received"
    );
    const unreadPayments = status.pendingPayments;
-   
-   const statusUnreadCount =
-      unreadMessages.reduce((sum, c) => sum + c.unreadCount, 0) +
-      unreadOffers.length +
-      unreadPayments.length;
-   
-   const totalUnread = statusUnreadCount + fcmUnreadCount + inAppUnreadCount;
-
-   // Build notification groups
-   const groups: NotificationGroup[] = [];
-
-   // In-app notifications: show only unread so list empties after "mark all read"
-   const unreadInApp = inAppNotifications.filter((n) => !n.read);
-   if (unreadInApp.length > 0) {
-      groups.push({
-         type: "in-app",
-         label: "Notifications",
-         icon: BellRing,
-         items: unreadInApp.slice(0, 20).map((n) => ({
-            id: n.id,
-            title: n.title,
-            description: n.body,
-            route: (n.data?.url as string) || "/notifications",
-            timestamp: n.createdAt instanceof Date ? n.createdAt : new Date(n.createdAt),
-         })),
-      });
-   }
-
-   // FCM system notifications (task reminders, keyword alerts, etc.)
-   if (fcmNotifications.length > 0) {
-      groups.push({
-         type: "system",
-         label: "Push",
-         icon: BellRing,
-         items: fcmNotifications.map((notif) => ({
-            id: notif.id,
-            title: notif.title,
-            description: notif.body,
-            route: (notif.data?.url as string) || "/home",
-            timestamp: notif.timestamp,
-         })),
-      });
-   }
 
    if (unreadMessages.length > 0) {
       groups.push({
@@ -231,16 +162,12 @@ export function NotificationCenter({ status }: NotificationCenterProps) {
                      </button>
                   </div>
 
-                  {groups.length === 0 && !inAppLoading ? (
+                  {groups.length === 0 ? (
                      <div className="p-6 text-center">
                         <Bell className="w-8 h-8 text-secondary-300 mx-auto mb-2" />
                         <p className="text-sm text-secondary-500">
                            No new notifications
                         </p>
-                     </div>
-                  ) : groups.length === 0 && inAppLoading ? (
-                     <div className="p-6 text-center">
-                        <p className="text-sm text-secondary-500">Loading notifications…</p>
                      </div>
                   ) : (
                      <div className="divide-y divide-secondary-100">
@@ -262,11 +189,6 @@ export function NotificationCenter({ status }: NotificationCenterProps) {
                                        <button
                                           key={item.id}
                                           onClick={() => {
-                                             if (group.type === "in-app") {
-                                                markInAppAsRead(item.id);
-                                             } else if (group.type === "system") {
-                                                markAsRead(item.id);
-                                             }
                                              router.push(item.route);
                                              setIsOpen(false);
                                           }}

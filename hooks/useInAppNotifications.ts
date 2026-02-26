@@ -59,12 +59,12 @@ export const useInAppNotifications = (
 
   const pollingInitializedRef = useRef(false);
 
-  // Initialize polling to update the store when new notifications arrive
+  // Polling disabled for now
   useEffect(() => {
     if (pollingInitializedRef.current) return;
 
     NotificationPollingService.initialize({
-      enabled: options?.enabled ?? true,
+      enabled: false,
       interval: options?.pollingInterval ?? 60000,
       onNotification: (notification) => {
         addOrUpdateNotification(notification);
@@ -79,11 +79,11 @@ export const useInAppNotifications = (
     pollingInitializedRef.current = true;
   }, [addOrUpdateNotification, fetchUnreadCount, options?.enabled, options?.pollingInterval, options?.onNotification, options?.onError]);
 
-  // Start polling when user is authenticated
-  useEffect(() => {
-    if (!userId || !pollingInitializedRef.current) return;
-    NotificationPollingService.startPolling(userId, options?.pollingInterval);
-  }, [userId, options?.pollingInterval]);
+  // Polling disabled for now - do not start
+  // useEffect(() => {
+  //   if (!userId || !pollingInitializedRef.current) return;
+  //   NotificationPollingService.startPolling(userId, options?.pollingInterval);
+  // }, [userId, options?.pollingInterval]);
 
   // Clear store when user logs out
   useEffect(() => {
