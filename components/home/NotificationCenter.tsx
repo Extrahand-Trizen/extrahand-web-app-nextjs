@@ -195,7 +195,12 @@ export function NotificationCenter({ status }: NotificationCenterProps) {
          >
             <Bell className="w-5 h-5" />
             {totalUnread > 0 && (
-               <span className="absolute top-1 right-1 w-2 h-2 bg-primary-500 rounded-full ring-2 ring-white" />
+               <span
+                  className="absolute -top-0.5 -right-0.5 min-w-[1.125rem] h-[1.125rem] px-1 flex items-center justify-center rounded-full bg-primary-500 text-white text-[10px] font-semibold ring-2 ring-white"
+                  aria-label={`${totalUnread} unread notifications`}
+               >
+                  {totalUnread > 99 ? "99+" : totalUnread}
+               </span>
             )}
          </button>
 
