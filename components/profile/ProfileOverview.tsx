@@ -32,9 +32,10 @@ import { toast } from "sonner";
 interface ProfileOverviewProps {
    user: UserProfile;
    onNavigate: (section: ProfileSection) => void;
+   loading?: boolean;
 }
 
-export function ProfileOverview({ user, onNavigate }: ProfileOverviewProps) {
+export function ProfileOverview({ user, onNavigate, loading }: ProfileOverviewProps) {
    const [shareOpen, setShareOpen] = useState(false);
 
    // Generate the public profile URL
@@ -69,6 +70,10 @@ export function ProfileOverview({ user, onNavigate }: ProfileOverviewProps) {
    const verifiedCount = verificationItems.filter(
       (v) => v.status === "verified"
    ).length;
+
+   if (loading) {
+      return <ProfileOverviewSkeleton />;
+   }
 
    return (
       <div className="space-y-4 sm:space-y-6">
@@ -298,6 +303,55 @@ export function ProfileOverview({ user, onNavigate }: ProfileOverviewProps) {
             url={getProfileUrl()}
             shareText={`Check out ${user.name}'s profile on ExtraHand!`}
          />
+      </div>
+   );
+}
+
+// Lightweight skeleton for initial profile load
+function ProfileOverviewSkeleton() {
+   return (
+      <div className="space-y-4 sm:space-y-6">
+         {/* Header skeleton */}
+         <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+               <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gray-200 animate-pulse" />
+               <div className="flex-1 min-w-0 space-y-2">
+                  <div className="h-4 sm:h-5 w-40 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-3 w-32 bg-gray-200 rounded animate-pulse" />
+                  <div className="flex gap-2 mt-3">
+                     <div className="h-7 w-20 bg-gray-200 rounded animate-pulse" />
+                     <div className="h-7 w-16 bg-gray-200 rounded animate-pulse" />
+                     <div className="h-7 w-16 bg-gray-200 rounded animate-pulse" />
+                  </div>
+               </div>
+            </div>
+         </div>
+
+         {/* Profile completion skeleton */}
+         <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-3">
+               <div className="space-y-1">
+                  <div className="h-3 w-32 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-2 w-40 bg-gray-100 rounded animate-pulse" />
+               </div>
+               <div className="h-4 w-10 bg-gray-200 rounded animate-pulse" />
+            </div>
+            <div className="h-2 w-full bg-gray-100 rounded animate-pulse" />
+         </div>
+
+         {/* Stats grid skeleton */}
+         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            {Array.from({ length: 4 }).map((_, idx) => (
+               <div
+                  key={idx}
+                  className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 space-y-2"
+               >
+                  <div className="h-3 w-16 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-5 w-10 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-2 w-20 bg-gray-100 rounded animate-pulse" />
+               </div>
+            ))}
+         </div>
       </div>
    );
 }

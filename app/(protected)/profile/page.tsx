@@ -507,7 +507,11 @@ function ProfilePageContent() {
       },
    };
 
-   if (authLoading || loadingProfile || (!user && !profileError)) {
+   // Show a full-page spinner only while auth is resolving or we truly
+   // have no user data yet. Allow the main layout to render while the
+   // detailed profile fetch (loadingProfile) is still in progress so
+   // the page doesn't feel blank on first load.
+   if (authLoading || (!user && !profileError)) {
       return (
          <div className="flex items-center justify-center py-20">
             <LoadingSpinner size="lg" />
@@ -653,7 +657,13 @@ interface Props {
 function renderSection(s: ProfileSection, p: Props) {
    switch (s) {
       case "overview":
-         return <ProfileOverview user={p.user} onNavigate={p.onNavigate} />;
+         return (
+            <ProfileOverview
+               user={p.user}
+               onNavigate={p.onNavigate}
+               loading={p.loadingProfile}
+            />
+         );
       case "public-profile":
          return (
             <PublicProfile
@@ -774,6 +784,12 @@ function renderSection(s: ProfileSection, p: Props) {
          );
       // business-verification section removed - now integrated into verifications section
       default:
-         return <ProfileOverview user={p.user} onNavigate={p.onNavigate} />;
+         return (
+            <ProfileOverview
+               user={p.user}
+               onNavigate={p.onNavigate}
+               loading={p.loadingProfile}
+            />
+         );
    }
 }
