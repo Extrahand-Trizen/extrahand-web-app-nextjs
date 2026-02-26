@@ -15,6 +15,8 @@ type NotificationState = {
   fetchUnreadCount: () => Promise<number>;
   markAsRead: (notificationId: string) => Promise<boolean>;
   markAllAsRead: () => Promise<boolean>;
+  /** Updates UI immediately (badge → 0, all read); call markAllAsRead() after for API. */
+  markAllAsReadOptimistic: () => void;
   deleteNotification: (notificationId: string) => Promise<boolean>;
 
   setNotifications: (notifications: InAppNotification[]) => void;
@@ -103,6 +105,13 @@ export const useNotificationStore = create<NotificationState>()((set, get) => ({
     } catch {
       return false;
     }
+  },
+
+  markAllAsReadOptimistic: () => {
+    set((s) => ({
+      notifications: s.notifications.map((n) => ({ ...n, read: true, readAt: new Date() })),
+      unreadCount: 0,
+    }));
   },
 
   deleteNotification: async (notificationId: string) => {

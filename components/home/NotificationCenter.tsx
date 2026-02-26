@@ -50,6 +50,7 @@ export function NotificationCenter({ status }: NotificationCenterProps) {
       fetchNotifications,
       markAsRead: markInAppAsRead,
       markAllAsRead: markAllInAppAsRead,
+      markAllAsReadOptimistic,
    } = useNotificationStore();
 
    // Fetch in-app notifications when user is logged in (on mount and when opening the bell)
@@ -59,14 +60,15 @@ export function NotificationCenter({ status }: NotificationCenterProps) {
       }
    }, [currentUser?.uid, fetchNotifications]);
 
-   // When user opens the bell modal: mark all as read (in-app + FCM), then fetch latest list
+   // When user opens the bell: clear badge immediately (optimistic), then persist via API
    useEffect(() => {
       if (!isOpen || !currentUser?.uid) return;
       clearFcmNotifications();
+      markAllAsReadOptimistic(); // Badge → 0 and all marked read in UI immediately
       markAllInAppAsRead().then(() => {
          fetchNotifications(50, 0);
       });
-   }, [isOpen, currentUser?.uid, fetchNotifications, markAllInAppAsRead, clearFcmNotifications]);
+   }, [isOpen, currentUser?.uid, fetchNotifications, markAllInAppAsRead, markAllAsReadOptimistic, clearFcmNotifications]);
 
    // Calculate unread count from status
    const unreadMessages = status.activeChats.filter((c) => c.unreadCount > 0);
@@ -85,13 +87,14 @@ export function NotificationCenter({ status }: NotificationCenterProps) {
    // Build notification groups
    const groups: NotificationGroup[] = [];
 
-   // In-app notifications from Zustand store (API-backed)
-   if (inAppNotifications.length > 0) {
+   // In-app notifications: show only unread so list empties after "mark all read"
+   const unreadInApp = inAppNotifications.filter((n) => !n.read);
+   if (unreadInApp.length > 0) {
       groups.push({
          type: "in-app",
          label: "Notifications",
          icon: BellRing,
-         items: inAppNotifications.slice(0, 20).map((n) => ({
+         items: unreadInApp.slice(0, 20).map((n) => ({
             id: n.id,
             title: n.title,
             description: n.body,
