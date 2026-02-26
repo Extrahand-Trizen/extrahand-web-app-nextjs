@@ -104,9 +104,9 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
          const query = searchQuery.toLowerCase();
          result = result.filter(
             (task) =>
-               task.title.toLowerCase().includes(query) ||
-               task.description.toLowerCase().includes(query) ||
-               task.category.toLowerCase().includes(query) ||
+               (task.title?.toLowerCase().includes(query) ?? false) ||
+               (task.description?.toLowerCase().includes(query) ?? false) ||
+               (task.category?.toLowerCase().includes(query) ?? false) ||
                (task.location?.city?.toLowerCase().includes(query) ?? false)
          );
       }

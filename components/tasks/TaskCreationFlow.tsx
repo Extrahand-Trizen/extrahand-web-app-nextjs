@@ -490,6 +490,9 @@ export function TaskCreationFlow() {
             localStorage.setItem(DRAFT_KEY, JSON.stringify(values));
             setHasUnsavedChanges(false);
          }
+      } else if (currentStep === 1) {
+         // Go back to previous page on step 1
+         router.back();
       }
    }, [currentStep, hasUnsavedChanges, form]);
 
@@ -644,7 +647,7 @@ export function TaskCreationFlow() {
                      <button
                         onClick={handleBack}
                         className="text-gray-700 hover:text-gray-900 transition-colors disabled:opacity-50"
-                        disabled={isSubmitting || currentStep === 1}
+                        disabled={isSubmitting}
                         aria-label="Previous step"
                      >
                         <ArrowLeft className="w-6 h-6" />

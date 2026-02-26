@@ -249,7 +249,7 @@ export function OTPVerificationForm({
                /too\s+many/i.test(errorMessage)
             ) {
                toast.error("Limit reached", {
-                  description: "Please wait 5 minutes and try again.",
+                  description: "Please wait 60 minutes and try again.",
                });
          } else {
                toast.error("Something went wrong", {

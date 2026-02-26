@@ -2,13 +2,14 @@
 
 /**
  * Landing Page
- *
- * Marketing surfaces should stay accessible even when someone is logged in,
- * so we no longer auto-redirect authenticated visitors away from this page.
+ * Redirects authenticated users to home page
  */
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { HeroSection } from "@/components/landing";
+import { useAuth } from "@/lib/auth/context";
 
 // Defer below-the-fold marketing sections to reduce initial bundle size.
 const SocialProofBar = dynamic(
@@ -44,6 +45,22 @@ const FinalCTASection = dynamic(
 );
 
 export default function LandingPage() {
+   const router = useRouter();
+   const { currentUser, userData, loading } = useAuth();
+   const isAuthenticated = Boolean(currentUser) || Boolean(userData);
+
+   useEffect(() => {
+      // Redirect authenticated users to home page
+      if (!loading && isAuthenticated) {
+         router.replace("/home");
+      }
+   }, [isAuthenticated, loading, router]);
+
+   // Show nothing while checking authentication or redirecting
+   if (loading || isAuthenticated) {
+      return null;
+   }
+
    return (
       <>
          <HeroSection />

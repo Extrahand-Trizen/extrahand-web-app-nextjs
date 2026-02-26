@@ -177,7 +177,7 @@ export function RecommendedTasks() {
                            timeAgo: formatTimeAgo(task.createdAt),
                            applications: task.offers?.length || 0,
                         }}
-                        onClick={() => router.push(`/tasks/${task._id}/track`)}
+                        onClick={() => router.push(`/tasks/${task._id}`)}
                      />
                   </div>
                ))}
