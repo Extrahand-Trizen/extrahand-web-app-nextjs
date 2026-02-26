@@ -6,7 +6,8 @@
  * Used within the Tasks page tabs
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -34,8 +35,6 @@ export function MyApplicationsContent({
    // State
    const [allApplications, setAllApplications] = useState<TaskApplication[]>([]);
    const [tasks, setTasks] = useState<Map<string, Task>>(new Map());
-   const [loading, setLoading] = useState(true);
-   const [error, setError] = useState<string | null>(null);
    const [searchQuery, setSearchQuery] = useState("");
    const [statusFilter, setStatusFilter] = useState<ApplicationStatus | "all">(
       "all"
@@ -45,6 +44,53 @@ export function MyApplicationsContent({
    const [withdrawingApplicationId, setWithdrawingApplicationId] = useState<
       string | null
    >(null);
+
+   // Fetch applications via React Query (cached across navigations)
+   const {
+      data,
+      isLoading,
+      error,
+      refetch,
+   } = useQuery<any>({
+      queryKey: ["my-applications"],
+      queryFn: async () => {
+         const response = await applicationsApi.getMyApplications();
+         console.log("✅ My applications response:", response);
+         return response;
+      },
+      staleTime: 60_000,
+      refetchOnMount: false,
+   });
+
+   // Normalize applications + tasks from API response
+   useEffect(() => {
+      const responseData = data as any;
+      if (!responseData) return;
+
+      let apps: TaskApplication[] = [];
+
+      if (Array.isArray(responseData?.data)) {
+         apps = responseData.data as TaskApplication[];
+      } else if (Array.isArray(responseData?.data?.applications)) {
+         apps = responseData.data.applications as TaskApplication[];
+      } else if (Array.isArray(responseData?.applications)) {
+         apps = responseData.applications as TaskApplication[];
+      }
+
+      console.log("✅ Parsed applications from query:", apps.length);
+
+      // Build tasks map from populated taskId
+      const taskMap = new Map<string, Task>();
+      apps.forEach((app: any) => {
+         if (typeof app.taskId === "object" && app.taskId) {
+            const task = app.taskId as Task;
+            taskMap.set(task._id, task);
+         }
+      });
+
+      setTasks(taskMap);
+      setAllApplications(apps);
+   }, [data]);
 
    // Client-side filtering and sorting
    const filteredApplications = useMemo(() => {
@@ -116,55 +162,6 @@ export function MyApplicationsContent({
       onCountChange?.(displayableApplications.length);
    }, [displayableApplications.length, onCountChange]);
 
-   // Fetch applications
-   const fetchApplications = useCallback(async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-         // Fetch from real API (fetch all, filter client-side)
-         const response = await applicationsApi.getMyApplications();
-         
-         console.log("✅ My applications response:", response);
-         
-         // Handle response structure: { success, data: [...], meta: {...} }
-         const responseData = response as any;
-         let apps: any[] = [];
-         
-         if (Array.isArray(responseData?.data)) {
-            apps = responseData.data;
-         } else if (responseData?.data?.applications) {
-            apps = responseData.data.applications;
-         } else if (responseData?.applications) {
-            apps = responseData.applications;
-         }
-         
-         console.log("✅ Parsed applications:", apps.length);
-
-         // Build tasks map from populated taskId
-         const taskMap = new Map<string, Task>();
-         apps.forEach((app: any) => {
-            if (typeof app.taskId === "object" && app.taskId) {
-               const task = app.taskId as Task;
-               taskMap.set(task._id, task);
-            }
-         });
-         setTasks(taskMap);
-
-         setAllApplications(apps);
-      } catch (err) {
-         console.error("Error fetching applications:", err);
-         setError(getErrorMessage(err));
-      } finally {
-         setLoading(false);
-      }
-   }, []); // No dependencies - only fetch once
-
-   // Call on mount
-   useEffect(() => {
-      fetchApplications();
-   }, [fetchApplications]);
-
    // Handlers
    const handleViewTask = (taskId: string) => {
       router.push(`/tasks/${taskId}`);
@@ -217,15 +214,17 @@ export function MyApplicationsContent({
 
          {/* Applications List */}
          <div className="flex-1">
-            {loading ? (
+           {isLoading ? (
                <div className="flex items-center justify-center py-16">
                   <LoadingSpinner size="lg" />
                </div>
             ) : error ? (
                <div className="flex items-center justify-center py-16">
                   <div className="text-center">
-                     <p className="text-red-600 mb-4">{error}</p>
-                     <Button onClick={fetchApplications} variant="outline">
+                     <p className="text-red-600 mb-4">
+                        {getErrorMessage(error)}
+                     </p>
+                     <Button onClick={() => refetch()} variant="outline">
                         Try Again
                      </Button>
                   </div>

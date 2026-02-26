@@ -12,8 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { MyTasksContent } from "@/components/tasks/MyTasksContent";
 import { MyApplicationsContent } from "@/components/tasks/MyApplicationsContent";
-import { tasksApi } from "@/lib/api/endpoints/tasks";
-import { applicationsApi } from "@/lib/api/endpoints/applications";
 
 export default function TasksPage() {
    const router = useRouter();
@@ -26,50 +24,6 @@ export default function TasksPage() {
       return tabParam === "myapplications" ? "myapplications" : "mytasks";
    }, [searchParams]);
 
-   // Fetch both counts on mount to ensure they're always available
-   useEffect(() => {
-      const fetchCounts = async () => {
-         try {
-            // Fetch both in parallel for faster loading
-            const [tasksResponse, appsResponse] = await Promise.all([
-               tasksApi.getMyTasks(),
-               applicationsApi.getMyApplications()
-            ]);
-
-            const getTasksCount = (response: any) => {
-               if (typeof response?.pagination?.total === "number") return response.pagination.total;
-               if (typeof response?.meta?.pagination?.total === "number") return response.meta.pagination.total;
-               if (typeof response?.meta?.total === "number") return response.meta.total;
-               if (Array.isArray(response?.tasks)) return response.tasks.length;
-               if (Array.isArray(response?.data?.tasks)) return response.data.tasks.length;
-               if (Array.isArray(response?.data)) return response.data.length;
-               if (Array.isArray(response)) return response.length;
-               return 0;
-            };
-
-            const getApplicationsCount = (response: any) => {
-               if (typeof response?.pagination?.total === "number") return response.pagination.total;
-               if (typeof response?.meta?.pagination?.total === "number") return response.meta.pagination.total;
-               if (typeof response?.meta?.total === "number") return response.meta.total;
-               if (Array.isArray(response?.applications)) return response.applications.length;
-               if (Array.isArray(response?.data?.applications)) return response.data.applications.length;
-               if (Array.isArray(response?.data)) return response.data.length;
-               if (Array.isArray(response)) return response.length;
-               return 0;
-            };
-
-            // Extract tasks count
-            setTasksCount(getTasksCount(tasksResponse));
-
-            // Extract applications count
-            setApplicationsCount(getApplicationsCount(appsResponse));
-         } catch (error) {
-            console.error("Error fetching counts:", error);
-         }
-      };
-
-      fetchCounts();
-   }, []);
 
    const handleTabChange = (value: string) => {
       router.push(`/tasks?tab=${value}`);

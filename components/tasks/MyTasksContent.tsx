@@ -3,10 +3,11 @@
 /**
  * My Tasks Content Component
  * Displays all tasks created by the current user
- * Uses real API data from tasksApi.getMyTasks()
+ * Uses real API data from tasksApi.getMyTasks(), cached via React Query.
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -14,7 +15,6 @@ import { MyTaskCard } from "@/components/tasks/my-tasks/MyTaskCard";
 import { MyTasksFilters } from "@/components/tasks/my-tasks/MyTasksFilters";
 import { MyTasksEmptyState } from "@/components/tasks/my-tasks/MyTasksEmptyState";
 import type { Task, TaskListResponse } from "@/types/task";
-import type { TaskQueryParams } from "@/types/api";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
@@ -30,14 +30,65 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
    const router = useRouter();
 
    // State
-   const [allTasks, setAllTasks] = useState<Task[]>([]); // All tasks from API
-   const [loading, setLoading] = useState(true);
-   const [error, setError] = useState<string | null>(null);
    const [searchQuery, setSearchQuery] = useState("");
    const [statusFilter, setStatusFilter] = useState<TaskStatus | "all">("all");
    const [sortBy, setSortBy] = useState("recent");
    const [page, setPage] = useState(1);
    const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
+
+   // Fetch tasks via React Query (cached across navigations)
+   const {
+      data,
+      isLoading,
+      error,
+      refetch,
+      isFetching,
+   } = useQuery<TaskListResponse | any>({
+      queryKey: ["my-tasks"],
+      queryFn: async () => {
+         console.log("📤 Fetching my tasks via React Query...");
+         const response = await tasksApi.getMyTasks({ limit: 100 });
+         console.log("✅ My tasks response:", response);
+         return response;
+      },
+      staleTime: 60_000, // 1 minute: reuse cached data for quick revisits
+      refetchOnMount: false, // don't refetch if we already have cached data
+   });
+
+   // Normalize tasks array from API response
+   const allTasks: Task[] = useMemo(() => {
+      const responseData = data as any;
+      let tasksData: Task[] = [];
+
+      if (!responseData) return tasksData;
+
+      if (Array.isArray(responseData)) {
+         tasksData = responseData as Task[];
+      } else if (Array.isArray(responseData?.data)) {
+         tasksData = responseData.data as Task[];
+      } else if (Array.isArray(responseData?.data?.tasks)) {
+         tasksData = responseData.data.tasks as Task[];
+      } else if (Array.isArray(responseData?.tasks)) {
+         tasksData = responseData.tasks as Task[];
+      }
+
+      console.log("✅ Extracted tasks from query data:", tasksData.length);
+      return tasksData;
+   }, [data]);
+
+   // Surface non-auth errors via toast (once per error instance)
+   useEffect(() => {
+      if (!error) return;
+      if (isAuthError(error)) return;
+
+      toast.error("Failed to load tasks", {
+         description: getErrorMessage(error),
+         action: {
+            label: "Retry",
+            onClick: () => refetch(),
+         },
+      });
+   }, [error, refetch]);
 
    // Client-side filtering, searching, and sorting
    const filteredTasks = useMemo(() => {
@@ -110,60 +161,6 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
       }
    }, [filteredTasks.length, onCountChange]);
 
-   // Fetch tasks from API (no filters - we filter client-side)
-   const fetchTasks = useCallback(async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-         console.log("📤 Fetching my tasks...");
-
-         // Call the real API - fetch all tasks, filter client-side
-         const response = await tasksApi.getMyTasks({ limit: 100 });
-
-         console.log("✅ My tasks response:", response);
-
-         // Handle different response structures
-         const responseData = response as any;
-         let tasksData: any[] = [];
-         
-         if (Array.isArray(responseData)) {
-            tasksData = responseData;
-         } else if (Array.isArray(responseData?.data)) {
-            tasksData = responseData.data;
-         } else if (Array.isArray(responseData?.data?.tasks)) {
-            tasksData = responseData.data.tasks;
-         } else if (Array.isArray(responseData?.tasks)) {
-            tasksData = responseData.tasks;
-         }
-         
-         console.log("✅ Extracted tasks:", tasksData.length, "tasks");
-
-         setAllTasks(tasksData);
-      } catch (err) {
-         console.error("❌ Failed to fetch tasks:", err);
-         const errorMessage = err instanceof Error ? err.message : "Failed to load tasks";
-         setError(errorMessage);
-         
-         if (!isAuthError(err)) {
-            toast.error("Failed to load tasks", {
-               description: getErrorMessage(err),
-               action: {
-                  label: "Retry",
-                  onClick: () => fetchTasks(),
-               },
-            });
-         }
-      } finally {
-         setLoading(false);
-      }
-   }, []);
-
-   // Fetch on mount and when filters change
-   useEffect(() => {
-      fetchTasks();
-   }, [fetchTasks]);
-
    // Handle delete task
    const handleDeleteTask = async (taskId: string, taskTitle: string) => {
       if (
@@ -218,7 +215,7 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
    const hasFilters = searchQuery.trim() !== "" || statusFilter !== "all";
 
    // Loading state
-   if (loading && tasks.length === 0) {
+   if (isLoading && tasks.length === 0) {
       return (
          <div className="flex-1 flex items-center justify-center py-20">
             <div className="text-center">
@@ -239,8 +236,10 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
                <p className="text-lg font-semibold text-red-600 mb-2">
                   Error loading tasks
                </p>
-               <p className="text-sm text-secondary-600 mb-4">{error}</p>
-               <Button onClick={fetchTasks}>Try Again</Button>
+               <p className="text-sm text-secondary-600 mb-4">
+                  {getErrorMessage(error)}
+               </p>
+               <Button onClick={() => refetch()}>Try Again</Button>
             </div>
          </div>
       );
