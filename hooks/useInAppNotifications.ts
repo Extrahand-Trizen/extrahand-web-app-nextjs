@@ -1,15 +1,18 @@
 /**
- * Hook for managing in-app notifications with polling
+ * Hook for in-app notifications backed by Zustand notification store
+ * Single source of truth: bell and notifications page share the same state
  */
 
 'use client';
 
-import { useEffect, useCallback, useRef, useState } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/lib/auth/context';
+import { useNotificationStore } from '@/lib/state/notificationStore';
 import NotificationPollingService, {
-  InAppNotification,
-  NotificationResponse
+  type InAppNotification,
 } from '@/lib/notifications/pollingService';
+
+export type { InAppNotification };
 
 interface UseInAppNotificationsOptions {
   enabled?: boolean;
@@ -32,235 +35,75 @@ interface UseInAppNotificationsReturn {
 }
 
 /**
- * Hook for managing in-app notifications
- * Handles both polling and display of notifications
+ * Hook for in-app notifications — reads from and updates the notification Zustand store
  */
 export const useInAppNotifications = (
   options?: UseInAppNotificationsOptions
 ): UseInAppNotificationsReturn => {
   const { currentUser, userData } = useAuth();
   const userId = currentUser?.uid || userData?.uid;
-  
-  const [notifications, setNotifications] = useState<InAppNotification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  
-  const pollingInitializedRef = useRef(false);
-  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Initialize polling service
+  const {
+    notifications,
+    unreadCount,
+    isLoading,
+    error,
+    fetchNotifications,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    addOrUpdateNotification,
+    fetchUnreadCount,
+    reset,
+  } = useNotificationStore();
+
+  const pollingInitializedRef = useRef(false);
+
+  // Initialize polling to update the store when new notifications arrive
   useEffect(() => {
     if (pollingInitializedRef.current) return;
-    
-    console.log('🚀 Initializing notification polling service');
-    
+
     NotificationPollingService.initialize({
       enabled: options?.enabled ?? true,
-      interval: options?.pollingInterval ?? 60000, // 1 minute
+      interval: options?.pollingInterval ?? 60000,
       onNotification: (notification) => {
-        console.log('📬 New notification received:', notification);
-        
-        // Add notification to list
-        setNotifications(prev => {
-          const exists = prev.some(n => n.id === notification.id);
-          if (!exists) {
-            return [notification, ...prev];
-          }
-          return prev;
-        });
-
-        // Update unread count
-        if (!notification.read) {
-          setUnreadCount(prev => prev + 1);
-        }
-
-        // Call custom callback if provided
-        if (options?.onNotification) {
-          options.onNotification(notification);
-        }
+        addOrUpdateNotification(notification);
+        fetchUnreadCount();
+        options?.onNotification?.(notification);
       },
       onError: (err) => {
-        console.error('❌ Polling error:', err);
-        setError(err);
-        if (options?.onError) {
-          options.onError(err);
-        }
-      }
+        options?.onError?.(err);
+      },
     });
 
     pollingInitializedRef.current = true;
-  }, [options?.enabled, options?.pollingInterval, options?.onNotification, options?.onError]);
+  }, [addOrUpdateNotification, fetchUnreadCount, options?.enabled, options?.pollingInterval, options?.onNotification, options?.onError]);
 
   // Start polling when user is authenticated
   useEffect(() => {
-    if (!userId || !pollingInitializedRef.current) {
-      console.log('⏸️ Polling not started - userId:', userId, 'initialized:', pollingInitializedRef.current);
-      return;
-    }
-
-    console.log('▶️ Starting notification polling for user:', userId);
+    if (!userId || !pollingInitializedRef.current) return;
     NotificationPollingService.startPolling(userId, options?.pollingInterval);
-
-    return () => {
-      // Don't stop polling on unmount, just when component is removed
-      // NotificationPollingService.stopPolling();
-    };
   }, [userId, options?.pollingInterval]);
 
-  // Fetch initial notifications
-  const fetchNotifications = useCallback(
-    async (limit: number = 50, skip: number = 0) => {
-      if (!userId) {
-        console.log('⚠️ Cannot fetch notifications - no userId');
-        return [];
-      }
-
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        console.log('📡 Fetching notifications for user:', userId);
-        const fetched = await NotificationPollingService.fetchNotifications(
-          userId,
-          limit,
-          skip,
-          false
-        );
-
-        console.log('✅ Fetched notifications:', fetched?.length || 0);
-
-        if (fetched) {
-          if (skip === 0) {
-            // Replace if first fetch
-            setNotifications(fetched);
-          } else {
-            // Append if pagination
-            setNotifications(prev => [...prev, ...fetched]);
-          }
-
-          // Update unread count
-          const unread = fetched.filter(n => !n.read).length;
-          setUnreadCount(unread);
-
-          return fetched;
-        }
-
-        return [];
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error('Failed to fetch notifications');
-        console.error('❌ Error fetching notifications:', error);
-        setError(error);
-        return [];
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [userId]
-  );
-
-  // Fetch notifications on mount
+  // Clear store when user logs out
   useEffect(() => {
-    if (userId && notifications.length === 0) {
-      console.log('📥 Initial fetch of notifications');
-      fetchNotifications();
+    if (!userId) {
+      reset();
     }
-  }, [userId, fetchNotifications, notifications.length]);
+  }, [userId, reset]);
 
-  // Mark notification as read
-  const markAsRead = useCallback(
-    async (notificationId: string): Promise<boolean> => {
-      try {
-        const success = await NotificationPollingService.markAsRead(notificationId);
-
-        if (success) {
-          // Update local state
-          setNotifications(prev =>
-            prev.map(n =>
-              n.id === notificationId
-                ? { ...n, read: true, readAt: new Date() }
-                : n
-            )
-          );
-
-          // Update unread count
-          setUnreadCount(prev => Math.max(0, prev - 1));
-        }
-
-        return success;
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to mark as read'));
-        return false;
-      }
-    },
-    []
-  );
-
-  // Mark all notifications as read
-  const markAllAsRead = useCallback(async (): Promise<boolean> => {
-    try {
-      const success = await NotificationPollingService.markAllAsRead();
-
-      if (success) {
-        // Update local state
-        setNotifications(prev =>
-          prev.map(n => ({
-            ...n,
-            read: true,
-            readAt: new Date()
-          }))
-        );
-
-        setUnreadCount(0);
-      }
-
-      return success;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to mark all as read'));
-      return false;
-    }
-  }, []);
-
-  // Delete notification
-  const deleteNotification = useCallback(
-    async (notificationId: string): Promise<boolean> => {
-      try {
-        const success = await NotificationPollingService.deleteNotification(notificationId);
-
-        if (success) {
-          // Remove from local state
-          setNotifications(prev => prev.filter(n => n.id !== notificationId));
-
-          // Update unread count
-          const deletedNotif = notifications.find(n => n.id === notificationId);
-          if (deletedNotif && !deletedNotif.read) {
-            setUnreadCount(prev => Math.max(0, prev - 1));
-          }
-        }
-
-        return success;
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to delete notification'));
-        return false;
-      }
-    },
-    [notifications]
-  );
-
-  // Stop polling
   const stopPolling = useCallback(() => {
     NotificationPollingService.stopPolling();
   }, []);
 
-  // Start polling
-  const startPolling = useCallback((interval?: number) => {
-    if (userId) {
-      console.log('▶️ Starting polling manually for user:', userId);
-      NotificationPollingService.startPolling(userId, interval);
-    } else {
-      console.warn('⚠️ Cannot start polling - no userId');
-    }
-  }, [userId]);
+  const startPolling = useCallback(
+    (interval?: number) => {
+      if (userId) {
+        NotificationPollingService.startPolling(userId, interval);
+      }
+    },
+    [userId]
+  );
 
   return {
     notifications,
@@ -272,7 +115,7 @@ export const useInAppNotifications = (
     deleteNotification,
     fetchNotifications,
     stopPolling,
-    startPolling
+    startPolling,
   };
 };
 

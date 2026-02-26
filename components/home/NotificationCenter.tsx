@@ -4,26 +4,23 @@
  * Notification Center Component
  * Bell icon with unread count and grouped notifications dropdown
  * Always visible, shows count when there are unread items
- * Includes FCM in-app notifications
+ * Uses Zustand notification store for in-app notifications + FCM for push
  */
 
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, MessageSquare, AlertCircle, CreditCard, X, BellRing } from "lucide-react";
 import { useFCM } from "@/lib/firebase/FCMProvider";
-import type {
-   UserCurrentStatus,
-   ActiveChatItem,
-   PendingOfferItem,
-   PendingPaymentItem,
-} from "@/types/dashboard";
+import { useNotificationStore } from "@/lib/state/notificationStore";
+import { useAuth } from "@/lib/auth/context";
+import type { UserCurrentStatus } from "@/types/dashboard";
 
 interface NotificationCenterProps {
    status: UserCurrentStatus;
 }
 
 interface NotificationGroup {
-   type: "messages" | "offers" | "payments" | "system";
+   type: "messages" | "offers" | "payments" | "system" | "in-app";
    label: string;
    icon: React.ElementType;
    items: Array<{
@@ -39,7 +36,37 @@ export function NotificationCenter({ status }: NotificationCenterProps) {
    const router = useRouter();
    const [isOpen, setIsOpen] = useState(false);
    const dropdownRef = useRef<HTMLDivElement>(null);
-   const { notifications: fcmNotifications, unreadCount: fcmUnreadCount, markAsRead } = useFCM();
+   const { currentUser } = useAuth();
+   const {
+      notifications: fcmNotifications,
+      unreadCount: fcmUnreadCount,
+      markAsRead,
+      clearAll: clearFcmNotifications,
+   } = useFCM();
+   const {
+      notifications: inAppNotifications,
+      unreadCount: inAppUnreadCount,
+      isLoading: inAppLoading,
+      fetchNotifications,
+      markAsRead: markInAppAsRead,
+      markAllAsRead: markAllInAppAsRead,
+   } = useNotificationStore();
+
+   // Fetch in-app notifications when user is logged in (on mount and when opening the bell)
+   useEffect(() => {
+      if (currentUser?.uid) {
+         fetchNotifications(50, 0);
+      }
+   }, [currentUser?.uid, fetchNotifications]);
+
+   // When user opens the bell modal: mark all as read (in-app + FCM), then fetch latest list
+   useEffect(() => {
+      if (!isOpen || !currentUser?.uid) return;
+      clearFcmNotifications();
+      markAllInAppAsRead().then(() => {
+         fetchNotifications(50, 0);
+      });
+   }, [isOpen, currentUser?.uid, fetchNotifications, markAllInAppAsRead, clearFcmNotifications]);
 
    // Calculate unread count from status
    const unreadMessages = status.activeChats.filter((c) => c.unreadCount > 0);
@@ -48,28 +75,43 @@ export function NotificationCenter({ status }: NotificationCenterProps) {
    );
    const unreadPayments = status.pendingPayments;
    
-   // Total unread including FCM notifications
    const statusUnreadCount =
       unreadMessages.reduce((sum, c) => sum + c.unreadCount, 0) +
       unreadOffers.length +
       unreadPayments.length;
    
-   const totalUnread = statusUnreadCount + fcmUnreadCount;
+   const totalUnread = statusUnreadCount + fcmUnreadCount + inAppUnreadCount;
 
    // Build notification groups
    const groups: NotificationGroup[] = [];
 
-   // Add FCM system notifications (task reminders, keyword alerts, etc.)
+   // In-app notifications from Zustand store (API-backed)
+   if (inAppNotifications.length > 0) {
+      groups.push({
+         type: "in-app",
+         label: "Notifications",
+         icon: BellRing,
+         items: inAppNotifications.slice(0, 20).map((n) => ({
+            id: n.id,
+            title: n.title,
+            description: n.body,
+            route: (n.data?.url as string) || "/notifications",
+            timestamp: n.createdAt instanceof Date ? n.createdAt : new Date(n.createdAt),
+         })),
+      });
+   }
+
+   // FCM system notifications (task reminders, keyword alerts, etc.)
    if (fcmNotifications.length > 0) {
       groups.push({
          type: "system",
-         label: "Notifications",
+         label: "Push",
          icon: BellRing,
          items: fcmNotifications.map((notif) => ({
             id: notif.id,
             title: notif.title,
             description: notif.body,
-            route: notif.data?.url || '/home',
+            route: (notif.data?.url as string) || "/home",
             timestamp: notif.timestamp,
          })),
       });
@@ -181,12 +223,16 @@ export function NotificationCenter({ status }: NotificationCenterProps) {
                      </button>
                   </div>
 
-                  {groups.length === 0 ? (
+                  {groups.length === 0 && !inAppLoading ? (
                      <div className="p-6 text-center">
                         <Bell className="w-8 h-8 text-secondary-300 mx-auto mb-2" />
                         <p className="text-sm text-secondary-500">
                            No new notifications
                         </p>
+                     </div>
+                  ) : groups.length === 0 && inAppLoading ? (
+                     <div className="p-6 text-center">
+                        <p className="text-sm text-secondary-500">Loading notifications…</p>
                      </div>
                   ) : (
                      <div className="divide-y divide-secondary-100">
@@ -208,8 +254,9 @@ export function NotificationCenter({ status }: NotificationCenterProps) {
                                        <button
                                           key={item.id}
                                           onClick={() => {
-                                             // Mark FCM notification as read
-                                             if (group.type === "system") {
+                                             if (group.type === "in-app") {
+                                                markInAppAsRead(item.id);
+                                             } else if (group.type === "system") {
                                                 markAsRead(item.id);
                                              }
                                              router.push(item.route);
