@@ -84,7 +84,9 @@ export function useTasksInfinite(
           pages: [initialData],
         }
       : undefined,
-    staleTime: 30_000,
+    // Let data stay "fresh" for a while and avoid refetching on every mount
+    // when we already have cached data for this query key.
+    refetchOnMount: false,
   });
 }
 
