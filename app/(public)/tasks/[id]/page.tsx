@@ -110,36 +110,13 @@ export default function TaskDetailsPage() {
       }
    }, [taskId]);
 
-   // Check if user has already applied to this task
+   // Track when we've finished computing hasApplied from offers
    useEffect(() => {
-      const checkUserApplication = async () => {
-         if (!currentUser || !userProfile || !taskId) {
-            setHasApplied(false);
-            setCheckingApplication(false);
-            return;
-         }
-
-         setCheckingApplication(true);
-         try {
-            const response = await applicationsApi.getTaskApplications(taskId);
-            const apps = response.applications || [];
-            
-            // Check if current user has already applied
-            const userApplication = apps.find(
-               (app: any) => app.applicantId === userProfile._id
-            );
-            
-            setHasApplied(!!userApplication);
-         } catch (error) {
-            console.error("Error checking user application:", error);
-            setHasApplied(false);
-         } finally {
-            setCheckingApplication(false);
-         }
-      };
-
-      checkUserApplication();
-   }, [taskId, currentUser, userProfile]);
+      // When there's no logged-in user, we can consider the check complete immediately
+      if (!currentUser || !userProfile) {
+         setCheckingApplication(false);
+      }
+   }, [currentUser, userProfile]);
 
    useEffect(() => {
       const handleScroll = () => {
@@ -153,12 +130,30 @@ export default function TaskDetailsPage() {
       return () => window.removeEventListener("scroll", handleScroll);
    }, []);
 
-   if (loading) {
+   if (loading && !task) {
       return (
-         <div className="min-h-screen flex items-center justify-center">
-            <div className="text-center">
-               <LoadingSpinner size="lg" />
-               <p className="mt-4 text-secondary-600">Loading task details...</p>
+         <div className="min-h-screen bg-secondary-50">
+            {/* Header skeleton */}
+            <div className="border-b bg-white">
+               <div className="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-secondary-200 animate-pulse" />
+                  <div className="flex-1 space-y-2">
+                     <div className="h-4 w-1/3 bg-secondary-200 rounded animate-pulse" />
+                     <div className="h-3 w-1/2 bg-secondary-200 rounded animate-pulse" />
+                  </div>
+               </div>
+            </div>
+
+            {/* Main + sidebar skeleton */}
+            <div className="max-w-5xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-[2fr,minmax(0,1fr)] gap-6">
+               <div className="space-y-4">
+                  <div className="h-40 bg-white border border-secondary-200 rounded-xl animate-pulse" />
+                  <div className="h-32 bg-white border border-secondary-200 rounded-xl animate-pulse" />
+               </div>
+               <div className="space-y-4">
+                  <div className="h-40 bg-white border border-secondary-200 rounded-xl animate-pulse" />
+                  <div className="h-32 bg-white border border-secondary-200 rounded-xl animate-pulse" />
+               </div>
             </div>
          </div>
       );
@@ -310,6 +305,7 @@ export default function TaskDetailsPage() {
                               taskCategory={task?.category}
                               hasApplied={hasApplied}
                               checkingApplication={checkingApplication}
+                              onHasAppliedChange={setHasApplied}
                            />
                         ) : (
                            <TaskQuestionsSection taskId={taskId} isOwner={isOwner} />

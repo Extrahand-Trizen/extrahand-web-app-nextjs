@@ -28,6 +28,7 @@ interface TaskOffersSectionProps {
    taskCategory?: string;
    hasApplied?: boolean;
    checkingApplication?: boolean;
+   onHasAppliedChange?: (hasApplied: boolean) => void;
 }
 
 
@@ -67,6 +68,7 @@ export function TaskOffersSection({
    taskCategory,
    hasApplied = false,
    checkingApplication = false,
+   onHasAppliedChange,
 }: TaskOffersSectionProps) {
    const [applications, setApplications] = useState<TaskApplication[]>([]);
    const [loading, setLoading] = useState(true);
@@ -200,8 +202,14 @@ export function TaskOffersSection({
 
    // Find user's own application by comparing applicantId with userProfile._id
    const myApplication = !isOwner && userProfile 
-      ? applications.find(app => app.applicantId === userProfile._id)
+      ? applications.find(app => app.applicantId === (userProfile as any)._id)
       : null;
+
+   // Inform parent whether current user has an application
+   useEffect(() => {
+      if (!onHasAppliedChange) return;
+      onHasAppliedChange(!!myApplication);
+   }, [myApplication, onHasAppliedChange]);
 
    // If not owner and has application, show their own application
    if (!isOwner && myApplication) {
