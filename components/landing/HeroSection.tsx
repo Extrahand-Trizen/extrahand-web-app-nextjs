@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Search, MapPin, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import Image from "next/image";
 
 const heroImages = [
    "/assets/images/hero-bg1.png",
@@ -149,19 +150,21 @@ export const HeroSection: React.FC = () => {
          {/* Background Image Carousel */}
          <div className="absolute inset-0 z-0">
             {heroImages.map((image, index) => (
-               <div
+               <Image
                   key={image}
-                  className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 ${
+                  src={image}
+                  alt=""
+                  priority={index === 0}
+                  fill
+                  sizes="100vw"
+                  className={cn(
+                     "object-cover transition-opacity duration-1000",
                      index === currentImageIndex ? "opacity-100" : "opacity-0"
-                  }`}
-                  style={{
-                     backgroundImage: `url("${image}")`,
-                  }}
-               >
-                  {/* Dark Overlay for Text Readability */}
-                  <div className="absolute inset-0 bg-black/40 backdrop-blur-xs" />
-               </div>
+                  )}
+               />
             ))}
+            {/* Dark Overlay for Text Readability */}
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-xs" />
          </div>
 
          {/* 2. The Content Card */}

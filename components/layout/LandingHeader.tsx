@@ -18,6 +18,7 @@ import React, {
    useMemo,
 } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -226,14 +227,13 @@ export const LandingHeader: React.FC = () => {
                <div className="flex items-center justify-between h-14 md:h-16">
                   {/* Logo */}
                   <Link href="/" className="flex items-center gap-2 shrink-0">
-                     <img
+                     <Image
                         src="/assets/images/logo.png"
                         alt="ExtraHand"
+                        width={32}
+                        height={32}
                         className="size-7 md:size-8"
-                        onError={(e) => {
-                           (e.target as HTMLImageElement).style.display =
-                              "none";
-                        }}
+                        priority
                      />
                      <span className="text-lg md:text-xl font-bold text-secondary-900">
                         ExtraHand

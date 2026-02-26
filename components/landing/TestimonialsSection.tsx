@@ -12,6 +12,7 @@
 
 import { Star, Quote } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 const testimonials = [
    {
@@ -83,18 +84,12 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({ testimonial }) => (
       <div className="flex items-center gap-4 pt-4 border-t border-secondary-100">
          {/* Avatar */}
          <div className="size-8 md:size-12 rounded-full bg-secondary-100 overflow-hidden">
-            <img
+            <Image
                src={testimonial.avatar}
                alt={testimonial.name}
+               width={48}
+               height={48}
                className="w-full h-full object-cover"
-               onError={(e) => {
-                  // Fallback to initials
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = "none";
-                  target.parentElement!.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-primary-100 text-primary-700 font-bold">${testimonial.name.charAt(
-                     0
-                  )}</div>`;
-               }}
             />
          </div>
 

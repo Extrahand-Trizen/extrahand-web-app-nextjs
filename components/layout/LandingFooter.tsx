@@ -11,6 +11,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Facebook, Twitter, Instagram, Linkedin, Youtube } from "lucide-react";
 
@@ -95,14 +96,14 @@ export const LandingFooter: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 lg:gap-10 mb-12">
           {/* Brand column */}
           <div className="col-span-2 md:col-span-4 lg:col-span-1 mb-4 lg:mb-0">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <img
+          <Link href="/" className="flex items-center gap-2 mb-4">
+              <Image
                 src="/assets/images/logo.png"
                 alt="ExtraHand"
+                width={48}
+                height={48}
                 className="size-8 md:size-12"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                }}
+                priority={false}
               />
               <div className="flex flex-col">
                 <span className="text-lg md:text-xl font-bold">ExtraHand</span>
