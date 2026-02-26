@@ -13,6 +13,33 @@ const RAW_API_GATEWAY_URL =
   'http://localhost:5000';
 const API_GATEWAY_URL = RAW_API_GATEWAY_URL.replace(/\/+$/, '');
 
+const ACCESS_COOKIE_NAME =
+  process.env.ACCESS_TOKEN_COOKIE_NAME || 'accessToken';
+
+function getAccessTokenFromRequest(request: NextRequest): string | null {
+  const cookieHeader = request.headers.get('cookie') ?? '';
+  if (!cookieHeader) return null;
+  const parts = cookieHeader.split(';').map((p) => p.trim());
+  for (const part of parts) {
+    if (part.startsWith(`${ACCESS_COOKIE_NAME}=`)) {
+      const value = part.slice(ACCESS_COOKIE_NAME.length + 1).trim();
+      return value ? decodeURIComponent(value) : null;
+    }
+  }
+  return null;
+}
+
+function buildAuthHeaders(request: NextRequest): HeadersInit {
+  const cookieHeader = request.headers.get('cookie') ?? '';
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...(cookieHeader && { cookie: cookieHeader }),
+  };
+  const token = getAccessTokenFromRequest(request);
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
+}
+
 /**
  * GET /api/notifications
  * Fetch in-app notifications for current user
@@ -25,20 +52,12 @@ export async function GET(request: NextRequest) {
     const skip = searchParams.get('skip') || '0';
     const unreadOnly = searchParams.get('unreadOnly') || 'false';
 
-    // Forward cookies from the incoming request so the API gateway
-    // receives the accessToken / session cookies.
-    const cookieHeader = request.headers.get('cookie') ?? '';
-
-    // Call API Gateway -> Notification Service
     const response = await fetch(
       `${API_GATEWAY_URL}/api/v1/notifications/in-app?` +
       `limit=${limit}&skip=${skip}&unreadOnly=${unreadOnly}`,
       {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(cookieHeader && { cookie: cookieHeader })
-        }
+        headers: buildAuthHeaders(request),
       }
     );
 
@@ -72,16 +91,11 @@ export async function GET(request: NextRequest) {
 export async function GET_UNREAD(request: NextRequest) {
   if (request.nextUrl.pathname.includes('unread-count')) {
     try {
-      const cookieHeader = request.headers.get('cookie') ?? '';
-
       const response = await fetch(
         `${API_GATEWAY_URL}/api/v1/notifications/in-app/unread-count`,
         {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(cookieHeader && { cookie: cookieHeader })
-          }
+          headers: buildAuthHeaders(request),
         }
       );
 

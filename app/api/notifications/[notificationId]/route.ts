@@ -11,6 +11,33 @@ const RAW_API_GATEWAY_URL =
   'http://localhost:5000';
 const API_GATEWAY_URL = RAW_API_GATEWAY_URL.replace(/\/+$/, '');
 
+const ACCESS_COOKIE_NAME =
+  process.env.ACCESS_TOKEN_COOKIE_NAME || 'accessToken';
+
+function getAccessTokenFromRequest(request: NextRequest): string | null {
+  const cookieHeader = request.headers.get('cookie') ?? '';
+  if (!cookieHeader) return null;
+  const parts = cookieHeader.split(';').map((p) => p.trim());
+  for (const part of parts) {
+    if (part.startsWith(`${ACCESS_COOKIE_NAME}=`)) {
+      const value = part.slice(ACCESS_COOKIE_NAME.length + 1).trim();
+      return value ? decodeURIComponent(value) : null;
+    }
+  }
+  return null;
+}
+
+function buildAuthHeaders(request: NextRequest): HeadersInit {
+  const cookieHeader = request.headers.get('cookie') ?? '';
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...(cookieHeader && { cookie: cookieHeader }),
+  };
+  const token = getAccessTokenFromRequest(request);
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
+}
+
 interface RouteParams {
   params: {
     notificationId: string;
@@ -35,16 +62,11 @@ export async function PATCH(
       );
     }
 
-    const cookieHeader = request.headers.get('cookie') ?? '';
-
     const response = await fetch(
       `${API_GATEWAY_URL}/api/v1/notifications/in-app/${notificationId}/read`,
       {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(cookieHeader && { cookie: cookieHeader })
-        }
+        headers: buildAuthHeaders(request),
       }
     );
 
@@ -88,16 +110,11 @@ export async function DELETE(
       );
     }
 
-    const cookieHeader = request.headers.get('cookie') ?? '';
-
     const response = await fetch(
       `${API_GATEWAY_URL}/api/v1/notifications/in-app/${notificationId}`,
       {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(cookieHeader && { cookie: cookieHeader })
-        }
+        headers: buildAuthHeaders(request),
       }
     );
 

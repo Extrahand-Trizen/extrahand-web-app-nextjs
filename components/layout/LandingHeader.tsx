@@ -426,9 +426,7 @@ export const LandingHeader: React.FC = () => {
                         <GuestCtaButtons onBecomeTasker={handleBecomeTasker} />
                      ) : (
                         <>
-                           <NotificationCenter
-                              status={emptyStatus}
-                           />
+                           <NotificationCenter />
 
                            <UserMenu
                               displayName={displayName}
