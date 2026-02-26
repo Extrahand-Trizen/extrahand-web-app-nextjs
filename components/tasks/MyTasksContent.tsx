@@ -10,10 +10,10 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { MyTaskCard } from "@/components/tasks/my-tasks/MyTaskCard";
 import { MyTasksFilters } from "@/components/tasks/my-tasks/MyTasksFilters";
 import { MyTasksEmptyState } from "@/components/tasks/my-tasks/MyTasksEmptyState";
+import { TaskListSkeleton } from "@/components/tasks/TaskSkeleton";
 import type { Task, TaskListResponse } from "@/types/task";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -175,10 +175,10 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
       try {
          // Call the real API to delete the task
          await tasksApi.deleteTask(taskId);
-         
-         // Remove from local state
-         setAllTasks((prev) => prev.filter((task) => task._id !== taskId));
-         
+
+         // Refetch tasks so the list updates from the server
+         await refetch();
+
          toast.success("Task deleted", {
             description: `"${taskTitle}" has been deleted.`,
          });
@@ -214,15 +214,23 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
 
    const hasFilters = searchQuery.trim() !== "" || statusFilter !== "all";
 
-   // Loading state
+   // Initial loading state - render subtle list skeleton without explicit text
    if (isLoading && tasks.length === 0) {
       return (
-         <div className="flex-1 flex items-center justify-center py-20">
-            <div className="text-center">
-               <LoadingSpinner size="lg" />
-               <p className="mt-4 text-base text-secondary-600">
-                  Loading your tasks...
-               </p>
+         <div className="flex flex-col flex-1">
+            <MyTasksFilters
+               searchQuery={searchQuery}
+               statusFilter={statusFilter}
+               sortBy={sortBy}
+               onSearchChange={setSearchQuery}
+               onStatusChange={setStatusFilter}
+               onSortChange={setSortBy}
+            />
+
+            <div className="flex-1">
+               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+                  <TaskListSkeleton count={8} />
+               </div>
             </div>
          </div>
       );
