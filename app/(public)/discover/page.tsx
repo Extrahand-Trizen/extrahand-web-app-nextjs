@@ -1,8 +1,9 @@
+import { Suspense } from "react";
 import { getApiBaseUrl } from "@/lib/config";
 import type { TaskListResponse } from "@/types/task";
 import { DiscoverClient } from "@/components/discover/DiscoverClient";
 
-export default async function TasksPage() {
+async function DiscoverPageContent() {
   const apiBase = getApiBaseUrl().replace(/\/$/, "");
   const url = `${apiBase}/api/v1/tasks?page=1&limit=20&status=open`;
 
@@ -32,4 +33,13 @@ export default async function TasksPage() {
   }
 
   return <DiscoverClient initialData={initialData} />;
+}
+
+export default function TasksPage() {
+  return (
+    <Suspense fallback={null}>
+      {/* @ts-expect-error Async Server Component wrapped in Suspense */}
+      <DiscoverPageContent />
+    </Suspense>
+  );
 }

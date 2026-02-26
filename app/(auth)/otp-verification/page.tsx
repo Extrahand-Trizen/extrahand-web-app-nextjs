@@ -1,10 +1,11 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { OTPVerificationForm } from "@/components/auth";
 import { formatPhoneNumber } from "@/lib/utils/phone";
 
-export default function OTPVerificationPage() {
+function OTPVerificationContent() {
    const searchParams = useSearchParams();
    const rawPhone = searchParams.get("phone") || "";
    const phone = rawPhone ? formatPhoneNumber(rawPhone) : "";
@@ -19,5 +20,13 @@ export default function OTPVerificationPage() {
          authType={authType}
          redirectTo={redirectTo}
       />
+   );
+}
+
+export default function OTPVerificationPage() {
+   return (
+      <Suspense fallback={null}>
+         <OTPVerificationContent />
+      </Suspense>
    );
 }
