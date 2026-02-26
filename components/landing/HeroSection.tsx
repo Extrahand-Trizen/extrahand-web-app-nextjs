@@ -133,16 +133,22 @@ export const HeroSection: React.FC = () => {
    const handleSearch = (e: React.FormEvent) => {
       e.preventDefault();
 
-      const searchParams = new URLSearchParams();
-      const trimmedQuery = query.trim();
-      const trimmedLocation = location.trim();
+      try {
+         const searchParams = new URLSearchParams();
+         const trimmedQuery = query.trim();
+         const trimmedLocation = location.trim();
 
-      if (trimmedQuery) searchParams.set("q", trimmedQuery);
-      if (trimmedLocation) searchParams.set("suburb", trimmedLocation);
+         if (trimmedQuery) searchParams.set("q", trimmedQuery);
+         if (trimmedLocation) searchParams.set("suburb", trimmedLocation);
 
-      const qs = searchParams.toString();
-      // Public browse-tasks page with filters encoded in the query string
-      router.push(qs ? `/discover?${qs}` : "/discover");
+         const qs = searchParams.toString();
+         // Public browse-tasks page with filters encoded in the query string
+         router.push(qs ? `/discover?${qs}` : "/discover");
+      } catch (error) {
+         console.error("Search error:", error);
+         // Fallback to discover page without search params
+         router.push("/discover");
+      }
    };
 
    return (

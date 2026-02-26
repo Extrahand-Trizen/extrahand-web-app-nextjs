@@ -38,7 +38,7 @@ export const useOTP = (
    mode: "login" | "signup"
 ): UseOTPResult => {
    const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
-   const [timer, setTimer] = useState(300);
+   const [timer, setTimer] = useState(30);
    const [sending, setSending] = useState(false);
    const [verifying, setVerifying] = useState(false);
 
@@ -174,7 +174,7 @@ export const useOTP = (
                otpStateManager.saveOTPSession(session);
 
                setOtp(Array(OTP_LENGTH).fill(""));
-               setTimer(300);
+               setTimer(30);
                // Make sure any previously typed OTP is removed from localStorage
                otpStateManager.clearOTPInput();
                console.log("✅ [useOTP] OTP sent successfully");
@@ -312,7 +312,7 @@ export const useOTP = (
       confirmationRef.current = null;
    };
 
-   const resetTimer = () => setTimer(300);
+   const resetTimer = () => setTimer(30);
 
    return {
       otp,

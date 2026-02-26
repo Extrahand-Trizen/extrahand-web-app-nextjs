@@ -176,7 +176,7 @@ export default function TaskTrackingPage() {
       try {
          
          // Update task status via API
-         const updatedTask = await tasksApi.updateTaskStatus(task._id, newStatus);
+         const updatedTask = await tasksApi.updateTaskStatus(task._id, newStatus, reason);
          
          console.log("✅ Task status updated successfully:", updatedTask);
          

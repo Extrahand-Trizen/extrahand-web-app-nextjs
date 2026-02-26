@@ -125,10 +125,18 @@ export const tasksApi = {
    * Update task status
    * PATCH /api/v1/tasks/:id/status
    */
-  async updateTaskStatus(taskId: string, status: Task['status']): Promise<Task> {
+  async updateTaskStatus(
+    taskId: string,
+    status: Task['status'],
+    cancellationReason?: string
+  ): Promise<Task> {
+    const body: any = { status };
+    if (cancellationReason) {
+      body.cancellationReason = cancellationReason;
+    }
     const response = await fetchWithAuth(`tasks/${taskId}/status`, {
       method: 'PATCH',
-      body: JSON.stringify({ status }),
+      body: JSON.stringify(body),
     });
     // Backend returns { success: true, data: task, message: "..." }
     return response.data || response;

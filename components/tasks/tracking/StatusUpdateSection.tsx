@@ -140,6 +140,7 @@ export function StatusUpdateSection({
                      icon: <AlertTriangle className="w-4 h-4" />,
                      variant: "outline",
                      requiresConfirmation: true,
+                     requiresReason: true,
                   }
                );
                break;
@@ -208,11 +209,15 @@ export function StatusUpdateSection({
                          {action.requiresReason && (
                             <div className="space-y-2">
                                <Label htmlFor="cancel-reason">
-                                  Reason for cancellation
+                                  {action.status === "in_progress"
+                                     ? "What changes are needed?"
+                                     : "Reason for cancellation"}
                                </Label>
                                <Textarea
                                   id="cancel-reason"
-                                  placeholder="Please provide a reason..."
+                                  placeholder={action.status === "in_progress"
+                                     ? "Please specify what needs to be changed..."
+                                     : "Please provide a reason..."}
                                   value={cancelReason}
                                   onChange={(e) =>
                                      setCancelReason(e.target.value)
