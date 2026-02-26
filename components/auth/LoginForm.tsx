@@ -54,15 +54,11 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       setIsSubmitting(true);
 
       try {
-         // Simulate API call to send OTP
-         await new Promise((resolve) => setTimeout(resolve, 1000));
-
+         // Format phone number
          const formattedPhone = formatPhoneNumber(data.phone);
 
-         toast.success("OTP sent!", {
-            description: `Verification code sent to ${formattedPhone}`,
-         });
-
+         // Redirect to OTP verification page without showing success message
+         // The OTP will be sent on the verification page after checking if user exists
          if (onSuccess) {
             onSuccess(formattedPhone);
          } else {
@@ -72,7 +68,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
             router.push(otpUrl);
          }
       } catch {
-         toast.error("Failed to send OTP", {
+         toast.error("Failed to proceed", {
             description: "Please check your phone number and try again.",
          });
       } finally {

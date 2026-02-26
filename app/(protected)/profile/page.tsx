@@ -103,9 +103,58 @@ function ProfilePageContent() {
    const [section, setSection] = useState<ProfileSection>("overview");
    const [navOpen, setNavOpen] = useState(false);
 
-   // Payment methods and payout methods state
-   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>(mockPaymentMethods);
-   const [payoutMethods, setPayoutMethods] = useState<PayoutMethod[]>(mockPayoutMethods);
+   // Payment methods and payout methods state with localStorage persistence
+   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>(() => {
+      if (typeof window !== 'undefined') {
+         const stored = localStorage.getItem('paymentMethods');
+         if (stored) {
+            try {
+               const parsed = JSON.parse(stored) as PaymentMethod[];
+               // Convert date strings back to Date objects
+               return parsed.map((pm) => ({
+                  ...pm,
+                  createdAt: new Date(pm.createdAt)
+               }));
+            } catch (e) {
+               console.error('Failed to parse stored payment methods:', e);
+            }
+         }
+      }
+      return mockPaymentMethods;
+   });
+   
+   const [payoutMethods, setPayoutMethods] = useState<PayoutMethod[]>(() => {
+      if (typeof window !== 'undefined') {
+         const stored = localStorage.getItem('payoutMethods');
+         if (stored) {
+            try {
+               const parsed = JSON.parse(stored) as PayoutMethod[];
+               // Convert date strings back to Date objects
+               return parsed.map((pm) => ({
+                  ...pm,
+                  createdAt: new Date(pm.createdAt)
+               }));
+            } catch (e) {
+               console.error('Failed to parse stored payout methods:', e);
+            }
+         }
+      }
+      return mockPayoutMethods;
+   });
+
+   // Save payment methods to localStorage whenever they change
+   useEffect(() => {
+      if (typeof window !== 'undefined' && paymentMethods.length >= 0) {
+         localStorage.setItem('paymentMethods', JSON.stringify(paymentMethods));
+      }
+   }, [paymentMethods]);
+
+   // Save payout methods to localStorage whenever they change
+   useEffect(() => {
+      if (typeof window !== 'undefined' && payoutMethods.length >= 0) {
+         localStorage.setItem('payoutMethods', JSON.stringify(payoutMethods));
+      }
+   }, [payoutMethods]);
 
    // Fetch profile data on mount
    useEffect(() => {

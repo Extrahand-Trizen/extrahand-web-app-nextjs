@@ -214,12 +214,12 @@ export function OTPVerificationForm({
          });
          return;
       }
+      
+      let sendSuccess = false;
       try {
          await sendOtp(phoneInput);
+         sendSuccess = true; // Only set to true if sendOtp completes without throwing
          resetTimer();
-         toast.success("OTP sent!", {
-            description: `Verification code sent to ${maskPhone(phoneInput)}`,
-         });
       } catch (error: any) {
          const errorMessage = error?.message || "Failed to send OTP";
          const errorCode = error?.code || "";
@@ -249,6 +249,13 @@ export function OTPVerificationForm({
                description: errorMessage || "Please try again.",
             });
          }
+      }
+      
+      // Only show success toast if send actually succeeded
+      if (sendSuccess) {
+         toast.success("OTP sent!", {
+            description: `Verification code sent to ${maskPhone(phoneInput)}`,
+         });
       }
    };
 
