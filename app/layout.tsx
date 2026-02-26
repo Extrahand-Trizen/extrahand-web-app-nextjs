@@ -4,9 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/auth/context";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { Toaster } from "@/components/ui/sonner";
-import { SocketProvider } from "@/lib/socket/SocketProvider";
 import { QueryProvider } from "@/components/providers/QueryProvider";
-import { FCMProvider } from "@/lib/firebase/FCMProvider";
 import { EnvironmentLogger } from "@/components/EnvironmentLogger";
 
 const inter = Inter({
@@ -38,12 +36,8 @@ export default function RootLayout({
             <ErrorBoundary>
                <QueryProvider>
                   <AuthProvider>
-                     <FCMProvider>
-                        <SocketProvider>
-                           <Toaster />
-                           {children}
-                        </SocketProvider>
-                     </FCMProvider>
+                     <Toaster />
+                     {children}
                   </AuthProvider>
                </QueryProvider>
             </ErrorBoundary>
