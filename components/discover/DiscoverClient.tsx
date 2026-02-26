@@ -175,6 +175,17 @@ export function DiscoverClient({
       );
     }
 
+    // Budget range filter (client-side)
+    if (
+      typeof filters.minBudget === "number" &&
+      typeof filters.maxBudget === "number"
+    ) {
+      filtered = filtered.filter((task) => {
+        const amount = getBudgetAmount(task.budget);
+        return amount >= filters.minBudget && amount <= filters.maxBudget;
+      });
+    }
+
     // Remotely / In-person filter
     if (typeof filters.remotely !== "undefined" && filters.remotely !== null) {
       if (filters.remotely === true) {
