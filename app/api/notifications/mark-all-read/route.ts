@@ -53,15 +53,20 @@ export async function PATCH(request: NextRequest) {
     );
 
     if (!response.ok) {
-      const text = await response.text();
+      let body: { success?: boolean; error?: string } = {};
+      try {
+        body = await response.json();
+      } catch {
+        body = { error: await response.text() };
+      }
       console.error(
         `Mark all read failed: ${response.status} ${response.statusText}`,
-        text.slice(0, 200)
+        body
       );
       return NextResponse.json(
         {
           success: false,
-          error: `Service error: ${response.statusText}`,
+          error: body.error ?? `Service error: ${response.statusText}`,
         },
         { status: response.status }
       );
