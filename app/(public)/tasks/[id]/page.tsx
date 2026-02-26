@@ -56,7 +56,7 @@ export default function TaskDetailsPage() {
    const [showMakeOfferModal, setShowMakeOfferModal] = useState(false);
    const [shareOpen, setShareOpen] = useState(false);
    const [hasApplied, setHasApplied] = useState(false);
-   const [checkingApplication, setCheckingApplication] = useState(true);
+   const [checkingApplication] = useState(false);
    
    const [scrollY, setScrollY] = useState(0);
    const isMobile = useIsMobile();
@@ -109,14 +109,6 @@ export default function TaskDetailsPage() {
          fetchTask();
       }
    }, [taskId]);
-
-   // Track when we've finished computing hasApplied from offers
-   useEffect(() => {
-      // When there's no logged-in user, we can consider the check complete immediately
-      if (!currentUser || !userProfile) {
-         setCheckingApplication(false);
-      }
-   }, [currentUser, userProfile]);
 
    useEffect(() => {
       const handleScroll = () => {
@@ -208,24 +200,8 @@ export default function TaskDetailsPage() {
          router.push(`/login?next=${encodeURIComponent(currentPath)}`);
          return;
       }
-      
-      // Check if still loading application status
-      if (checkingApplication) {
-         toast.info("Please Wait", {
-            description: "Checking your application status..."
-         });
-         return;
-      }
-      
-      // Check if user has already applied
-      if (hasApplied) {
-         toast.error("Already Applied", {
-            description: "You have already submitted an offer for this task. Check the Offers section to view your application."
-         });
-         return;
-      }
-      
-      // User is logged in and hasn't applied, open the modal
+
+      // User is logged in, open the modal
       setShowMakeOfferModal(true);
    };
 
