@@ -381,7 +381,7 @@ export function ReviewStep({
                         </a>{" "}
                         and{" "}
                         <a
-                           href="/guidelines"
+                           href="/coming-soon?type=info&label=Community%20Guidelines"
                            target="_blank"
                            rel="noopener noreferrer"
                            className="inline text-primary-600 hover:underline"

@@ -290,7 +290,7 @@ Error Code: ${res?.code}`;
 
       const errorMessage = `Too many OTP requests for this phone number.
       
-Please wait 60 minutes before trying again, or use a different phone number for testing.
+Please wait 5 minutes before trying again, or use a different phone number for testing.
 
 Error Code: ${res?.code}`;
 

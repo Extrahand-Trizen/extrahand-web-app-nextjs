@@ -418,7 +418,7 @@ export default function EmailVerificationPage() {
                            </button>
                         )}
                      </div>
-                     {state.attemptsRemaining < 3 && (
+                     {state.attemptsRemaining < 5 && (
                         <p className="text-xs text-center text-amber-600 mt-2">
                            {state.attemptsRemaining} attempt
                            {state.attemptsRemaining > 1 ? "s" : ""} left

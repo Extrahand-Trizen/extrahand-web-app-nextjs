@@ -104,10 +104,8 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
             console.warn("Phone check failed during signup, continuing anyway", checkErr);
          }
 
-         toast.success("OTP sent!", {
-            description: `Verification code sent to ${formattedPhone}`,
-         });
-
+         // Redirect to OTP verification page without showing success message
+         // The OTP will be sent on the verification page
          if (onSuccess) {
             onSuccess(formattedPhone, data.fullName);
          } else {
@@ -118,7 +116,7 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
             );
          }
       } catch (error) {
-         toast.error("Failed to send OTP", {
+         toast.error("Failed to proceed", {
             description: "Something went wrong. Please try again.",
          });
       } finally {

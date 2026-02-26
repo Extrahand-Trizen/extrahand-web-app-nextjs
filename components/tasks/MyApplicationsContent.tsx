@@ -106,10 +106,15 @@ export function MyApplicationsContent({
       return result;
    }, [allApplications, searchQuery, statusFilter, sortBy]);
 
-   // Notify parent of count change when applications change
+   // Calculate displayable applications (excluding those with null taskId)
+   const displayableApplications = useMemo(() => {
+      return filteredApplications.filter((app) => app.taskId !== null && app.taskId !== undefined);
+   }, [filteredApplications]);
+
+   // Notify parent of count change when displayable applications change
    useEffect(() => {
-      onCountChange?.(filteredApplications.length);
-   }, [filteredApplications.length, onCountChange]);
+      onCountChange?.(displayableApplications.length);
+   }, [displayableApplications.length, onCountChange]);
 
    // Fetch applications
    const fetchApplications = useCallback(async () => {
@@ -259,10 +264,10 @@ export function MyApplicationsContent({
                   </div>
 
                   {/* Pagination (for future use) */}
-                  {filteredApplications.length > 10 && (
+                  {displayableApplications.length > 10 && (
                      <div className="flex flex-col sm:flex-row items-center justify-between mt-6 sm:mt-8 pt-6 border-t border-secondary-200 gap-4">
                         <p className="text-sm text-secondary-600">
-                           Showing {filteredApplications.length} applications
+                           Showing {displayableApplications.length} applications
                         </p>
                         <div className="flex gap-2">
                            <Button
@@ -277,7 +282,7 @@ export function MyApplicationsContent({
                            <Button
                               variant="outline"
                               size="sm"
-                              disabled={filteredApplications.length < 10}
+                              disabled={displayableApplications.length < 10}
                               onClick={() => setPage((p) => p + 1)}
                            >
                               Next
