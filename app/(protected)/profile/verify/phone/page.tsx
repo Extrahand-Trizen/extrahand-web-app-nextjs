@@ -103,7 +103,7 @@ export default function PhoneVerificationPage() {
          // TODO: Replace with actual API call
          await new Promise((r) => setTimeout(r, 1500));
          setState((p) => ({ ...p, step: "otp" }));
-         setOtpTimer(600); // 10 minutes for SMS OTP
+         setOtpTimer(300); // 5 minutes for SMS OTP
       } catch {
          setState((p) => ({
             ...p,
@@ -152,7 +152,7 @@ export default function PhoneVerificationPage() {
       setIsLoading(true);
       try {
          await new Promise((r) => setTimeout(r, 1500));
-         setOtpTimer(600);
+         setOtpTimer(300);
          setState((p) => ({ ...p, otp: "", error: undefined }));
       } catch {
          setState((p) => ({ ...p, error: "Failed to resend OTP." }));

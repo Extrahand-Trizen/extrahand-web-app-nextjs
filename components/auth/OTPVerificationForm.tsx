@@ -244,19 +244,21 @@ export function OTPVerificationForm({
                   "Please check Firebase console settings. Phone authentication may not be properly configured.",
                duration: 10000,
             });
+            } else if (
+               errorCode === "auth/too-many-requests" ||
+               /too\s+many/i.test(errorMessage)
+            ) {
+               toast.error("Limit reached", {
+                  description: "Please wait 5 minutes and try again.",
+               });
          } else {
-            toast.error("Failed to send OTP", {
+               toast.error("Something went wrong", {
                description: errorMessage || "Please try again.",
             });
          }
       }
       
-      // Only show success toast if send actually succeeded
-      if (sendSuccess) {
-         toast.success("OTP sent!", {
-            description: `Verification code sent to ${maskPhone(phoneInput)}`,
-         });
-      }
+         // Success toast removed to avoid double messaging on retry/limits
    };
 
    const handleVerify = async () => {
