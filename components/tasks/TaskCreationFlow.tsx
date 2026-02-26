@@ -51,6 +51,12 @@ const MAX_RETRY_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 1000;
 const DRAFT_KEY = "taskDraft";
 
+const URGENCY_SURCHARGES: Record<string, number> = {
+   standard: 0,
+   soon: 20,
+   urgent: 50,
+};
+
 const CATEGORY_LABELS: Record<string, string> = {
    "home-cleaning": "Home Cleaning",
    "deep-cleaning": "Deep Cleaning",
@@ -142,6 +148,9 @@ const mapUrgencyToBackend = (
    return urgencyMap[urgency] || "medium";
 };
 
+const getUrgencySurcharge = (urgency: string): number =>
+   URGENCY_SURCHARGES[urgency] ?? 0;
+
 /**
  * Map frontend flexibility to backend values
  */
@@ -180,11 +189,13 @@ const transformFormDataToTask = (
    const coords = formData.location.coordinates;
    const coordinates: [number, number] = [coords?.[0] ?? 0, coords?.[1] ?? 0];
 
-   // Budget is required in backend schema - default to 0 for negotiable
+   const baseBudget =
+      formData.budgetType === "negotiable" ? 0 : formData.budget ?? null;
+   const urgencySurcharge = getUrgencySurcharge(formData.urgency);
    const budget =
-      formData.budgetType === "negotiable"
+      formData.budgetType === "negotiable" || baseBudget === null
          ? 0
-         : formData.budget ?? 0;
+         : baseBudget + urgencySurcharge;
 
    return {
       title: formData.title,
@@ -330,13 +341,29 @@ export function TaskCreationFlow() {
       [currentStep]
    );
 
-   // Track unsaved changes
+   // Track unsaved changes and auto-save periodically
    useEffect(() => {
       const subscription = form.watch(() => {
          setHasUnsavedChanges(true);
       });
       return () => subscription.unsubscribe();
    }, [form]);
+
+   // Auto-save draft every 30 seconds if there are unsaved changes
+   useEffect(() => {
+      if (!hasUnsavedChanges) return;
+
+      const autoSaveInterval = setInterval(() => {
+         if (hasUnsavedChanges && !isSubmitting) {
+            const values = form.getValues();
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(values));
+            console.log("Auto-saved draft");
+            // Don't show toast for auto-save to avoid interrupting user
+         }
+      }, 30000); // Auto-save every 30 seconds
+
+      return () => clearInterval(autoSaveInterval);
+   }, [hasUnsavedChanges, isSubmitting, form]);
 
    // Warn before leaving page with unsaved changes
    useEffect(() => {
@@ -442,15 +469,29 @@ export function TaskCreationFlow() {
       if (currentStep < TOTAL_STEPS) {
          setCurrentStep((prev) => prev + 1);
          window.scrollTo({ top: 0, behavior: "smooth" });
+         
+         // Auto-save draft when moving to next step
+         if (hasUnsavedChanges) {
+            const values = form.getValues();
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(values));
+            setHasUnsavedChanges(false);
+         }
       }
-   }, [currentStep, form, stepValidationFields]);
+   }, [currentStep, form, stepValidationFields, hasUnsavedChanges]);
 
    const handleBack = useCallback(() => {
       if (currentStep > 1) {
          setCurrentStep((prev) => prev - 1);
          window.scrollTo({ top: 0, behavior: "smooth" });
+         
+         // Auto-save draft when going back
+         if (hasUnsavedChanges) {
+            const values = form.getValues();
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(values));
+            setHasUnsavedChanges(false);
+         }
       }
-   }, [currentStep]);
+   }, [currentStep, hasUnsavedChanges, form]);
 
    // API call with retry logic
    const createTaskWithRetry = useCallback(
@@ -502,6 +543,14 @@ export function TaskCreationFlow() {
          setRetryCount(0);
 
          try {
+            if (data.budgetType !== "negotiable") {
+               const budgetValue = data.budget ?? null;
+               if (budgetValue === null || budgetValue < 50 || budgetValue > 50000) {
+                  toast.error("Please enter a budget between ₹50 and ₹50,000");
+                  return;
+               }
+            }
+
             // Transform form data to match backend Task schema
             const taskPayload = transformFormDataToTask(data);
 
@@ -563,13 +612,17 @@ export function TaskCreationFlow() {
       });
    }, [form]);
 
-   // Handle navigation action
-   const handleNavigateBack = useCallback(() => {
+   // Handle edit action from review step
+   const handleEdit = useCallback((step: number) => {
+      // Auto-save draft before navigating to edit step
       if (hasUnsavedChanges) {
-         handleSaveDraft();
+         const values = form.getValues();
+         localStorage.setItem(DRAFT_KEY, JSON.stringify(values));
+         setHasUnsavedChanges(false);
       }
-      router.back();
-   }, [hasUnsavedChanges, handleSaveDraft, router]);
+      setCurrentStep(step);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+   }, [hasUnsavedChanges, form]);
 
    const handleAuthLogin = () => {
       setShowAuthModal(false);
@@ -589,14 +642,10 @@ export function TaskCreationFlow() {
                <div className="h-16 flex items-center justify-between">
                   <div className="flex items-center gap-4">
                      <button
-                        onClick={
-                           currentStep === 1 ? handleNavigateBack : handleBack
-                        }
+                        onClick={handleBack}
                         className="text-gray-700 hover:text-gray-900 transition-colors disabled:opacity-50"
-                        disabled={isSubmitting}
-                        aria-label={
-                           currentStep === 1 ? "Go back" : "Previous step"
-                        }
+                        disabled={isSubmitting || currentStep === 1}
+                        aria-label="Previous step"
                      >
                         <ArrowLeft className="w-6 h-6" />
                      </button>
@@ -661,7 +710,7 @@ export function TaskCreationFlow() {
                   {currentStep === 4 && (
                      <ReviewStep
                         form={form}
-                        onEdit={(step) => setCurrentStep(step)}
+                        onEdit={handleEdit}
                         isSubmitting={isSubmitting}
                      />
                   )}

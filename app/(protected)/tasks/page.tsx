@@ -32,32 +32,37 @@ export default function TasksPage() {
          try {
             // Fetch both in parallel for faster loading
             const [tasksResponse, appsResponse] = await Promise.all([
-               tasksApi.getMyTasks({ limit: 1 }),
+               tasksApi.getMyTasks(),
                applicationsApi.getMyApplications()
             ]);
 
+            const getTasksCount = (response: any) => {
+               if (typeof response?.pagination?.total === "number") return response.pagination.total;
+               if (typeof response?.meta?.pagination?.total === "number") return response.meta.pagination.total;
+               if (typeof response?.meta?.total === "number") return response.meta.total;
+               if (Array.isArray(response?.tasks)) return response.tasks.length;
+               if (Array.isArray(response?.data?.tasks)) return response.data.tasks.length;
+               if (Array.isArray(response?.data)) return response.data.length;
+               if (Array.isArray(response)) return response.length;
+               return 0;
+            };
+
+            const getApplicationsCount = (response: any) => {
+               if (typeof response?.pagination?.total === "number") return response.pagination.total;
+               if (typeof response?.meta?.pagination?.total === "number") return response.meta.pagination.total;
+               if (typeof response?.meta?.total === "number") return response.meta.total;
+               if (Array.isArray(response?.applications)) return response.applications.length;
+               if (Array.isArray(response?.data?.applications)) return response.data.applications.length;
+               if (Array.isArray(response?.data)) return response.data.length;
+               if (Array.isArray(response)) return response.length;
+               return 0;
+            };
+
             // Extract tasks count
-            const tasksData = tasksResponse as any;
-            const tasksTotal = tasksData?.meta?.total ?? 
-                              tasksData?.data?.meta?.total ?? 
-                              tasksData?.total ?? 
-                              (Array.isArray(tasksData) ? tasksData.length : 
-                               Array.isArray(tasksData?.data) ? tasksData.data.length :
-                               Array.isArray(tasksData?.data?.tasks) ? tasksData.data.tasks.length :
-                               Array.isArray(tasksData?.tasks) ? tasksData.tasks.length : 0);
-            
-            setTasksCount(tasksTotal);
+            setTasksCount(getTasksCount(tasksResponse));
 
             // Extract applications count
-            const appsData = appsResponse as any;
-            const appsTotal = appsData?.meta?.total ?? 
-                             appsData?.data?.meta?.total ?? 
-                             appsData?.total ??
-                             (Array.isArray(appsData?.data) ? appsData.data.length :
-                              Array.isArray(appsData?.data?.applications) ? appsData.data.applications.length :
-                              Array.isArray(appsData?.applications) ? appsData.applications.length : 0);
-            
-            setApplicationsCount(appsTotal);
+            setApplicationsCount(getApplicationsCount(appsResponse));
          } catch (error) {
             console.error("Error fetching counts:", error);
          }

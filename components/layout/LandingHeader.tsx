@@ -460,7 +460,7 @@ export const LandingHeader: React.FC = () => {
 
          {/* Mobile Menu - Professional Slide-out Drawer */}
          {isMobileMenuOpen && (
-            <div className="fixed inset-0 z-50 lg:hidden">
+            <div className="fixed inset-0 z-[100] lg:hidden">
                {/* Backdrop */}
                <div
                   className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -488,12 +488,30 @@ export const LandingHeader: React.FC = () => {
                                        {displayName}
                                     </p>
                                  </div>
+                                 <button
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                                    aria-label="Close menu"
+                                 >
+                                    <X className="w-5 h-5 text-white" />
+                                 </button>
                               </div>
                            </div>
                         ) : (
                            <div className="bg-gradient-to-br from-primary-500 to-primary-600 px-4 py-4">
-                              <h2 className="text-lg font-bold text-white">ExtraHand</h2>
-                              <p className="text-xs text-white/80 mt-0.5">Find help or earn money</p>
+                              <div className="flex items-center justify-between">
+                                 <div>
+                                    <h2 className="text-lg font-bold text-white">ExtraHand</h2>
+                                    <p className="text-xs text-white/80 mt-0.5">Find help or earn money</p>
+                                 </div>
+                                 <button
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                                    aria-label="Close menu"
+                                 >
+                                    <X className="w-5 h-5 text-white" />
+                                 </button>
+                              </div>
                            </div>
                         )}
 
@@ -647,14 +665,23 @@ export const LandingHeader: React.FC = () => {
                      </>
                   ) : (
                      <div className="p-4">
-                        {/* Back Button */}
-                        <button
-                           onClick={() => setIsMobileCategoriesOpen(false)}
-                           className="flex items-center gap-2 text-secondary-700 font-medium mb-4 hover:text-secondary-900"
-                        >
-                           <ChevronDown className="w-5 h-5 rotate-90" />
-                           Back
-                        </button>
+                        {/* Back Button and Close Button */}
+                        <div className="flex items-center justify-between mb-4">
+                           <button
+                              onClick={() => setIsMobileCategoriesOpen(false)}
+                              className="flex items-center gap-2 text-secondary-700 font-medium hover:text-secondary-900"
+                           >
+                              <ChevronDown className="w-5 h-5 rotate-90" />
+                              Back
+                           </button>
+                           <button
+                              onClick={() => setIsMobileMenuOpen(false)}
+                              className="p-2 hover:bg-secondary-100 rounded-lg transition-colors"
+                              aria-label="Close menu"
+                           >
+                              <X className="w-5 h-5 text-secondary-700" />
+                           </button>
+                        </div>
 
                         {/* Role Selection */}
                         <div className="mb-4">

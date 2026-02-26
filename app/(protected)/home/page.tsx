@@ -120,16 +120,16 @@ export default function HomePage() {
                               type="text"
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value)}
-                              placeholder="In a few words, what do you need done?"
-                              className="h-12 sm:h-14 pl-10 sm:pl-12 pr-24 sm:pr-28 text-sm sm:text-base border-secondary-300 focus-visible:ring-2 focus-visible:ring-primary-500"
+                              placeholder="What do you need done?"
+                              className="h-12 sm:h-14 pl-10 sm:pl-12 pr-24 sm:pr-36 text-sm sm:text-base border-secondary-300 focus-visible:ring-2 focus-visible:ring-primary-500"
                               aria-label="Describe what you need done"
                            />
                            <button
                               type="submit"
-                              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 sm:h-10 px-4 sm:px-6 bg-primary-500 hover:bg-primary-600 text-white rounded-md text-sm sm:text-base font-medium transition-colors flex items-center gap-2"
+                              className="absolute right-1.5 top-1/2 -translate-y-1/2 h-7 sm:h-10 px-2.5 sm:px-6 bg-primary-500 hover:bg-primary-600 text-white rounded text-[10px] sm:text-base font-medium transition-colors flex items-center justify-center"
                            >
-                              <Search className="w-4 h-4" />
-                              <span>Get offers</span>
+                              <Search className="hidden sm:block w-4 h-4 sm:mr-2" />
+                              <span className="whitespace-nowrap leading-none">Get offers</span>
                            </button>
                         </div>
                      </form>

@@ -83,7 +83,8 @@ export function RecommendedTasks() {
 
       const container = scrollContainerRef.current;
       const cardWidth = container.querySelector(".task-card")?.clientWidth || 0;
-      const gap = 24; // gap-6 = 24px
+      const styles = window.getComputedStyle(container);
+      const gap = Number.parseFloat(styles.columnGap || styles.gap || "0") || 0;
       const scrollAmount = (cardWidth + gap) * (direction === "right" ? 1 : -1);
 
       container.scrollBy({
@@ -157,42 +158,29 @@ export function RecommendedTasks() {
             </div>
 
             {/* Scrollable Carousel Container */}
-            <div className="relative">
-               {/* Left Gradient Fade */}
-               {showLeftArrow && (
-                  <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-               )}
-
-               {/* Right Gradient Fade */}
-               {showRightArrow && (
-                  <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-r from-transparent to-white z-10 pointer-events-none" />
-               )}
-
-               {/* Scrollable Container */}
-               <div
-                  ref={scrollContainerRef}
-                  className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4 -mx-2 px-2"
-               >
-                  {tasks.map((task) => (
-                     <div
-                        key={task._id}
-                        className="task-card flex-shrink-0 w-[calc(100%-1rem)] sm:w-[calc(50%-1.5rem)] lg:w-[calc(33.333%-1.5rem)] min-w-[280px]"
-                     >
-                        <TaskCard
-                           task={{
-                              id: task._id,
-                              title: task.title,
-                              budget: typeof task.budget === 'object' ? task.budget.amount : task.budget,
-                              location: task.location?.city || task.location?.address || "Remote",
-                              category: task.category,
-                              timeAgo: formatTimeAgo(task.createdAt),
-                              applications: task.offers?.length || 0,
-                           }}
-                           onClick={() => router.push(`/tasks/${task._id}/track`)}
-                        />
-                     </div>
-                  ))}
-               </div>
+            <div
+               ref={scrollContainerRef}
+               className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4 -mx-2 px-2 snap-x snap-mandatory"
+            >
+               {tasks.map((task) => (
+                  <div
+                     key={task._id}
+                     className="task-card snap-start flex-shrink-0 w-[calc(100%-1rem)] sm:w-[calc(50%-1.5rem)] lg:w-[calc(33.333%-1.5rem)] min-w-[280px]"
+                  >
+                     <TaskCard
+                        task={{
+                           id: task._id,
+                           title: task.title,
+                           budget: typeof task.budget === 'object' ? task.budget.amount : task.budget,
+                           location: task.location?.city || task.location?.address || "Remote",
+                           category: task.category,
+                           timeAgo: formatTimeAgo(task.createdAt),
+                           applications: task.offers?.length || 0,
+                        }}
+                        onClick={() => router.push(`/tasks/${task._id}/track`)}
+                     />
+                  </div>
+               ))}
             </div>
          </div>
       </div>
@@ -227,7 +215,7 @@ function TaskCard({
                <Tag className="w-3 h-3 mr-1" />
                {task.category}
             </span>
-            <span className="text-xs text-secondary-500 flex items-center gap-1">
+            <span className="text-xs text-secondary-700 flex items-center gap-1">
                <Clock className="w-3 h-3" />
                {task.timeAgo}
             </span>
@@ -239,7 +227,7 @@ function TaskCard({
          </h3>
 
          {/* Location */}
-         <div className="flex items-center gap-1.5 text-xs md:text-sm text-secondary-600 mb-4">
+         <div className="flex items-center gap-1.5 text-xs md:text-sm text-secondary-700 mb-4">
             <MapPin className="w-4 h-4" />
             <span>{task.location}</span>
          </div>
@@ -250,14 +238,14 @@ function TaskCard({
                <div className="text-xl sm:text-2xl font-bold text-secondary-900">
                   ₹{task.budget.toLocaleString("en-IN")}
                </div>
-               <div className="text-xs text-secondary-500">Fixed price</div>
+               <div className="text-xs text-secondary-600">Fixed price</div>
             </div>
             {task.applications !== undefined && task.applications > 0 && (
                <div className="text-right">
                   <div className="text-sm font-semibold text-primary-600">
                      {task.applications} offer{task.applications > 1 ? "s" : ""}
                   </div>
-                  <div className="text-xs text-secondary-500">Applied</div>
+                  <div className="text-xs text-secondary-600">Applied</div>
                </div>
             )}
          </div>

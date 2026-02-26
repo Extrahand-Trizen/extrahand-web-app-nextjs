@@ -81,9 +81,40 @@ export function LocationScheduleStep({
 
    const canUseRecurring = recurringEligibleCategories.includes(category || "");
 
+   // Get the ceiling hour (next full hour from current time)
+   const getCeilingHour = () => {
+      const now = new Date();
+      const nextHour = new Date(now);
+      if (now.getMinutes() === 0 && now.getSeconds() === 0) {
+         // Already on a full hour, return it
+         return new Date(now.setSeconds(0, 0));
+      }
+      // Round up to next hour
+      nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
+      return nextHour;
+   };
 
    // Minimum date is today at midnight
    const minDate = useMemo(() => startOfDay(new Date()), []);
+
+   // Minimum time for start date & time is the ceiling hour
+   const minStartDateTime = useMemo(() => getCeilingHour(), []);
+
+   const getMinStartForDate = (date: Date | undefined) => {
+      if (!date) return minStartDateTime;
+      const isToday =
+         startOfDay(date).getTime() === startOfDay(new Date()).getTime();
+      return isToday ? minStartDateTime : startOfDay(date);
+   };
+
+   const clampStartDateTime = (date: Date | undefined) => {
+      if (!date) return date;
+      const minStart = getMinStartForDate(date);
+      if (startOfDay(date).getTime() === startOfDay(minStart).getTime()) {
+         return date < minStart ? minStart : date;
+      }
+      return date;
+   };
 
    // Sync scheduledDate with scheduledTimeStart date portion
    useEffect(() => {
@@ -115,16 +146,32 @@ export function LocationScheduleStep({
       }
    }, [scheduledDate, form]);
 
-   // Ensure end time is never before start time
+   // Ensure end time is never before or equal to start time (minimum 30 min duration)
    useEffect(() => {
       if (!scheduledTimeStart || !scheduledTimeEnd) return;
-      if (scheduledTimeEnd <= scheduledTimeStart) {
+      
+      const timeDiffMinutes = (scheduledTimeEnd.getTime() - scheduledTimeStart.getTime()) / (1000 * 60);
+      
+      // If end time is before or equal to start, or less than 30 minutes, auto-correct
+      if (timeDiffMinutes < 30) {
          // Auto-correct by setting end time 1 hour after start
          const newEnd = new Date(scheduledTimeStart);
          newEnd.setHours(newEnd.getHours() + 1);
          form.setValue("scheduledTimeEnd", newEnd);
       }
    }, [scheduledTimeStart, scheduledTimeEnd, form]);
+
+   // Calculate duration for display
+   const calculateDuration = () => {
+      if (!scheduledTimeStart || !scheduledTimeEnd) return null;
+      const diffMs = scheduledTimeEnd.getTime() - scheduledTimeStart.getTime();
+      if (diffMs <= 0) return null;
+      const hours = Math.floor(diffMs / (1000 * 60 * 60));
+      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      return { hours, minutes, total: diffMs };
+   };
+
+   const duration = calculateDuration();
 
    useEffect(() => {
       if (!canUseRecurring && recurringEnabled) {
@@ -320,96 +367,6 @@ export function LocationScheduleStep({
 
          {recurringEnabled && (
             <div className="space-y-4">
-               <div className="grid gap-4 md:grid-cols-2">
-                  <FormField
-                     control={form.control}
-                     name="recurringStartDate"
-                     render={({ field }) => (
-                        <FormItem>
-                           <FormLabel className="text-xs md:text-sm">Start date</FormLabel>
-                           <FormControl>
-                              <Popover>
-                                 <PopoverTrigger asChild>
-                                    <Button
-                                       type="button"
-                                       variant="outline"
-                                       className={cn(
-                                          "w-full h-10 justify-start text-left font-normal",
-                                          !field.value && "text-gray-500"
-                                       )}
-                                    >
-                                       <CalendarIcon className="mr-2 h-5 w-5" />
-                                       {field.value ? (
-                                          format(field.value, "PPP")
-                                       ) : (
-                                          <span>Pick a start date</span>
-                                       )}
-                                    </Button>
-                                 </PopoverTrigger>
-                                 <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                       mode="single"
-                                       selected={field.value || undefined}
-                                       onSelect={field.onChange}
-                                       disabled={(date) =>
-                                          date <
-                                          new Date(new Date().setHours(0, 0, 0, 0))
-                                       }
-                                       initialFocus
-                                    />
-                                 </PopoverContent>
-                              </Popover>
-                           </FormControl>
-                           <FormMessage />
-                        </FormItem>
-                     )}
-                  />
-
-                  <FormField
-                     control={form.control}
-                     name="recurringEndDate"
-                     render={({ field }) => (
-                        <FormItem>
-                           <FormLabel className="text-xs md:text-sm">End date</FormLabel>
-                           <FormControl>
-                              <Popover>
-                                 <PopoverTrigger asChild>
-                                    <Button
-                                       type="button"
-                                       variant="outline"
-                                       className={cn(
-                                          "w-full h-10 justify-start text-left font-normal",
-                                          !field.value && "text-gray-500"
-                                       )}
-                                    >
-                                       <CalendarIcon className="mr-2 h-5 w-5" />
-                                       {field.value ? (
-                                          format(field.value, "PPP")
-                                       ) : (
-                                          <span>Pick an end date</span>
-                                       )}
-                                    </Button>
-                                 </PopoverTrigger>
-                                 <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                       mode="single"
-                                       selected={field.value || undefined}
-                                       onSelect={field.onChange}
-                                       disabled={(date) =>
-                                          date <
-                                          new Date(new Date().setHours(0, 0, 0, 0))
-                                       }
-                                       initialFocus
-                                    />
-                                 </PopoverContent>
-                              </Popover>
-                           </FormControl>
-                           <FormMessage />
-                        </FormItem>
-                     )}
-                  />
-               </div>
-
                <FormField
                   control={form.control}
                   name="recurringFrequency"
@@ -437,51 +394,113 @@ export function LocationScheduleStep({
             </div>
          )}
 
-         {/* Start Date & Time */}
-         <FormField
-            control={form.control}
-            name="scheduledTimeStart"
-            render={({ field }) => (
-               <FormItem>
-                  <FormLabel className="text-xs md:text-sm">Start date & time</FormLabel>
-                  <FormControl>
-                     <DateTimePicker
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="Select start date & time"
-                        className="h-10"
-                        minDate={minDate}
-                     />
-                  </FormControl>
-                  <FormDescription className="text-xs">When should the task begin?</FormDescription>
-                  <FormMessage />
-               </FormItem>
-            )}
-         />
+         {/* Start Date & Time - Only for one-time tasks */}
+         {!recurringEnabled && (
+            <>
+               <FormField
+                  control={form.control}
+                  name="scheduledTimeStart"
+                  render={({ field }) => (
+                     <FormItem>
+                        <FormLabel className="text-xs md:text-sm">Start date & time</FormLabel>
+                        <FormControl>
+                           <DateTimePicker
+                              value={field.value}
+                              onChange={(date) => field.onChange(clampStartDateTime(date))}
+                              placeholder="Select start date & time"
+                              className="h-10"
+                              minDate={minDate}
+                           />
+                        </FormControl>
+                        <FormDescription className="text-xs">When should the task begin?</FormDescription>
+                        <FormMessage />
+                     </FormItem>
+                  )}
+               />
 
-         {/* End Date & Time */}
-         <FormField
-            control={form.control}
-            name="scheduledTimeEnd"
-            render={({ field }) => (
-               <FormItem>
-                  <FormLabel className="text-xs md:text-sm">End date & time</FormLabel>
-                  <FormControl>
-                     <DateTimePicker
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="Select end date & time"
-                        className="h-10"
-                        minDate={scheduledTimeStart || minDate}
-                     />
-                  </FormControl>
-                  <FormDescription className="text-xs">
-                     When should the task be completed by?
-                  </FormDescription>
-                  <FormMessage />
-               </FormItem>
-            )}
-         />
+               {/* End Date & Time */}
+               <FormField
+                  control={form.control}
+                  name="scheduledTimeEnd"
+                  render={({ field }) => (
+                     <FormItem>
+                        <FormLabel className="text-xs md:text-sm">End date & time</FormLabel>
+                        <FormControl>
+                           <DateTimePicker
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="Select end date & time"
+                              className="h-10"
+                              minDate={scheduledTimeStart || minDate}
+                           />
+                        </FormControl>
+                        <FormDescription className="text-xs">
+                           When should the task be completed by?
+                           {duration && duration.total > 0 && (
+                              <span className="ml-2 font-medium text-primary-600">
+                                 (Duration: {duration.hours > 0 && `${duration.hours}h `}{duration.minutes > 0 && `${duration.minutes}min`})
+                              </span>
+                           )}
+                        </FormDescription>
+                        <FormMessage />
+                     </FormItem>
+                  )}
+               />
+            </>
+         )}
+
+         {recurringEnabled && (
+            <>
+               <FormField
+                  control={form.control}
+                  name="scheduledTimeStart"
+                  render={({ field }) => (
+                     <FormItem>
+                        <FormLabel className="text-xs md:text-sm">Start date & time</FormLabel>
+                        <FormControl>
+                           <DateTimePicker
+                              value={field.value}
+                              onChange={(date) => field.onChange(clampStartDateTime(date))}
+                              placeholder="Select start date & time"
+                              className="h-10"
+                              minDate={minDate}
+                           />
+                        </FormControl>
+                        <FormDescription className="text-xs">When should the task begin?</FormDescription>
+                        <FormMessage />
+                     </FormItem>
+                  )}
+               />
+
+               <FormField
+                  control={form.control}
+                  name="scheduledTimeEnd"
+                  render={({ field }) => (
+                     <FormItem>
+                        <FormLabel className="text-xs md:text-sm">End date & time</FormLabel>
+                        <FormControl>
+                           <DateTimePicker
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="Select end date & time"
+                              className="h-10"
+                              minDate={scheduledTimeStart || minDate}
+                           />
+                        </FormControl>
+                        <FormDescription className="text-xs">
+                           When should the task be completed by?
+                           {duration && duration.total > 0 && (
+                              <span className="ml-2 font-medium text-primary-600">
+                                 (Duration: {duration.hours > 0 && `${duration.hours}h `}{duration.minutes > 0 && `${duration.minutes}min`})
+                              </span>
+                           )}
+                        </FormDescription>
+                        <FormMessage />
+                     </FormItem>
+                  )}
+               />
+            </>
+         )}
 
          {/* Flexibility */}
          <FormField

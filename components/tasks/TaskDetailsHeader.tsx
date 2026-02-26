@@ -8,12 +8,16 @@ interface TaskDetailsHeaderProps {
    task: Task;
    showMobileCTA?: boolean;
    onMakeOffer?: () => void;
+   hasApplied?: boolean;
+   checkingApplication?: boolean;
 }
 
 export function TaskDetailsHeader({
    task,
    showMobileCTA = false,
    onMakeOffer,
+   hasApplied = false,
+   checkingApplication = false,
 }: TaskDetailsHeaderProps) {
    const budgetAmount =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
@@ -210,10 +214,11 @@ export function TaskDetailsHeader({
                {task.status === "open" && onMakeOffer && (
                   <Button 
                      onClick={onMakeOffer}
-                     className="bg-primary-600 hover:bg-primary-700 text-white h-10 font-semibold rounded-xl shadow-sm" 
+                     disabled={hasApplied || checkingApplication}
+                     className="bg-primary-600 hover:bg-primary-700 text-white h-10 font-semibold rounded-xl shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" 
                      size="lg"
                   >
-                     Make an Offer
+                     {checkingApplication ? "Checking..." : hasApplied ? "Already Applied" : "Make an Offer"}
                   </Button>
                )}
             </div>

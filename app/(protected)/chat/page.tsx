@@ -6,6 +6,7 @@ import { Search, Send, ArrowLeft, MessageCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { chatsApi, type Chat, type Message } from "@/lib/api/endpoints/chats";
+import { profilesApi } from "@/lib/api/endpoints/profiles";
 import { useSocket } from "@/lib/socket/SocketProvider";
 import { useChatSocket } from "@/lib/socket/hooks/useChatSocket";
 import { useUserStore } from "@/lib/state/userStore";
@@ -31,6 +32,64 @@ export default function ChatPage() {
   const otherUserIdParam = searchParams.get("otherUserId");
   const taskIdParam = searchParams.get("taskId");
   const messageInputRef = useRef<HTMLInputElement | null>(null);
+  const profileCacheRef = useRef(
+    new Map<string, { name: string; profileImage?: string }>()
+  );
+
+  const resolveOtherParticipant = useCallback(
+    async (chat: Chat): Promise<Chat> => {
+      if (chat.otherParticipant?.name) return chat;
+      if (!chat.participants || chat.participants.length === 0) return chat;
+
+      const otherUserId = chat.participants.find((id) => id !== user?._id);
+      if (!otherUserId) return chat;
+
+      const cached = profileCacheRef.current.get(otherUserId);
+      if (cached) {
+        return {
+          ...chat,
+          otherParticipant: {
+            uid: otherUserId,
+            name: cached.name,
+            profileImage: cached.profileImage,
+          },
+        };
+      }
+
+      try {
+        const profile = await profilesApi.getProfile(otherUserId);
+        const name =
+          profile?.name ||
+          (profile as any)?.displayName ||
+          (profile as any)?.fullName ||
+          "Unknown";
+        const profileImage = profile?.profileImage || (profile as any)?.photoURL;
+        profileCacheRef.current.set(otherUserId, { name, profileImage });
+        return {
+          ...chat,
+          otherParticipant: {
+            uid: otherUserId,
+            name,
+            profileImage,
+          },
+        };
+      } catch (error) {
+        console.error("Failed to load participant profile:", error);
+        return chat;
+      }
+    },
+    [user?._id]
+  );
+
+  const hydrateChats = useCallback(
+    async (chatList: Chat[]) => {
+      const hydrated = await Promise.all(
+        chatList.map((chat) => resolveOtherParticipant(chat))
+      );
+      return hydrated;
+    },
+    [resolveOtherParticipant]
+  );
 
   // Load chats on mount
   useEffect(() => {
@@ -75,7 +134,27 @@ export default function ChatPage() {
     try {
       setLoading(true);
       const { chats: loadedChats } = await chatsApi.getChats();
-      setChats(loadedChats);
+      const hydratedChats = await hydrateChats(loadedChats);
+      
+      // Deduplicate chats by user pair (keep most recent one)
+      // This handles legacy data where multiple chats existed per user pair
+      const chatMap = new Map<string, Chat>();
+      hydratedChats.forEach((chat) => {
+        // Create a key from sorted participant IDs
+        const key = [...chat.participants].sort().join('_');
+        const existing = chatMap.get(key);
+        
+        // Keep the chat with the most recent message or newest creation
+        if (!existing || 
+            (chat.lastMessage?.timestamp && existing.lastMessage?.timestamp &&
+             new Date(chat.lastMessage.timestamp) > new Date(existing.lastMessage.timestamp)) ||
+            (!chat.lastMessage && !existing.lastMessage && 
+             new Date(chat.createdAt) > new Date(existing.createdAt))) {
+          chatMap.set(key, chat);
+        }
+      });
+      
+      setChats(Array.from(chatMap.values()));
     } catch (error) {
       console.error("Failed to load chats:", error);
     } finally {
@@ -89,19 +168,20 @@ export default function ChatPage() {
       if (!chat?.chatId) {
         throw new Error("Chat creation failed");
       }
+      const hydratedChat = await resolveOtherParticipant(chat);
       setChats((prev) => {
         const existingIndex = prev.findIndex(
-          (c) => c.chatId === chat.chatId || c._id === chat._id
+          (c) => c.chatId === hydratedChat.chatId || c._id === hydratedChat._id
         );
         if (existingIndex >= 0) {
           const updated = [...prev];
-          updated[existingIndex] = chat;
+          updated[existingIndex] = hydratedChat;
           return updated;
         }
-        return [chat, ...prev];
+        return [hydratedChat, ...prev];
       });
-      setSelectedChat(chat);
-      await loadMessages(chat.chatId);
+      setSelectedChat(hydratedChat);
+      await loadMessages(hydratedChat.chatId);
       setShowMobileList(false);
     } catch (error) {
       console.error("Failed to start chat:", error);
@@ -115,25 +195,26 @@ export default function ChatPage() {
     try {
       setLoading(true);
       const { chat } = await chatsApi.startChatForTask(taskId);
+      const hydratedChat = await resolveOtherParticipant(chat);
       
       // Add/update chat in list
       setChats((prev) => {
         const existingIndex = prev.findIndex(
-          (c) => c.chatId === chat.chatId || c.relatedTask === taskId
+          (c) => c.chatId === hydratedChat.chatId || c.relatedTask === taskId
         );
         if (existingIndex >= 0) {
           // Update existing chat
           const updated = [...prev];
-          updated[existingIndex] = chat;
+          updated[existingIndex] = hydratedChat;
           return updated;
         } else {
           // Add new chat at the top
-          return [chat, ...prev];
+          return [hydratedChat, ...prev];
         }
       });
 
-      setSelectedChat(chat);
-      await loadMessages(chat.chatId);
+      setSelectedChat(hydratedChat);
+      await loadMessages(hydratedChat.chatId);
       setShowMobileList(false);
     } catch (error) {
       console.error("Failed to start chat for task:", error);
@@ -148,19 +229,20 @@ export default function ChatPage() {
   const loadChatById = async (chatId: string) => {
     try {
       const chat = await chatsApi.getChatDetails(chatId);
+      const hydratedChat = await resolveOtherParticipant(chat);
       setChats((prev) => {
         const existingIndex = prev.findIndex(
-          (c) => c.chatId === chat.chatId || c._id === chat._id
+          (c) => c.chatId === hydratedChat.chatId || c._id === hydratedChat._id
         );
         if (existingIndex >= 0) {
           const updated = [...prev];
-          updated[existingIndex] = chat;
+          updated[existingIndex] = hydratedChat;
           return updated;
         }
-        return [chat, ...prev];
+        return [hydratedChat, ...prev];
       });
-      setSelectedChat(chat);
-      await loadMessages(chat.chatId);
+      setSelectedChat(hydratedChat);
+      await loadMessages(hydratedChat.chatId);
       setShowMobileList(false);
     } catch (error) {
       console.error("Failed to load chat details:", error);
@@ -171,21 +253,18 @@ export default function ChatPage() {
   };
 
   const handleSelectChat = async (chat: Chat) => {
-    if (!chat.otherParticipant) {
-      await loadChatById(chat.chatId || chat._id);
-    } else {
-      setSelectedChat(chat);
-    }
+    const hydratedChat = await resolveOtherParticipant(chat);
+    setSelectedChat(hydratedChat);
     setShowMobileList(false);
-    await loadMessages(chat.chatId);
+    await loadMessages(hydratedChat.chatId);
     
     // Mark as read
-    if (chat.unreadCount > 0) {
+    if (hydratedChat.unreadCount > 0) {
       try {
-        await chatsApi.markChatAsRead(chat.chatId);
+        await chatsApi.markChatAsRead(hydratedChat.chatId);
         setChats((prev) =>
           prev.map((c) =>
-            c.chatId === chat.chatId ? { ...c, unreadCount: 0 } : c
+            c.chatId === hydratedChat.chatId ? { ...c, unreadCount: 0 } : c
           )
         );
       } catch (error) {
@@ -271,6 +350,12 @@ export default function ChatPage() {
     chatId: selectedChat?.chatId || null,
     onNewMessage: handleNewSocketMessage,
   });
+
+  useEffect(() => {
+    if (selectedChat && !showMobileList) {
+      messageInputRef.current?.focus();
+    }
+  }, [selectedChat, showMobileList]);
 
   const handleSendMessage = async () => {
     if (!messageText.trim() || !selectedChat || sending) return;

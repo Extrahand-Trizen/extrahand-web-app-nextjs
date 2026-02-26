@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth/context";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { ProfileSection, Review, WorkHistoryItem } from "@/types/profile";
+import { ProfileSection, Review, WorkHistoryItem, PaymentMethod, PayoutMethod } from "@/types/profile";
 import { UserProfile } from "@/types/user";
 import {
    ProfileSidebar,
@@ -28,6 +28,7 @@ import {
    CommunicationChannel,
    NotificationSettingsState,
 } from "@/types/consent";
+import { mockPaymentMethods, mockPayoutMethods } from "@/lib/data/payments";
 import {
    Sheet,
    SheetContent,
@@ -101,6 +102,10 @@ function ProfilePageContent() {
    const [isMobile, setIsMobile] = useState(false);
    const [section, setSection] = useState<ProfileSection>("overview");
    const [navOpen, setNavOpen] = useState(false);
+
+   // Payment methods and payout methods state
+   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>(mockPaymentMethods);
+   const [payoutMethods, setPayoutMethods] = useState<PayoutMethod[]>(mockPayoutMethods);
 
    // Fetch profile data on mount
    useEffect(() => {
@@ -326,6 +331,53 @@ function ProfilePageContent() {
       notificationSettings,
       notificationFrequency,
       notificationChannel,
+      paymentMethods,
+      payoutMethods,
+      onRemovePaymentMethod: (id: string) => {
+         setPaymentMethods(prev => prev.filter(pm => pm.id !== id));
+         toast.success("Payment method removed successfully");
+      },
+      onRemovePayoutMethod: (id: string) => {
+         setPayoutMethods(prev => prev.filter(pm => pm.id !== id));
+         toast.success("Payout method removed successfully");
+      },
+      onSetDefaultPayment: (id: string) => {
+         setPaymentMethods(prev => prev.map(pm => ({
+            ...pm,
+            isDefault: pm.id === id
+         })));
+         toast.success("Default payment method updated");
+      },
+      onSetDefaultPayout: (id: string) => {
+         setPayoutMethods(prev => prev.map(pm => ({
+            ...pm,
+            isDefault: pm.id === id
+         })));
+         toast.success("Default payout method updated");
+      },
+      onSavePaymentMethod: (data: Partial<PaymentMethod>) => {
+         const newMethod: PaymentMethod = {
+            id: `pm${Date.now()}`,
+            type: data.type || 'card',
+            isDefault: paymentMethods.length === 0,
+            createdAt: new Date(),
+            ...data,
+         } as PaymentMethod;
+         setPaymentMethods(prev => [...prev, newMethod]);
+         toast.success("Payment method added successfully");
+      },
+      onSavePayoutMethod: (data: Partial<PayoutMethod>) => {
+         const newMethod: PayoutMethod = {
+            id: `po${Date.now()}`,
+            type: data.type || 'bank',
+            isDefault: payoutMethods.length === 0,
+            isVerified: false,
+            createdAt: new Date(),
+            ...data,
+         } as PayoutMethod;
+         setPayoutMethods(prev => [...prev, newMethod]);
+         toast.success("Payout method added successfully");
+      },
       onVerify: async (t: string) => {
          router.push(
             {
@@ -539,6 +591,14 @@ interface Props {
    onRevokeAllSessions: () => Promise<void>;
    onUpdatePrivacy: () => Promise<void>;
    onDeleteAccount: () => Promise<void>;
+   paymentMethods: PaymentMethod[];
+   payoutMethods: PayoutMethod[];
+   onRemovePaymentMethod: (id: string) => void;
+   onRemovePayoutMethod: (id: string) => void;
+   onSetDefaultPayment: (id: string) => void;
+   onSetDefaultPayout: (id: string) => void;
+   onSavePaymentMethod: (data: Partial<PaymentMethod>) => void;
+   onSavePayoutMethod: (data: Partial<PayoutMethod>) => void;
 }
 
 function renderSection(s: ProfileSection, p: Props) {
@@ -581,12 +641,14 @@ function renderSection(s: ProfileSection, p: Props) {
       case "payments":
          return (
             <PaymentsSection
-               onRemovePaymentMethod={console.log}
-               onRemovePayoutMethod={console.log}
-               onSetDefaultPayment={console.log}
-               onSetDefaultPayout={console.log}
-               onSavePaymentMethod={console.log}
-               onSavePayoutMethod={console.log}
+               paymentMethods={p.paymentMethods}
+               payoutMethods={p.payoutMethods}
+               onRemovePaymentMethod={p.onRemovePaymentMethod}
+               onRemovePayoutMethod={p.onRemovePayoutMethod}
+               onSetDefaultPayment={p.onSetDefaultPayment}
+               onSetDefaultPayout={p.onSetDefaultPayout}
+               onSavePaymentMethod={p.onSavePaymentMethod}
+               onSavePayoutMethod={p.onSavePayoutMethod}
             />
          );
       case "addresses":

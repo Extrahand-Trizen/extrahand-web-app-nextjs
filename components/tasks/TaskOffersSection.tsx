@@ -26,6 +26,8 @@ interface TaskOffersSectionProps {
    userProfile?: Record<string, unknown> | null;
    onMakeOffer?: () => void;
    taskCategory?: string;
+   hasApplied?: boolean;
+   checkingApplication?: boolean;
 }
 
 
@@ -63,6 +65,8 @@ export function TaskOffersSection({
    userProfile = null,
    onMakeOffer,
    taskCategory,
+   hasApplied = false,
+   checkingApplication = false,
 }: TaskOffersSectionProps) {
    const [applications, setApplications] = useState<TaskApplication[]>([]);
    const [loading, setLoading] = useState(true);
@@ -267,17 +271,18 @@ export function TaskOffersSection({
    }
 
    // If not owner and no application, show make offer button
-   if (!isOwner && !myApplication) {
+   if (!isOwner && !myApplication && !hasApplied) {
       return (
          <div className="p-8 text-center">
             <p className="text-secondary-600 mb-4">
-               Interested in this task? Submit your offer!
+               {checkingApplication ? "Checking application status..." : "Interested in this task? Submit your offer!"}
             </p>
             <Button
                onClick={onMakeOffer}
-               className="bg-primary-600 hover:bg-primary-700"
+               disabled={checkingApplication}
+               className="bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-               Make an Offer
+               {checkingApplication ? "Please Wait..." : "Make an Offer"}
             </Button>
          </div>
       );
@@ -601,18 +606,6 @@ export function TaskOffersSection({
                                        className="text-secondary-600 hover:bg-secondary-50 rounded-lg text-[10px] md:text-xs font-medium"
                                     >
                                        View Profile
-                                    </Button>
-                                 </Link>
-
-                                 <Link
-                                    href={`/chat?taskId=${taskId}&otherUserId=${application.applicantId}`}
-                                 >
-                                    <Button
-                                       size="sm"
-                                       variant="outline"
-                                       className="border-secondary-200 text-secondary-700 hover:bg-secondary-50 rounded-lg text-[10px] md:text-xs font-medium"
-                                    >
-                                       Message
                                     </Button>
                                  </Link>
 

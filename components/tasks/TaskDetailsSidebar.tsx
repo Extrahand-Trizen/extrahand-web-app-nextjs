@@ -12,9 +12,17 @@ interface TaskDetailsSidebarProps {
    task: Task;
    isOwner?: boolean;
    onMakeOffer?: () => void;
+   hasApplied?: boolean;
+   checkingApplication?: boolean;
 }
 
-export function TaskDetailsSidebar({ task, isOwner = false, onMakeOffer }: TaskDetailsSidebarProps) {
+export function TaskDetailsSidebar({ 
+   task, 
+   isOwner = false, 
+   onMakeOffer,
+   hasApplied = false,
+   checkingApplication = false,
+}: TaskDetailsSidebarProps) {
    
    // Fetch requester badge
    const [requesterBadge, setRequesterBadge] = useState<{ currentBadge: string } | null>(null);
@@ -71,9 +79,10 @@ export function TaskDetailsSidebar({ task, isOwner = false, onMakeOffer }: TaskD
                <div className="space-y-2">
                   <Button
                      onClick={onMakeOffer}
-                     className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold h-12 rounded-xl shadow-sm hover:shadow-md transition-all"
+                     disabled={hasApplied || checkingApplication}
+                     className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold h-12 rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                     Make an Offer
+                     {checkingApplication ? "Checking..." : hasApplied ? "Already Applied" : "Make an Offer"}
                   </Button>
                   <Button
                      variant="outline"
