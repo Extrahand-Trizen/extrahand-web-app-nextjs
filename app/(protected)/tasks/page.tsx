@@ -32,41 +32,36 @@ export default function TasksPage() {
       const fetchCounts = async () => {
          try {
             const [tasksResponse, applicationsResponse] = await Promise.all([
-               tasksApi.getMyTasks({ limit: 1 }),
-               applicationsApi.getApplications({ mine: "true", limit: 1 }),
+               tasksApi.getMyTasks({ limit: 100 }),
+               applicationsApi.getMyApplications(),
             ]);
 
             if (!isMounted) return;
 
             const tasksPayload: any = tasksResponse;
-            const tasksCountFromResponse =
-               typeof tasksPayload?.pagination?.total === "number"
-                  ? tasksPayload.pagination.total
-                  : typeof tasksPayload?.data?.total === "number"
-                  ? tasksPayload.data.total
-                  : Array.isArray(tasksPayload?.data?.tasks)
-                  ? tasksPayload.data.tasks.length
-                  : Array.isArray(tasksPayload?.tasks)
-                  ? tasksPayload.tasks.length
-                  : Array.isArray(tasksPayload)
-                  ? tasksPayload.length
-                  : 0;
+            const tasksCountFromResponse = Array.isArray(tasksPayload?.data?.tasks)
+               ? tasksPayload.data.tasks.length
+               : Array.isArray(tasksPayload?.tasks)
+               ? tasksPayload.tasks.length
+               : Array.isArray(tasksPayload?.data)
+               ? tasksPayload.data.length
+               : Array.isArray(tasksPayload)
+               ? tasksPayload.length
+               : 0;
 
             const applicationsPayload: any = applicationsResponse;
-            const applicationsCountFromResponse =
-               typeof applicationsPayload?.pagination?.total === "number"
-                  ? applicationsPayload.pagination.total
-                  : typeof applicationsPayload?.data?.total === "number"
-                  ? applicationsPayload.data.total
-                  : Array.isArray(applicationsPayload?.data?.applications)
-                  ? applicationsPayload.data.applications.length
-                  : Array.isArray(applicationsPayload?.applications)
-                  ? applicationsPayload.applications.length
-                  : Array.isArray(applicationsPayload?.data)
-                  ? applicationsPayload.data.length
-                  : Array.isArray(applicationsPayload)
-                  ? applicationsPayload.length
-                  : 0;
+            const applicationsFromResponse = Array.isArray(applicationsPayload?.data)
+               ? applicationsPayload.data
+               : Array.isArray(applicationsPayload?.data?.applications)
+               ? applicationsPayload.data.applications
+               : Array.isArray(applicationsPayload?.applications)
+               ? applicationsPayload.applications
+               : Array.isArray(applicationsPayload)
+               ? applicationsPayload
+               : [];
+            const applicationsCountFromResponse = applicationsFromResponse.filter(
+               (app: any) => app?.taskId !== null && app?.taskId !== undefined
+            ).length;
 
             // Only update counts for inactive tabs - let active tab components set their own accurate counts
             if (activeTab !== "mytasks") {
