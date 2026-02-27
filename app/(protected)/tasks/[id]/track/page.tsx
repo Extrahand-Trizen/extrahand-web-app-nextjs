@@ -19,7 +19,8 @@ import {
    ReviewSection,
    FloatingChatWidget,
    ReportForm,
-   ProofUploadSection
+   ProofUploadSection,
+   RequestedChangesSection,
 } from "@/components/tasks/tracking";
 import {
    Dialog,
@@ -586,6 +587,7 @@ export default function TaskTrackingPage() {
                            task={task}
                            userRole={userRole}
                            onStatusUpdate={handleStatusUpdate}
+                           onTaskUpdated={(updatedTask) => setTask(updatedTask)}
                         />
                      </div>
                   )}
@@ -596,7 +598,7 @@ export default function TaskTrackingPage() {
                      onValueChange={setActiveTab}
                      className="w-full"
                   >
-                     <TabsList className="grid w-full grid-cols-4 mb-6 overflow-x-auto">
+                     <TabsList className="grid w-full grid-cols-5 mb-6 overflow-x-auto">
                         <TabsTrigger
                            value="overview"
                            className="text-xs md:text-sm"
@@ -609,6 +611,14 @@ export default function TaskTrackingPage() {
                         >
                            Proof
                         </TabsTrigger>
+                        {task.feedback && task.feedback.length > 0 && (
+                           <TabsTrigger
+                              value="requested-changes"
+                              className="text-xs md:text-sm"
+                           >
+                              Requested Changes
+                           </TabsTrigger>
+                        )}
                         <TabsTrigger
                            value="reviews"
                            className="text-xs md:text-sm"
@@ -636,6 +646,15 @@ export default function TaskTrackingPage() {
                            userRole={userRole}
                         />
                      </TabsContent>
+
+                     {task.feedback && task.feedback.length > 0 && (
+                        <TabsContent value="requested-changes" className="space-y-6">
+                           <RequestedChangesSection
+                              task={task}
+                              requesterName={task.requesterName || "Task Owner"}
+                           />
+                        </TabsContent>
+                     )}
 
                      <TabsContent value="reviews" className="space-y-6">
                         <ReviewSection
@@ -665,6 +684,7 @@ export default function TaskTrackingPage() {
                         task={task}
                         userRole={userRole}
                         onStatusUpdate={handleStatusUpdate}
+                        onTaskUpdated={(updatedTask) => setTask(updatedTask)}
                      />
                   )}
 
