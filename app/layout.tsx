@@ -29,10 +29,40 @@ export default function RootLayout({
    children: React.ReactNode;
 }>) {
    return (
-      <html lang="en" suppressHydrationWarning>
+      <html lang="en" suppressHydrationWarning style={{ scrollBehavior: 'auto' }}>
+         <head>
+            <script
+               dangerouslySetInnerHTML={{
+                  __html: `
+                     // Aggressive scroll reset - runs immediately
+                     (function() {
+                        window.history.scrollRestoration = 'manual';
+                        window.scrollTo(0, 0);
+                        document.documentElement.scrollTop = 0;
+                        document.body.scrollTop = 0;
+                        
+                        // Reset on DOMContentLoaded
+                        document.addEventListener('DOMContentLoaded', function() {
+                           window.scrollTo(0, 0);
+                           document.documentElement.scrollTop = 0;
+                           document.body.scrollTop = 0;
+                        });
+                        
+                        // Reset on load
+                        window.addEventListener('load', function() {
+                           window.scrollTo(0, 0);
+                           document.documentElement.scrollTop = 0;
+                           document.body.scrollTop = 0;
+                        });
+                     })();
+                  `,
+               }}
+            />
+         </head>
          <body
             className={`${inter.variable} font-sans antialiased`}
             suppressHydrationWarning
+            style={{ margin: 0, padding: 0, overflowX: 'hidden' }}
          >
             <EnvironmentLogger />
             <ErrorBoundary>

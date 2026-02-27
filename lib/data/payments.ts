@@ -202,8 +202,8 @@ export const mockPaymentSummary: PaymentSummary = {
    taskTitle: "Deep House Cleaning - 3BHK Apartment",
    taskAmount: 2500,
    serviceFee: 125,
-   platformFee: 60,
-   totalAmount: 2685,
+   platformFee: 125, // 5% of 2500
+   totalAmount: 2750,
    currency: "INR",
    taskerName: "Rajesh Kumar",
 };

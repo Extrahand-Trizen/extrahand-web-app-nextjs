@@ -155,6 +155,22 @@ export const tasksApi = {
   },
 
   /**
+   * Request changes on a task (poster sends feedback to tasker)
+   * This doesn't change the task status, just creates a comment/notification
+   * POST /api/v1/tasks/:id/request-changes
+   */
+  async requestChanges(
+    taskId: string,
+    message: string
+  ): Promise<{ success: boolean; message?: string; data?: Task }> {
+    const response = await fetchWithAuth(`tasks/${taskId}/request-changes`, {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    });
+    return response;
+  },
+
+  /**
    * Accept a task (for taskers)
    * POST /api/v1/tasks/:id/accept
    */

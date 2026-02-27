@@ -22,7 +22,7 @@ const footerLinks = {
       { label: "How it Works", href: "#how-it-works" },
       { label: "Browse Categories", href: "#categories" },
       { label: "Trust & Safety", href: "/trust-safety" },
-      { label: "Pricing", href: "/coming-soon?type=info&label=Pricing" },
+      { label: "Pricing", href: "/pricing" },
     ],
   },
   forTaskers: {

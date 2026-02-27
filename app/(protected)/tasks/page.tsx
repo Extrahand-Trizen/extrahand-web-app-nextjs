@@ -68,12 +68,22 @@ export default function TasksPage() {
                   ? applicationsPayload.length
                   : 0;
 
-            setTasksCount(tasksCountFromResponse);
-            setApplicationsCount(applicationsCountFromResponse);
+            // Only update counts for inactive tabs - let active tab components set their own accurate counts
+            if (activeTab !== "mytasks") {
+               setTasksCount(tasksCountFromResponse);
+            }
+            if (activeTab !== "myapplications") {
+               setApplicationsCount(applicationsCountFromResponse);
+            }
          } catch (error) {
             if (!isMounted) return;
-            setTasksCount(0);
-            setApplicationsCount(0);
+            // Only reset counts for inactive tabs
+            if (activeTab !== "mytasks") {
+               setTasksCount(0);
+            }
+            if (activeTab !== "myapplications") {
+               setApplicationsCount(0);
+            }
          }
       };
 
@@ -81,7 +91,7 @@ export default function TasksPage() {
       return () => {
          isMounted = false;
       };
-   }, []);
+   }, [activeTab]);
 
 
    const handleTabChange = (value: string) => {

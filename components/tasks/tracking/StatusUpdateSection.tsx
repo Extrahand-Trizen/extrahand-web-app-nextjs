@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import type { Task } from "@/types/task";
 import type { UserRole } from "@/types/tracking";
+import { tasksApi } from "@/lib/api/endpoints/tasks";
 import { toast } from "sonner";
 
 interface StatusUpdateSectionProps {
@@ -57,6 +58,7 @@ export function StatusUpdateSection({
          variant: "default" | "destructive" | "outline";
          requiresConfirmation: boolean;
          requiresReason?: boolean;
+         isSpecialAction?: boolean;
       }> = [];
 
       if (userRole === "viewer") return actions;
@@ -134,13 +136,14 @@ export function StatusUpdateSection({
                      requiresConfirmation: true,
                   },
                   {
-                     status: "in_progress",
+                     status: "review",
                      label: "Request Changes",
                      description: "Send task back for revisions",
                      icon: <AlertTriangle className="w-4 h-4" />,
                      variant: "outline",
                      requiresConfirmation: true,
                      requiresReason: true,
+                     isSpecialAction: true,
                   }
                );
                break;
@@ -150,20 +153,20 @@ export function StatusUpdateSection({
       return actions;
    };
 
-   const availableActions = getAvailableActions();
-
-   if (availableActions.length === 0) {
-      return null;
-   }
-
    const handleStatusUpdate = async (
       newStatus: Task["status"],
-      reason?: string
+      reason?: string,
+      isSpecialAction?: boolean
    ) => {
       setIsUpdating(true);
       try {
-         await onStatusUpdate(newStatus, reason);
-         toast.success(`Task status updated to ${newStatus?.replace("_", " ") || "unknown"}`);
+         if (isSpecialAction && newStatus === "review") {
+            await tasksApi.requestChanges(task._id, reason || "");
+            toast.success("Changes requested! Notified the tasker.");
+         } else {
+            await onStatusUpdate(newStatus, reason);
+            toast.success(`Task status updated to ${newStatus?.replace("_", " ") || "unknown"}`);
+         }
          setCancelReason("");
       } catch (error) {
          toast.error("Failed to update task status");
@@ -172,6 +175,12 @@ export function StatusUpdateSection({
          setIsUpdating(false);
       }
    };
+
+   const availableActions = getAvailableActions();
+
+   if (availableActions.length === 0) {
+      return null;
+   }
 
    return (
       <div className="bg-white rounded-xl shadow-sm border border-secondary-200 p-4 md:p-6">
@@ -204,28 +213,28 @@ export function StatusUpdateSection({
                               </AlertDialogTitle>
                               <AlertDialogDescription>
                                  {action.description}
-                            </AlertDialogDescription>
-                         </AlertDialogHeader>
-                         {action.requiresReason && (
-                            <div className="space-y-2">
-                               <Label htmlFor="cancel-reason">
-                                  {action.status === "in_progress"
-                                     ? "What changes are needed?"
-                                     : "Reason for cancellation"}
-                               </Label>
-                               <Textarea
-                                  id="cancel-reason"
-                                  placeholder={action.status === "in_progress"
-                                     ? "Please specify what needs to be changed..."
-                                     : "Please provide a reason..."}
-                                  value={cancelReason}
-                                  onChange={(e) =>
-                                     setCancelReason(e.target.value)
-                                  }
-                                  rows={3}
-                               />
-                            </div>
-                         )}
+                              </AlertDialogDescription>
+                           </AlertDialogHeader>
+                           {action.requiresReason && (
+                              <div className="space-y-2">
+                                 <Label htmlFor="cancel-reason">
+                                    {action.status === "review"
+                                       ? "What changes are needed?"
+                                       : "Reason for cancellation"}
+                                 </Label>
+                                 <Textarea
+                                    id="cancel-reason"
+                                    placeholder={action.status === "review"
+                                       ? "Please specify what needs to be changed..."
+                                       : "Please provide a reason..."}
+                                    value={cancelReason}
+                                    onChange={(e) =>
+                                       setCancelReason(e.target.value)
+                                    }
+                                    rows={3}
+                                 />
+                              </div>
+                           )}
                            <AlertDialogFooter>
                               <AlertDialogCancel
                                  onClick={() => setCancelReason("")}
@@ -238,7 +247,8 @@ export function StatusUpdateSection({
                                        action.status,
                                        action.requiresReason
                                           ? cancelReason
-                                          : undefined
+                                          : undefined,
+                                       action.isSpecialAction
                                     )
                                  }
                                  disabled={

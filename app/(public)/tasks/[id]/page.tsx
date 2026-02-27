@@ -56,7 +56,7 @@ export default function TaskDetailsPage() {
    const [showMakeOfferModal, setShowMakeOfferModal] = useState(false);
    const [shareOpen, setShareOpen] = useState(false);
    const [hasApplied, setHasApplied] = useState(false);
-   const [checkingApplication] = useState(false);
+   const [checkingApplication, setCheckingApplication] = useState(false);
    const [applicationCount, setApplicationCount] = useState(0);
    
    const [scrollY, setScrollY] = useState(0);
@@ -98,6 +98,21 @@ export default function TaskDetailsPage() {
             
             if (taskData) {
                setTask(taskData as Task);
+               
+               // Check application status immediately if user is logged in
+               if (currentUser && userProfile && taskId) {
+                  try {
+                     const appResponse = await applicationsApi.getTaskApplications(taskId);
+                     const applications = appResponse.applications || [];
+                     const userApplication = applications.find(
+                        (app) => app.applicantId === (userProfile as any)._id
+                     );
+                     setHasApplied(!!userApplication);
+                  } catch (error) {
+                     console.error("Error checking application:", error);
+                     setHasApplied(false);
+                  }
+               }
             }
          } catch (error) {
             console.error("❌ Failed to fetch task:", error);
@@ -109,36 +124,6 @@ export default function TaskDetailsPage() {
       if (taskId) {
          fetchTask();
       }
-   }, [taskId]);
-
-   // Check if user has already applied to this task
-   useEffect(() => {
-      const checkIfApplied = async () => {
-         try {
-            // Skip if no logged-in user or no task
-            if (!currentUser || !userProfile || !taskId) {
-               return;
-            }
-
-            // Fetch applications for this task
-            const response = await applicationsApi.getTaskApplications(taskId);
-            const applications = response.applications || [];
-
-            // Check if current user has an application
-            const userApplication = applications.find(
-               (app) => app.applicantId === (userProfile as any)._id
-            );
-
-            // Set hasApplied immediately if user has an application
-            if (userApplication) {
-               setHasApplied(true);
-            }
-         } catch (error) {
-            console.error("Error checking if user has applied:", error);
-         }
-      };
-
-      checkIfApplied();
    }, [taskId, currentUser, userProfile]);
 
    useEffect(() => {
@@ -329,7 +314,6 @@ export default function TaskDetailsPage() {
                      isOwner={isOwner} 
                      onMakeOffer={handleMakeOffer}
                      hasApplied={hasApplied}
-                     checkingApplication={checkingApplication}
                   />
                </div>
             </div>
@@ -341,11 +325,11 @@ export default function TaskDetailsPage() {
                <div className="max-w-7xl mx-auto px-4 py-3">
                   <Button
                      onClick={handleMakeOffer}
-                     disabled={hasApplied || checkingApplication}
+                     disabled={hasApplied}
                      className="w-full bg-primary-600 hover:bg-primary-700 text-white h-10 font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                     {checkingApplication ? "Checking..." : hasApplied ? "Already Applied" : "Make an Offer"}
-                     {!checkingApplication && !hasApplied && <ArrowRight className="w-4 h-4" />}
+                     {hasApplied ? "Already Applied" : "Make an Offer"}
+                     {!hasApplied && <ArrowRight className="w-4 h-4" />}
                   </Button>
                </div>
             </div>
