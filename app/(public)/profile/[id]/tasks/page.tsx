@@ -102,9 +102,43 @@ export default function UserPortfolioPage() {
    if (loading) {
       return (
          <div className="flex flex-col min-h-screen bg-gray-50">
-            <div className="flex-1 flex items-center justify-center">
-               <LoadingSpinner size="lg" />
+            {/* Header skeleton */}
+            <div className="bg-white border-b border-gray-200">
+               <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+                  <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-5 w-40 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-8 w-24 bg-gray-200 rounded-full animate-pulse" />
+               </div>
             </div>
+
+            {/* Content skeleton */}
+            <main className="flex-1 py-8">
+               <div className="max-w-7xl mx-auto px-4 space-y-6">
+                  <div className="bg-white rounded-lg border border-gray-200 p-6">
+                     <div className="flex items-start gap-4">
+                        <div className="w-16 h-16 rounded-full bg-gray-200 animate-pulse" />
+                        <div className="flex-1 space-y-2">
+                           <div className="h-4 w-40 bg-gray-200 rounded animate-pulse" />
+                           <div className="h-3 w-32 bg-gray-200 rounded animate-pulse" />
+                           <div className="h-3 w-24 bg-gray-200 rounded animate-pulse" />
+                        </div>
+                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-3">
+                        <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+                        <div className="h-3 w-full bg-gray-200 rounded animate-pulse" />
+                        <div className="h-3 w-2/3 bg-gray-200 rounded animate-pulse" />
+                     </div>
+                     <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-3">
+                        <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+                        <div className="h-3 w-full bg-gray-200 rounded animate-pulse" />
+                        <div className="h-3 w-2/3 bg-gray-200 rounded animate-pulse" />
+                     </div>
+                  </div>
+               </div>
+            </main>
          </div>
       );
    }

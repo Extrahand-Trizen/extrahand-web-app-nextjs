@@ -126,8 +126,33 @@ export default function UserProfilePage() {
    if (loading) {
       return (
          <div className="flex flex-col min-h-screen bg-gray-50">
-            <div className="flex-1 flex items-center justify-center">
-               <LoadingSpinner size="lg" />
+            {/* Top bar skeleton */}
+            <div className="bg-white border-b border-gray-200">
+               <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+                  <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-8 w-24 bg-gray-200 rounded-full animate-pulse" />
+               </div>
+            </div>
+
+            {/* Main content skeleton */}
+            <div className="flex-1 py-6">
+               <div className="max-w-7xl mx-auto px-4 space-y-4">
+                  <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 flex gap-4">
+                     <div className="w-16 h-16 rounded-full bg-gray-200 animate-pulse" />
+                     <div className="flex-1 space-y-2">
+                        <div className="h-4 w-40 bg-gray-200 rounded animate-pulse" />
+                        <div className="h-3 w-24 bg-gray-200 rounded animate-pulse" />
+                        <div className="h-3 w-32 bg-gray-200 rounded animate-pulse" />
+                     </div>
+                  </div>
+
+                  <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 space-y-3">
+                     <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+                     <div className="h-3 w-full bg-gray-200 rounded animate-pulse" />
+                     <div className="h-3 w-full bg-gray-200 rounded animate-pulse" />
+                     <div className="h-3 w-2/3 bg-gray-200 rounded animate-pulse" />
+                  </div>
+               </div>
             </div>
          </div>
       );
