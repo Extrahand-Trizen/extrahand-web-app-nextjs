@@ -36,11 +36,7 @@ import {
    IndianRupee,
 } from "lucide-react";
 import { PaymentMethod, PayoutMethod, Transaction } from "@/types/profile";
-import {
-   mockPaymentMethods,
-   mockPayoutMethods,
-   mockTransactions,
-} from "@/lib/data/payments";
+import { mockTransactions } from "@/lib/data/payments";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { paymentApi } from "@/lib/api/endpoints/payment";
@@ -61,8 +57,8 @@ interface PaymentsSectionProps {
 }
 
 export function PaymentsSection({
-   paymentMethods = mockPaymentMethods,
-   payoutMethods = mockPayoutMethods,
+   paymentMethods = [],
+   payoutMethods = [],
    transactions: initialTransactions,
    userId,
    onRemovePaymentMethod,
@@ -104,32 +100,54 @@ export function PaymentsSection({
             const response = await paymentApi.getUserTransactions(currentUser.uid, { limit: 100 });
             if (response && Array.isArray(response.transactions)) {
                // Map payment service transactions to profile format
-               const mapped: Transaction[] = response.transactions.map((tx: any) => {
-                  // Map transaction type: escrow -> payment (outgoing)
-                  let mappedType: Transaction['type'] = 'payment';
-                  if (tx.type === 'escrow') {
-                     mappedType = 'payment'; // Escrow is money going out (payment for task)
-                  } else if (tx.type === 'payout' || tx.type === 'earning') {
-                     mappedType = 'payout'; // Money coming in
-                  }
-                  
-                  return {
-                     id: tx.transactionId || tx.id,
-                     type: mappedType,
-                     amount: parseFloat(tx.amount), // Convert string to number
-                     currency: 'INR', // Default currency
-                     status: tx.status === 'held' || tx.status === 'pending' ? 'pending' : 'completed',
-                     description: tx.description || '',
-                     createdAt: new Date(tx.date || tx.createdAt), // API uses 'date' field
-                     taskId: tx.metadata?.taskId,
-                     taskTitle: tx.metadata?.taskTitle,
-                  };
-               });
+               // Filter out pending escrows (not yet paid) - only show held/released/refunded
+               const mapped: Transaction[] = response.transactions
+                  .filter((tx: any) => {
+                     // Don't show pending escrows (order created but payment not verified)
+                     if (tx.type === 'escrow' && tx.status === 'pending') {
+                        return false;
+                     }
+                     return true;
+                  })
+                  .map((tx: any) => {
+                     // Map transaction type: escrow -> payment (outgoing)
+                     let mappedType: Transaction['type'] = 'payment';
+                     if (tx.type === 'escrow') {
+                        mappedType = 'payment'; // Escrow is money going out (payment for task)
+                     } else if (tx.type === 'payout' || tx.type === 'earning') {
+                        mappedType = 'payout'; // Money coming in
+                     }
+                     
+                     // Map status: held (paid, in escrow) → pending, others → completed
+                     let mappedStatus: Transaction['status'] = 'completed';
+                     if (tx.status === 'held') {
+                        mappedStatus = 'pending'; // Money paid, in escrow (will show as "In Progress")
+                     } else if (tx.status === 'pending') {
+                        mappedStatus = 'pending';
+                     } else if (tx.status === 'failed') {
+                        mappedStatus = 'failed';
+                     } else if (tx.status === 'cancelled') {
+                        mappedStatus = 'cancelled';
+                     }
+                     
+                     return {
+                        id: tx.transactionId || tx.id,
+                        type: mappedType,
+                        amount: parseFloat(tx.amount), // Convert string to number
+                        currency: 'INR', // Default currency
+                        status: mappedStatus,
+                        description: tx.description || '',
+                        createdAt: new Date(tx.date || tx.createdAt), // API uses 'date' field
+                        taskId: tx.metadata?.taskId,
+                        taskTitle: tx.metadata?.taskTitle,
+                     };
+                  });
                setTransactions(mapped);
                
-               // Calculate spent from fetched transactions (ONLY completed payments)
+               // Calculate spent from fetched transactions (include held + completed payments)
+               // Held = paid and in escrow, Completed = released to performer
                const spent = mapped
-                  .filter((t) => t.type === "payment" && t.status === "completed")
+                  .filter((t) => t.type === "payment" && (t.status === "completed" || t.status === "pending"))
                   .reduce((sum, t) => sum + t.amount, 0);
                setRealSpent(spent);
             }
@@ -195,7 +213,7 @@ export function PaymentsSection({
       .reduce((sum, t) => sum + t.amount, 0);
 
    const totalOutgoing = realSpent !== null ? realSpent : transactions
-      .filter((t) => t.type === "payment" && t.status === "completed")
+      .filter((t) => t.type === "payment" && (t.status === "completed" || t.status === "pending"))
       .reduce((sum, t) => sum + t.amount, 0);
 
    // Filter transactions based on selected filter + range filters
@@ -967,7 +985,7 @@ function TransactionStatusBadge({ status }: { status: Transaction["status"] }) {
          label: "Completed",
          className: "bg-green-100 text-green-700",
       },
-      pending: { label: "Pending", className: "bg-amber-100 text-amber-700" },
+      pending: { label: "In Progress", className: "bg-amber-100 text-amber-700" },
       failed: { label: "Failed", className: "bg-red-100 text-red-700" },
       cancelled: { label: "Cancelled", className: "bg-gray-100 text-gray-600" },
    };

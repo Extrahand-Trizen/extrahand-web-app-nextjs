@@ -335,11 +335,23 @@ export function TaskCreationFlow() {
       },
    }) as UseFormReturn<TaskFormData>;
 
+   const scrollToTop = useCallback(() => {
+      requestAnimationFrame(() => {
+         window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+         document.documentElement.scrollTop = 0;
+         document.body.scrollTop = 0;
+      });
+   }, []);
+
    // Memoized progress calculation
    const progress = useMemo(
       () => (currentStep / TOTAL_STEPS) * 100,
       [currentStep]
    );
+
+   useEffect(() => {
+      scrollToTop();
+   }, [currentStep, scrollToTop]);
 
    // Track unsaved changes and auto-save periodically
    useEffect(() => {
@@ -468,7 +480,7 @@ export function TaskCreationFlow() {
 
       if (currentStep < TOTAL_STEPS) {
          setCurrentStep((prev) => prev + 1);
-         window.scrollTo({ top: 0, behavior: "smooth" });
+         scrollToTop();
          
          // Auto-save draft when moving to next step
          if (hasUnsavedChanges) {
@@ -477,12 +489,12 @@ export function TaskCreationFlow() {
             setHasUnsavedChanges(false);
          }
       }
-   }, [currentStep, form, stepValidationFields, hasUnsavedChanges]);
+   }, [currentStep, form, stepValidationFields, hasUnsavedChanges, scrollToTop]);
 
    const handleBack = useCallback(() => {
       if (currentStep > 1) {
          setCurrentStep((prev) => prev - 1);
-         window.scrollTo({ top: 0, behavior: "smooth" });
+         scrollToTop();
          
          // Auto-save draft when going back
          if (hasUnsavedChanges) {
@@ -494,7 +506,7 @@ export function TaskCreationFlow() {
          // Go back to previous page on step 1
          router.back();
       }
-   }, [currentStep, hasUnsavedChanges, form]);
+   }, [currentStep, hasUnsavedChanges, form, scrollToTop]);
 
    // API call with retry logic
    const createTaskWithRetry = useCallback(
@@ -624,8 +636,8 @@ export function TaskCreationFlow() {
          setHasUnsavedChanges(false);
       }
       setCurrentStep(step);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-   }, [hasUnsavedChanges, form]);
+      scrollToTop();
+   }, [hasUnsavedChanges, form, scrollToTop]);
 
    const handleAuthLogin = () => {
       setShowAuthModal(false);

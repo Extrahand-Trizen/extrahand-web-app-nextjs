@@ -28,7 +28,6 @@ import {
    CommunicationChannel,
    NotificationSettingsState,
 } from "@/types/consent";
-import { mockPaymentMethods, mockPayoutMethods } from "@/lib/data/payments";
 import {
    Sheet,
    SheetContent,
@@ -110,8 +109,10 @@ function ProfilePageContent() {
          if (stored) {
             try {
                const parsed = JSON.parse(stored) as PaymentMethod[];
+               // Filter out mock/dummy data (IDs: pm1, pm2, pm3)
+               const filtered = parsed.filter(pm => !['pm1', 'pm2', 'pm3'].includes(pm.id));
                // Convert date strings back to Date objects
-               return parsed.map((pm) => ({
+               return filtered.map((pm) => ({
                   ...pm,
                   createdAt: new Date(pm.createdAt)
                }));
@@ -120,7 +121,7 @@ function ProfilePageContent() {
             }
          }
       }
-      return mockPaymentMethods;
+      return [];
    });
    
    const [payoutMethods, setPayoutMethods] = useState<PayoutMethod[]>(() => {
@@ -129,8 +130,10 @@ function ProfilePageContent() {
          if (stored) {
             try {
                const parsed = JSON.parse(stored) as PayoutMethod[];
+               // Filter out mock/dummy data (IDs: po1, po2)
+               const filtered = parsed.filter(pm => !['po1', 'po2'].includes(pm.id));
                // Convert date strings back to Date objects
-               return parsed.map((pm) => ({
+               return filtered.map((pm) => ({
                   ...pm,
                   createdAt: new Date(pm.createdAt)
                }));
@@ -139,7 +142,7 @@ function ProfilePageContent() {
             }
          }
       }
-      return mockPayoutMethods;
+      return [];
    });
 
    // Save payment methods to localStorage whenever they change
@@ -155,6 +158,50 @@ function ProfilePageContent() {
          localStorage.setItem('payoutMethods', JSON.stringify(payoutMethods));
       }
    }, [payoutMethods]);
+
+   // One-time cleanup: Remove any mock/dummy data from localStorage on mount
+   useEffect(() => {
+      if (typeof window !== 'undefined') {
+         const MOCK_PAYMENT_IDS = ['pm1', 'pm2', 'pm3'];
+         const MOCK_PAYOUT_IDS = ['po1', 'po2'];
+         
+         const storedPayments = localStorage.getItem('paymentMethods');
+         if (storedPayments) {
+            try {
+               const parsed = JSON.parse(storedPayments);
+               const hasMockData = parsed.some((pm: PaymentMethod) => MOCK_PAYMENT_IDS.includes(pm.id));
+               if (hasMockData) {
+                  const cleaned = parsed.filter((pm: PaymentMethod) => !MOCK_PAYMENT_IDS.includes(pm.id));
+                  localStorage.setItem('paymentMethods', JSON.stringify(cleaned));
+                  setPaymentMethods(cleaned.map((pm: PaymentMethod) => ({
+                     ...pm,
+                     createdAt: new Date(pm.createdAt)
+                  })));
+               }
+            } catch (e) {
+               console.error('Error cleaning payment methods:', e);
+            }
+         }
+
+         const storedPayouts = localStorage.getItem('payoutMethods');
+         if (storedPayouts) {
+            try {
+               const parsed = JSON.parse(storedPayouts);
+               const hasMockData = parsed.some((pm: PayoutMethod) => MOCK_PAYOUT_IDS.includes(pm.id));
+               if (hasMockData) {
+                  const cleaned = parsed.filter((pm: PayoutMethod) => !MOCK_PAYOUT_IDS.includes(pm.id));
+                  localStorage.setItem('payoutMethods', JSON.stringify(cleaned));
+                  setPayoutMethods(cleaned.map((pm: PayoutMethod) => ({
+                     ...pm,
+                     createdAt: new Date(pm.createdAt)
+                  })));
+               }
+            } catch (e) {
+               console.error('Error cleaning payout methods:', e);
+            }
+         }
+      }
+   }, []); // Empty dependency array - runs once on mount
 
    // Fetch profile data on mount
    useEffect(() => {

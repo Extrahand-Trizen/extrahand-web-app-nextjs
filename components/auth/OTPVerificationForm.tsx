@@ -218,6 +218,10 @@ export function OTPVerificationForm({
          await sendOtp(phoneInput);
          sendSuccess = true; // Only set to true if sendOtp completes without throwing
          resetTimer();
+         // Show success toast when OTP is sent
+         toast.success("Verification code sent", {
+            description: `Code sent to ${phoneInput}. It will expire in 10 minutes.`,
+         });
       } catch (error: any) {
          const errorMessage = error?.message || "Failed to send OTP";
          const errorCode = error?.code || "";
@@ -255,8 +259,6 @@ export function OTPVerificationForm({
             });
          }
       }
-      
-         // Success toast removed to avoid double messaging on retry/limits
    };
 
    const handleVerify = async () => {

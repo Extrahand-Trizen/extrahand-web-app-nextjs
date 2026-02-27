@@ -1,17 +1,14 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { CategoryAlerts } from "@/components/profile/CategoryAlerts";
 import {
    Bell,
-   Mail,
    Smartphone,
-   MessageSquare,
    Check,
    Loader2,
    Clock,
@@ -27,7 +24,6 @@ import {
    COMMUNICATION_CHANNELS,
 } from "@/types/consent";
 import { profilesApi } from "@/lib/api/endpoints/profiles";
-import type { CategoriesListItem } from "@/lib/api/endpoints/categories";
 
 // Same categories as used in task posting
 const KEYWORD_CATEGORIES = [
@@ -100,8 +96,51 @@ export function NotificationsSection({
    const [keywordAlerts, setKeywordAlerts] = useState<string[]>([]);
    const [categories, setCategories] = useState<Array<{ name: string; slug: string }>>([]);
    const [filteredCategories, setFilteredCategories] = useState<Array<{ name: string; slug: string }>>([]);
+   const autoSaveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+   const initialized = useRef(false);
+
+   useEffect(() => {
+      setLocalSettings(settings);
+      setHasChanges(false);
+   }, [settings]);
+
+   useEffect(() => {
+      setLocalFrequency(frequencySettings);
+      setHasChanges(false);
+   }, [frequencySettings]);
+
+   useEffect(() => {
+      setLocalChannel(preferredChannel);
+      setHasChanges(false);
+   }, [preferredChannel]);
+
+   useEffect(() => {
+      initialized.current = true;
+      return () => {
+         if (autoSaveTimeout.current) {
+            clearTimeout(autoSaveTimeout.current);
+         }
+      };
+   }, []);
+
+   useEffect(() => {
+      if (!initialized.current || !hasChanges || isSaving) return;
+
+      if (autoSaveTimeout.current) {
+         clearTimeout(autoSaveTimeout.current);
+      }
+
+      autoSaveTimeout.current = setTimeout(() => {
+         handleSave();
+      }, 800);
+
+      return () => {
+         if (autoSaveTimeout.current) {
+            clearTimeout(autoSaveTimeout.current);
+         }
+      };
+   }, [hasChanges, localSettings, localFrequency, localChannel, isSaving]);
    const [showDropdown, setShowDropdown] = useState(false);
-   const [selectedCategories, setSelectedCategories] = useState<CategoriesListItem[]>([]);
 
    const keywordAlertsEnabled =
       (localSettings.push.enabled && localSettings.push.keywordTaskAlerts) ||
@@ -130,26 +169,7 @@ export function NotificationsSection({
       }
    }, []);
 
-   // Load category alerts from localStorage
-   useEffect(() => {
-      if (typeof window === "undefined") return;
-      const stored = window.localStorage.getItem("notificationCategoryAlerts");
-      if (!stored) return;
-      try {
-         const parsed = JSON.parse(stored);
-         if (Array.isArray(parsed)) {
-            setSelectedCategories(
-               parsed.filter(
-                  (c) => c && typeof c.slug === "string" && typeof c.name === "string"
-               )
-            );
-         }
-      } catch (error) {
-         console.error("Failed to parse category alerts from storage:", error);
-      }
-   }, []);
-
-   // Sync alerts from backend (keywords + categories)
+   // Sync alerts from backend (keywords only)
    useEffect(() => {
       let isMounted = true;
 
@@ -157,9 +177,6 @@ export function NotificationsSection({
          try {
             const localKeywordStore = typeof window !== "undefined"
                ? window.localStorage.getItem("notificationKeywordAlerts")
-               : null;
-            const localCategoryStore = typeof window !== "undefined"
-               ? window.localStorage.getItem("notificationCategoryAlerts")
                : null;
 
             const localKeywords = localKeywordStore
@@ -173,24 +190,10 @@ export function NotificationsSection({
                  })()
                : [];
 
-            const localCategories = localCategoryStore
-               ? (() => {
-                    try {
-                       const parsed = JSON.parse(localCategoryStore);
-                       return Array.isArray(parsed) ? parsed : [];
-                    } catch {
-                       return [];
-                    }
-                 })()
-               : [];
+            const keywordRes = await profilesApi.getKeywordAlerts();
 
-            const [keywordRes, categoryRes] = await Promise.allSettled([
-               profilesApi.getKeywordAlerts(),
-               profilesApi.getCategoryAlerts(),
-            ]);
-
-            if (keywordRes.status === "fulfilled") {
-               const keywords = keywordRes.value?.data?.keywords;
+            if (keywordRes) {
+               const keywords = keywordRes?.data?.keywords;
                if (Array.isArray(keywords) && isMounted) {
                   const resolvedKeywords = keywords.length > 0 ? keywords : localKeywords;
                   setKeywordAlerts(resolvedKeywords);
@@ -203,32 +206,6 @@ export function NotificationsSection({
                   if (keywords.length === 0 && localKeywords.length > 0) {
                      profilesApi.updateKeywordAlerts(localKeywords).catch((error) =>
                         console.error("Failed to sync local keywords:", error)
-                     );
-                  }
-               }
-            }
-
-            if (categoryRes.status === "fulfilled") {
-               const categoriesFromApi = categoryRes.value?.data?.categories;
-               if (Array.isArray(categoriesFromApi) && isMounted) {
-                  const resolvedCategories = categoriesFromApi.length > 0
-                     ? categoriesFromApi
-                     : localCategories;
-                  setSelectedCategories(resolvedCategories as CategoriesListItem[]);
-                  if (typeof window !== "undefined") {
-                     window.localStorage.setItem(
-                        "notificationCategoryAlerts",
-                        JSON.stringify(resolvedCategories)
-                     );
-                  }
-                  if (categoriesFromApi.length === 0 && localCategories.length > 0) {
-                     profilesApi.updateCategoryAlerts(
-                        localCategories.map((c: any) => ({
-                           slug: c.slug,
-                           name: c.name,
-                        }))
-                     ).catch((error) =>
-                        console.error("Failed to sync local categories:", error)
                      );
                   }
                }
@@ -299,29 +276,6 @@ export function NotificationsSection({
       persistKeywordAlerts(keywordAlerts.filter((k) => k !== keyword));
    };
 
-   const persistCategoryAlerts = (next: CategoriesListItem[]) => {
-      setSelectedCategories(next);
-      setHasChanges(true);
-      if (typeof window !== "undefined") {
-         window.localStorage.setItem(
-            "notificationCategoryAlerts",
-            JSON.stringify(next)
-         );
-      }
-   };
-
-   const addCategoryAlert = (category: CategoriesListItem) => {
-      if (selectedCategories.find((c) => c.slug === category.slug)) return;
-      if (selectedCategories.length >= 10) return;
-      persistCategoryAlerts([...selectedCategories, category]);
-   };
-
-   const removeCategoryAlert = (categorySlug: string) => {
-      persistCategoryAlerts(
-         selectedCategories.filter((c) => c.slug !== categorySlug)
-      );
-   };
-
    const updateChannelSetting = <K extends keyof NotificationSettingsState>(
       channel: K,
       key: keyof NotificationSettingsState[K],
@@ -365,12 +319,7 @@ export function NotificationsSection({
       try {
          await onSave(localSettings, localFrequency, localChannel);
 
-         await Promise.allSettled([
-            profilesApi.updateKeywordAlerts(keywordAlerts),
-            profilesApi.updateCategoryAlerts(
-               selectedCategories.map((c) => ({ slug: c.slug, name: c.name }))
-            ),
-         ]);
+         await profilesApi.updateKeywordAlerts(keywordAlerts);
 
          setHasChanges(false);
       } catch (error) {
@@ -501,106 +450,7 @@ export function NotificationsSection({
             />
          </NotificationChannel>
 
-         {/* Email Notifications */}
-         <NotificationChannel
-            icon={<Mail className="w-4 h-4 sm:w-5 sm:h-5" />}
-            title="Email Notifications"
-            description="Updates delivered to your inbox"
-            enabled={localSettings.email.enabled}
-            onToggleMaster={() => toggleChannelMaster("email")}
-            isExpanded={expandedSections.includes("email")}
-            onToggle={() => toggleSection("email")}
-         >
-            <NotificationToggle
-               label="Transactional"
-               description="Important confirmations and account actions"
-               checked={localSettings.email.transactional}
-               onChange={(v) => updateChannelSetting("email", "transactional", v)}
-               disabled={!localSettings.email.enabled}
-               comingSoon={true}
-            />
-            <NotificationToggle
-               label="Task Updates"
-               description="Status changes and new offers"
-               checked={localSettings.email.taskUpdates}
-               onChange={(v) => updateChannelSetting("email", "taskUpdates", v)}
-               disabled={!localSettings.email.enabled}
-            />
-            <NotificationToggle
-               label="Payment Alerts"
-               description="Receipts and payment confirmations"
-               checked={localSettings.email.payments}
-               onChange={(v) => updateChannelSetting("email", "payments", v)}
-               disabled={!localSettings.email.enabled}
-               comingSoon={true}
-            />
-            <NotificationToggle
-               label="Task Reminders"
-               description="Task-specific reminder alerts"
-               checked={localSettings.email.taskReminders}
-               onChange={(v) => updateChannelSetting("email", "taskReminders", v)}
-               disabled={!localSettings.email.enabled}
-               comingSoon={true}
-            />
-            <NotificationToggle
-               label="Keyword Task Alerts"
-               description="Alerts for tasks matching your keywords"
-               checked={localSettings.email.keywordTaskAlerts}
-               onChange={(v) => updateChannelSetting("email", "keywordTaskAlerts", v)}
-               disabled={!localSettings.email.enabled}
-            />
-            <NotificationToggle
-               label="System Alerts"
-               description="Security and account notifications"
-               checked={localSettings.email.system}
-               onChange={(v) => updateChannelSetting("email", "system", v)}
-               disabled={!localSettings.email.enabled}
-            />
-            <NotificationToggle
-               label="Promotions"
-               description="Tips, offers, and feature announcements"
-               checked={localSettings.email.promotions}
-               onChange={(v) => updateChannelSetting("email", "promotions", v)}
-               disabled={!localSettings.email.enabled}
-               comingSoon={true}
-            />
-            <NotificationToggle
-               label="Marketing"
-               description="Newsletter and product updates"
-               checked={localSettings.email.marketing}
-               onChange={(v) => updateChannelSetting("email", "marketing", v)}
-               disabled={!localSettings.email.enabled}
-            />
-         </NotificationChannel>
-
-         {/* SMS Notifications */}
-         <NotificationChannel
-            icon={<MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />}
-            title="SMS Notifications"
-            description="Text messages to your phone"
-            enabled={localSettings.sms.enabled}
-            onToggleMaster={() => toggleChannelMaster("sms")}
-            isExpanded={expandedSections.includes("sms")}
-            onToggle={() => toggleSection("sms")}
-         >
-            <NotificationToggle
-               label="Task Updates"
-               description="Important task status changes"
-               checked={localSettings.sms.taskUpdates}
-               onChange={(v) => updateChannelSetting("sms", "taskUpdates", v)}
-               disabled={!localSettings.sms.enabled}
-               comingSoon={true}
-            />
-            <NotificationToggle
-               label="Payment Alerts"
-               description="Payment confirmations and security codes"
-               checked={localSettings.sms.payments}
-               onChange={(v) => updateChannelSetting("sms", "payments", v)}
-               disabled={!localSettings.sms.enabled}
-               comingSoon={true}
-            />
-
-         </NotificationChannel>
+         {/* Email and SMS channel sections removed (handled via Preferred Channel) */}
 
          {/* Keyword Task Alerts */}
          <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5">
@@ -710,20 +560,9 @@ export function NotificationsSection({
             )}
          </div>
 
-         {/* Category Alerts */}
-         <CategoryAlerts
-            enabled={keywordAlertsEnabled}
-            onAddCategory={addCategoryAlert}
-            onRemoveCategory={removeCategoryAlert}
-            selectedCategories={selectedCategories}
-         />
-
-         {/* Quiet Hours & Frequency */}
-         <div className="bg-white rounded-lg border border-gray-200">
-            <button
-               onClick={() => toggleSection("frequency")}
-               className="w-full px-4 py-3 sm:px-5 sm:py-4 flex items-center gap-3 sm:gap-4 text-left"
-            >
+         {/* Quiet Hours & Frequency - Coming Soon */}
+         <div className="bg-white rounded-lg border border-gray-200 opacity-60">
+            <div className="w-full px-4 py-3 sm:px-5 sm:py-4 flex items-center gap-3 sm:gap-4 cursor-not-allowed">
                <span className="text-gray-400 shrink-0">
                   <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
                </span>
@@ -732,28 +571,22 @@ export function NotificationsSection({
                      <h3 className="text-xs sm:text-sm font-medium text-gray-900 truncate">
                         Quiet Hours & Frequency
                      </h3>
-                     {localFrequency.quietHours.enabled && (
-                        <Badge
-                           variant="secondary"
-                           className="text-[10px] sm:text-xs bg-gray-100 text-gray-600 shrink-0"
-                        >
-                           {localFrequency.quietHours.start} -{" "}
-                           {localFrequency.quietHours.end}
-                        </Badge>
-                     )}
+                     <Badge
+                        variant="secondary"
+                        className="text-[8px] px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200"
+                     >
+                        Coming Soon
+                     </Badge>
                   </div>
                   <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 truncate">
                      Control when and how often you receive notifications
                   </p>
                </div>
-               {expandedSections.includes("frequency") ? (
-                  <ChevronUp className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0" />
-               ) : (
-                  <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0" />
-               )}
-            </button>
+            </div>
+         </div>
 
-            {expandedSections.includes("frequency") && (
+         {/* Hidden frequency section removed - Coming Soon */}
+         {false && (
                <div className="px-4 pb-4 sm:px-5 sm:pb-5 border-t border-gray-100 pt-4 space-y-4">
                   {/* Quiet Hours Toggle */}
                   <div className="flex items-start justify-between gap-4">
@@ -841,7 +674,6 @@ export function NotificationsSection({
                   </div>
                </div>
             )}
-         </div>
 
          {/* Save Button */}
          {hasChanges && (

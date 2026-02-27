@@ -8,6 +8,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
    InputOTP,
@@ -123,12 +124,21 @@ export default function EmailVerificationPage() {
                verificationId: response.data.verificationId,
             }));
             setOtpTimer(response.data.expiresInMinutes * 60);
+            toast.success("Verification code sent", {
+               description: `Code sent to ${state.email}. It will expire in ${response.data.expiresInMinutes} minutes.`,
+            });
          } else {
             setState((p) => ({ ...p, error: response.message || "Failed to send verification code" }));
+            toast.error("Failed to send code", {
+               description: response.message || "Please try again",
+            });
          }
       } catch (err: unknown) {
          const errorMessage = err instanceof Error ? err.message : "Failed to send verification code";
          setState((p) => ({ ...p, error: errorMessage }));
+         toast.error("Failed to send code", {
+            description: errorMessage,
+         });
       } finally {
          setIsLoading(false);
       }
@@ -198,12 +208,21 @@ export default function EmailVerificationPage() {
                verificationId: response.data.verificationId,
                error: undefined,
             }));
+            toast.success("Verification code resent", {
+               description: `New code sent to ${state.email}. It will expire in ${response.data.expiresInMinutes} minutes.`,
+            });
          } else {
             setState((p) => ({ ...p, error: response.message || "Failed to resend code" }));
+            toast.error("Failed to resend code", {
+               description: response.message || "Please try again",
+            });
          }
       } catch (err: unknown) {
          const errorMessage = err instanceof Error ? err.message : "Failed to resend code";
          setState((p) => ({ ...p, error: errorMessage }));
+         toast.error("Failed to resend code", {
+            description: errorMessage,
+         });
       } finally {
          setIsLoading(false);
       }

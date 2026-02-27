@@ -175,6 +175,19 @@ export function PrivacySection({
             </p>
          </div>
 
+         {/* Coming Soon Banner */}
+         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
+            <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+               <h3 className="text-sm font-semibold text-amber-900">
+                  🚧 Features In Development
+               </h3>
+               <p className="text-xs text-amber-700 mt-1">
+                  We're actively working on implementing all privacy features. Some options may be limited or unavailable. Thank you for your patience!
+               </p>
+            </div>
+         </div>
+
          {/* Profile Visibility */}
          <CollapsibleSection
             title="Profile Visibility"
