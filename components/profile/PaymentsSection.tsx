@@ -94,10 +94,10 @@ export function PaymentsSection({
    const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false);
    const [showPayoutMethodModal, setShowPayoutMethodModal] = useState(false);
 
-   // Fetch real transaction data when transactions tab is active
+   // Fetch real transaction data when component mounts and when transactions tab is active
    useEffect(() => {
       const fetchTransactions = async () => {
-         if (!currentUser?.uid || activeTab !== 'transactions') return;
+         if (!currentUser?.uid) return;
          
          setLoadingTransactions(true);
          try {
@@ -127,9 +127,9 @@ export function PaymentsSection({
                });
                setTransactions(mapped);
                
-               // Calculate spent from fetched transactions (including escrow)
+               // Calculate spent from fetched transactions (ONLY completed payments)
                const spent = mapped
-                  .filter((t) => t.type === "payment")
+                  .filter((t) => t.type === "payment" && t.status === "completed")
                   .reduce((sum, t) => sum + t.amount, 0);
                setRealSpent(spent);
             }
@@ -141,7 +141,7 @@ export function PaymentsSection({
       };
 
       const fetchEarnings = async () => {
-         if (!currentUser?.uid || activeTab !== 'transactions') return;
+         if (!currentUser?.uid) return;
          
          try {
             const response = await paymentApi.getUserEarnings(currentUser.uid);
@@ -153,11 +153,10 @@ export function PaymentsSection({
          }
       };
 
-      if (activeTab === 'transactions') {
-         fetchTransactions();
-         fetchEarnings();
-      }
-   }, [currentUser?.uid, activeTab]);
+      // Fetch on mount and when transactions tab is active
+      fetchTransactions();
+      fetchEarnings();
+   }, [currentUser?.uid]);
 
    // Check if any range filters are active
    const hasActiveRangeFilters = useMemo(() => {

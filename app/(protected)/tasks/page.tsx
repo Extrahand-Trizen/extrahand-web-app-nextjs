@@ -7,6 +7,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -18,6 +19,7 @@ import { applicationsApi } from "@/lib/api/endpoints/applications";
 export default function TasksPage() {
    const router = useRouter();
    const searchParams = useSearchParams();
+   const queryClient = useQueryClient();
    const [tasksCount, setTasksCount] = useState<number>(0);
    const [applicationsCount, setApplicationsCount] = useState<number>(0);
 
@@ -26,19 +28,16 @@ export default function TasksPage() {
       return tabParam === "myapplications" ? "myapplications" : "mytasks";
    }, [searchParams]);
 
+   // Prefetch both tabs' data on page load so they're immediately available
    useEffect(() => {
-      let isMounted = true;
-
-      const fetchCounts = async () => {
+      const prefetchBothTabs = async () => {
          try {
-            const [tasksResponse, applicationsResponse] = await Promise.all([
-               tasksApi.getMyTasks({ limit: 100 }),
-               applicationsApi.getMyApplications(),
-            ]);
+            // Prefetch tasks
+            const tasksData = await tasksApi.getMyTasks({ limit: 100 });
+            queryClient.setQueryData(["my-tasks"], tasksData);
 
-            if (!isMounted) return;
-
-            const tasksPayload: any = tasksResponse;
+            // Extract tasks count immediately after setting
+            const tasksPayload = tasksData;
             const tasksCountFromResponse = Array.isArray(tasksPayload?.data?.tasks)
                ? tasksPayload.data.tasks.length
                : Array.isArray(tasksPayload?.tasks)
@@ -48,8 +47,14 @@ export default function TasksPage() {
                : Array.isArray(tasksPayload)
                ? tasksPayload.length
                : 0;
+            setTasksCount(tasksCountFromResponse);
 
-            const applicationsPayload: any = applicationsResponse;
+            // Prefetch applications
+            const applicationsData = await applicationsApi.getMyApplications();
+            queryClient.setQueryData(["my-applications"], applicationsData);
+
+            // Extract applications count immediately after setting
+            const applicationsPayload = applicationsData;
             const applicationsFromResponse = Array.isArray(applicationsPayload?.data)
                ? applicationsPayload.data
                : Array.isArray(applicationsPayload?.data?.applications)
@@ -62,31 +67,14 @@ export default function TasksPage() {
             const applicationsCountFromResponse = applicationsFromResponse.filter(
                (app: any) => app?.taskId !== null && app?.taskId !== undefined
             ).length;
-
-            // Only update counts for inactive tabs - let active tab components set their own accurate counts
-            if (activeTab !== "mytasks") {
-               setTasksCount(tasksCountFromResponse);
-            }
-            if (activeTab !== "myapplications") {
-               setApplicationsCount(applicationsCountFromResponse);
-            }
+            setApplicationsCount(applicationsCountFromResponse);
          } catch (error) {
-            if (!isMounted) return;
-            // Only reset counts for inactive tabs
-            if (activeTab !== "mytasks") {
-               setTasksCount(0);
-            }
-            if (activeTab !== "myapplications") {
-               setApplicationsCount(0);
-            }
+            console.error("Failed to prefetch tab data:", error);
          }
       };
 
-      fetchCounts();
-      return () => {
-         isMounted = false;
-      };
-   }, [activeTab]);
+      prefetchBothTabs();
+   }, [queryClient]);
 
 
    const handleTabChange = (value: string) => {

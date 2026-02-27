@@ -14,8 +14,6 @@ import {
    Monitor,
    Globe,
    LogOut,
-   Trash2,
-   AlertTriangle,
    Shield,
 } from "lucide-react";
 import {
@@ -31,7 +29,6 @@ interface SecuritySectionProps {
    onRevokeSession: (sessionId: string) => Promise<void>;
    onRevokeAllSessions: () => Promise<void>;
    onUpdatePrivacy: (settings: PrivacySettings) => Promise<void>;
-   onDeleteAccount: () => Promise<void>;
 }
 
 const defaultSecurity: SecuritySettings = {
@@ -56,7 +53,6 @@ export function SecuritySection({
    onRevokeSession,
    onRevokeAllSessions,
    onUpdatePrivacy,
-   onDeleteAccount,
 }: SecuritySectionProps) {
    return (
       <div className="max-w-4xl space-y-4 sm:space-y-6">
@@ -116,9 +112,6 @@ export function SecuritySection({
 
          {/* Privacy Settings */}
          <PrivacySection privacy={privacy} onUpdate={onUpdatePrivacy} />
-
-         {/* Danger Zone */}
-         <DangerZone onDeleteAccount={onDeleteAccount} />
       </div>
    );
 }
@@ -332,78 +325,6 @@ function PrivacyToggle({
             onCheckedChange={onChange}
             className="data-[state=checked]:bg-primary-600"
          />
-      </div>
-   );
-}
-
-interface DangerZoneProps {
-   onDeleteAccount: () => Promise<void>;
-}
-
-function DangerZone({ onDeleteAccount }: DangerZoneProps) {
-   const [showConfirm, setShowConfirm] = useState(false);
-
-   return (
-      <div className="bg-white rounded-lg border border-red-200">
-         <div className="px-4 py-3 sm:px-5 sm:py-4 border-b border-red-100">
-            <div className="flex items-center gap-2 sm:gap-3">
-               <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 shrink-0" />
-               <div>
-                  <h3 className="text-xs sm:text-sm font-medium text-gray-900">
-                     Danger Zone
-                  </h3>
-                  <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">
-                     Irreversible actions for your account
-                  </p>
-               </div>
-            </div>
-         </div>
-
-         <div className="px-4 py-3 sm:px-5 sm:py-4">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-               <div className="min-w-0 flex-1">
-                  <p className="text-xs sm:text-sm font-medium text-gray-900">
-                     Delete Account
-                  </p>
-                  <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">
-                     Permanently delete your account and all associated data
-                  </p>
-               </div>
-               {showConfirm ? (
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                     <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={async () => {
-                           await onDeleteAccount();
-                           setShowConfirm(false);
-                        }}
-                        className="flex-1 sm:flex-initial text-xs h-8"
-                     >
-                        <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                        Confirm Delete
-                     </Button>
-                     <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowConfirm(false)}
-                        className="flex-1 sm:flex-initial text-xs h-8"
-                     >
-                        Cancel
-                     </Button>
-                  </div>
-               ) : (
-                  <Button
-                     variant="outline"
-                     size="sm"
-                     className="text-red-600 border-red-200 hover:bg-red-50 text-xs h-8 px-3 w-full sm:w-auto"
-                     onClick={() => setShowConfirm(true)}
-                  >
-                     Delete Account
-                  </Button>
-               )}
-            </div>
-         </div>
       </div>
    );
 }

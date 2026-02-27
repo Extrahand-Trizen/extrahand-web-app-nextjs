@@ -6,60 +6,10 @@ import {
 import { PaymentMethod, PayoutMethod, Transaction } from "@/types/profile";
 
 // Mock payment methods for demo
-export const mockPaymentMethods: PaymentMethod[] = [
-   {
-      id: "pm1",
-      type: "card",
-      isDefault: true,
-      cardBrand: "visa",
-      lastFour: "4242",
-      expiryMonth: 12,
-      expiryYear: 2026,
-      cardHolderName: "ANITA KAPOOR",
-      createdAt: new Date("2024-06-15"),
-   },
-   {
-      id: "pm2",
-      type: "card",
-      isDefault: false,
-      cardBrand: "mastercard",
-      lastFour: "8888",
-      expiryMonth: 8,
-      expiryYear: 2025,
-      cardHolderName: "ANITA KAPOOR",
-      createdAt: new Date("2024-09-20"),
-   },
-   {
-      id: "pm3",
-      type: "upi",
-      isDefault: false,
-      upiId: "anita@paytm",
-      createdAt: new Date("2024-10-01"),
-   },
-];
+export const mockPaymentMethods: PaymentMethod[] = [];
 
 // Mock payout methods for demo
-export const mockPayoutMethods: PayoutMethod[] = [
-   {
-      id: "po1",
-      type: "bank",
-      isDefault: true,
-      isVerified: true,
-      bankName: "HDFC Bank",
-      accountNumber: "XXXX XXXX 4567",
-      ifscCode: "HDFC0001234",
-      accountHolderName: "Anita Kapoor",
-      createdAt: new Date("2024-05-10"),
-   },
-   {
-      id: "po2",
-      type: "upi",
-      isDefault: false,
-      isVerified: true,
-      upiId: "anita@upi",
-      createdAt: new Date("2024-07-15"),
-   },
-];
+export const mockPayoutMethods: PayoutMethod[] = [];
 
 // Mock transaction data for demo
 export const mockTransactions: Transaction[] = [
