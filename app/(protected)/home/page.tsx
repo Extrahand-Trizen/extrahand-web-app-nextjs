@@ -5,15 +5,13 @@
  * Seamless full-width design with integrated hero and action card
  */
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import {
-   DynamicActionCard,
-   RecommendedTasks,
-} from "@/components/home";
+import { DynamicActionCard, RecommendedTasks } from "@/components/home";
 import { useUserStore } from "@/lib/state/userStore";
+import { useDashboardStore } from "@/lib/state/dashboardStore";
 
 type CardState =
    | "first_time"
@@ -49,11 +47,47 @@ const CATEGORY_PARAM_MAP: Record<string, string> = {
    Business: "other",
 };
 
+function StatPill({
+   label,
+   value,
+   loading,
+}: {
+   label: string;
+   value: number | undefined;
+   loading: boolean;
+}) {
+   if (loading) {
+      return (
+         <div className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-secondary-100 text-secondary-600 text-xs sm:text-sm font-medium inline-flex items-center gap-2">
+            <span className="h-3 w-3 rounded-full bg-secondary-300 animate-pulse" />
+            <span className="h-3 w-16 sm:w-20 bg-secondary-300 rounded-full animate-pulse" />
+         </div>
+      );
+   }
+
+   return (
+      <div className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary-50 text-primary-800 text-xs sm:text-sm font-medium inline-flex items-center gap-2">
+         <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary-100 text-[10px] sm:text-xs font-semibold">
+            {typeof value === "number" ? value : "–"}
+         </span>
+         <span>{label}</span>
+      </div>
+   );
+}
+
 export default function HomePage() {
    const router = useRouter();
    const { user } = useUserStore();
    const [isRefreshing, setIsRefreshing] = useState(false);
    const [searchQuery, setSearchQuery] = useState("");
+   const { stats, statsLoading, fetchStats } = useDashboardStore();
+
+   useEffect(() => {
+      // Warm dashboard stats cache; no-op if already fresh
+      fetchStats().catch(() => {
+         // Swallow errors here; individual pages can handle messaging if needed
+      });
+   }, [fetchStats]);
 
    const handleRefresh = async () => {
       setIsRefreshing(true);
@@ -99,7 +133,7 @@ export default function HomePage() {
                   {/* Hero Section Inside Card */}
                   <div className="max-w-4xl mx-auto px-6 sm:px-8 md:px-12 py-8 sm:py-12 md:py-16">
                      {/* Greeting - Centered */}
-                     <div className="text-center mb-6 sm:mb-8">
+                     <div className="text-center mb-6 sm:mb-4">
                         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-secondary-900 mb-2">
                            {getGreeting()},{" "}
                            {user?.name?.split(" ")[0] || "there"}
@@ -107,6 +141,29 @@ export default function HomePage() {
                         <p className="text-sm sm:text-base text-secondary-600">
                            How can we help you today?
                         </p>
+                     </div>
+
+                     {/* Quick stats (from dashboard store) */}
+                     <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mb-6">
+                        {(statsLoading || stats) && (
+                           <>
+                              <StatPill
+                                 label="Tasks posted"
+                                 value={stats?.totalTasks}
+                                 loading={statsLoading && !stats}
+                              />
+                              <StatPill
+                                 label="Tasks completed"
+                                 value={stats?.completedTasks}
+                                 loading={statsLoading && !stats}
+                              />
+                              <StatPill
+                                 label="Offers sent"
+                                 value={stats?.totalApplications}
+                                 loading={statsLoading && !stats}
+                              />
+                           </>
+                        )}
                      </div>
 
                      {/* Search Bar - Centered */}

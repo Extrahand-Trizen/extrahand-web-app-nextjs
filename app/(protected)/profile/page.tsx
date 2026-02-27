@@ -36,11 +36,11 @@ import {
    SheetTitle,
 } from "@/components/ui/sheet";
 import { ArrowLeft, Menu } from "lucide-react";
-import { profilesApi } from "@/lib/api/endpoints/profiles";
 import { reviewsApi } from "@/lib/api/endpoints/reviews";
 import { toast } from "sonner";
 import { privacyApi } from "@/lib/api/endpoints/privacy";
 import { notificationPreferencesApi } from "@/lib/api/endpoints/notificationPreferences";
+import { useUserStore } from "@/lib/state/userStore";
 
 const VALID_SECTIONS: ProfileSection[] = [
    "overview",
@@ -82,10 +82,64 @@ const SECTION_TITLES: Record<ProfileSection, string> = {
       maxPerDay: 0,
    };
 
+function ProfilePageSkeleton() {
+   return (
+      <div className="bg-gray-50 max-w-7xl mx-auto">
+         <div className="flex">
+            {/* Sidebar skeleton */}
+            <aside className="hidden lg:block w-64 border-r border-gray-200 bg-white min-h-screen">
+               <div className="p-4 border-b border-gray-200">
+                  <div className="h-5 w-24 bg-gray-200 rounded animate-pulse" />
+               </div>
+               <div className="p-4 space-y-3">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                     <div
+                        key={i}
+                        className="h-8 w-full bg-gray-100 rounded-md animate-pulse"
+                     />
+                  ))}
+               </div>
+            </aside>
+
+            {/* Main content skeleton */}
+            <main className="flex-1 min-h-screen">
+               <div className="max-w-4xl mx-auto py-8 px-4 lg:px-8">
+                  <div className="h-5 w-32 bg-gray-200 rounded animate-pulse mb-6" />
+                  <div className="space-y-4">
+                     <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+                        <div className="flex items-center gap-4">
+                           <div className="w-16 h-16 rounded-full bg-gray-200 animate-pulse" />
+                           <div className="flex-1 space-y-2">
+                              <div className="h-4 w-40 bg-gray-200 rounded animate-pulse" />
+                              <div className="h-3 w-24 bg-gray-200 rounded animate-pulse" />
+                           </div>
+                        </div>
+                     </div>
+                     <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5">
+                        <div className="h-4 w-32 bg-gray-200 rounded animate-pulse mb-3" />
+                        <div className="h-2.5 w-full bg-gray-200 rounded animate-pulse mb-2" />
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+                           {Array.from({ length: 4 }).map((_, i) => (
+                              <div
+                                 key={i}
+                                 className="h-16 bg-gray-100 rounded-lg animate-pulse"
+                              />
+                           ))}
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </main>
+         </div>
+      </div>
+   );
+}
+
 function ProfilePageContent() {
    const router = useRouter();
    const searchParams = useSearchParams();
    const { userData, loading: authLoading, refreshUserData, logout } = useAuth();
+   const refreshProfile = useUserStore((state) => state.refreshProfile);
 
    const [user, setUser] = useState<UserProfile | null>(userData);
    const [reviews, setReviews] = useState<Review[]>([]);
@@ -164,8 +218,10 @@ function ProfilePageContent() {
          setLoadingProfile(true);
          setProfileError(null);
          try {
-            const profileData = await profilesApi.me();
-            setUser(profileData as UserProfile);
+            const profileData = await refreshProfile();
+            if (profileData) {
+               setUser(profileData as UserProfile);
+            }
          } catch (error: any) {
             console.error("Failed to fetch profile:", error);
             setProfileError(error.message || "Failed to load profile data");
@@ -507,24 +563,15 @@ function ProfilePageContent() {
       },
    };
 
-   // Show a full-page spinner only while auth is resolving or we truly
-   // have no user data yet. Allow the main layout to render while the
-   // detailed profile fetch (loadingProfile) is still in progress so
-   // the page doesn't feel blank on first load.
+   // While auth is resolving or we truly have no user data yet, show a
+   // structured skeleton instead of a blocking full-page spinner so the
+   // page feels responsive even during refresh.
    if (authLoading || (!user && !profileError)) {
-      return (
-         <div className="flex items-center justify-center py-20">
-            <LoadingSpinner size="lg" />
-         </div>
-      );
+      return <ProfilePageSkeleton />;
    }
 
    if (!user) {
-      return (
-         <div className="flex items-center justify-center py-20">
-            <LoadingSpinner size="lg" />
-         </div>
-      );
+      return <ProfilePageSkeleton />;
    }
 
    if (isMobile) {
@@ -611,13 +658,7 @@ function ProfilePageContent() {
 
 export default function ProfilePage() {
    return (
-      <Suspense
-         fallback={
-            <div className="flex items-center justify-center py-20">
-               <LoadingSpinner size="lg" />
-            </div>
-         }
-      >
+      <Suspense fallback={<ProfilePageSkeleton />}>
          <ProfilePageContent />
       </Suspense>
    );
