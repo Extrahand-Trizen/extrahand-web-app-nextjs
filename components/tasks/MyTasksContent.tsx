@@ -51,8 +51,9 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
          console.log("✅ My tasks response:", response);
          return response;
       },
-      staleTime: 60_000, // 1 minute: reuse cached data for quick revisits
-      refetchOnMount: true, // Always fetch fresh data when component mounts
+      staleTime: 5 * 60 * 1000, // 5 minutes: keep data fresh longer to avoid refetch
+      refetchOnMount: "stale", // Only refetch if data is stale (older than 5 minutes)
+      refetchOnWindowFocus: false, // Don't refetch on window focus
    });
 
    // Normalize tasks array from API response
