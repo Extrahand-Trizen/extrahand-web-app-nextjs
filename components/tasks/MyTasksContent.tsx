@@ -51,8 +51,9 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
          console.log("✅ My tasks response:", response);
          return response;
       },
-      staleTime: 60_000, // 1 minute: reuse cached data for quick revisits
-      refetchOnMount: false, // don't refetch if we already have cached data
+      staleTime: Infinity, // Never mark as stale - keep cached data indefinitely
+      refetchOnMount: false, // Never refetch on mount - show cached data immediately
+      refetchOnWindowFocus: false, // Don't refetch on window focus
    });
 
    // Normalize tasks array from API response
@@ -149,17 +150,10 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
       return filteredTasks.slice(start, start + 10);
    }, [filteredTasks, page]);
 
-   // Track previous count to avoid unnecessary parent updates
-   const prevCountRef = React.useRef<number | null>(null);
-   
-   // Notify parent of count change (only when count actually changes)
+   // Notify parent of total count change (use total tasks, not filtered)
    useEffect(() => {
-      const count = filteredTasks.length;
-      if (prevCountRef.current !== count) {
-         prevCountRef.current = count;
-         onCountChange?.(count);
-      }
-   }, [filteredTasks.length, onCountChange]);
+      onCountChange?.(allTasks.length);
+   }, [allTasks.length, onCountChange]);
 
    // Handle delete task
    const handleDeleteTask = async (taskId: string, taskTitle: string) => {

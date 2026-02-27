@@ -56,7 +56,9 @@ export default function TaskDetailsPage() {
    const [showMakeOfferModal, setShowMakeOfferModal] = useState(false);
    const [shareOpen, setShareOpen] = useState(false);
    const [hasApplied, setHasApplied] = useState(false);
-   const [checkingApplication] = useState(false);
+   const [checkingApplication, setCheckingApplication] = useState(false);
+   const [applicationCount, setApplicationCount] = useState(0);
+   const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
    
    const [scrollY, setScrollY] = useState(0);
    const isMobile = useIsMobile();
@@ -97,6 +99,21 @@ export default function TaskDetailsPage() {
             
             if (taskData) {
                setTask(taskData as Task);
+               
+               // Check application status immediately if user is logged in
+               if (currentUser && userProfile && taskId) {
+                  try {
+                     const appResponse = await applicationsApi.getTaskApplications(taskId);
+                     const applications = appResponse.applications || [];
+                     const userApplication = applications.find(
+                        (app) => app.applicantId === (userProfile as any)._id
+                     );
+                     setHasApplied(!!userApplication);
+                  } catch (error) {
+                     console.error("Error checking application:", error);
+                     setHasApplied(false);
+                  }
+               }
             }
          } catch (error) {
             console.error("❌ Failed to fetch task:", error);
@@ -108,7 +125,7 @@ export default function TaskDetailsPage() {
       if (taskId) {
          fetchTask();
       }
-   }, [taskId]);
+   }, [taskId, currentUser, userProfile]);
 
    useEffect(() => {
       const handleScroll = () => {
@@ -235,6 +252,7 @@ export default function TaskDetailsPage() {
                onMakeOffer={handleMakeOffer}
                hasApplied={hasApplied}
                checkingApplication={checkingApplication}
+               isSubmittingOffer={isSubmittingOffer}
             />
          </div>
 
@@ -256,7 +274,7 @@ export default function TaskDetailsPage() {
                                  : "text-secondary-600 hover:bg-secondary-50"
                            }`}
                         >
-                           Offers ({task.applications || 0})
+                           Offers ({applicationCount})
                         </button>
                         <button
                            onClick={() => setActiveTab("questions")}
@@ -282,6 +300,7 @@ export default function TaskDetailsPage() {
                               hasApplied={hasApplied}
                               checkingApplication={checkingApplication}
                               onHasAppliedChange={setHasApplied}
+                              onApplicationsCountChange={setApplicationCount}
                            />
                         ) : (
                            <TaskQuestionsSection taskId={taskId} isOwner={isOwner} />
@@ -297,7 +316,7 @@ export default function TaskDetailsPage() {
                      isOwner={isOwner} 
                      onMakeOffer={handleMakeOffer}
                      hasApplied={hasApplied}
-                     checkingApplication={checkingApplication}
+                     isSubmittingOffer={isSubmittingOffer}
                   />
                </div>
             </div>
@@ -309,11 +328,22 @@ export default function TaskDetailsPage() {
                <div className="max-w-7xl mx-auto px-4 py-3">
                   <Button
                      onClick={handleMakeOffer}
-                     disabled={hasApplied || checkingApplication}
+                     disabled={hasApplied || isSubmittingOffer}
                      className="w-full bg-primary-600 hover:bg-primary-700 text-white h-10 font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                     {checkingApplication ? "Checking..." : hasApplied ? "Already Applied" : "Make an Offer"}
-                     {!checkingApplication && !hasApplied && <ArrowRight className="w-4 h-4" />}
+                     {isSubmittingOffer ? (
+                        <>
+                           <LoadingSpinner className="w-4 h-4" />
+                           <span>Submitting...</span>
+                        </>
+                     ) : hasApplied ? (
+                        "Already Applied"
+                     ) : (
+                        <>
+                           Make an Offer
+                           <ArrowRight className="w-4 h-4" />
+                        </>
+                     )}
                   </Button>
                </div>
             </div>
@@ -325,8 +355,10 @@ export default function TaskDetailsPage() {
                task={task}
                open={showMakeOfferModal}
                onOpenChange={setShowMakeOfferModal}
+               onSubmittingChange={setIsSubmittingOffer}
                onSuccess={() => {
                   setHasApplied(true);
+                  setIsSubmittingOffer(false);
                   setShowMakeOfferModal(false);
                }}
             />

@@ -138,6 +138,10 @@ export const HeroSection: React.FC = () => {
          const trimmedQuery = query.trim();
          const trimmedLocation = location.trim();
 
+         if (!trimmedQuery && !trimmedLocation) {
+            return;
+         }
+
          if (trimmedQuery) searchParams.set("q", trimmedQuery);
          if (trimmedLocation) searchParams.set("suburb", trimmedLocation);
 

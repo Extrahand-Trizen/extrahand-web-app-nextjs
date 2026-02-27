@@ -7,22 +7,74 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { MyTasksContent } from "@/components/tasks/MyTasksContent";
 import { MyApplicationsContent } from "@/components/tasks/MyApplicationsContent";
+import { tasksApi } from "@/lib/api/endpoints/tasks";
+import { applicationsApi } from "@/lib/api/endpoints/applications";
 
 export default function TasksPage() {
    const router = useRouter();
    const searchParams = useSearchParams();
-   const [tasksCount, setTasksCount] = useState<number | null>(null);
-   const [applicationsCount, setApplicationsCount] = useState<number | null>(null);
+   const queryClient = useQueryClient();
+   const [tasksCount, setTasksCount] = useState<number>(0);
+   const [applicationsCount, setApplicationsCount] = useState<number>(0);
 
    const activeTab = useMemo(() => {
       const tabParam = searchParams.get("tab");
       return tabParam === "myapplications" ? "myapplications" : "mytasks";
    }, [searchParams]);
+
+   // Prefetch both tabs' data on page load so they're immediately available
+   useEffect(() => {
+      const prefetchBothTabs = async () => {
+         try {
+            // Prefetch tasks
+            const tasksData = await tasksApi.getMyTasks({ limit: 100 });
+            queryClient.setQueryData(["my-tasks"], tasksData);
+
+            // Extract tasks count immediately after setting
+            const tasksPayload = tasksData;
+            const tasksCountFromResponse = Array.isArray(tasksPayload?.data?.tasks)
+               ? tasksPayload.data.tasks.length
+               : Array.isArray(tasksPayload?.tasks)
+               ? tasksPayload.tasks.length
+               : Array.isArray(tasksPayload?.data)
+               ? tasksPayload.data.length
+               : Array.isArray(tasksPayload)
+               ? tasksPayload.length
+               : 0;
+            setTasksCount(tasksCountFromResponse);
+
+            // Prefetch applications
+            const applicationsData = await applicationsApi.getMyApplications();
+            queryClient.setQueryData(["my-applications"], applicationsData);
+
+            // Extract applications count immediately after setting
+            const applicationsPayload = applicationsData;
+            const applicationsFromResponse = Array.isArray(applicationsPayload?.data)
+               ? applicationsPayload.data
+               : Array.isArray(applicationsPayload?.data?.applications)
+               ? applicationsPayload.data.applications
+               : Array.isArray(applicationsPayload?.applications)
+               ? applicationsPayload.applications
+               : Array.isArray(applicationsPayload)
+               ? applicationsPayload
+               : [];
+            const applicationsCountFromResponse = applicationsFromResponse.filter(
+               (app: any) => app?.taskId !== null && app?.taskId !== undefined
+            ).length;
+            setApplicationsCount(applicationsCountFromResponse);
+         } catch (error) {
+            console.error("Failed to prefetch tab data:", error);
+         }
+      };
+
+      prefetchBothTabs();
+   }, [queryClient]);
 
 
    const handleTabChange = (value: string) => {
@@ -55,15 +107,13 @@ export default function TasksPage() {
                               </div>
                            </div>
 
-                           {activeTab === "mytasks" && (
-                              <Button
-                                 onClick={() => router.push("/tasks/new")}
-                                 className="bg-primary-600 hover:bg-primary-700 shrink-0"
-                              >
-                                 <Plus className="w-4 h-4 mr-2" />
-                                 Post task
-                              </Button>
-                           )}
+                           <Button
+                              onClick={() => router.push("/tasks/new")}
+                              className="bg-primary-600 hover:bg-primary-700 shrink-0"
+                           >
+                              <Plus className="w-4 h-4 mr-2" />
+                              Post task
+                           </Button>
                         </div>
                         <TabsList className="bg-transparent p-0 h-auto gap-4 sm:gap-6">
                            <TabsTrigger
@@ -71,7 +121,7 @@ export default function TasksPage() {
                               className="px-3 py-2 rounded-lg border-b-2 border-transparent data-[state=active]:border-primary-600 data-[state=active]:text-primary-600 text-secondary-600 font-medium text-sm sm:text-base"
                            >
                               My Tasks
-                              {tasksCount !== null && tasksCount > 0 && (
+                              {tasksCount > 0 && (
                                  <span className="ml-2 text-secondary-400">
                                     {tasksCount}
                                  </span>
@@ -83,7 +133,7 @@ export default function TasksPage() {
                               className="px-3 py-2 rounded-lg border-b-2 border-transparent data-[state=active]:border-primary-600 data-[state=active]:text-primary-600 text-secondary-600 font-medium text-sm sm:text-base"
                            >
                               My Applications
-                              {applicationsCount !== null && applicationsCount > 0 && (
+                              {applicationsCount > 0 && (
                                  <span className="ml-2 text-secondary-400">
                                     {applicationsCount}
                                  </span>

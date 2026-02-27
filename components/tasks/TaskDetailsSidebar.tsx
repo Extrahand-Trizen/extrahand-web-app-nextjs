@@ -7,13 +7,14 @@ import type { Task } from "@/types/task";
 import Link from "next/link";
 import { getUserBadge } from "@/lib/api/badge";
 import { UserBadge } from "@/components/ui/user-badge";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 interface TaskDetailsSidebarProps {
    task: Task;
    isOwner?: boolean;
    onMakeOffer?: () => void;
    hasApplied?: boolean;
-   checkingApplication?: boolean;
+   isSubmittingOffer?: boolean;
 }
 
 export function TaskDetailsSidebar({ 
@@ -21,7 +22,7 @@ export function TaskDetailsSidebar({
    isOwner = false, 
    onMakeOffer,
    hasApplied = false,
-   checkingApplication = false,
+   isSubmittingOffer = false,
 }: TaskDetailsSidebarProps) {
    
    // Fetch requester badge
@@ -79,10 +80,19 @@ export function TaskDetailsSidebar({
                <div className="space-y-2">
                   <Button
                      onClick={onMakeOffer}
-                     disabled={hasApplied || checkingApplication}
+                     disabled={hasApplied || isSubmittingOffer}
                      className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold h-12 rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                     {checkingApplication ? "Checking..." : hasApplied ? "Already Applied" : "Make an Offer"}
+                     {isSubmittingOffer ? (
+                        <>
+                           <LoadingSpinner className="w-4 h-4 mr-2" />
+                           Submitting...
+                        </>
+                     ) : hasApplied ? (
+                        "Already Applied"
+                     ) : (
+                        "Make an Offer"
+                     )}
                   </Button>
                   <Button
                      variant="outline"

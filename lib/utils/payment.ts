@@ -47,13 +47,11 @@ export function calculateServiceFee(amount: number, percentage: number = 5): num
 }
 
 /**
- * Calculate platform fee
+ * Calculate platform fee (5% of amount)
  */
 export function calculatePlatformFee(amount: number): number {
-   // Example: Fixed fee + percentage
-   const fixedFee = 10;
-   const percentageFee = Math.round(amount * 0.02);
-   return fixedFee + percentageFee;
+   // 5% platform fee
+   return Math.round(amount * 0.05);
 }
 
 /**

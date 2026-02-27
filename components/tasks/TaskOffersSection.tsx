@@ -112,7 +112,7 @@ export function TaskOffersSection({
       if (taskId) {
          loadApplications();
       }
-   }, [taskId]);
+   }, [taskId, hasApplied]);
 
    // Notify parent of count changes in a separate effect to avoid render issues
    useEffect(() => {

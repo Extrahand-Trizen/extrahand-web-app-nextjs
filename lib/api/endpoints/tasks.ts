@@ -75,6 +75,18 @@ export const tasksApi = {
   async getMyTasks(params?: TaskQueryParams): Promise<TaskListResponse> {
     const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
     const response = await fetchWithAuth(`tasks/my-tasks${queryString}`);
+    if (response.data && response.meta?.pagination) {
+      return {
+        tasks: response.data,
+        pagination: {
+          page: response.meta.pagination.page,
+          limit: response.meta.pagination.limit,
+          total: response.meta.pagination.total,
+          pages: response.meta.pagination.totalPages ?? response.meta.pagination.pages,
+        },
+      };
+    }
+
     return response.data || response;
   },
 
@@ -140,6 +152,22 @@ export const tasksApi = {
     });
     // Backend returns { success: true, data: task, message: "..." }
     return response.data || response;
+  },
+
+  /**
+   * Request changes on a task (poster sends feedback to tasker)
+   * This doesn't change the task status, just creates a comment/notification
+   * POST /api/v1/tasks/:id/request-changes
+   */
+  async requestChanges(
+    taskId: string,
+    message: string
+  ): Promise<{ success: boolean; message?: string; data?: Task }> {
+    const response = await fetchWithAuth(`tasks/${taskId}/request-changes`, {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    });
+    return response;
   },
 
   /**

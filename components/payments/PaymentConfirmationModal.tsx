@@ -182,7 +182,7 @@ export function PaymentConfirmationModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
       <DialogContent className="sm:max-w-[500px]" showCloseButton={!isPaymentProcessing}>
         <DialogHeader>
           <DialogTitle>Complete Payment</DialogTitle>
@@ -243,7 +243,7 @@ export function PaymentConfirmationModal({
 
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">
-                      Platform Fee ({((fees.metadata?.platformFeePercentage || 0.1) * 100).toFixed(0)}%)
+                      Platform Fee ({((fees.metadata?.platformFeePercentage || 0.05) * 100).toFixed(0)}%)
                     </span>
                     <span className="text-gray-600">
                       +{formatCurrency(fees.platformFee)}
@@ -291,7 +291,7 @@ export function PaymentConfirmationModal({
                   <div className="flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
                     <p className="text-xs text-green-800">
-                      Full refund if task not completed
+                      Refund and cancellation policy
                     </p>
                   </div>
                 </div>
