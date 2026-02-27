@@ -149,17 +149,10 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
       return filteredTasks.slice(start, start + 10);
    }, [filteredTasks, page]);
 
-   // Track previous count to avoid unnecessary parent updates
-   const prevCountRef = React.useRef<number | null>(null);
-   
-   // Notify parent of count change (only when count actually changes)
+   // Notify parent of total count change (use total tasks, not filtered)
    useEffect(() => {
-      const count = filteredTasks.length;
-      if (prevCountRef.current !== count) {
-         prevCountRef.current = count;
-         onCountChange?.(count);
-      }
-   }, [filteredTasks.length, onCountChange]);
+      onCountChange?.(allTasks.length);
+   }, [allTasks.length, onCountChange]);
 
    // Handle delete task
    const handleDeleteTask = async (taskId: string, taskTitle: string) => {

@@ -52,7 +52,6 @@ export async function loadRazorpayScript(): Promise<boolean> {
   return new Promise((resolve) => {
     // Check if already loaded
     if (window.Razorpay) {
-      console.log('✅ Razorpay SDK already loaded');
       resolve(true);
       return;
     }
@@ -60,19 +59,8 @@ export async function loadRazorpayScript(): Promise<boolean> {
     // Check if script is already in DOM
     const existingScript = document.querySelector(`script[src="${RAZORPAY_SCRIPT_URL}"]`);
     if (existingScript) {
-      // Wait for it to load
-      if ((existingScript as any).loaded) {
-        resolve(true);
-      } else {
-        existingScript.addEventListener('load', () => {
-          console.log('✅ Razorpay SDK loaded from existing script');
-          resolve(true);
-        }, { once: true });
-        existingScript.addEventListener('error', () => {
-          console.error('❌ Error loading existing Razorpay script');
-          resolve(false);
-        }, { once: true });
-      }
+      existingScript.addEventListener('load', () => resolve(true));
+      existingScript.addEventListener('error', () => resolve(false));
       return;
     }
 
@@ -80,13 +68,10 @@ export async function loadRazorpayScript(): Promise<boolean> {
     const script = document.createElement('script');
     script.src = RAZORPAY_SCRIPT_URL;
     script.async = true;
-    script.defer = false; // Load immediately for payment flow
     
     script.onload = () => {
-      (script as any).loaded = true;
       console.log('✅ Razorpay SDK loaded successfully');
-      // Small delay to ensure Razorpay global is available
-      setTimeout(() => resolve(true), 100);
+      resolve(true);
     };
     
     script.onerror = () => {
@@ -94,8 +79,7 @@ export async function loadRazorpayScript(): Promise<boolean> {
       resolve(false);
     };
     
-    // Insert at head for faster loading
-    document.head ? document.head.appendChild(script) : document.body.appendChild(script);
+    document.body.appendChild(script);
   });
 }
 
@@ -124,12 +108,6 @@ export interface RazorpayOptions {
     escape?: boolean;
     backdropclose?: boolean;
   };
-  method?: string; // Preferred payment method (card, upi, netbanking, wallet, emandate)
-  recurring?: boolean; // For recurring payments
-  readonly?: {
-    contact?: boolean;
-    email?: boolean;
-  };
 }
 
 /**
@@ -146,19 +124,12 @@ export async function initiateRazorpayPayment(
 ): Promise<void> {
   try {
     // Load Razorpay SDK
-    console.log('📦 Loading Razorpay SDK...');
     const loaded = await loadRazorpayScript();
     if (!loaded) {
       throw new Error('Failed to load Razorpay SDK');
     }
 
-    // Verify Razorpay is available
-    if (!window.Razorpay) {
-      throw new Error('Razorpay SDK not available');
-    }
-
     // Get Razorpay key: from server API (RAZORPAY_KEY_ID) or build-time NEXT_PUBLIC_RAZORPAY_KEY_ID
-    console.log('🔑 Fetching Razorpay key...');
     const razorpayKey = await getRazorpayKeyId();
 
     // Prepare Razorpay options
@@ -178,10 +149,7 @@ export async function initiateRazorpayPayment(
           callbacks.onError?.(error as Error);
         }
       },
-      prefill: options.prefill || {
-        contact: '',
-        email: '',
-      },
+      prefill: options.prefill,
       notes: options.notes || order.notes,
       theme: {
         color: options.theme?.color || '#10b981', // Green primary color
@@ -194,58 +162,20 @@ export async function initiateRazorpayPayment(
         escape: options.modal?.escape !== false,
         backdropclose: options.modal?.backdropclose !== false,
       },
-      readonly: {
-        contact: false, // Allow user to edit contact
-        email: false,  // Allow user to edit email
-      },
     };
 
-    console.log('💳 Creating Razorpay checkout instance...');
-    // Create Razorpay checkout instance
+    // Create and open Razorpay checkout
     const rzp = new window.Razorpay(razorpayOptions);
     
-    // Set up all event handlers BEFORE opening the modal
-    // These handlers capture various payment flow events
     rzp.on('payment.failed', function (response: any) {
-      console.error('❌ Payment failed event:', response.error);
-      const error = new Error(response.error?.description || 'Payment failed');
+      console.error('❌ Payment failed:', response.error);
+      const error = new Error(response.error.description || 'Payment failed');
       callbacks.onError?.(error);
-    });
-
-    rzp.on('payment.error', function (response: any) {
-      console.error('❌ Payment error event:', response.error);
-      const error = new Error(response.error?.description || 'Payment error occurred');
-      callbacks.onError?.(error);
-    });
-
-    rzp.on('payment.authorized', function (response: any) {
-      console.log('✅ Payment authorized event:', response);
-    });
-
-    rzp.on('payment.success', function (response: any) {
-      console.log('✅ Payment success event:', response);
-    });
-
-    // Additional event handlers for better UX
-    rzp.on('payment.submit', function () {
-      console.log('📤 Payment submission initiated');
-    });
-
-    // Handle radio selection (for payment method selection)
-    rzp.on('method.select', function (method: any) {
-      console.log('📌 Payment method selected:', method);
-    });
-
-    // Handle phone input
-    rzp.on('input.contact', function (data: any) {
-      console.log('📱 Contact updated:', data);
     });
     
-    // Open the modal AFTER all handlers are registered
-    console.log('🎯 Opening Razorpay payment modal...');
     rzp.open();
   } catch (error) {
-    console.error('❌ Error initiating Razorpay payment:', error);
+    console.error('❌  Error initiating Razorpay payment:', error);
     callbacks.onError?.(error as Error);
     throw error;
   }

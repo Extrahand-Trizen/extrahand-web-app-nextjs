@@ -157,10 +157,15 @@ export function MyApplicationsContent({
       return filteredApplications.filter((app) => app.taskId !== null && app.taskId !== undefined);
    }, [filteredApplications]);
 
-   // Notify parent of count change when displayable applications change
+   // Calculate total count for tab badge (all applications with valid taskId, regardless of filters)
+   const totalApplicationsCount = useMemo(() => {
+      return allApplications.filter((app) => app.taskId !== null && app.taskId !== undefined).length;
+   }, [allApplications]);
+
+   // Notify parent of count change when total count changes
    useEffect(() => {
-      onCountChange?.(displayableApplications.length);
-   }, [displayableApplications.length, onCountChange]);
+      onCountChange?.(totalApplicationsCount);
+   }, [totalApplicationsCount, onCountChange]);
 
    // Handlers
    const handleViewTask = (taskId: string) => {

@@ -56,6 +56,7 @@ interface MakeOfferModalProps {
    open: boolean;
    onOpenChange: (open: boolean) => void;
    onSuccess?: () => void;
+   onSubmittingChange?: (isSubmitting: boolean) => void;
 }
 
 export function MakeOfferModal({
@@ -63,6 +64,7 @@ export function MakeOfferModal({
    open,
    onOpenChange,
    onSuccess,
+   onSubmittingChange,
 }: MakeOfferModalProps) {
    const router = useRouter();
    const { userData } = useAuth();
@@ -199,6 +201,7 @@ export function MakeOfferModal({
       }
 
       setIsSubmitting(true);
+      onSubmittingChange?.(true);
 
       try {
          // Build the application payload
@@ -244,6 +247,7 @@ export function MakeOfferModal({
          }
       } finally {
          setIsSubmitting(false);
+         onSubmittingChange?.(false);
       }
    };
 

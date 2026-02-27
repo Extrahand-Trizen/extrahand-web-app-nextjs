@@ -182,7 +182,7 @@ export function PaymentConfirmationModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
       <DialogContent className="sm:max-w-[500px]" showCloseButton={!isPaymentProcessing}>
         <DialogHeader>
           <DialogTitle>Complete Payment</DialogTitle>

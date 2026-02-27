@@ -3,6 +3,7 @@
 import { MapPin, Calendar, Clock, Tag, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Task } from "@/types/task";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 interface TaskDetailsHeaderProps {
    task: Task;
@@ -10,6 +11,7 @@ interface TaskDetailsHeaderProps {
    onMakeOffer?: () => void;
    hasApplied?: boolean;
    checkingApplication?: boolean;
+   isSubmittingOffer?: boolean;
 }
 
 export function TaskDetailsHeader({
@@ -18,6 +20,7 @@ export function TaskDetailsHeader({
    onMakeOffer,
    hasApplied = false,
    checkingApplication = false,
+   isSubmittingOffer = false,
 }: TaskDetailsHeaderProps) {
    const budgetAmount =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
@@ -214,11 +217,22 @@ export function TaskDetailsHeader({
                {task.status === "open" && onMakeOffer && (
                   <Button 
                      onClick={onMakeOffer}
-                     disabled={hasApplied || checkingApplication}
+                     disabled={hasApplied || checkingApplication || isSubmittingOffer}
                      className="bg-primary-600 hover:bg-primary-700 text-white h-10 font-semibold rounded-xl shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" 
                      size="lg"
                   >
-                     {checkingApplication ? "Checking..." : hasApplied ? "Already Applied" : "Make an Offer"}
+                     {checkingApplication ? (
+                        "Checking..."
+                     ) : isSubmittingOffer ? (
+                        <>
+                           <LoadingSpinner className="w-4 h-4 mr-2" />
+                           Submitting...
+                        </>
+                     ) : hasApplied ? (
+                        "Already Applied"
+                     ) : (
+                        "Make an Offer"
+                     )}
                   </Button>
                )}
             </div>

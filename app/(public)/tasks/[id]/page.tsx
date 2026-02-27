@@ -58,6 +58,7 @@ export default function TaskDetailsPage() {
    const [hasApplied, setHasApplied] = useState(false);
    const [checkingApplication, setCheckingApplication] = useState(false);
    const [applicationCount, setApplicationCount] = useState(0);
+   const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
    
    const [scrollY, setScrollY] = useState(0);
    const isMobile = useIsMobile();
@@ -251,6 +252,7 @@ export default function TaskDetailsPage() {
                onMakeOffer={handleMakeOffer}
                hasApplied={hasApplied}
                checkingApplication={checkingApplication}
+               isSubmittingOffer={isSubmittingOffer}
             />
          </div>
 
@@ -314,6 +316,7 @@ export default function TaskDetailsPage() {
                      isOwner={isOwner} 
                      onMakeOffer={handleMakeOffer}
                      hasApplied={hasApplied}
+                     isSubmittingOffer={isSubmittingOffer}
                   />
                </div>
             </div>
@@ -325,11 +328,22 @@ export default function TaskDetailsPage() {
                <div className="max-w-7xl mx-auto px-4 py-3">
                   <Button
                      onClick={handleMakeOffer}
-                     disabled={hasApplied}
+                     disabled={hasApplied || isSubmittingOffer}
                      className="w-full bg-primary-600 hover:bg-primary-700 text-white h-10 font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                     {hasApplied ? "Already Applied" : "Make an Offer"}
-                     {!hasApplied && <ArrowRight className="w-4 h-4" />}
+                     {isSubmittingOffer ? (
+                        <>
+                           <LoadingSpinner className="w-4 h-4" />
+                           <span>Submitting...</span>
+                        </>
+                     ) : hasApplied ? (
+                        "Already Applied"
+                     ) : (
+                        <>
+                           Make an Offer
+                           <ArrowRight className="w-4 h-4" />
+                        </>
+                     )}
                   </Button>
                </div>
             </div>
@@ -341,8 +355,10 @@ export default function TaskDetailsPage() {
                task={task}
                open={showMakeOfferModal}
                onOpenChange={setShowMakeOfferModal}
+               onSubmittingChange={setIsSubmittingOffer}
                onSuccess={() => {
                   setHasApplied(true);
+                  setIsSubmittingOffer(false);
                   setShowMakeOfferModal(false);
                }}
             />
