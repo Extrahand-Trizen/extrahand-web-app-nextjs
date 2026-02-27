@@ -43,6 +43,7 @@ import { useUserStore } from "@/lib/state/userStore";
 import { useQueryClient } from "@tanstack/react-query";
 import { getBadgeProgress } from "@/lib/api/badge";
 import { referralsApi } from "@/lib/api/endpoints/referrals";
+import { profilesApi } from "@/lib/api/endpoints/profiles";
 
 const VALID_SECTIONS: ProfileSection[] = [
    "overview",
@@ -276,7 +277,7 @@ function ProfilePageContent() {
 
          try {
             const response = await notificationPreferencesApi.getPreferences();
-            const prefs = response?.data ?? response?.preferences ?? response;
+            const prefs = response.data ?? response;
             if (!prefs) return;
 
             setNotificationSettings(normalizeNotificationSettings(prefs));
@@ -656,6 +657,7 @@ interface Props {
    user: UserProfile;
    reviews?: Review[];
    workHistory?: WorkHistoryItem[];
+   loadingProfile?: boolean;
    loadingReviews?: boolean;
    onNavigate: (s: ProfileSection) => void;
    onSaveProfile: (data?: Partial<UserProfile>) => Promise<void>;
@@ -780,7 +782,6 @@ function renderSection(s: ProfileSection, p: Props) {
                onRevokeSession={p.onRevokeSession}
                onRevokeAllSessions={p.onRevokeAllSessions}
                onUpdatePrivacy={p.onUpdatePrivacy}
-               onDeleteAccount={p.onDeleteAccount}
             />
          );
       case "privacy":

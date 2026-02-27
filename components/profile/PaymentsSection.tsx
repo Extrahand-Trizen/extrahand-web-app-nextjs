@@ -37,7 +37,6 @@ import {
 } from "lucide-react";
 import { PaymentMethod, PayoutMethod, Transaction } from "@/types/profile";
 import { mockTransactions } from "@/lib/data/payments";
-import { mockTransactions } from "@/lib/data/payments";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { useAuth } from "@/lib/auth/context";
@@ -58,8 +57,6 @@ interface PaymentsSectionProps {
 }
 
 export function PaymentsSection({
-   paymentMethods = [],
-   payoutMethods = [],
    paymentMethods = [],
    payoutMethods = [],
    transactions: initialTransactions,

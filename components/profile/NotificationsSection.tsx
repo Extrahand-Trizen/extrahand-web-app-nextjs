@@ -94,6 +94,9 @@ export function NotificationsSection({
    const [expandedSections, setExpandedSections] = useState<string[]>(["push"]);
    const [keywordInput, setKeywordInput] = useState("");
    const [keywordAlerts, setKeywordAlerts] = useState<string[]>([]);
+   const [showDropdown, setShowDropdown] = useState(false);
+   const [filteredCategories, setFilteredCategories] =
+      useState(KEYWORD_CATEGORIES);
 
    const keywordAlertsEnabled =
       (localSettings.push.enabled && localSettings.push.keywordTaskAlerts) ||
@@ -143,23 +146,10 @@ export function NotificationsSection({
                  })()
                : [];
 
-            const localCategories = localCategoryStore
-               ? (() => {
-                    try {
-                       const parsed = JSON.parse(localCategoryStore);
-                       return Array.isArray(parsed) ? parsed : [];
-                    } catch {
-                       return [];
-                    }
-                 })()
-               : [];
-
-            const [keywordRes] = await Promise.allSettled([
-               profilesApi.getKeywordAlerts(),
-            ]);
+            const keywordRes = await profilesApi.getKeywordAlerts();
 
             if (keywordRes) {
-               const keywords = keywordRes?.data?.keywords;
+               const keywords = keywordRes.data?.keywords;
                if (Array.isArray(keywords) && isMounted) {
                   const resolvedKeywords = keywords.length > 0 ? keywords : localKeywords;
                   setKeywordAlerts(resolvedKeywords);
@@ -187,7 +177,22 @@ export function NotificationsSection({
       };
    }, []);
 
-  
+   // Update category suggestions dropdown based on input
+   useEffect(() => {
+      const term = keywordInput.trim().toLowerCase();
+      if (!term) {
+         setFilteredCategories([]);
+         setShowDropdown(false);
+         return;
+      }
+
+      const matches = KEYWORD_CATEGORIES.filter((cat) =>
+         cat.name.toLowerCase().includes(term)
+      );
+      setFilteredCategories(matches);
+      setShowDropdown(matches.length > 0);
+   }, [keywordInput]);
+
    const persistKeywordAlerts = (next: string[]) => {
       setKeywordAlerts(next);
       setHasChanges(true);
@@ -523,7 +528,7 @@ export function NotificationsSection({
                      Control when and how often you receive notifications
                   </p>
                </div>
-            </div>
+            </button>
          </div>
 
          {/* Hidden frequency section removed - Coming Soon */}
