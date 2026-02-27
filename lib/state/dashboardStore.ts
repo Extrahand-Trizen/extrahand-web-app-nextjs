@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { api } from "@/lib/api";
+import { useUserStore } from "@/lib/state/userStore";
 
 type UserStats = {
   totalTasks: number;
@@ -60,6 +61,21 @@ export const useDashboardStore = create<DashboardState>()((set, get) => ({
         statsError: null,
         lastFetchedAt: now,
       });
+
+      // Also patch the user profile store so that components which rely
+      // on user.totalTasks / completedTasks (like DynamicActionCard)
+      // see consistent stats without issuing their own stats requests.
+      try {
+        const patchUser = useUserStore.getState().patchUser;
+        patchUser({
+          totalTasks: stats.totalTasks,
+          completedTasks: stats.completedTasks,
+          postedTasks: stats.totalTasks,
+        });
+      } catch {
+        // Swallow errors here; we don't want a failure in user patching
+        // to break the dashboard stats flow.
+      }
 
       return stats;
     } catch (error: any) {

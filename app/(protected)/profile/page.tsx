@@ -28,7 +28,6 @@ import {
    CommunicationChannel,
    NotificationSettingsState,
 } from "@/types/consent";
-import { mockPaymentMethods, mockPayoutMethods } from "@/lib/data/payments";
 import {
    Sheet,
    SheetContent,
@@ -41,6 +40,9 @@ import { toast } from "sonner";
 import { privacyApi } from "@/lib/api/endpoints/privacy";
 import { notificationPreferencesApi } from "@/lib/api/endpoints/notificationPreferences";
 import { useUserStore } from "@/lib/state/userStore";
+import { useQueryClient } from "@tanstack/react-query";
+import { getBadgeProgress } from "@/lib/api/badge";
+import { referralsApi } from "@/lib/api/endpoints/referrals";
 
 const VALID_SECTIONS: ProfileSection[] = [
    "overview",
@@ -140,6 +142,7 @@ function ProfilePageContent() {
    const searchParams = useSearchParams();
    const { userData, loading: authLoading, refreshUserData, logout } = useAuth();
    const refreshProfile = useUserStore((state) => state.refreshProfile);
+   const queryClient = useQueryClient();
 
    const [user, setUser] = useState<UserProfile | null>(userData);
    const [reviews, setReviews] = useState<Review[]>([]);
@@ -158,57 +161,42 @@ function ProfilePageContent() {
    const [navOpen, setNavOpen] = useState(false);
 
    // Payment methods and payout methods state with localStorage persistence
-   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>(() => {
-      if (typeof window !== 'undefined') {
-         const stored = localStorage.getItem('paymentMethods');
-         if (stored) {
-            try {
-               const parsed = JSON.parse(stored) as PaymentMethod[];
-               // Convert date strings back to Date objects
-               return parsed.map((pm) => ({
-                  ...pm,
-                  createdAt: new Date(pm.createdAt)
-               }));
-            } catch (e) {
-               console.error('Failed to parse stored payment methods:', e);
-            }
-         }
-      }
-      return mockPaymentMethods;
-   });
+   // Start with no payment methods by default; we no longer seed
+   // mock cards here, and we'll ignore any stale localStorage mocks.
+   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
    
-   const [payoutMethods, setPayoutMethods] = useState<PayoutMethod[]>(() => {
-      if (typeof window !== 'undefined') {
-         const stored = localStorage.getItem('payoutMethods');
-         if (stored) {
-            try {
-               const parsed = JSON.parse(stored) as PayoutMethod[];
-               // Convert date strings back to Date objects
-               return parsed.map((pm) => ({
-                  ...pm,
-                  createdAt: new Date(pm.createdAt)
-               }));
-            } catch (e) {
-               console.error('Failed to parse stored payout methods:', e);
-            }
+   // Likewise, start with no payout methods by default.
+   const [payoutMethods, setPayoutMethods] = useState<PayoutMethod[]>([]);
+
+   // Optional: clear any old mock data that might be lingering
+   // from previous versions. We don't persist methods for now.
+   useEffect(() => {
+      if (typeof window !== "undefined") {
+         try {
+            localStorage.removeItem("paymentMethods");
+            localStorage.removeItem("payoutMethods");
+         } catch (e) {
+            console.error("Failed to clear stored payment data:", e);
          }
       }
-      return mockPayoutMethods;
-   });
+   }, []);
 
-   // Save payment methods to localStorage whenever they change
+   // Warm up badge & referral queries so the sections feel instant when opened
    useEffect(() => {
-      if (typeof window !== 'undefined' && paymentMethods.length >= 0) {
-         localStorage.setItem('paymentMethods', JSON.stringify(paymentMethods));
-      }
-   }, [paymentMethods]);
+      if (!userData?.uid) return;
 
-   // Save payout methods to localStorage whenever they change
-   useEffect(() => {
-      if (typeof window !== 'undefined' && payoutMethods.length >= 0) {
-         localStorage.setItem('payoutMethods', JSON.stringify(payoutMethods));
-      }
-   }, [payoutMethods]);
+      queryClient.prefetchQuery({
+         queryKey: ["badgeProgress"],
+         queryFn: getBadgeProgress,
+         staleTime: 5 * 60 * 1000,
+      });
+
+      queryClient.prefetchQuery({
+         queryKey: ["referralSimple"],
+         queryFn: () => referralsApi.getDashboard(),
+         staleTime: 5 * 60 * 1000,
+      });
+   }, [userData?.uid, queryClient]);
 
    // Fetch profile data on mount
    useEffect(() => {

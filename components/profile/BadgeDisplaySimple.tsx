@@ -34,7 +34,19 @@ export default function BadgeDisplaySimple({ className = '' }: BadgeDisplaySimpl
   });
 
   if (isLoading) {
-    return <LoadingSpinner />;
+    return (
+      <div className={`space-y-8 ${className}`}>
+        <div className="text-center py-8">
+          <div className="mx-auto mb-4 w-20 h-20 rounded-full bg-gray-200 animate-pulse" />
+          <div className="h-5 w-40 mx-auto bg-gray-200 rounded animate-pulse mb-2" />
+          <div className="h-4 w-24 mx-auto bg-gray-200 rounded animate-pulse" />
+        </div>
+        <div className="py-8 border-t border-gray-200">
+          <div className="h-4 w-32 bg-gray-200 rounded animate-pulse mb-4" />
+          <div className="h-20 bg-gray-100 rounded-lg animate-pulse" />
+        </div>
+      </div>
+    );
   }
 
   if (error) {

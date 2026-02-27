@@ -218,7 +218,15 @@ export default function TaskDetailsPage() {
          return;
       }
 
-      // User is logged in, open the modal
+      // Prevent owners from making offers on their own task
+      if (isOwner) {
+         toast.info("This is your task", {
+            description: "You can't make an offer on your own task.",
+         });
+         return;
+      }
+
+      // User is logged in and not the owner, open the modal
       setShowMakeOfferModal(true);
    };
 
@@ -253,6 +261,7 @@ export default function TaskDetailsPage() {
                hasApplied={hasApplied}
                checkingApplication={checkingApplication}
                isSubmittingOffer={isSubmittingOffer}
+               isOwner={isOwner}
             />
          </div>
 

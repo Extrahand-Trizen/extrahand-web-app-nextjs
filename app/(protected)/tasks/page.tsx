@@ -15,13 +15,19 @@ import { MyTasksContent } from "@/components/tasks/MyTasksContent";
 import { MyApplicationsContent } from "@/components/tasks/MyApplicationsContent";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
 import { applicationsApi } from "@/lib/api/endpoints/applications";
+import { useDashboardStore } from "@/lib/state/dashboardStore";
 
 export default function TasksPage() {
    const router = useRouter();
    const searchParams = useSearchParams();
    const queryClient = useQueryClient();
-   const [tasksCount, setTasksCount] = useState<number>(0);
-   const [applicationsCount, setApplicationsCount] = useState<number>(0);
+   const { stats } = useDashboardStore();
+   const [tasksCount, setTasksCount] = useState<number>(
+      stats?.totalTasks ?? 0
+   );
+   const [applicationsCount, setApplicationsCount] = useState<number>(
+      stats?.totalApplications ?? 0
+   );
 
    const activeTab = useMemo(() => {
       const tabParam = searchParams.get("tab");
@@ -75,6 +81,20 @@ export default function TasksPage() {
 
       prefetchBothTabs();
    }, [queryClient]);
+
+   // If dashboard stats are already available (from /home or a previous fetch),
+   // use them as fast initial values for the tab counts. This avoids a visible
+   // "pop in" while the dedicated /tasks APIs are still loading.
+   useEffect(() => {
+      if (!stats) return;
+
+      if (!tasksCount) {
+         setTasksCount(stats.totalTasks ?? 0);
+      }
+      if (!applicationsCount) {
+         setApplicationsCount(stats.totalApplications ?? 0);
+      }
+   }, [stats, tasksCount, applicationsCount]);
 
 
    const handleTabChange = (value: string) => {

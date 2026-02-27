@@ -21,7 +21,21 @@ export default function ReferralDashboardSimple({ className = '' }: ReferralSimp
   });
 
   if (isLoading) {
-    return <LoadingSpinner />;
+    return (
+      <div className={`space-y-6 ${className}`}>
+        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border-2 border-blue-200 p-6">
+          <div className="h-5 w-40 bg-blue-200 rounded animate-pulse mb-4" />
+          <div className="h-16 bg-white/80 rounded-lg border border-blue-100 animate-pulse" />
+        </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="h-5 w-32 bg-gray-200 rounded animate-pulse mb-4" />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="h-20 bg-gray-100 rounded-lg animate-pulse" />
+            <div className="h-20 bg-gray-100 rounded-lg animate-pulse" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (error) {

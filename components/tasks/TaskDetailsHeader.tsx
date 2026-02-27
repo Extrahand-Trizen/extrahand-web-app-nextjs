@@ -12,6 +12,7 @@ interface TaskDetailsHeaderProps {
    hasApplied?: boolean;
    checkingApplication?: boolean;
    isSubmittingOffer?: boolean;
+   isOwner?: boolean;
 }
 
 export function TaskDetailsHeader({
@@ -21,6 +22,7 @@ export function TaskDetailsHeader({
    hasApplied = false,
    checkingApplication = false,
    isSubmittingOffer = false,
+   isOwner = false,
 }: TaskDetailsHeaderProps) {
    const budgetAmount =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
@@ -214,7 +216,7 @@ export function TaskDetailsHeader({
                      )}
                   </div>
                </div>
-               {task.status === "open" && onMakeOffer && (
+               {task.status === "open" && !isOwner && onMakeOffer && (
                   <Button 
                      onClick={onMakeOffer}
                      disabled={hasApplied || checkingApplication || isSubmittingOffer}

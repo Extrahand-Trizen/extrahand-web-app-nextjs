@@ -13,7 +13,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Facebook, Twitter, Instagram, Linkedin, Youtube } from "lucide-react";
+import { Facebook, Twitter, Instagram, Linkedin, Youtube, ChevronDown } from "lucide-react";
+import { useState } from "react";
 
 const footerLinks = {
   discover: {
@@ -89,14 +90,18 @@ const socialLinks = [
 
 export const LandingFooter: React.FC = () => {
   const pathname = usePathname();
+  const [openSection, setOpenSection] = useState<string | null>(null);
+
+  const handleToggle = (title: string) => {
+    setOpenSection((prev) => (prev === title ? null : title));
+  };
 
   return (
     <footer className="bg-secondary-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-12">
-        {/* Main footer content */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 lg:gap-10 mb-12">
-          {/* Brand column */}
-          <div className="col-span-2 md:col-span-4 lg:col-span-1 mb-4 lg:mb-0">
+        {/* Brand + social */}
+        <div className="mb-4 md:mb-10">
+          <div className="max-w-md">
           <Link href="/" className="flex items-center gap-2 mb-4">
               <Image
                 src="/assets/images/logo.png"
@@ -134,8 +139,55 @@ export const LandingFooter: React.FC = () => {
               ))}
             </div>
           </div>
+        </div>
 
-          {/* Link columns */}
+        {/* Mobile: stacked accordion sections */}
+        <div className="md:hidden border-t border-secondary-800 mb-8">
+          {Object.values(footerLinks).map((column) => {
+            const links =
+              column.title === "Discover" && pathname !== "/"
+                ? column.links.filter((link) => link.label !== "How it Works")
+                : column.links;
+
+            const isOpen = openSection === column.title;
+
+            return (
+              <div key={column.title}>
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between py-3"
+                  onClick={() => handleToggle(column.title)}
+                >
+                  <span className="text-sm font-semibold text-white">
+                    {column.title}
+                  </span>
+                  <ChevronDown
+                    className={`w-4 h-4 text-secondary-400 transition-transform ${
+                      isOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                {isOpen && (
+                  <ul className="pb-3 space-y-2">
+                    {links.map((link) => (
+                      <li key={link.label}>
+                        <Link
+                          href={link.href}
+                          className="text-secondary-400 hover:text-white text-xs transition-colors"
+                        >
+                          {link.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Desktop / tablet: grid of link columns */}
+        <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-5 gap-8 lg:gap-10 mb-12">
           {Object.values(footerLinks).map((column) => {
             const links =
               column.title === "Discover" && pathname !== "/"
@@ -147,12 +199,12 @@ export const LandingFooter: React.FC = () => {
                 <h3 className="text-sm md:text-base font-semibold text-white mb-3 md:mb-4">
                   {column.title}
                 </h3>
-                <ul className="md:space-y-3">
+                <ul className="space-y-3">
                   {links.map((link) => (
                     <li key={link.label}>
                       <Link
                         href={link.href}
-                        className="text-secondary-400 hover:text-white text-xs md:text-sm transition-colors"
+                        className="text-secondary-400 hover:text-white text-sm transition-colors"
                       >
                         {link.label}
                       </Link>
