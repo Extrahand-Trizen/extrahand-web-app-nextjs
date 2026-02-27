@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth/context";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -37,7 +38,9 @@ export default function RootLayout({
             <ErrorBoundary>
                <QueryProvider>
                   <AuthProvider>
-                     <ScrollToTop />
+                     <Suspense fallback={null}>
+                        <ScrollToTop />
+                     </Suspense>
                      <Toaster />
                      {children}
                   </AuthProvider>
