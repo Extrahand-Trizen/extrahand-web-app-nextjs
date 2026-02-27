@@ -66,6 +66,19 @@ export function SecuritySection({
             </p>
          </div>
 
+         {/* Coming Soon Banner */}
+         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
+            <Shield className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+               <h3 className="text-sm font-semibold text-amber-900">
+                  🚧 Security Features In Development
+               </h3>
+               <p className="text-xs text-amber-700 mt-1">
+                  Some security features like Two-Factor Authentication are currently being developed. Core privacy settings are fully functional.
+               </p>
+            </div>
+         </div>
+
          {/* Two-Factor Auth */}
          <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5">
             <div className="flex items-center justify-between flex-wrap gap-3">

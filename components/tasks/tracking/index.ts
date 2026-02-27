@@ -17,3 +17,4 @@ export { ReviewCard } from "./ReviewCard";
 export { ReviewForm } from "./ReviewForm";
 export { ReportSection } from "./ReportSection";
 export { ReportForm } from "./ReportForm";
+export { RequestedChangesSection } from "./RequestedChangesSection";

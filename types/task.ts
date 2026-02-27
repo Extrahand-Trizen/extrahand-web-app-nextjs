@@ -82,6 +82,12 @@ export interface Task {
   completionRejectedReason?: string;
   completionApprovedAt?: Date;
   completionRejectedAt?: Date;
+  feedback?: Array<{
+    _id?: string;
+    message: string;
+    createdById: string;
+    createdAt: Date;
+  }>;
   createdAt: Date;
   updatedAt: Date;
 }

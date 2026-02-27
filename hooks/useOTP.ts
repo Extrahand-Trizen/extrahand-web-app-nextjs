@@ -79,14 +79,21 @@ export const useOTP = (
       otpStateManager.saveOTPInput(otp);
    }, [otp]);
 
-   // 3. Timer Logic
+   // 3. Timer Logic - Only re-run when timer status changes (0 to positive or positive to 0)
    useEffect(() => {
       if (timer <= 0) return;
+
       const interval = setInterval(() => {
-         setTimer((prev) => (prev <= 1 ? 0 : prev - 1));
+         setTimer((prev) => {
+            if (prev <= 1) {
+               return 0;
+            }
+            return prev - 1;
+         });
       }, 1000);
+
       return () => clearInterval(interval);
-   }, [timer]);
+   }, [timer > 0]);
 
    // 4. Restore Session Logic
    useEffect(() => {

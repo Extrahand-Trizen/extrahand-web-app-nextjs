@@ -262,6 +262,27 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 // Note: getErrorMessage and isNetworkError are imported from @/lib/utils/errorUtils
 
 // ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Round up current time to next 15-minute interval
+ * If current time is in the past (shouldn't happen), rounds to next available slot
+ */
+const getRoundedCurrentTime = (): Date => {
+   const now = new Date();
+   const minutes = now.getMinutes();
+   const remainder = 15 - (minutes % 15);
+   
+   // Round up to next 15-minute mark
+   now.setMinutes(minutes + remainder);
+   now.setSeconds(0);
+   now.setMilliseconds(0);
+   
+   return now;
+};
+
+// ============================================================================
 // Initial Form Data
 // ============================================================================
 
@@ -285,14 +306,14 @@ const INITIAL_FORM_DATA: TaskFormData = {
    },
    scheduledDate: null,
    scheduledTimeStart: (() => {
-      const date = new Date();
-      date.setHours(9, 0, 0, 0);
-      return date;
+      // Default to current time rounded to next 15-minute interval
+      return getRoundedCurrentTime();
    })(),
    scheduledTimeEnd: (() => {
-      const date = new Date();
-      date.setHours(10, 0, 0, 0);
-      return date;
+      // Default to 1 hour after rounded current time
+      const startTime = getRoundedCurrentTime();
+      startTime.setHours(startTime.getHours() + 1);
+      return startTime;
    })(),
    flexibility: "flexible",
    recurringEnabled: false,
@@ -335,11 +356,23 @@ export function TaskCreationFlow() {
       },
    }) as UseFormReturn<TaskFormData>;
 
+   const scrollToTop = useCallback(() => {
+      requestAnimationFrame(() => {
+         window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+         document.documentElement.scrollTop = 0;
+         document.body.scrollTop = 0;
+      });
+   }, []);
+
    // Memoized progress calculation
    const progress = useMemo(
       () => (currentStep / TOTAL_STEPS) * 100,
       [currentStep]
    );
+
+   useEffect(() => {
+      scrollToTop();
+   }, [currentStep, scrollToTop]);
 
    // Track unsaved changes and auto-save periodically
    useEffect(() => {
@@ -468,7 +501,7 @@ export function TaskCreationFlow() {
 
       if (currentStep < TOTAL_STEPS) {
          setCurrentStep((prev) => prev + 1);
-         window.scrollTo({ top: 0, behavior: "smooth" });
+         scrollToTop();
          
          // Auto-save draft when moving to next step
          if (hasUnsavedChanges) {
@@ -477,12 +510,12 @@ export function TaskCreationFlow() {
             setHasUnsavedChanges(false);
          }
       }
-   }, [currentStep, form, stepValidationFields, hasUnsavedChanges]);
+   }, [currentStep, form, stepValidationFields, hasUnsavedChanges, scrollToTop]);
 
    const handleBack = useCallback(() => {
       if (currentStep > 1) {
          setCurrentStep((prev) => prev - 1);
-         window.scrollTo({ top: 0, behavior: "smooth" });
+         scrollToTop();
          
          // Auto-save draft when going back
          if (hasUnsavedChanges) {
@@ -494,7 +527,7 @@ export function TaskCreationFlow() {
          // Go back to previous page on step 1
          router.back();
       }
-   }, [currentStep, hasUnsavedChanges, form]);
+   }, [currentStep, hasUnsavedChanges, form, scrollToTop]);
 
    // API call with retry logic
    const createTaskWithRetry = useCallback(
@@ -624,8 +657,8 @@ export function TaskCreationFlow() {
          setHasUnsavedChanges(false);
       }
       setCurrentStep(step);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-   }, [hasUnsavedChanges, form]);
+      scrollToTop();
+   }, [hasUnsavedChanges, form, scrollToTop]);
 
    const handleAuthLogin = () => {
       setShowAuthModal(false);

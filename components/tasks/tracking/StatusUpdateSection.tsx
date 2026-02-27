@@ -39,12 +39,14 @@ interface StatusUpdateSectionProps {
       newStatus: Task["status"],
       reason?: string
    ) => Promise<void>;
+   onTaskUpdated?: (updatedTask: Task) => void;
 }
 
 export function StatusUpdateSection({
    task,
    userRole,
    onStatusUpdate,
+   onTaskUpdated,
 }: StatusUpdateSectionProps) {
    const [isUpdating, setIsUpdating] = useState(false);
    const [cancelReason, setCancelReason] = useState("");
@@ -161,8 +163,12 @@ export function StatusUpdateSection({
       setIsUpdating(true);
       try {
          if (isSpecialAction && newStatus === "review") {
-            await tasksApi.requestChanges(task._id, reason || "");
-            toast.success("Changes requested! Notified the tasker.");
+            const response = await tasksApi.requestChanges(task._id, reason || "");
+            // Update parent with the response which includes reverted status and feedback
+            if (response.data && onTaskUpdated) {
+               onTaskUpdated(response.data);
+            }
+            toast.success("Changes requested! Task reverted to Assigned. Tasker has been notified.");
          } else {
             await onStatusUpdate(newStatus, reason);
             toast.success(`Task status updated to ${newStatus?.replace("_", " ") || "unknown"}`);

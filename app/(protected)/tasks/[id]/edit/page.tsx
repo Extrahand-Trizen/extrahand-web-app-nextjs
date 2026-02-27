@@ -31,17 +31,17 @@ function taskToFormData(task: Task): Partial<EditTaskFormData> {
    const budgetAmount =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
 
-   // Convert scheduledTime string to Date objects if needed
+   // Convert scheduledDate to Date objects, preserving time if available
    let scheduledTimeStart: Date | undefined;
    let scheduledTimeEnd: Date | undefined;
 
    if (task.scheduledDate) {
-      const baseDate = new Date(task.scheduledDate);
-      scheduledTimeStart = new Date(baseDate);
-      scheduledTimeStart.setHours(9, 0, 0, 0);
+      // Preserve the actual time from scheduledDate instead of hardcoding 9 AM
+      scheduledTimeStart = new Date(task.scheduledDate);
 
-      scheduledTimeEnd = new Date(baseDate);
-      scheduledTimeEnd.setHours(10, 0, 0, 0);
+      // Default end time to 1 hour after start
+      scheduledTimeEnd = new Date(task.scheduledDate);
+      scheduledTimeEnd.setHours(scheduledTimeEnd.getHours() + 1);
    }
 
    // Map flexibility values

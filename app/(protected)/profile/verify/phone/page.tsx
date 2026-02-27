@@ -27,6 +27,7 @@ import {
    Sparkles,
    Bell,
 } from "lucide-react";
+import { toast } from "sonner";
 
 interface PhoneVerificationState {
    step: "input" | "otp" | "success" | "error";
@@ -56,13 +57,22 @@ export default function PhoneVerificationPage() {
       }
    }, [state.step]);
 
+   // Timer countdown effect
    useEffect(() => {
-      let interval: NodeJS.Timeout;
-      if (otpTimer > 0) {
-         interval = setInterval(() => setOtpTimer((p) => p - 1), 1000);
-      }
+      if (otpTimer <= 0) return;
+
+      const interval = setInterval(() => {
+         setOtpTimer((prev) => {
+            if (prev <= 1) {
+               clearInterval(interval);
+               return 0;
+            }
+            return prev - 1;
+         });
+      }, 1000);
+
       return () => clearInterval(interval);
-   }, [otpTimer]);
+   }, [otpTimer > 0]); // Only re-run when timer starts (goes from 0 to positive)
 
    const handleBack = () => {
       switch (state.step) {
@@ -104,11 +114,17 @@ export default function PhoneVerificationPage() {
          await new Promise((r) => setTimeout(r, 1500));
          setState((p) => ({ ...p, step: "otp" }));
          setOtpTimer(30); // 30 seconds for SMS OTP
+         toast.success("OTP sent successfully!", {
+            description: `Verification code sent to +91 ${state.phone}`,
+         });
       } catch {
          setState((p) => ({
             ...p,
             error: "Failed to send OTP. Please try again.",
          }));
+         toast.error("Failed to send OTP", {
+            description: "Please try again",
+         });
       } finally {
          setIsLoading(false);
       }
@@ -154,8 +170,14 @@ export default function PhoneVerificationPage() {
          await new Promise((r) => setTimeout(r, 1500));
          setOtpTimer(30);
          setState((p) => ({ ...p, otp: "", error: undefined }));
+         toast.success("OTP resent successfully!", {
+            description: `New verification code sent to +91 ${state.phone}`,
+         });
       } catch {
          setState((p) => ({ ...p, error: "Failed to resend OTP." }));
+         toast.error("Failed to resend OTP", {
+            description: "Please try again",
+         });
       } finally {
          setIsLoading(false);
       }

@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { PaymentMethod, PayoutMethod, Transaction } from "@/types/profile";
 import { mockTransactions } from "@/lib/data/payments";
+import { mockTransactions } from "@/lib/data/payments";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { useAuth } from "@/lib/auth/context";
@@ -57,6 +58,8 @@ interface PaymentsSectionProps {
 }
 
 export function PaymentsSection({
+   paymentMethods = [],
+   payoutMethods = [],
    paymentMethods = [],
    payoutMethods = [],
    transactions: initialTransactions,
@@ -900,7 +903,7 @@ function TransactionStatusBadge({ status }: { status: Transaction["status"] }) {
          label: "Completed",
          className: "bg-green-100 text-green-700",
       },
-      pending: { label: "Pending", className: "bg-amber-100 text-amber-700" },
+      pending: { label: "In Progress", className: "bg-amber-100 text-amber-700" },
       failed: { label: "Failed", className: "bg-red-100 text-red-700" },
       cancelled: { label: "Cancelled", className: "bg-gray-100 text-gray-600" },
    };

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -8,9 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
    Bell,
-   Mail,
    Smartphone,
-   MessageSquare,
    Check,
    Loader2,
    Clock,
@@ -26,6 +24,36 @@ import {
    COMMUNICATION_CHANNELS,
 } from "@/types/consent";
 import { profilesApi } from "@/lib/api/endpoints/profiles";
+
+// Same categories as used in task posting
+const KEYWORD_CATEGORIES = [
+   { name: "Home Cleaning", slug: "home-cleaning" },
+   { name: "Deep Cleaning", slug: "deep-cleaning" },
+   { name: "Plumbing", slug: "plumbing" },
+   { name: "Electrical", slug: "electrical" },
+   { name: "Carpenter", slug: "carpenter" },
+   { name: "Painting", slug: "painting" },
+   { name: "AC Repair & Service", slug: "ac-repair" },
+   { name: "Appliance Repair", slug: "appliance-repair" },
+   { name: "Pest Control", slug: "pest-control" },
+   { name: "Car Washing / Car Cleaning", slug: "car-washing" },
+   { name: "Gardening", slug: "gardening" },
+   { name: "Handyperson / General Repairs", slug: "handyperson" },
+   { name: "Furniture Assembly", slug: "furniture-assembly" },
+   { name: "Security Patrol / Watchman", slug: "security-patrol" },
+   { name: "Beauty Services", slug: "beauty-services" },
+   { name: "Massage / Spa", slug: "massage-spa" },
+   { name: "Fitness Trainers", slug: "fitness-trainers" },
+   { name: "Tutors", slug: "tutors" },
+   { name: "IT Support / Laptop Repair", slug: "it-support" },
+   { name: "Photographer / Videographer", slug: "photographer-videographer" },
+   { name: "Event Services", slug: "event-services" },
+   { name: "Pet Services", slug: "pet-services" },
+   { name: "Driver / Chauffeur", slug: "driver-chauffeur" },
+   { name: "Cooking / Home Chef", slug: "cooking-home-chef" },
+   { name: "Laundry / Ironing", slug: "laundry-ironing" },
+   { name: "Other", slug: "other" },
+];
 
 interface NotificationsSectionProps {
    settings?: NotificationSettingsState;
@@ -103,9 +131,6 @@ export function NotificationsSection({
             const localKeywordStore = typeof window !== "undefined"
                ? window.localStorage.getItem("notificationKeywordAlerts")
                : null;
-            const localCategoryStore = typeof window !== "undefined"
-               ? window.localStorage.getItem("notificationCategoryAlerts")
-               : null;
 
             const localKeywords = localKeywordStore
                ? (() => {
@@ -133,8 +158,8 @@ export function NotificationsSection({
                profilesApi.getKeywordAlerts(),
             ]);
 
-            if (keywordRes.status === "fulfilled") {
-               const keywords = keywordRes.value?.data?.keywords;
+            if (keywordRes) {
+               const keywords = keywordRes?.data?.keywords;
                if (Array.isArray(keywords) && isMounted) {
                   const resolvedKeywords = keywords.length > 0 ? keywords : localKeywords;
                   setKeywordAlerts(resolvedKeywords);
@@ -363,106 +388,7 @@ export function NotificationsSection({
             />
          </NotificationChannel>
 
-         {/* Email Notifications */}
-         <NotificationChannel
-            icon={<Mail className="w-4 h-4 sm:w-5 sm:h-5" />}
-            title="Email Notifications"
-            description="Updates delivered to your inbox"
-            enabled={localSettings.email.enabled}
-            onToggleMaster={() => toggleChannelMaster("email")}
-            isExpanded={expandedSections.includes("email")}
-            onToggle={() => toggleSection("email")}
-         >
-            <NotificationToggle
-               label="Transactional"
-               description="Important confirmations and account actions"
-               checked={localSettings.email.transactional}
-               onChange={(v) => updateChannelSetting("email", "transactional", v)}
-               disabled={!localSettings.email.enabled}
-               comingSoon={true}
-            />
-            <NotificationToggle
-               label="Task Updates"
-               description="Status changes and new offers"
-               checked={localSettings.email.taskUpdates}
-               onChange={(v) => updateChannelSetting("email", "taskUpdates", v)}
-               disabled={!localSettings.email.enabled}
-            />
-            <NotificationToggle
-               label="Payment Alerts"
-               description="Receipts and payment confirmations"
-               checked={localSettings.email.payments}
-               onChange={(v) => updateChannelSetting("email", "payments", v)}
-               disabled={!localSettings.email.enabled}
-               comingSoon={true}
-            />
-            <NotificationToggle
-               label="Task Reminders"
-               description="Task-specific reminder alerts"
-               checked={localSettings.email.taskReminders}
-               onChange={(v) => updateChannelSetting("email", "taskReminders", v)}
-               disabled={!localSettings.email.enabled}
-               comingSoon={true}
-            />
-            <NotificationToggle
-               label="Keyword Task Alerts"
-               description="Alerts for tasks matching your keywords"
-               checked={localSettings.email.keywordTaskAlerts}
-               onChange={(v) => updateChannelSetting("email", "keywordTaskAlerts", v)}
-               disabled={!localSettings.email.enabled}
-            />
-            <NotificationToggle
-               label="System Alerts"
-               description="Security and account notifications"
-               checked={localSettings.email.system}
-               onChange={(v) => updateChannelSetting("email", "system", v)}
-               disabled={!localSettings.email.enabled}
-            />
-            <NotificationToggle
-               label="Promotions"
-               description="Tips, offers, and feature announcements"
-               checked={localSettings.email.promotions}
-               onChange={(v) => updateChannelSetting("email", "promotions", v)}
-               disabled={!localSettings.email.enabled}
-               comingSoon={true}
-            />
-            <NotificationToggle
-               label="Marketing"
-               description="Newsletter and product updates"
-               checked={localSettings.email.marketing}
-               onChange={(v) => updateChannelSetting("email", "marketing", v)}
-               disabled={!localSettings.email.enabled}
-            />
-         </NotificationChannel>
-
-         {/* SMS Notifications */}
-         <NotificationChannel
-            icon={<MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />}
-            title="SMS Notifications"
-            description="Text messages to your phone"
-            enabled={localSettings.sms.enabled}
-            onToggleMaster={() => toggleChannelMaster("sms")}
-            isExpanded={expandedSections.includes("sms")}
-            onToggle={() => toggleSection("sms")}
-         >
-            <NotificationToggle
-               label="Task Updates"
-               description="Important task status changes"
-               checked={localSettings.sms.taskUpdates}
-               onChange={(v) => updateChannelSetting("sms", "taskUpdates", v)}
-               disabled={!localSettings.sms.enabled}
-               comingSoon={true}
-            />
-            <NotificationToggle
-               label="Payment Alerts"
-               description="Payment confirmations and security codes"
-               checked={localSettings.sms.payments}
-               onChange={(v) => updateChannelSetting("sms", "payments", v)}
-               disabled={!localSettings.sms.enabled}
-               comingSoon={true}
-            />
-
-         </NotificationChannel>
+         {/* Email and SMS channel sections removed (handled via Preferred Channel) */}
 
          {/* Keyword Task Alerts */}
          <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5">
@@ -586,28 +512,22 @@ export function NotificationsSection({
                      <h3 className="text-xs sm:text-sm font-medium text-gray-900 truncate">
                         Quiet Hours & Frequency
                      </h3>
-                     {localFrequency.quietHours.enabled && (
-                        <Badge
-                           variant="secondary"
-                           className="text-[10px] sm:text-xs bg-gray-100 text-gray-600 shrink-0"
-                        >
-                           {localFrequency.quietHours.start} -{" "}
-                           {localFrequency.quietHours.end}
-                        </Badge>
-                     )}
+                     <Badge
+                        variant="secondary"
+                        className="text-[8px] px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200"
+                     >
+                        Coming Soon
+                     </Badge>
                   </div>
                   <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 truncate">
                      Control when and how often you receive notifications
                   </p>
                </div>
-               {expandedSections.includes("frequency") ? (
-                  <ChevronUp className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0" />
-               ) : (
-                  <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0" />
-               )}
-            </button>
+            </div>
+         </div>
 
-            {expandedSections.includes("frequency") && (
+         {/* Hidden frequency section removed - Coming Soon */}
+         {false && (
                <div className="px-4 pb-4 sm:px-5 sm:pb-5 border-t border-gray-100 pt-4 space-y-4">
                   {/* Quiet Hours Toggle */}
                   <div className="flex items-start justify-between gap-4">
@@ -695,7 +615,6 @@ export function NotificationsSection({
                   </div>
                </div>
             )}
-         </div>
 
          {/* Save Button */}
          {hasChanges && (
