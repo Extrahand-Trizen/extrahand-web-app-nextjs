@@ -70,7 +70,7 @@ export const CategoryNotFound: React.FC<CategoryNotFoundProps> = ({
                <p className="text-xs text-secondary-500">
                   Need help?{" "}
                   <a
-                     href="https://extrahand.in/contact"
+                     href="https://extrhand-support-frontend.apps.extrahand.in"
                      target="_blank"
                      rel="noopener noreferrer"
                      className="text-primary-600 hover:underline font-medium"

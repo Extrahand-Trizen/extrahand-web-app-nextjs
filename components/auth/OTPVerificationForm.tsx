@@ -40,7 +40,6 @@ interface OTPVerificationFormProps {
    authType?: "login" | "signup";
    redirectTo?: string;
    onSuccess?: () => void;
-   onSkip?: () => void;
 }
 
 const maskPhone = (phone: string) => {
@@ -59,7 +58,6 @@ export function OTPVerificationForm({
    authType = "login",
    redirectTo = "/home",
    onSuccess,
-   onSkip,
 }: OTPVerificationFormProps) {
    const router = useRouter();
    const { refreshUserData } = useAuth();
@@ -528,14 +526,6 @@ export function OTPVerificationForm({
       await handleSendOtp(phone);
    };
 
-   const handleSkip = () => {
-      if (onSkip) {
-         onSkip();
-      } else {
-         router.push(redirectTo);
-      }
-   };
-
    return (
       <div className="min-h-screen bg-linear-to-b from-white to-secondary-50 flex flex-col">
          {/* Main Content */}
@@ -658,16 +648,6 @@ export function OTPVerificationForm({
                      <div className="flex items-center justify-center gap-2 text-sm text-gray-600 bg-gray-50 rounded-lg px-4 py-3">
                         <Shield className="h-4 w-4 text-primary-500" />
                         <span>Your phone number is secure</span>
-                     </div>
-
-                     {/* Skip Option */}
-                     <div className="text-center">
-                        <button
-                           onClick={handleSkip}
-                           className="text-sm text-gray-600 hover:text-gray-900 underline"
-                        >
-                           Skip verification for now
-                        </button>
                      </div>
                   </CardContent>
                )}

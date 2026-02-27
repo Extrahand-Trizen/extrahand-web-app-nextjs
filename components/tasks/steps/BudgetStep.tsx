@@ -62,6 +62,7 @@ export function BudgetStep({ form, onNext }: BudgetStepProps) {
    const budgetType = form.watch("budgetType");
    const budget = form.watch("budget");
    const urgency = form.watch("urgency");
+   const budgetErrors = form.formState.errors.budget;
 
    const selectedUrgency = URGENCY_OPTIONS.find((opt) => opt.id === urgency);
    const totalBudget =
@@ -69,13 +70,22 @@ export function BudgetStep({ form, onNext }: BudgetStepProps) {
          ? budget + (selectedUrgency?.surcharge || 0)
          : null;
 
+   // Check if budget is valid
+   const isBudgetValid =
+      budgetType === "negotiable" ||
+      (budgetType === "fixed" &&
+         budget !== null &&
+         budget !== undefined &&
+         budget >= 50 &&
+         budget <= 50000);
+
    useEffect(() => {
       if (budgetType !== "fixed") {
          form.clearErrors("budget");
          return;
       }
 
-      if (typeof budget === "number" && budget >= 50) {
+      if (typeof budget === "number" && budget >= 50 && budget <= 50000) {
          form.clearErrors("budget");
       }
    }, [budgetType, budget, form]);
@@ -206,66 +216,64 @@ export function BudgetStep({ form, onNext }: BudgetStepProps) {
             <FormField
                control={form.control}
                name="budget"
-               render={({ field }) => (
-                  <FormItem className="animate-in slide-in-from-top duration-200">
-                     <FormLabel className="text-xs md:text-sm">Your budget</FormLabel>
-                     <FormControl>
-                        <div className="relative">
-                           <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 size-4 md:size-5 text-gray-400" />
-                           <Input
-                              type="text"
-                              inputMode="numeric"
-                              pattern="[0-9]*"
-                              placeholder="500"
-                              className="h-10 pl-12 text-sm"
-                              value={field.value ?? ""}
-                              onChange={(e) => {
-                                 const digits = e.target.value.replace(/[^0-9]/g, "");
-                                 if (!digits) {
-                                    field.onChange(null);
-                                    form.clearErrors("budget");
-                                    return;
-                                 }
+               render={({ field }) => {
+                  const isOutOfRange =
+                     field.value !== null &&
+                     field.value !== undefined &&
+                     (field.value < 50 || field.value > 50000);
 
-                                 const parsed = parseInt(digits, 10);
-                                 const clamped = Math.min(parsed, 50000);
-                                 field.onChange(clamped);
-                                 if (clamped >= 50) {
-                                    form.clearErrors("budget");
-                                 }
-                              }}
-                              onKeyDown={(e) => {
-                                 if (e.key === "Enter") {
-                                    e.preventDefault();
-                                 }
-                              }}
-                              onBlur={() => {
-                                 if (field.value === null) {
-                                    form.setError("budget", {
-                                       type: "manual",
-                                       message: "Please enter a budget.",
-                                    });
-                                    return;
-                                 }
+                  return (
+                     <FormItem className="animate-in slide-in-from-top duration-200">
+                        <FormLabel className="text-xs md:text-sm">Your budget</FormLabel>
+                        <FormControl>
+                           <div className="relative">
+                              <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 size-4 md:size-5 text-gray-400" />
+                              <Input
+                                 type="text"
+                                 inputMode="numeric"
+                                 pattern="[0-9]*"
+                                 placeholder="500"
+                                 className="h-10 pl-12 text-sm"
+                                 value={field.value ?? ""}
+                                 onChange={(e) => {
+                                    const digits = e.target.value.replace(/[^0-9]/g, "");
+                                    if (!digits) {
+                                       field.onChange(null);
+                                       form.clearErrors("budget");
+                                       return;
+                                    }
 
-                                 if (field.value < 50) {
-                                    form.setError("budget", {
-                                       type: "manual",
-                                       message: "Minimum budget is ₹50.",
-                                    });
-                                    field.onChange(50);
-                                 }
-                              }}
-                           />
-                        </div>
-                     </FormControl>
-                     <FormDescription className="text-xs">
-                        Minimum ₹50, maximum ₹50,000. Similar tasks typically
-                        cost ₹200-800.
-                     </FormDescription>
-                     <FormMessage />
-                  </FormItem>
-               )}
+                                    const parsed = parseInt(digits, 10);
+                                    field.onChange(parsed);
+
+                                    // Validate and show error if out of range
+                                    if (parsed < 50 || parsed > 50000) {
+                                       form.setError("budget", {
+                                          type: "manual",
+                                          message: `Budget must be between ₹50 and ₹50,000. Entered: ₹${parsed}`,
+                                       });
+                                    } else {
+                                       form.clearErrors("budget");
+                                    }
+                                 }}
+                                 onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                       e.preventDefault();
+                                    }
+                                 }}
+                              />
+                           </div>
+                        </FormControl>
+                        <FormDescription className={cn(
+                           "text-xs",
+                           isOutOfRange && "text-red-600 font-medium"
+                        )}>
+                          Enter a budget between ₹50 and ₹50,000.
+                        </FormDescription>
+                        <FormMessage />
+                     </FormItem>
+                  );
+               }}
             />
          )}
 
@@ -390,7 +398,8 @@ export function BudgetStep({ form, onNext }: BudgetStepProps) {
             <Button
                type="button"
                onClick={onNext}
-               className="w-full h-10 font-medium bg-primary-600 hover:bg-primary-700"
+               disabled={!isBudgetValid}
+               className="w-full h-10 font-medium bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
                size="lg"
             >
                Continue to Review

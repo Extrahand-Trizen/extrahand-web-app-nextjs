@@ -22,96 +22,20 @@ const menuItems = [
    { label: "Become a Tasker", type: "button", route: "/earn-money" },
 ];
 
-type HeaderCategory = { name: string; isPublished?: boolean };
-
-// Fallback categories if API fails
-const fallbackCategories: HeaderCategory[] = [
-   { name: "Accountants", isPublished: true },
-   { name: "Admin", isPublished: true },
-   { name: "Alterations", isPublished: true },
-   { name: "Appliances", isPublished: true },
-   { name: "Assembly", isPublished: true },
-   { name: "Auto Electricians", isPublished: true },
-   { name: "Bakers", isPublished: true },
-   { name: "Barbers", isPublished: true },
-   { name: "Beauticians", isPublished: true },
-   { name: "Bicycle Service", isPublished: true },
-   { name: "Bricklaying", isPublished: true },
-   { name: "Building & Construction", isPublished: true },
-   { name: "Business", isPublished: true },
-   { name: "Car Body Work", isPublished: true },
-   { name: "Car Detailing", isPublished: true },
-   { name: "Car Repair", isPublished: true },
-   { name: "Car Service", isPublished: true },
-   { name: "Carpentry", isPublished: true },
-   { name: "Cat Care", isPublished: true },
-   { name: "Catering", isPublished: true },
-   { name: "Chef", isPublished: true },
-   { name: "Cladding", isPublished: true },
-   { name: "Cleaning", isPublished: true },
-   { name: "Computers & IT", isPublished: true },
-   { name: "Concreting", isPublished: true },
-   { name: "Decking", isPublished: true },
-   { name: "Delivery", isPublished: true },
-   { name: "Design", isPublished: true },
-   { name: "Dog Care", isPublished: true },
-   { name: "Draftsman", isPublished: true },
-   { name: "Driving", isPublished: true },
-   { name: "Electricians", isPublished: true },
-   { name: "Entertainment", isPublished: true },
-   { name: "Events", isPublished: true },
-   { name: "Fencing", isPublished: true },
-   { name: "Flooring", isPublished: true },
-   { name: "Florist", isPublished: true },
-   { name: "Furniture Assembly", isPublished: true },
-   { name: "Gardening", isPublished: true },
-   { name: "Gate Installation", isPublished: true },
-   { name: "Hairdressers", isPublished: true },
-   { name: "Handyman", isPublished: true },
-   { name: "Heating & Cooling", isPublished: true },
-   { name: "Home", isPublished: true },
-   { name: "Automation And Security", isPublished: true },
-   { name: "Home Theatre", isPublished: true },
-   { name: "Interior Designer", isPublished: true },
-   { name: "Landscaping", isPublished: true },
-   { name: "Laundry", isPublished: true },
-   { name: "Lawn Care", isPublished: true },
-   { name: "Lessons", isPublished: true },
-   { name: "Locksmith", isPublished: true },
-   { name: "Makeup Artist", isPublished: true },
-   { name: "Marketing", isPublished: true },
-   { name: "Mobile Mechanic", isPublished: true },
-   { name: "Painting", isPublished: true },
-   { name: "Paving", isPublished: true },
-   { name: "Pet Care", isPublished: true },
-   { name: "Photographers", isPublished: true },
-   { name: "Plasterer", isPublished: true },
-   { name: "Plumbing", isPublished: true },
-   { name: "Pool Maintenance", isPublished: true },
-   { name: "Removals", isPublished: true },
-   { name: "Roofing", isPublished: true },
-   { name: "Sharpening", isPublished: true },
-   { name: "Staffing", isPublished: true },
-   { name: "Tailors", isPublished: true },
-   { name: "Tattoo Artists", isPublished: true },
-   { name: "Tiling", isPublished: true },
-   { name: "Tradesman", isPublished: true },
-   { name: "Tutoring", isPublished: true },
-   { name: "Wall Hanging & Mounting", isPublished: true },
-   { name: "Wallpapering", isPublished: true },
-   { name: "Waterproofing", isPublished: true },
-   { name: "Web", isPublished: true },
-   { name: "Wheel & Tyre Service", isPublished: true },
-   { name: "Writing", isPublished: true },
-];
+type HeaderCategory = {
+   name: string;
+   isPublished?: boolean;
+   categoryType?: string;
+};
 
 export const Header: React.FC = () => {
    const router = useRouter();
    const [activeItem, setActiveItem] = useState<string | null>(null);
    const [showCategories, setShowCategories] = useState(false);
    const [showMobileMenu, setShowMobileMenu] = useState(false);
-   const [categories, setCategories] = useState<HeaderCategory[]>(
-      fallbackCategories
+   const [categories, setCategories] = useState<HeaderCategory[]>([]);
+   const [categoryView, setCategoryView] = useState<"tasker" | "poster">(
+      "tasker"
    );
    const [categoriesLoading, setCategoriesLoading] = useState(true);
    const dropdownRef = useRef<HTMLDivElement>(null);
@@ -122,17 +46,17 @@ export const Header: React.FC = () => {
       const fetchCategories = async () => {
          try {
             const categoriesData = await categoriesApi.getCategories({
-               includeUnpublished: true,
+               includeUnpublished: false,
             });
             const categoryItems = (categoriesData || []).map((cat) => ({
                name: cat.name,
                isPublished: cat.isPublished,
+               categoryType: cat.categoryType,
             }));
             setCategories(categoryItems);
          } catch (error) {
             console.error("Error fetching categories:", error);
-            // Keep fallback categories on error only
-            setCategories(fallbackCategories);
+            setCategories([]);
          } finally {
             setCategoriesLoading(false);
          }
@@ -276,56 +200,96 @@ export const Header: React.FC = () => {
                            <span className="absolute left-1/2 -translate-x-1/2 -top-2 w-full h-0.5 bg-secondary-500 rounded block" />
                         )}
                      </button>
-                     {showCategories && (
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-white border border-neutral-gray-200 rounded-lg shadow-lg z-[10000] p-6 w-[90vw] max-w-[650px] max-h-[350px] overflow-y-auto flex gap-8">
-                           {categoriesLoading ? (
-                              <div className="text-secondary-500 text-sm">Loading categories...</div>
-                           ) : categories.length === 0 ? (
-                              <div className="text-secondary-500 text-sm">No categories available</div>
-                           ) : (
-                              Array.from({ length: 4 }).map((_, colIdx) => (
-                                 <ul key={colIdx} className="list-none p-0 m-0">
-                                    {categories
-                                       .slice(
-                                          Math.floor(
-                                             (categories.length / 4) * colIdx
-                                          ),
-                                          Math.floor(
-                                             (categories.length / 4) * (colIdx + 1)
-                                          )
-                                       )
-                                       .map((cat) => {
-                                          const isDisabled =
-                                             cat.isPublished === false;
+                     {showCategories && (() => {
+                        const normalizedView = categoryView;
+                        const filteredCategories = categories.filter((cat) => {
+                           const type = (cat.categoryType || "").toLowerCase();
+                           if (!type) return true;
+                           if (normalizedView === "tasker") {
+                              return type.includes("tasker") || type.includes("both");
+                           }
+                           return type.includes("poster") || type.includes("both");
+                        });
 
-                                          return (
+                        return (
+                           <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-white border border-neutral-gray-200 rounded-lg shadow-lg z-[10000] p-6 w-[90vw] max-w-[700px] max-h-[350px] overflow-y-auto flex gap-6">
+                              <div className="min-w-[180px] border-r border-neutral-gray-200 pr-5">
+                                 <p className="text-sm font-semibold text-secondary-800 mb-3">
+                                    What are you looking for?
+                                 </p>
+                                 <p className="text-xs text-secondary-500 mb-4">
+                                    Pick a type of task.
+                                 </p>
+                                 <div className="space-y-3">
+                                    <button
+                                       onClick={() => setCategoryView("tasker")}
+                                       className={cn(
+                                          "w-full text-left rounded-lg px-3 py-2 text-xs font-semibold border",
+                                          categoryView === "tasker"
+                                             ? "bg-amber-50 border-amber-300 text-amber-800"
+                                             : "bg-white border-neutral-gray-200 text-secondary-600"
+                                       )}
+                                    >
+                                       AS A TASKER
+                                       <span className="block text-[11px] font-normal text-secondary-500 mt-1">
+                                          I&apos;m looking for work in ...
+                                       </span>
+                                    </button>
+                                    <button
+                                       onClick={() => setCategoryView("poster")}
+                                       className={cn(
+                                          "w-full text-left rounded-lg px-3 py-2 text-xs font-semibold border",
+                                          categoryView === "poster"
+                                             ? "bg-amber-50 border-amber-300 text-amber-800"
+                                             : "bg-white border-neutral-gray-200 text-secondary-600"
+                                       )}
+                                    >
+                                       AS A POSTER
+                                       <span className="block text-[11px] font-normal text-secondary-500 mt-1">
+                                          I&apos;m looking to hire someone for ...
+                                       </span>
+                                    </button>
+                                 </div>
+                              </div>
+
+                              {categoriesLoading ? (
+                                 <div className="text-secondary-500 text-sm">Loading categories...</div>
+                              ) : filteredCategories.length === 0 ? (
+                                 <div className="text-secondary-500 text-sm">
+                                    No categories available
+                                 </div>
+                              ) : (
+                                 Array.from({ length: 3 }).map((_, colIdx) => (
+                                    <ul key={colIdx} className="list-none p-0 m-0">
+                                       {filteredCategories
+                                          .slice(
+                                             Math.floor(
+                                                (filteredCategories.length / 3) * colIdx
+                                             ),
+                                             Math.floor(
+                                                (filteredCategories.length / 3) * (colIdx + 1)
+                                             )
+                                          )
+                                          .map((cat) => (
                                              <li key={cat.name}>
-                                                {isDisabled ? (
-                                                   <span className="block text-secondary-400 px-2 py-1 text-sm rounded font-sans cursor-not-allowed">
-                                                      {cat.name}
-                                                   </span>
-                                                ) : (
-                                                   <a
-                                                      href="#"
-                                                      onClick={(e) => {
-                                                         e.preventDefault();
-                                                         handleCategoryClick(
-                                                            cat.name
-                                                         );
-                                                      }}
-                                                      className="block text-secondary-700 no-underline px-2 py-1 text-sm rounded font-sans transition-colors duration-200 hover:bg-neutral-gray-100 cursor-pointer"
-                                                   >
-                                                      {cat.name}
-                                                   </a>
-                                                )}
+                                                <a
+                                                   href="#"
+                                                   onClick={(e) => {
+                                                      e.preventDefault();
+                                                      handleCategoryClick(cat.name);
+                                                   }}
+                                                   className="block text-secondary-700 no-underline px-2 py-1 text-sm rounded font-sans transition-colors duration-200 hover:bg-neutral-gray-100 cursor-pointer"
+                                                >
+                                                   {cat.name}
+                                                </a>
                                              </li>
-                                          );
-                                       })}
-                                 </ul>
-                              ))
-                           )}
-                        </div>
-                     )}
+                                          ))}
+                                    </ul>
+                                 ))
+                              )}
+                           </div>
+                        );
+                     })()}
                   </div>
                ) : (
                   <button

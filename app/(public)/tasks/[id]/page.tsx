@@ -57,6 +57,7 @@ export default function TaskDetailsPage() {
    const [shareOpen, setShareOpen] = useState(false);
    const [hasApplied, setHasApplied] = useState(false);
    const [checkingApplication] = useState(false);
+   const [applicationCount, setApplicationCount] = useState(0);
    
    const [scrollY, setScrollY] = useState(0);
    const isMobile = useIsMobile();
@@ -109,6 +110,36 @@ export default function TaskDetailsPage() {
          fetchTask();
       }
    }, [taskId]);
+
+   // Check if user has already applied to this task
+   useEffect(() => {
+      const checkIfApplied = async () => {
+         try {
+            // Skip if no logged-in user or no task
+            if (!currentUser || !userProfile || !taskId) {
+               return;
+            }
+
+            // Fetch applications for this task
+            const response = await applicationsApi.getTaskApplications(taskId);
+            const applications = response.applications || [];
+
+            // Check if current user has an application
+            const userApplication = applications.find(
+               (app) => app.applicantId === (userProfile as any)._id
+            );
+
+            // Set hasApplied immediately if user has an application
+            if (userApplication) {
+               setHasApplied(true);
+            }
+         } catch (error) {
+            console.error("Error checking if user has applied:", error);
+         }
+      };
+
+      checkIfApplied();
+   }, [taskId, currentUser, userProfile]);
 
    useEffect(() => {
       const handleScroll = () => {
@@ -256,7 +287,7 @@ export default function TaskDetailsPage() {
                                  : "text-secondary-600 hover:bg-secondary-50"
                            }`}
                         >
-                           Offers ({task.applications || 0})
+                           Offers ({applicationCount})
                         </button>
                         <button
                            onClick={() => setActiveTab("questions")}
@@ -282,6 +313,7 @@ export default function TaskDetailsPage() {
                               hasApplied={hasApplied}
                               checkingApplication={checkingApplication}
                               onHasAppliedChange={setHasApplied}
+                              onApplicationsCountChange={setApplicationCount}
                            />
                         ) : (
                            <TaskQuestionsSection taskId={taskId} isOwner={isOwner} />

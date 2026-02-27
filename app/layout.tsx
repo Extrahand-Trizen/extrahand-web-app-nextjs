@@ -6,6 +6,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { EnvironmentLogger } from "@/components/EnvironmentLogger";
+import { ScrollToTop } from "@/components/ScrollToTop";
 
 const inter = Inter({
    subsets: ["latin"],
@@ -36,6 +37,7 @@ export default function RootLayout({
             <ErrorBoundary>
                <QueryProvider>
                   <AuthProvider>
+                     <ScrollToTop />
                      <Toaster />
                      {children}
                   </AuthProvider>

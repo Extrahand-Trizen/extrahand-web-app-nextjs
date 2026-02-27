@@ -5,7 +5,7 @@
  * Redirects authenticated users to home page
  */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { HeroSection } from "@/components/landing";
@@ -48,16 +48,53 @@ export default function LandingPage() {
    const router = useRouter();
    const { currentUser, userData, loading } = useAuth();
    const isAuthenticated = Boolean(currentUser) || Boolean(userData);
+   const [allowHowItWorks, setAllowHowItWorks] = useState(() => {
+      if (typeof window === "undefined") return false;
+      return window.location.hash === "#how-it-works";
+   });
 
    useEffect(() => {
+      if (typeof window === "undefined") return;
+
+      const updateAllow = () => {
+         setAllowHowItWorks(window.location.hash === "#how-it-works");
+      };
+
+      updateAllow();
+      window.addEventListener("hashchange", updateAllow);
+      return () => window.removeEventListener("hashchange", updateAllow);
+   }, []);
+
+   useEffect(() => {
+      if (loading || !isAuthenticated) return;
+
+      const hasHowItWorksHash =
+         typeof window !== "undefined" &&
+         window.location.hash === "#how-it-works";
+
+      if (hasHowItWorksHash) {
+         if (!allowHowItWorks) {
+            setAllowHowItWorks(true);
+         }
+         return;
+      }
+
       // Redirect authenticated users to home page
-      if (!loading && isAuthenticated) {
+      if (!allowHowItWorks) {
          router.replace("/home");
       }
-   }, [isAuthenticated, loading, router]);
+   }, [allowHowItWorks, isAuthenticated, loading, router]);
+
+   useEffect(() => {
+      if (!allowHowItWorks) return;
+      const element = document.getElementById("how-it-works");
+      if (element) {
+         element.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+   }, [allowHowItWorks]);
 
    // Show nothing while checking authentication or redirecting
-   if (loading || isAuthenticated) {
+   if (loading || (isAuthenticated && !allowHowItWorks)) {
       return null;
    }
 

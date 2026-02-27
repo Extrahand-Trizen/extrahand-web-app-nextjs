@@ -75,6 +75,18 @@ export const tasksApi = {
   async getMyTasks(params?: TaskQueryParams): Promise<TaskListResponse> {
     const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
     const response = await fetchWithAuth(`tasks/my-tasks${queryString}`);
+    if (response.data && response.meta?.pagination) {
+      return {
+        tasks: response.data,
+        pagination: {
+          page: response.meta.pagination.page,
+          limit: response.meta.pagination.limit,
+          total: response.meta.pagination.total,
+          pages: response.meta.pagination.totalPages ?? response.meta.pagination.pages,
+        },
+      };
+    }
+
     return response.data || response;
   },
 

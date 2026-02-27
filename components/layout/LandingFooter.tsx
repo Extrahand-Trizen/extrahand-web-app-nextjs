@@ -21,7 +21,7 @@ const footerLinks = {
     links: [
       { label: "How it Works", href: "#how-it-works" },
       { label: "Browse Categories", href: "#categories" },
-      { label: "Trust & Safety", href: "#trust" },
+      { label: "Trust & Safety", href: "/trust-safety" },
       { label: "Pricing", href: "/coming-soon?type=info&label=Pricing" },
     ],
   },
@@ -38,18 +38,18 @@ const footerLinks = {
   company: {
     title: "Company",
     links: [
-      { label: "About Us", href: "/coming-soon?type=info&label=About%20Us" },
+      { label: "About Us", href: "/about-us" },
       { label: "Careers", href: "/careers" },
-      { label: "Press", href: "/coming-soon?type=info&label=Press" },
-      { label: "Contact", href: "/contact" },
-      { label: "Help Center", href: "/coming-soon?type=info&label=Help%20Center" },
-      { label: "FAQs", href: "/coming-soon?type=info&label=FAQs" },
+      { label: "Press", href: "/press" },
+      { label: "Contact", href: "https://extrhand-support-frontend.apps.extrahand.in" },
+      { label: "Help Center", href: "https://extrhand-support-frontend.apps.extrahand.in" },
+      { label: "FAQs", href: "/faqs" },
       { label: "Privacy Policy", href: "/privacy-policy" },
       { label: "Terms and Conditions", href: "/terms-and-conditions" },
       { label: "Refund Policy", href: "/refund-policy" },
       { label: "Tasker Agreement", href: "/provider-agreement" },
-      { label: "Community Guidelines", href: "/coming-soon?type=info&label=Community%20Guidelines" },
-      { label: "Report an Issue", href: "/coming-soon?type=info&label=Report%20an%20Issue" },
+      { label: "Community Guidelines", href: "/community-guidelines" },
+      { label: "Report an Issue", href: "/report-an-issue" },
     ],
   },
   categories: {
@@ -81,6 +81,7 @@ const footerLinks = {
 
 const socialLinks = [
   { icon: Facebook, href: "https://www.facebook.com/profile.php?id=61587931868799", label: "Facebook" },
+  { icon: Linkedin, href: "https://www.linkedin.com/company/112403995/admin/dashboard/", label: "LinkedIn" },
   { icon: Twitter, href: "https://x.com/ExtrahandI42141", label: "X (Twitter)" },
   { icon: Instagram, href: "https://www.instagram.com/extrahand.in/", label: "Instagram" },
   { icon: Youtube, href: "https://www.youtube.com/channel/UCHCIU5Qq0mEdGf8RgJIjCUw", label: "YouTube" },

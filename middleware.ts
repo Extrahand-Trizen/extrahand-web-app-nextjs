@@ -56,6 +56,11 @@ function isProtectedPath(pathname: string) {
       return true;
    }
 
+   // /tasks/new (post a task) is protected - requires authentication
+   if (pathname === "/tasks/new" || pathname.startsWith("/tasks/new?") || pathname.startsWith("/tasks/new#")) {
+      return true;
+   }
+
    // /tasks root and query variants are protected (my tasks/applications),
    // but /tasks/[id] is handled as public above.
    if (pathname === "/tasks" || pathname.startsWith("/tasks?") || pathname.startsWith("/tasks#")) {

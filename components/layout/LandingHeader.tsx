@@ -40,7 +40,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/context";
 import { UserMenu } from "./UserMenu";
 import { NotificationCenter } from "@/components/home";
-import { taskTypes, taskerTypes, posterTypes } from "@/lib/constants";
+import { categoriesApi } from "@/lib/api/endpoints/categories";
 import type { UserCurrentStatus } from "@/types/dashboard";
 
 const USER_MENU_ITEMS = [
@@ -106,6 +106,8 @@ export const LandingHeader: React.FC = () => {
    const [mobileActiveRole, setMobileActiveRole] = useState<
       "poster" | "tasker"
    >("poster");
+   const [categories, setCategories] = useState<any[]>([]);
+   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
    const categoriesRef = useRef<HTMLDivElement>(null);
    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -167,6 +169,25 @@ export const LandingHeader: React.FC = () => {
          document.body.style.overflow = "";
       };
    }, [isMobileMenuOpen]);
+
+   // Fetch categories from API
+   useEffect(() => {
+      const fetchCategories = async () => {
+         try {
+            const data = await categoriesApi.getCategories({
+               includeUnpublished: false,
+            });
+            setCategories(data || []);
+         } catch (error) {
+            console.error("Error fetching categories:", error);
+            setCategories([]);
+         } finally {
+            setCategoriesLoading(false);
+         }
+      };
+
+      fetchCategories();
+   }, []);
 
    const handleNavClick = (href: string, hasDropdown?: boolean) => {
       if (hasDropdown) {
@@ -340,46 +361,50 @@ export const LandingHeader: React.FC = () => {
 
                                           {/* Task types grid */}
                                           <div className="flex-1 grid grid-cols-4 gap-x-4 gap-y-0.5 text-sm max-h-[360px] overflow-y-auto">
-                                             {(activeRole === "tasker" ? taskerTypes : posterTypes).map((col, colIdx) => (
-                                                <div
-                                                   key={colIdx}
-                                                   className="space-y-0.5"
-                                                >
-                                                   {col.map((task) => (
-                                                      <Link
-                                                         key={task}
-                                                         href={
-                                                            activeRole ===
-                                                            "poster"
-                                                               ? `/services/${encodeURIComponent(
-                                                                    task
-                                                                       .toLowerCase()
-                                                                       .replace(
-                                                                          /\s+/g,
-                                                                          "-"
-                                                                       )
-                                                                 )}`
-                                                               : `/jobs/${encodeURIComponent(
-                                                                    task
-                                                                       .toLowerCase()
-                                                                       .replace(
-                                                                          /\s+/g,
-                                                                          "-"
-                                                                       )
-                                                                 )}`
-                                                         }
-                                                         className="block py-1 text-secondary-600 hover:text-secondary-900 hover:underline"
-                                                         onClick={() =>
-                                                            setIsCategoriesOpen(
-                                                               false
-                                                            )
-                                                         }
-                                                      >
-                                                         {task}
-                                                      </Link>
-                                                   ))}
-                                                </div>
-                                             ))}
+                                             {categoriesLoading ? (
+                                                <div className="col-span-4 text-secondary-500">Loading categories...</div>
+                                             ) : categories.length === 0 ? (
+                                                <div className="col-span-4 text-secondary-500">No categories available</div>
+                                             ) : (
+                                                (() => {
+                                                   // Filter categories by role
+                                                   const filteredCategories = categories.filter((cat) => {
+                                                      const type = (cat.categoryType || "").toLowerCase();
+                                                      if (!type) return true; // Show all if no type set
+                                                      if (activeRole === "tasker") {
+                                                         return type.includes("tasker") || type.includes("both");
+                                                      }
+                                                      return type.includes("poster") || type.includes("both");
+                                                   });
+
+                                                   // Build a 4-column layout
+                                                   const cols = [[], [], [], []] as any[];
+                                                   filteredCategories.forEach((cat, idx) => {
+                                                      cols[idx % 4].push(cat);
+                                                   });
+
+                                                   return cols.map((col, colIdx) => (
+                                                      <div key={colIdx} className="space-y-0.5">
+                                                         {col.map((cat) => (
+                                                            <Link
+                                                               key={cat.slug}
+                                                               href={
+                                                                  activeRole === "poster"
+                                                                     ? `/services/${encodeURIComponent(cat.slug)}`
+                                                                     : `/jobs/${encodeURIComponent(cat.slug)}`
+                                                               }
+                                                               className="block py-1 text-secondary-600 hover:text-secondary-900 hover:underline"
+                                                               onClick={() =>
+                                                                  setIsCategoriesOpen(false)
+                                                               }
+                                                            >
+                                                               {cat.name}
+                                                            </Link>
+                                                         ))}
+                                                      </div>
+                                                   ));
+                                                })()
+                                             )}
                                           </div>
                                        </div>
                                        <div className="mt-3 pt-3 border-t border-secondary-100 text-right">
@@ -726,31 +751,40 @@ export const LandingHeader: React.FC = () => {
 
                         {/* Categories List */}
                         <div className="max-h-[50vh] overflow-y-auto space-y-1 mb-4">
-                           {(mobileActiveRole === "tasker" ? taskerTypes : posterTypes).flat().map((task) => (
-                              <Link
-                                 key={task}
-                                 href={
-                                    mobileActiveRole === "poster"
-                                       ? `/services/${encodeURIComponent(
-                                            task
-                                               .toLowerCase()
-                                               .replace(/\s+/g, "-")
-                                         )}`
-                                       : `/jobs/${encodeURIComponent(
-                                            task
-                                               .toLowerCase()
-                                               .replace(/\s+/g, "-")
-                                         )}`
+                           {categoriesLoading ? (
+                              <div className="py-2 px-3 text-sm text-secondary-500">Loading categories...</div>
+                           ) : (() => {
+                              const filteredCategories = categories.filter((cat) => {
+                                 const type = (cat.categoryType || "").toLowerCase();
+                                 if (!type) return true;
+                                 if (mobileActiveRole === "tasker") {
+                                    return type.includes("tasker") || type.includes("both");
                                  }
-                                 className="block py-2 px-3 text-sm text-secondary-600 hover:bg-secondary-50 hover:text-secondary-900 rounded-lg"
-                                 onClick={() => {
-                                    setIsMobileCategoriesOpen(false);
-                                    setIsMobileMenuOpen(false);
-                                 }}
-                              >
-                                 {task}
-                              </Link>
-                           ))}
+                                 return type.includes("poster") || type.includes("both");
+                              });
+
+                              return filteredCategories.length === 0 ? (
+                                 <div className="py-2 px-3 text-sm text-secondary-500">No categories available</div>
+                              ) : (
+                                 filteredCategories.map((cat) => (
+                                    <Link
+                                       key={cat.slug}
+                                       href={
+                                          mobileActiveRole === "poster"
+                                             ? `/services/${encodeURIComponent(cat.slug)}`
+                                             : `/jobs/${encodeURIComponent(cat.slug)}`
+                                       }
+                                       className="block py-2 px-3 text-sm text-secondary-600 hover:bg-secondary-50 hover:text-secondary-900 rounded-lg"
+                                       onClick={() => {
+                                          setIsMobileCategoriesOpen(false);
+                                          setIsMobileMenuOpen(false);
+                                       }}
+                                    >
+                                       {cat.name}
+                                    </Link>
+                                 ))
+                              );
+                           })()}
                         </div>
 
                         {/* View All Button */}

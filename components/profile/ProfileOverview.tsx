@@ -278,8 +278,8 @@ export function ProfileOverview({ user, onNavigate, loading }: ProfileOverviewPr
             <div className="space-y-3">
                <StatusRow
                   label="Account Status"
-                  value={user.isActive ? "Active" : "Inactive"}
-                  status={user.isActive ? "success" : "warning"}
+                  value="Active"
+                  status="success"
                />
                <StatusRow
                   label="Member Since"

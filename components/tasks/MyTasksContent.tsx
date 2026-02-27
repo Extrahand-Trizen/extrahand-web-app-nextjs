@@ -52,7 +52,7 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
          return response;
       },
       staleTime: 60_000, // 1 minute: reuse cached data for quick revisits
-      refetchOnMount: false, // don't refetch if we already have cached data
+      refetchOnMount: true, // Always fetch fresh data when component mounts
    });
 
    // Normalize tasks array from API response

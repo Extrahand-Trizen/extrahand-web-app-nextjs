@@ -59,7 +59,7 @@ export function MyApplicationsContent({
          return response;
       },
       staleTime: 60_000,
-      refetchOnMount: false,
+      refetchOnMount: true, // Always fetch fresh data when component mounts
    });
 
    // Normalize applications + tasks from API response

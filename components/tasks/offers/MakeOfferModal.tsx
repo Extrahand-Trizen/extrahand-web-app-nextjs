@@ -427,15 +427,7 @@ export function MakeOfferModal({
                                     const val = e.target.value === ""
                                        ? 0
                                        : Number(e.target.value);
-                                    
-                                    // Enforce range: 50-50000
-                                    if (val < 50 && val !== 0) {
-                                       field.onChange(0);
-                                    } else if (val > 50000) {
-                                       field.onChange(50000);
-                                    } else {
-                                       field.onChange(val);
-                                    }
+                                    field.onChange(val);
                                  }}
                                  onBlur={field.onBlur}
                                  className="h-11"
