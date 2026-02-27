@@ -262,6 +262,27 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 // Note: getErrorMessage and isNetworkError are imported from @/lib/utils/errorUtils
 
 // ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Round up current time to next 15-minute interval
+ * If current time is in the past (shouldn't happen), rounds to next available slot
+ */
+const getRoundedCurrentTime = (): Date => {
+   const now = new Date();
+   const minutes = now.getMinutes();
+   const remainder = 15 - (minutes % 15);
+   
+   // Round up to next 15-minute mark
+   now.setMinutes(minutes + remainder);
+   now.setSeconds(0);
+   now.setMilliseconds(0);
+   
+   return now;
+};
+
+// ============================================================================
 // Initial Form Data
 // ============================================================================
 
@@ -285,14 +306,14 @@ const INITIAL_FORM_DATA: TaskFormData = {
    },
    scheduledDate: null,
    scheduledTimeStart: (() => {
-      const date = new Date();
-      date.setHours(9, 0, 0, 0);
-      return date;
+      // Default to current time rounded to next 15-minute interval
+      return getRoundedCurrentTime();
    })(),
    scheduledTimeEnd: (() => {
-      const date = new Date();
-      date.setHours(10, 0, 0, 0);
-      return date;
+      // Default to 1 hour after rounded current time
+      const startTime = getRoundedCurrentTime();
+      startTime.setHours(startTime.getHours() + 1);
+      return startTime;
    })(),
    flexibility: "flexible",
    recurringEnabled: false,

@@ -281,17 +281,6 @@ export function ImageUpload({
                )}
             </div>
          )}
-
-         {/* Empty State */}
-         {value.length === 0 && !isUploading && (
-            <div className="text-center py-4">
-               <ImageIcon className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-               <p className="text-sm text-gray-500">No images uploaded yet</p>
-               <p className="text-xs text-gray-400 mt-1">
-                  Images help taskers understand your task better
-               </p>
-            </div>
-         )}
       </div>
    );
 }
