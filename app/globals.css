@@ -70,7 +70,8 @@
 html {
    overflow-x: hidden;
    scroll-behavior: auto;
-   overscroll-behavior: none;
+   /* Allow vertical overscroll so mobile pull-to-refresh works */
+   overscroll-behavior-y: auto;
 }
 
 html, body {
