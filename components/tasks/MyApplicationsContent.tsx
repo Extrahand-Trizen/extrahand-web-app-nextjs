@@ -58,8 +58,8 @@ export function MyApplicationsContent({
          console.log("✅ My applications response:", response);
          return response;
       },
-      staleTime: 5 * 60 * 1000, // 5 minutes: keep data fresh longer to avoid refetch
-      refetchOnMount: "stale", // Only refetch if data is stale (older than 5 minutes)
+      staleTime: Infinity, // Never mark as stale - keep cached data indefinitely
+      refetchOnMount: false, // Never refetch on mount - show cached data immediately
       refetchOnWindowFocus: false, // Don't refetch on window focus
    });
 
