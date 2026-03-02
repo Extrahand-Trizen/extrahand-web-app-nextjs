@@ -306,6 +306,10 @@ export function OTPVerificationForm({
             await applyPendingReferralCode();
             setIsVerified(true);
             clearSession();
+            
+            // Set client-side auth cookie for middleware detection
+            document.cookie = "extrahand_auth=1; path=/; max-age=2592000; SameSite=Lax";
+            
             // Keep isVerifyingRef.current=true until after redirect fires so the
             // auto-verify useEffect cannot re-trigger handleVerify with a stale state.
             toast.success(
@@ -317,8 +321,8 @@ export function OTPVerificationForm({
             setTimeout(() => {
                isVerifyingRef.current = false;
                if (onSuccess) onSuccess();
-               else router.push(redirectTo);
-            }, 1000);
+               else window.location.href = redirectTo;
+            }, 800);
          } catch (err: any) {
             setOTPAuthInProgress(false);
             isVerifyingRef.current = false;
@@ -420,6 +424,10 @@ export function OTPVerificationForm({
          // 5. Success!
          setIsVerified(true);
          clearSession();
+         
+         // Set client-side auth cookie for middleware detection
+         document.cookie = "extrahand_auth=1; path=/; max-age=2592000; SameSite=Lax";
+         
          // Keep isVerifyingRef.current=true until after redirect fires so the
          // auto-verify useEffect cannot re-trigger handleVerify with a stale state.
 
@@ -437,9 +445,10 @@ export function OTPVerificationForm({
             if (onSuccess) {
                onSuccess();
             } else {
-               router.push(redirectTo);
+               // Use hard navigation to ensure middleware re-checks auth state
+               window.location.href = redirectTo;
             }
-         }, 1000);
+         }, 800);
       } catch (error: any) {
          // Don't show error toast for code-expired if verification already succeeded
          // This prevents duplicate toasts

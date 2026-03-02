@@ -3,7 +3,7 @@
  * Matches task-connect-relay routes/applications.js
  */
 
-import { fetchWithAuth } from '../client';
+import { fetchWithAuth, fetchPublic } from '../client';
 import { TaskApplication, CreateApplicationRequest, UpdateApplicationRequest, ApplicationsResponse } from '@/types/application';
 import { ApplicationQueryParams } from '@/types/api';
 
@@ -67,9 +67,10 @@ export const applicationsApi = {
   /**
    * Get applications for a specific task
    * GET /api/v1/applications?taskId=:taskId
+   * Public endpoint - works without authentication
    */
   async getTaskApplications(taskId: string): Promise<ApplicationsResponse> {
-    const response = await fetchWithAuth(`applications?taskId=${taskId}`);
+    const response = await fetchPublic(`applications?taskId=${taskId}`);
     
     // Handle standardized response format
     if (response.data && response.meta?.pagination) {

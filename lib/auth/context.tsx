@@ -124,6 +124,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
          // Clear session data
          sessionManager.clearSession();
          storeLogout();
+         
+         // Clear client-side auth cookie
+         document.cookie = "extrahand_auth=; path=/; max-age=0; SameSite=Lax";
 
          // Clear user state
          setCurrentUser(null);
@@ -141,6 +144,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
          // Even if Firebase signOut fails, clear local session
          sessionManager.clearSession();
          storeLogout();
+         // Clear client-side auth cookie
+         document.cookie = "extrahand_auth=; path=/; max-age=0; SameSite=Lax";
          setCurrentUser(null);
          setUserData(null);
       }

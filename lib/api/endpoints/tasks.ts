@@ -93,9 +93,10 @@ export const tasksApi = {
   /**
    * Get a single task by ID
    * GET /api/v1/tasks/:id
+   * Public endpoint - works without authentication
    */
   async getTask(taskId: string): Promise<Task> {
-    const response = await fetchWithAuth(`tasks/${taskId}`);
+    const response = await fetchPublic(`tasks/${taskId}`);
     return response.data || response;
   },
 
