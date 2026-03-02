@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { taskDetailsQueryKeys } from "@/lib/queryKeys";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
 import { applicationsApi } from "@/lib/api/endpoints/applications";
+import { sessionManager } from "@/lib/auth/session";
 
 const PREFETCH_DEBOUNCE_MS = 200;
 
@@ -14,6 +15,7 @@ let globalTimeout: ReturnType<typeof setTimeout> | null = null;
 /**
  * Conservative prefetch for task detail page: debounced hover, one at a time.
  * Use on task links/cards so that when the user clicks, data is often already in cache.
+ * Applications are only prefetched when the user is logged in to avoid 401 → redirect on hover for guests.
  */
 export function usePrefetchTaskDetails(taskId: string | null) {
    const queryClient = useQueryClient();
@@ -31,11 +33,14 @@ export function usePrefetchTaskDetails(taskId: string | null) {
             },
             staleTime: 60 * 1000,
          });
-         void queryClient.prefetchQuery({
-            queryKey: taskDetailsQueryKeys.applications(taskId),
-            queryFn: () => applicationsApi.getTaskApplications(taskId),
-            staleTime: 60 * 1000,
-         });
+         // Only prefetch applications when authenticated; otherwise 401 triggers redirect to home
+         if (typeof window !== "undefined" && sessionManager.isSessionActive()) {
+            void queryClient.prefetchQuery({
+               queryKey: taskDetailsQueryKeys.applications(taskId),
+               queryFn: () => applicationsApi.getTaskApplications(taskId),
+               staleTime: 60 * 1000,
+            });
+         }
       }, PREFETCH_DEBOUNCE_MS);
    }, [taskId, queryClient]);
 
