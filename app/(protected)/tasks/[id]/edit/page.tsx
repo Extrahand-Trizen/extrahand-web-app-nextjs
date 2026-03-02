@@ -9,6 +9,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -25,6 +26,8 @@ import { BudgetStep } from "@/components/tasks/steps/BudgetStep";
 import { editTaskSchema, type EditTaskFormData } from "@/lib/validations/task";
 import type { Task } from "@/types/task";
 import type { TaskFormData } from "@/components/tasks/TaskCreationFlow";
+import { tasksApi } from "@/lib/api/endpoints/tasks";
+import { taskDetailsQueryKeys } from "@/lib/queryKeys";
 
 // Transform Task to EditTaskFormData
 function taskToFormData(task: Task): Partial<EditTaskFormData> {
@@ -106,8 +109,18 @@ export default function EditTaskPage() {
    const params = useParams();
    const taskId = params.id as string;
 
-   const [task, setTask] = useState<Task | null>(null);
-   const [loading, setLoading] = useState(true);
+   const taskQuery = useQuery({
+      queryKey: taskDetailsQueryKeys.task(taskId),
+      queryFn: async () => {
+         const r = await tasksApi.getTask(taskId);
+         return ((r as { data?: Task })?.data ?? r) as Task;
+      },
+      enabled: !!taskId,
+      staleTime: 30 * 1000,
+   });
+   const task = taskQuery.data ?? null;
+   const loading = taskQuery.isLoading && !taskQuery.data;
+
    const [isSubmitting, setIsSubmitting] = useState(false);
    const [currentStep, setCurrentStep] = useState(1);
 
@@ -117,42 +130,24 @@ export default function EditTaskPage() {
       defaultValues: {} as Partial<EditTaskFormData>,
    }) as UseFormReturn<Partial<EditTaskFormData>>;
 
-   // Load task data from API
    useEffect(() => {
-      const loadTask = async () => {
-         try {
-            setLoading(true);
-            // Fetch real task data
-            const { tasksApi } = await import("@/lib/api/endpoints/tasks");
-            const response = await tasksApi.getTask(taskId);
-            
-            // Handle different response structures
-            const taskData = ((response as any)?.data || response) as Task;
+      if (!task) return;
+      const formData = taskToFormData(task);
+      form.reset(formData);
+   }, [task, form]);
 
-            if (!taskData) {
-               toast.error("Task not found");
-               router.push("/tasks");
-               return;
-            }
-
-            setTask(taskData);
-            const formData = taskToFormData(taskData);
-            form.reset(formData);
-         } catch (error) {
-            console.error("Error loading task:", error);
-            toast.error("Failed to load task", {
-               description: "Please try again later.",
-            });
-            router.push("/tasks");
-         } finally {
-            setLoading(false);
-         }
-      };
-
-      if (taskId) {
-         loadTask();
+   useEffect(() => {
+      if (!taskId) return;
+      if (taskQuery.isError) {
+         toast.error("Failed to load task", { description: "Please try again later." });
+         router.push("/tasks");
+         return;
       }
-   }, [taskId, form, router]);
+      if (taskQuery.isSuccess && task == null) {
+         toast.error("Task not found");
+         router.push("/tasks");
+      }
+   }, [taskId, taskQuery.isError, taskQuery.isSuccess, task, router]);
 
    const totalSteps = 3;
    const progress = (currentStep / totalSteps) * 100;

@@ -56,6 +56,8 @@ export const CompactFilterBar = ({
       filters.remotely !== null && typeof filters.remotely !== 'undefined' ||
       filters.minBudget !== 50 ||
       filters.maxBudget !== 50000 ||
+      filters.availableOnly ||
+      filters.noOffersOnly ||
       searchQuery.length > 0;
 
    const clearAll = () => {
@@ -66,6 +68,8 @@ export const CompactFilterBar = ({
          minBudget: 50,
          maxBudget: 50000,
          sortBy: "recent",
+         availableOnly: false,
+         noOffersOnly: false,
       });
       onSearchChange("");
    };
@@ -97,6 +101,8 @@ export const CompactFilterBar = ({
                value={filters.sortBy}
                onChange={(v) => onFilterChange({ ...filters, sortBy: v })}
             />
+
+            <OtherFilters filters={filters} onFilterChange={onFilterChange} />
 
             {hasActiveFilters && (
                <Button
@@ -381,6 +387,128 @@ export const PriceFilter = ({ filters, onFilterChange }) => {
    );
 };
 
+export const OtherFilters = ({ filters, onFilterChange }) => {
+   const [open, setOpen] = useState(false);
+   const [localAvailableOnly, setLocalAvailableOnly] = useState(filters.availableOnly);
+   const [localNoOffersOnly, setLocalNoOffersOnly] = useState(filters.noOffersOnly);
+
+   const handleApply = () => {
+      onFilterChange({
+         ...filters,
+         availableOnly: localAvailableOnly,
+         noOffersOnly: localNoOffersOnly,
+      });
+      setOpen(false);
+   };
+
+   const handleCancel = () => {
+      setLocalAvailableOnly(filters.availableOnly);
+      setLocalNoOffersOnly(filters.noOffersOnly);
+      setOpen(false);
+   };
+
+   const hasActiveOtherFilters = filters.availableOnly || filters.noOffersOnly;
+
+   return (
+      <Popover open={open} onOpenChange={(nextOpen) => {
+         if (!nextOpen) {
+            setLocalAvailableOnly(filters.availableOnly);
+            setLocalNoOffersOnly(filters.noOffersOnly);
+         }
+         setOpen(nextOpen);
+      }}>
+         <PopoverTrigger asChild>
+            <Button
+               variant={hasActiveOtherFilters ? "default" : "outline"}
+               className="px-4 py-2 text-sm"
+            >
+               Other Filters
+               {hasActiveOtherFilters && (
+                  <span className="ml-2 inline-flex items-center justify-center h-5 w-5 rounded-full bg-white text-primary-600 text-xs font-semibold">
+                     {(localAvailableOnly ? 1 : 0) + (localNoOffersOnly ? 1 : 0)}
+                  </span>
+               )}
+            </Button>
+         </PopoverTrigger>
+         <PopoverContent className="w-72 p-6">
+            <div className="space-y-4">
+               {/* Title */}
+               <h3 className="text-sm font-semibold text-secondary-900">OTHER FILTERS</h3>
+
+               {/* Available tasks only */}
+               <div 
+                  className="flex items-center justify-between p-3 rounded-lg border border-secondary-200 cursor-pointer hover:bg-secondary-50"
+                  onClick={() => setLocalAvailableOnly(!localAvailableOnly)}
+               >
+                  <div className="flex-1">
+                     <p className="text-sm font-medium text-secondary-900">Available tasks only</p>
+                     <p className="text-xs text-secondary-500 mt-1">Hide tasks that are already assigned</p>
+                  </div>
+                  <div 
+                     className={cn(
+                        "h-6 w-11 rounded-full border-2 flex items-center transition-colors",
+                        localAvailableOnly 
+                           ? "bg-primary-600 border-primary-600" 
+                           : "bg-secondary-200 border-secondary-200"
+                     )}
+                  >
+                     <div 
+                        className={cn(
+                           "h-5 w-5 rounded-full bg-white shadow transition-transform",
+                           localAvailableOnly ? "translate-x-5" : "translate-x-0"
+                        )}
+                     />
+                  </div>
+               </div>
+
+               {/* Tasks with no offers only */}
+               <div 
+                  className="flex items-center justify-between p-3 rounded-lg border border-secondary-200 cursor-pointer hover:bg-secondary-50"
+                  onClick={() => setLocalNoOffersOnly(!localNoOffersOnly)}
+               >
+                  <div className="flex-1">
+                     <p className="text-sm font-medium text-secondary-900">Tasks with no offers only</p>
+                     <p className="text-xs text-secondary-500 mt-1">Hide tasks that have offers</p>
+                  </div>
+                  <div 
+                     className={cn(
+                        "h-6 w-11 rounded-full border-2 flex items-center transition-colors",
+                        localNoOffersOnly 
+                           ? "bg-primary-600 border-primary-600" 
+                           : "bg-secondary-200 border-secondary-200"
+                     )}
+                  >
+                     <div 
+                        className={cn(
+                           "h-5 w-5 rounded-full bg-white shadow transition-transform",
+                           localNoOffersOnly ? "translate-x-5" : "translate-x-0"
+                        )}
+                     />
+                  </div>
+               </div>
+
+               {/* Buttons */}
+               <div className="flex gap-3 pt-4">
+                  <Button
+                     variant="ghost"
+                     className="flex-1 text-primary-600 hover:text-primary-700 hover:bg-transparent"
+                     onClick={handleCancel}
+                  >
+                     Cancel
+                  </Button>
+                  <Button
+                     className="flex-1 bg-primary-600 hover:bg-primary-700 text-white rounded-full font-semibold"
+                     onClick={handleApply}
+                  >
+                     Apply
+                  </Button>
+               </div>
+            </div>
+         </PopoverContent>
+      </Popover>
+   );
+};
+
 export const SortFilter = ({ value, onChange }) => {
    return (
       <Select value={value} onValueChange={onChange}>
@@ -466,6 +594,13 @@ export const MobileFilterSheet = ({
                            onChange={(v) =>
                               onFilterChange({ ...filters, sortBy: v })
                            }
+                        />
+                     </div>
+
+                     <div className={filterRowClass}>
+                        <OtherFilters
+                           filters={filters}
+                           onFilterChange={onFilterChange}
                         />
                      </div>
                   </div>

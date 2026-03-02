@@ -182,20 +182,20 @@ function ProfilePageContent() {
       }
    }, []);
 
-   // Warm up badge & referral queries so the sections feel instant when opened
+   // Warm up badge & referral (layout also prefetches; badge requested first as it’s slower)
    useEffect(() => {
       if (!userData?.uid) return;
 
+      const stale = 5 * 60 * 1000;
       queryClient.prefetchQuery({
          queryKey: ["badgeProgress"],
          queryFn: getBadgeProgress,
-         staleTime: 5 * 60 * 1000,
+         staleTime: stale,
       });
-
       queryClient.prefetchQuery({
          queryKey: ["referralSimple"],
          queryFn: () => referralsApi.getDashboard(),
-         staleTime: 5 * 60 * 1000,
+         staleTime: stale,
       });
    }, [userData?.uid, queryClient]);
 
@@ -567,48 +567,37 @@ function ProfilePageContent() {
       return (
          <div className="bg-gray-50 min-h-screen">
             <Sheet open={navOpen} onOpenChange={setNavOpen}>
-               <SheetContent side="left" className="w-[300px] p-0">
-                  <SheetHeader className="border-b border-gray-200 p-4">
+               <SheetContent side="left" className="w-[300px] p-0 flex flex-col max-h-full">
+                  <SheetHeader className="border-b border-gray-200 p-4 shrink-0">
                      <SheetTitle className="text-left">Account</SheetTitle>
                      <p className="text-sm text-gray-500">
                         Manage your profile
                      </p>
                   </SheetHeader>
-                  <ProfileNavList
-                     onSectionChange={(s) => {
-                        goTo(s);
-                        setNavOpen(false);
-                     }}
-                  />
+                  <div className="flex-1 min-h-0 overflow-y-auto">
+                     <ProfileNavList
+                        onSectionChange={(s) => {
+                           goTo(s);
+                           setNavOpen(false);
+                        }}
+                     />
+                  </div>
                </SheetContent>
             </Sheet>
             <div className="sticky top-0 z-40 bg-white border-b border-gray-200">
                <div className="flex items-center gap-3 px-4 py-3">
                   <button
-                     onClick={() =>
-                        section !== "overview"
-                           ? goTo("overview")
-                           : setNavOpen(true)
-                     }
+                     onClick={() => setNavOpen(true)}
                      className="p-2 -ml-2 hover:bg-gray-100 rounded-lg"
+                     aria-label="Open profile menu"
                   >
-                     {section !== "overview" ? (
-                        <ArrowLeft className="w-5 h-5 text-gray-600" />
-                     ) : (
-                        <Menu className="w-5 h-5 text-gray-600" />
-                     )}
+                     <Menu className="w-5 h-5 text-gray-600" />
                   </button>
-                  <h1 className="text-base font-semibold text-gray-900 flex-1">
+                  <h1 className="text-base font-semibold text-gray-900 flex-1 text-center">
                      {SECTION_TITLES[section]}
                   </h1>
-                  {section !== "overview" && (
-                     <button
-                        onClick={() => setNavOpen(true)}
-                        className="p-2 -mr-2 hover:bg-gray-100 rounded-lg"
-                     >
-                        <Menu className="w-5 h-5 text-gray-600" />
-                     </button>
-                  )}
+                  {/* Spacer so title stays centered when only one icon */}
+                  <div className="w-9 shrink-0" aria-hidden />
                </div>
             </div>
             <div className="px-4 py-6 pb-20">
@@ -731,6 +720,7 @@ function renderSection(s: ProfileSection, p: Props) {
       case "payments":
          return (
             <PaymentsSection
+               userId={p.user.uid}
                paymentMethods={p.paymentMethods}
                payoutMethods={p.payoutMethods}
                onRemovePaymentMethod={p.onRemovePaymentMethod}
@@ -809,7 +799,7 @@ function renderSection(s: ProfileSection, p: Props) {
          return (
             <div>
                <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Badges</h2>
-               <BadgeDisplaySimple className="mb-12" />
+               <BadgeDisplaySimple className="mb-6" />
             </div>
          );
       // business-verification section removed - now integrated into verifications section

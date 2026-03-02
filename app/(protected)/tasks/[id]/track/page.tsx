@@ -38,9 +38,11 @@ import type {
    ReportReason,
 } from "@/types/tracking";
 import type { Message } from "@/types/chat";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
 import { reviewsApi } from "@/lib/api/endpoints/reviews";
 import { chatsApi } from "@/lib/api/endpoints/chats";
+import { taskDetailsQueryKeys } from "@/lib/queryKeys";
 import { toast } from "sonner";
 import { reportsApi } from "@/lib/api/endpoints/reports";
 import { completionApi } from "@/lib/api/endpoints/completion";
@@ -54,13 +56,26 @@ export default function TaskTrackingPage() {
    const { currentUser, loading: authLoading } = useAuth();
    const taskId = params.id as string;
 
-   const [task, setTask] = useState<Task | null>(null);
+   const queryClient = useQueryClient();
+   const taskQuery = useQuery({
+      queryKey: taskDetailsQueryKeys.task(taskId),
+      queryFn: async () => {
+         const r = await tasksApi.getTask(taskId);
+         return ((r as { data?: Task })?.data ?? r) as Task;
+      },
+      enabled: !!taskId,
+      staleTime: 30 * 1000,
+   });
+   const task = taskQuery.data ?? null;
+   const setTaskInCache = (updatedTask: Task) => {
+      queryClient.setQueryData(taskDetailsQueryKeys.task(taskId), updatedTask);
+   };
    const [reviews, setReviews] = useState<Review[]>([]);
    const [existingReport, setExistingReport] = useState<
       TaskReportSubmission | undefined
    >();
    const [showReportModal, setShowReportModal] = useState(false);
-   const [isLoading, setIsLoading] = useState(true);
+   const isLoading = taskQuery.isLoading && !taskQuery.data;
    const [activeTab, setActiveTab] = useState("overview");
    const [hasUnseenChanges, setHasUnseenChanges] = useState(false);
    const [chatMessages, setChatMessages] = useState<Message[]>([]);
@@ -101,6 +116,7 @@ export default function TaskTrackingPage() {
       return "viewer";
    }, [task, userProfile]);
 
+<<<<<<< HEAD
    // Fetch task data from API
    useEffect(() => {
       const fetchTask = async () => {
@@ -159,6 +175,8 @@ export default function TaskTrackingPage() {
       }
    };
 
+=======
+>>>>>>> 59b8bb36af6d89618828c8202e1d9ad366bbbc73
    // Fetch reviews for the task - only when user is involved (poster or tasker)
    useEffect(() => {
       const fetchReviews = async () => {
@@ -210,7 +228,7 @@ export default function TaskTrackingPage() {
          console.log("✅ Task status updated successfully:", updatedTask);
          
          // Update local state with response from server
-         setTask(updatedTask);
+         setTaskInCache(updatedTask);
       } catch (error) {
          console.error("❌ Failed to update task status:", error);
          // TODO: Show error toast to user
@@ -231,7 +249,7 @@ export default function TaskTrackingPage() {
          
          console.log("✅ Completion proof submitted:", updatedTask);
          console.log("📸 completionProof in response:", updatedTask?.completionProof);
-         setTask(updatedTask);
+         setTaskInCache(updatedTask);
          toast.success("Completion proof submitted for review!");
          
          // Refetch task to ensure we have latest data
@@ -240,7 +258,7 @@ export default function TaskTrackingPage() {
          console.log("🔄 Refreshed task:", taskData);
          console.log("📸 completionProof in refreshed task:", taskData?.completionProof);
          if (taskData) {
-            setTask(taskData as Task);
+            setTaskInCache(taskData as Task);
          }
       } catch (error) {
          console.error("❌ Failed to submit proof:", error);
@@ -258,7 +276,7 @@ export default function TaskTrackingPage() {
          const updatedTask = await completionApi.approveCompletion(task._id);
          
          console.log("✅ Completion approved:", updatedTask);
-         setTask(updatedTask);
+         setTaskInCache(updatedTask);
          toast.success("Work approved! Task completed.");
       } catch (error) {
          console.error("❌ Failed to approve completion:", error);
@@ -276,7 +294,7 @@ export default function TaskTrackingPage() {
          const updatedTask = await completionApi.rejectCompletion(task._id, reason);
          
          console.log("✅ Completion rejected:", updatedTask);
-         setTask(updatedTask);
+         setTaskInCache(updatedTask);
          toast.success("Work sent back for revisions");
       } catch (error) {
          console.error("❌ Failed to reject completion:", error);
@@ -390,26 +408,26 @@ export default function TaskTrackingPage() {
    // Real-time task updates: Listen for task status changes via Socket.IO
    const handleTaskStatusChanged = useCallback((updatedTask: any) => {
       console.log("📨 Real-time task status update:", updatedTask);
-      setTask(updatedTask as Task);
+      setTaskInCache(updatedTask as Task);
       toast.success(`Task status updated to ${updatedTask.status}`);
    }, []);
 
    const handleProofSubmitted = useCallback((updatedTask: any) => {
       console.log("📸 Real-time proof submission:", updatedTask);
-      setTask(updatedTask as Task);
+      setTaskInCache(updatedTask as Task);
       toast.info("Completion proof has been submitted for review");
    }, []);
 
    const handleProofApproved = useCallback((updatedTask: any) => {
       console.log("✅ Real-time proof approval:", updatedTask);
-      setTask(updatedTask as Task);
+      setTaskInCache(updatedTask as Task);
       toast.success("Completion proof has been approved!");
    }, []);
 
    const handleProofRejected = useCallback((data: any) => {
       console.log("❌ Real-time proof rejection:", data);
       if (data.task) {
-         setTask(data.task as Task);
+         setTaskInCache(data.task as Task);
       }
       toast.error(`Proof rejected: ${data.reason || "Please revise and resubmit"}`);
    }, []);
@@ -609,7 +627,7 @@ export default function TaskTrackingPage() {
                            task={task}
                            userRole={userRole}
                            onStatusUpdate={handleStatusUpdate}
-                           onTaskUpdated={(updatedTask) => setTask(updatedTask)}
+                           onTaskUpdated={(updatedTask) => setTaskInCache(updatedTask)}
                         />
                      </div>
                   )}
@@ -710,7 +728,7 @@ export default function TaskTrackingPage() {
                         task={task}
                         userRole={userRole}
                         onStatusUpdate={handleStatusUpdate}
-                        onTaskUpdated={(updatedTask) => setTask(updatedTask)}
+                        onTaskUpdated={(updatedTask) => setTaskInCache(updatedTask)}
                      />
                   )}
 

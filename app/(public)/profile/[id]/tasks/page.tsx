@@ -26,6 +26,7 @@ import { tasksApi } from "@/lib/api/endpoints/tasks";
 import { useAuth } from "@/lib/auth/context";
 import { toast } from "sonner";
 import { ShareModal } from "@/components/shared/ShareModal";
+import { usePrefetchTaskDetails } from "@/hooks/usePrefetchTaskDetails";
 
 export default function UserPortfolioPage() {
    const router = useRouter();
@@ -346,6 +347,7 @@ interface TaskCardProps {
 
 function TaskCard({ task, userName }: TaskCardProps) {
    const [shareOpen, setShareOpen] = useState(false);
+   const { onMouseEnter: prefetchTask } = usePrefetchTaskDetails(task._id);
 
    const handleShareTask = () => {
       setShareOpen(true);
@@ -353,7 +355,7 @@ function TaskCard({ task, userName }: TaskCardProps) {
 
    return (
       <>
-         <Link href={`/tasks/${task._id}`}>
+         <Link href={`/tasks/${task._id}`} onMouseEnter={prefetchTask}>
             <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer h-full group">
                {/* Header */}
                <div className="flex items-start justify-between gap-3 mb-3">

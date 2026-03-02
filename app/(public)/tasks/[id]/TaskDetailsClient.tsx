@@ -1,22 +1,14 @@
-<<<<<<< HEAD
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
    AlertCircle,
    ChevronLeft,
-   MapPin,
-   Calendar,
-   Clock,
-   User,
-   Star,
-   DollarSign,
-   ArrowRight,
-   CheckCircle,
-   Shield,
    Share2,
+   ArrowRight,
 } from "lucide-react";
 import { TaskDetailsHeader } from "@/components/tasks/TaskDetailsHeader";
 import { TaskDetailsMain } from "@/components/tasks/TaskDetailsMain";
@@ -28,127 +20,74 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth/context";
 import { useUserStore } from "@/lib/state/userStore";
-=======
-import { getApiBaseUrl } from "@/lib/config";
-import { cookies } from "next/headers";
->>>>>>> 59b8bb36af6d89618828c8202e1d9ad366bbbc73
 import type { Task } from "@/types/task";
-import { TaskDetailsClient } from "./TaskDetailsClient";
+import { tasksApi } from "@/lib/api/endpoints/tasks";
+import { applicationsApi } from "@/lib/api/endpoints/applications";
+import { taskDetailsQueryKeys } from "@/lib/queryKeys";
+import { ShareModal } from "@/components/shared/ShareModal";
+import { toast } from "sonner";
 
-type PageProps = { params: Promise<{ id: string }> };
+interface TaskDetailsClientProps {
+   initialTask: Task | null;
+   taskId: string;
+}
 
-<<<<<<< HEAD
-export default function TaskDetailsPage() {
-   const params = useParams();
+const TASK_STALE_MS = 60 * 1000;
+
+export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProps) {
    const router = useRouter();
-   const searchParams = useSearchParams();
-   const taskId = params.id as string;
-   const [task, setTask] = useState<Task | null>(null);
-   const [loading, setLoading] = useState(true);
+   const queryClient = useQueryClient();
+   const initialForId =
+      initialTask && String((initialTask as Task & { _id?: string })._id) === taskId ? initialTask : null;
+
+   const taskQuery = useQuery({
+      queryKey: taskDetailsQueryKeys.task(taskId),
+      queryFn: async () => {
+         const r = await tasksApi.getTask(taskId);
+         return ((r as { data?: Task })?.data ?? r) as Task;
+      },
+      initialData: initialForId ?? undefined,
+      enabled: !!taskId,
+      staleTime: TASK_STALE_MS,
+   });
+
+   const applicationsQuery = useQuery({
+      queryKey: taskDetailsQueryKeys.applications(taskId),
+      queryFn: () => applicationsApi.getTaskApplications(taskId),
+      enabled: !!taskId,
+      staleTime: TASK_STALE_MS,
+   });
+
+   const isMobile = useIsMobile();
+   const { currentUser } = useAuth();
+   const userProfile = useUserStore((state) => state.user);
+
+   const task = taskQuery.data ?? null;
+   const loading = taskQuery.isLoading && !taskQuery.data;
+   const applications = applicationsQuery.data?.applications ?? [];
+   const userId = (userProfile as { _id?: string } | null)?._id;
+   const hasApplied = applications.some((app) => app.applicantId === userId);
+   const applicationCount = applications.length;
+   const checkingApplication = applicationsQuery.isLoading;
+
    const [activeTab, setActiveTab] = useState<"offers" | "questions">("offers");
    const [showFixedCTA, setShowFixedCTA] = useState(false);
    const [showMakeOfferModal, setShowMakeOfferModal] = useState(false);
    const [shareOpen, setShareOpen] = useState(false);
-   const [hasApplied, setHasApplied] = useState(false);
-   const [checkingApplication, setCheckingApplication] = useState(false);
-   const [applicationCount, setApplicationCount] = useState(0);
    const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
-   const autoOfferTriggered = useRef(false);
-   
-   const [scrollY, setScrollY] = useState(0);
-   const isMobile = useIsMobile();
-   const { currentUser } = useAuth();
-   const userProfile = useUserStore((state) => state.user); // Get profile from global state
-   
-   // Check if current user is the task owner
-   // Compare MongoDB ObjectIds: profile._id with task.requesterId
+
    const isOwner = (() => {
       if (!task || !userProfile) return false;
-      
-      // Convert both to strings for comparison (handles ObjectId vs string)
-      const taskRequesterId = String(task.requesterId || '');
-      const userProfileId = String(userProfile._id || '');
-      
-      // Debug logging
-      console.log("🔍 isOwner Check:", {
-         taskRequesterId,
-         userProfileId,
-         match: taskRequesterId === userProfileId,
-         taskStatus: task.status,
-      });
-      
-      return taskRequesterId !== '' && userProfileId !== '' && taskRequesterId === userProfileId;
+      const taskRequesterId = String(task.requesterId || "");
+      const userProfileId = String(userProfile._id || "");
+      return taskRequesterId !== "" && userProfileId !== "" && taskRequesterId === userProfileId;
    })();
-
-   // Fetch task data from API
-   useEffect(() => {
-      const fetchTask = async () => {
-         setLoading(true);
-         try {
-            const response = await tasksApi.getTask(taskId);
-            
-            console.log("✅ Task details response:", response);
-            
-            // Handle different response structures
-            const taskData = (response as any)?.data || response;
-            
-            if (taskData) {
-               setTask(taskData as Task);
-               
-               // Check application status immediately if user is logged in
-               if (currentUser && userProfile && taskId) {
-                  try {
-                     const appResponse = await applicationsApi.getTaskApplications(taskId);
-                     const applications = appResponse.applications || [];
-                     const userApplication = applications.find(
-                        (app) => app.applicantId === (userProfile as any)._id
-                     );
-                     setHasApplied(!!userApplication);
-                  } catch (error) {
-                     console.error("Error checking application:", error);
-                     setHasApplied(false);
-                  }
-               }
-            }
-         } catch (error) {
-            console.error("❌ Failed to fetch task:", error);
-         } finally {
-            setLoading(false);
-         }
-      };
-
-      if (taskId) {
-         fetchTask();
-      }
-   }, [taskId, currentUser, userProfile]);
-
-   // Auto-open the Make an Offer modal when redirected back after login with ?action=offer
-   useEffect(() => {
-      if (
-         searchParams.get("action") === "offer" &&
-         currentUser &&
-         task &&
-         !loading &&
-         !autoOfferTriggered.current
-      ) {
-         autoOfferTriggered.current = true;
-         // Remove the action param from the URL without a page reload
-         const url = new URL(window.location.href);
-         url.searchParams.delete("action");
-         router.replace(url.pathname + (url.search || ""), { scroll: false });
-         // Open the modal (isOwner is derived; delay a tick to let state settle)
-         setTimeout(() => setShowMakeOfferModal(true), 100);
-      }
-   }, [searchParams, currentUser, task, loading, router]);
 
    useEffect(() => {
       const handleScroll = () => {
          const currentScroll = window.scrollY;
-         setScrollY(currentScroll);
-         // Show fixed CTA when user scrolls past 400px
          setShowFixedCTA(currentScroll > 400);
       };
-
       window.addEventListener("scroll", handleScroll);
       return () => window.removeEventListener("scroll", handleScroll);
    }, []);
@@ -156,7 +95,6 @@ export default function TaskDetailsPage() {
    if (loading && !task) {
       return (
          <div className="min-h-screen bg-secondary-50">
-            {/* Header skeleton */}
             <div className="border-b bg-white">
                <div className="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3">
                   <div className="h-8 w-8 rounded-full bg-secondary-200 animate-pulse" />
@@ -166,8 +104,6 @@ export default function TaskDetailsPage() {
                   </div>
                </div>
             </div>
-
-            {/* Main + sidebar skeleton */}
             <div className="max-w-5xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-[2fr,minmax(0,1fr)] gap-6">
                <div className="space-y-4">
                   <div className="h-40 bg-white border border-secondary-200 rounded-xl animate-pulse" />
@@ -187,36 +123,27 @@ export default function TaskDetailsPage() {
          <div className="min-h-screen flex items-center justify-center">
             <div className="text-center">
                <AlertCircle className="w-16 h-16 text-secondary-400 mx-auto mb-4" />
-               <h1 className="text-2xl font-bold text-secondary-900 mb-2">
-                  Task not found
-               </h1>
+               <h1 className="text-2xl font-bold text-secondary-900 mb-2">Task not found</h1>
                <p className="text-secondary-600 mb-6">
-                  The task you&apos;re looking for doesn&apos;t exist or has
-                  been removed.
+                  The task you&apos;re looking for doesn&apos;t exist or has been removed.
                </p>
-               <Button onClick={() => router.push("/tasks")}>
-                  Browse all tasks
-               </Button>
+               <Button onClick={() => router.push("/tasks")}>Browse all tasks</Button>
             </div>
          </div>
       );
    }
 
-   const budgetAmount =
-      typeof task.budget === "object" ? task.budget.amount : task.budget;
-
    const handleShare = async () => {
       const url = window.location.href;
-
       if (navigator.share) {
          try {
             await navigator.share({
                title: task?.title || "Task on ExtraHand",
                text: `Check out this task on ExtraHand: ${task?.title}`,
-               url: url,
+               url,
             });
-         } catch (err) {
-            console.log("Share cancelled");
+         } catch {
+            // User cancelled
          }
       } else {
          setShareOpen(true);
@@ -224,29 +151,21 @@ export default function TaskDetailsPage() {
    };
 
    const handleMakeOffer = () => {
-      // Check if user is logged in before opening the offer modal
       if (!currentUser) {
-         // Redirect to login with the current task page (+ action) as the return URL
-         const currentPath = `/tasks/${taskId}?action=offer`;
-         router.push(`/login?next=${encodeURIComponent(currentPath)}`);
+         router.push(`/login?next=${encodeURIComponent(`/tasks/${taskId}`)}`);
          return;
       }
-
-      // Prevent owners from making offers on their own task
       if (isOwner) {
          toast.info("This is your task", {
             description: "You can't make an offer on your own task.",
          });
          return;
       }
-
-      // User is logged in and not the owner, open the modal
       setShowMakeOfferModal(true);
    };
 
    return (
       <div className="min-h-screen bg-linear-to-b from-secondary-50 to-white pb-24 md:pb-0">
-         {/* Back Button & Share */}
          <div className="bg-white/80 backdrop-blur-sm border-b border-secondary-100">
             <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
                <button
@@ -266,11 +185,10 @@ export default function TaskDetailsPage() {
             </div>
          </div>
 
-         {/* Header Component */}
          <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 lg:py-6">
-            <TaskDetailsHeader 
-               task={task} 
-               showMobileCTA={isMobile} 
+            <TaskDetailsHeader
+               task={task}
+               showMobileCTA={isMobile}
                onMakeOffer={handleMakeOffer}
                hasApplied={hasApplied}
                checkingApplication={checkingApplication}
@@ -279,14 +197,11 @@ export default function TaskDetailsPage() {
             />
          </div>
 
-         {/* Main Content */}
          <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 lg:py-8">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-               {/* Left Column - Main Content */}
                <div className="lg:col-span-2 space-y-6">
                   <TaskDetailsMain task={task} />
 
-                  {/* Tabs */}
                   <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm overflow-hidden border border-secondary-100/50">
                      <div className="flex gap-2 p-2 border-b border-secondary-100">
                         <button
@@ -310,8 +225,6 @@ export default function TaskDetailsPage() {
                            Questions
                         </button>
                      </div>
-
-                     {/* Tab Content */}
                      <div>
                         {activeTab === "offers" ? (
                            <TaskOffersSection
@@ -322,8 +235,8 @@ export default function TaskDetailsPage() {
                               taskCategory={task?.category}
                               hasApplied={hasApplied}
                               checkingApplication={checkingApplication}
-                              onHasAppliedChange={setHasApplied}
-                              onApplicationsCountChange={setApplicationCount}
+                              onHasAppliedChange={() => {}}
+                              onApplicationsCountChange={() => {}}
                            />
                         ) : (
                            <TaskQuestionsSection taskId={taskId} isOwner={isOwner} />
@@ -331,12 +244,10 @@ export default function TaskDetailsPage() {
                      </div>
                   </div>
                </div>
-
-               {/* Right Sidebar - Desktop Only */}
                <div className="hidden lg:block">
-                  <TaskDetailsSidebar 
-                     task={task} 
-                     isOwner={isOwner} 
+                  <TaskDetailsSidebar
+                     task={task}
+                     isOwner={isOwner}
                      onMakeOffer={handleMakeOffer}
                      hasApplied={hasApplied}
                      isSubmittingOffer={isSubmittingOffer}
@@ -345,7 +256,6 @@ export default function TaskDetailsPage() {
             </div>
          </div>
 
-         {/* Fixed Bottom CTA - Mobile (only for non-owners) */}
          {showFixedCTA && task && task.status === "open" && !isOwner && (
             <div className="fixed bottom-0 left-0 right-0 lg:hidden bg-white border-t border-secondary-200 shadow-xl animate-in slide-in-from-bottom-0 duration-300">
                <div className="max-w-7xl mx-auto px-4 py-3">
@@ -372,7 +282,6 @@ export default function TaskDetailsPage() {
             </div>
          )}
 
-         {/* Make Offer Modal */}
          {task && (
             <MakeOfferModal
                task={task}
@@ -380,14 +289,13 @@ export default function TaskDetailsPage() {
                onOpenChange={setShowMakeOfferModal}
                onSubmittingChange={setIsSubmittingOffer}
                onSuccess={() => {
-                  setHasApplied(true);
+                  queryClient.invalidateQueries({ queryKey: taskDetailsQueryKeys.applications(taskId) });
                   setIsSubmittingOffer(false);
                   setShowMakeOfferModal(false);
                }}
             />
          )}
 
-         {/* Share Modal */}
          {task && (
             <ShareModal
                isOpen={shareOpen}
@@ -400,32 +308,4 @@ export default function TaskDetailsPage() {
          )}
       </div>
    );
-=======
-async function fetchTaskOnServer(id: string): Promise<Task | null> {
-   const apiBase = getApiBaseUrl().replace(/\/$/, "");
-   const url = `${apiBase}/api/v1/tasks/${id}`;
-   try {
-      const cookieStore = await cookies();
-      const cookieHeader = cookieStore
-         .getAll()
-         .map((c) => `${c.name}=${c.value}`)
-         .join("; ");
-      const res = await fetch(url, {
-         headers: cookieHeader ? { Cookie: cookieHeader } : {},
-         next: { revalidate: 30 },
-      });
-      if (!res.ok) return null;
-      const json = await res.json();
-      const taskData = json?.data ?? json;
-      return taskData && typeof taskData === "object" && taskData._id ? (taskData as Task) : null;
-   } catch {
-      return null;
-   }
-}
-
-export default async function TaskDetailsPage({ params }: PageProps) {
-   const { id } = await params;
-   const initialTask = await fetchTaskOnServer(id);
-   return <TaskDetailsClient initialTask={initialTask} taskId={id} />;
->>>>>>> 59b8bb36af6d89618828c8202e1d9ad366bbbc73
 }

@@ -18,6 +18,12 @@ import {
    PopoverTrigger,
 } from "@/components/ui/popover";
 import {
+   DropdownMenu,
+   DropdownMenuContent,
+   DropdownMenuItem,
+   DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
    CreditCard,
    Building2,
    Smartphone,
@@ -34,6 +40,8 @@ import {
    X,
    CalendarIcon,
    IndianRupee,
+   FileText,
+   FileSpreadsheet,
 } from "lucide-react";
 import { PaymentMethod, PayoutMethod, Transaction } from "@/types/profile";
 import { mockTransactions } from "@/lib/data/payments";
@@ -42,6 +50,10 @@ import { DateRange } from "react-day-picker";
 import { useAuth } from "@/lib/auth/context";
 import { toast } from "sonner";
 import { usePaymentsStore } from "@/lib/state/paymentsStore";
+import {
+   exportTransactionsToPdf,
+   exportTransactionsToExcel,
+} from "@/lib/exportTransactions";
 
 interface PaymentsSectionProps {
    paymentMethods?: PaymentMethod[];
@@ -92,13 +104,15 @@ export function PaymentsSection({
    const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false);
    const [showPayoutMethodModal, setShowPayoutMethodModal] = useState(false);
 
-   // Fetch earnings + transactions from shared payments store
+   // Fetch earnings + transactions as soon as Payments section is shown (use userId
+   // from parent so Total Earnings/Total Spent load without waiting for auth or tab).
+   const effectiveUserId = userId ?? currentUser?.uid;
    useEffect(() => {
-      if (!currentUser?.uid) return;
-      fetchPayments(currentUser.uid).catch((error) => {
+      if (!effectiveUserId) return;
+      fetchPayments(effectiveUserId).catch((error) => {
          console.error("Failed to load payments:", error);
       });
-   }, [currentUser?.uid, fetchPayments]);
+   }, [effectiveUserId, fetchPayments]);
 
    // Check if any range filters are active
    const hasActiveRangeFilters = useMemo(() => {
@@ -394,9 +408,52 @@ export function PaymentsSection({
                            </span>
                         )}
                      </Button>
-                     <Button variant="ghost" size="sm" className="h-8 px-2">
-                        <Download className="w-4 h-4" />
-                     </Button>
+                     <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                           <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 px-2"
+                              aria-label="Download transactions"
+                           >
+                              <Download className="w-4 h-4" />
+                           </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                           <DropdownMenuItem
+                              onClick={async () => {
+                                 try {
+                                    await exportTransactionsToPdf(filteredTransactions, {
+                                       totalEarnings,
+                                       totalSpent,
+                                    });
+                                    toast.success("PDF downloaded");
+                                 } catch (e) {
+                                    toast.error("Failed to download PDF");
+                                 }
+                              }}
+                           >
+                              <FileText className="w-4 h-4 mr-2" />
+                              Download as PDF
+                           </DropdownMenuItem>
+                           <DropdownMenuItem
+                              onClick={async () => {
+                                 try {
+                                    await exportTransactionsToExcel(filteredTransactions, {
+                                       totalEarnings,
+                                       totalSpent,
+                                    });
+                                    toast.success("Excel downloaded");
+                                 } catch (e) {
+                                    toast.error("Failed to download Excel");
+                                 }
+                              }}
+                           >
+                              <FileSpreadsheet className="w-4 h-4 mr-2" />
+                              Download as Excel
+                           </DropdownMenuItem>
+                        </DropdownMenuContent>
+                     </DropdownMenu>
                   </div>
                </div>
 

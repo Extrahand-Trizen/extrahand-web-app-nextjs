@@ -14,6 +14,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserStore } from "@/lib/state/userStore";
 import { useTasksInfinite } from "@/hooks/useTasksInfinite";
 import { serviceCategories } from "@/lib/data/categories";
+import { PrefetchTaskWrapper } from "@/hooks/usePrefetchTaskDetails";
 
 const HYDERABAD_CENTER = { lat: 17.385, lng: 78.4867 };
 
@@ -24,6 +25,8 @@ type CompactFilterState = {
   minBudget: number;
   maxBudget: number;
   sortBy: "recent" | "nearest" | "price-low" | "price-high" | "date";
+  availableOnly: boolean;
+  noOffersOnly: boolean;
 };
 
 // tweak these to match your header/filter/footer sizes
@@ -109,6 +112,8 @@ export function DiscoverClient({
     minBudget: 50,
     maxBudget: 50000,
     sortBy: "recent",
+    availableOnly: false,
+    noOffersOnly: false,
   });
 
   const isMobile = useIsMobile();
@@ -239,6 +244,21 @@ export function DiscoverClient({
       }
     }
 
+    // Available tasks only (hide assigned tasks)
+    if (filters.availableOnly) {
+      filtered = filtered.filter((task) => {
+        const isAssigned = task.status === "assigned" || task.status === "started" || task.status === "in_progress";
+        return !isAssigned;
+      });
+    }
+
+    // Tasks with no offers only (hide tasks with applications)
+    if (filters.noOffersOnly) {
+      filtered = filtered.filter((task) => {
+        return !task.applications || task.applications === 0;
+      });
+    }
+
     // Sort by nearest (client-side distance calculation)
     if (filters.sortBy === "nearest") {
       filtered.sort((a, b) => {
@@ -346,12 +366,13 @@ export function DiscoverClient({
               ) : (
                 <div className="space-y-5">
                   {filteredTasks.map((task) => (
-                    <TaskCard
-                      key={task._id}
-                      task={task}
-                      isSelected={selectedTaskId === task._id}
-                      onClick={() => handleTaskSelect(task._id)}
-                    />
+                    <PrefetchTaskWrapper key={task._id} taskId={task._id}>
+                      <TaskCard
+                        task={task}
+                        isSelected={selectedTaskId === task._id}
+                        onClick={() => handleTaskSelect(task._id)}
+                      />
+                    </PrefetchTaskWrapper>
                   ))}
                 </div>
               )}
