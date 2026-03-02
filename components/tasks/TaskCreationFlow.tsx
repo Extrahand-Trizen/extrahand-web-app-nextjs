@@ -207,7 +207,7 @@ const transformFormDataToTask = (
          ? formData.subcategory || CATEGORY_LABELS.other
          : CATEGORY_LABELS[formData.category] || undefined,
       subcategory: formData.subcategory || undefined,
-      requirements: formData.requirements,
+      requirements: (formData.requirements || []).filter((req: string) => Boolean(req && req.trim())),
       estimatedDuration: formData.estimatedDuration || undefined,
       tags: formData.tags,
       priority: formData.priority,
@@ -579,10 +579,14 @@ export function TaskCreationFlow() {
          setRetryCount(0);
 
          try {
-            if (data.budgetType !== "negotiable") {
+            if (data.budgetType === "negotiable") {
+               // Negotiable tasks don't require a specific budget
+            } else {
+               // Fixed and hourly budgets require a valid amount
                const budgetValue = data.budget ?? null;
                if (budgetValue === null || budgetValue < 50 || budgetValue > 50000) {
-                  toast.error("Please enter a budget between ₹50 and ₹50,000");
+                  toast.error(`Please enter a ${data.budgetType} budget between ₹50 and ₹50,000`);
+                  setIsSubmitting(false);
                   return;
                }
             }
@@ -662,12 +666,12 @@ export function TaskCreationFlow() {
 
    const handleAuthLogin = () => {
       setShowAuthModal(false);
-      router.push("/login?next=/tasks/new");
+      window.location.href = "/login?next=/tasks/new";
    };
 
    const handleAuthSignup = () => {
       setShowAuthModal(false);
-      router.push("/signup?next=/tasks/new");
+      window.location.href = "/signup?next=/tasks/new";
    };
 
    return (

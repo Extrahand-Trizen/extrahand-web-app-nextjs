@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Star, CheckCircle, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -79,6 +80,7 @@ export function TaskOffersSection({
       useState<TaskApplication | null>(null);
    const [showPaymentModal, setShowPaymentModal] = useState(false);
    const { currentUser } = useAuth();
+   const router = useRouter();
    const onApplicationsCountChangeRef = useRef(onApplicationsCountChange);
 
    // Keep ref updated with latest callback
@@ -129,35 +131,27 @@ export function TaskOffersSection({
    };
 
    const handlePaymentSuccess = async () => {
+      const application = selectedApplication;
+      setSelectedApplication(null);
+      setShowPaymentModal(false);
+
+      toast.success("Payment successful!", {
+         description: "Task assigned to tasker. Money held in escrow.",
+      });
+
       try {
-         if (!selectedApplication) return;
-
-         // Update application status to accepted after payment
-         await applicationsApi.updateApplicationStatus(selectedApplication._id, {
-            status: "accepted",
-         });
-
-         toast.success("Payment successful!", {
-            description: "Task assigned to tasker. Money held in escrow.",
-         });
-
-         // Update local state
-         setApplications((prev) =>
-            prev.map((app) =>
-               app._id === selectedApplication._id
-                  ? { ...app, status: "accepted" as const }
-                  : app.status === "pending"
-                  ? { ...app, status: "rejected" as const }
-                  : app
-            )
-         );
-
-         setSelectedApplication(null);
+         if (application) {
+            // Update application status to accepted after payment
+            await applicationsApi.updateApplicationStatus(application._id, {
+               status: "accepted",
+            });
+         }
       } catch (error) {
-         console.error("Error updating application:", error);
-         toast.error("Payment successful but failed to update task", {
-            description: "Please contact support if task doesn't update.",
-         });
+         // Payment succeeded even if status update fails – silently log
+         console.error("Error updating application status after payment:", error);
+      } finally {
+         // Always redirect to the task tracking page after payment
+         router.push(`/tasks/${taskId}/track`);
       }
    };
 

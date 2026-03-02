@@ -245,8 +245,8 @@ export function ImageUpload({
                         className="w-full h-full object-cover"
                      />
 
-                     {/* Overlay on Hover */}
-                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                     {/* Overlay on Hover - Desktop only */}
+                     <div className="absolute inset-0 bg-black/50 hidden md:flex opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center">
                         <Button
                            type="button"
                            variant="destructive"
@@ -258,6 +258,16 @@ export function ImageUpload({
                            Remove
                         </Button>
                      </div>
+
+                     {/* Always-visible Remove button - Mobile only */}
+                     <button
+                        type="button"
+                        onClick={() => removeAttachment(index)}
+                        className="md:hidden absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center shadow-md active:bg-red-700"
+                        aria-label="Remove image"
+                     >
+                        <X className="w-4 h-4" />
+                     </button>
 
                      {/* Filename */}
                      <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/70 to-transparent p-2">

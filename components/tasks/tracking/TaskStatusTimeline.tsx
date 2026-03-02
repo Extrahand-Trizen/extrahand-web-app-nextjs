@@ -6,12 +6,13 @@
  */
 
 import React from "react";
-import { CheckCircle2, Circle, Clock } from "lucide-react";
+import { CheckCircle2, Circle, Clock, XCircle } from "lucide-react";
 import type { Task } from "@/types/task";
 import { cn } from "@/lib/utils";
 
 interface TaskStatusTimelineProps {
    task: Task;
+   userRole?: "poster" | "tasker" | "viewer";
 }
 
 const STATUS_FLOW: Array<{
@@ -27,10 +28,43 @@ const STATUS_FLOW: Array<{
    { key: "completed", label: "Completed" },
 ];
 
-export function TaskStatusTimeline({ task }: TaskStatusTimelineProps) {
-   // Don't show timeline for cancelled tasks
+export function TaskStatusTimeline({ task, userRole }: TaskStatusTimelineProps) {
+   // Show cancellation banner for cancelled tasks
    if (task.status === "cancelled") {
-      return null;
+      return (
+         <div className="bg-white rounded-xl shadow-sm border border-red-200 p-4 md:p-6">
+            <div className="flex items-start gap-3">
+               <div className="flex-shrink-0 mt-0.5">
+                  <XCircle className="w-6 h-6 text-red-500" />
+               </div>
+               <div className="flex-1 min-w-0">
+                  <h2 className="text-base md:text-lg font-bold text-red-700 mb-1">
+                     Task Cancelled
+                  </h2>
+                  {task.cancellationReason ? (
+                     <div className="mt-2 bg-red-50 rounded-lg p-3 border border-red-100">
+                        <p className="text-xs font-semibold text-red-600 mb-1">
+                           {userRole === "tasker" ? "Reason from task owner:" : "Cancellation reason:"}
+                        </p>
+                        <p className="text-sm text-red-800 leading-relaxed">
+                           {task.cancellationReason}
+                        </p>
+                     </div>
+                  ) : (
+                     <p className="text-sm text-secondary-600">
+                        This task has been cancelled.
+                        {userRole === "tasker" && " No reason was provided by the task owner."}
+                     </p>
+                  )}
+                  {task.cancelledAt && (
+                     <p className="text-xs text-secondary-400 mt-2">
+                        Cancelled on {new Date(task.cancelledAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                     </p>
+                  )}
+               </div>
+            </div>
+         </div>
+      );
    }
 
    const currentStatusIndex = STATUS_FLOW.findIndex(

@@ -26,14 +26,18 @@ export function useTasksInfinite(
     queryKey: ["tasks", { ...filters, userId: userProfile?._id ?? null }],
     initialPageParam: 1,
     queryFn: async ({ pageParam = 1 }) => {
-      const params: any = {
-        page: pageParam,
+      const page = typeof pageParam === "number" ? pageParam : 1;
+      const params: Record<string, string | number | boolean> = {
+        page,
         limit: TASKS_PER_PAGE,
         status: filters.status,
       };
 
       if (filters.categories.length > 0) {
-        params.category = filters.categories.join(",");
+        const categoryValue = filters.categories.join(",");
+        params.category = categoryValue;
+        params.categories = categoryValue;
+        params.categorySlug = categoryValue;
       }
 
       if (filters.search.trim()) {
@@ -65,8 +69,14 @@ export function useTasksInfinite(
           return await tasksApi.getTasks(params);
         }
         return await tasksApi.getPublicTasks(params);
-      } catch (err: any) {
-        if (err?.status === 401) {
+      } catch (err: unknown) {
+        const isUnauthorized =
+          typeof err === "object" &&
+          err !== null &&
+          "status" in err &&
+          (err as { status?: number }).status === 401;
+
+        if (isUnauthorized) {
           return await tasksApi.getPublicTasks(params);
         }
         throw err;

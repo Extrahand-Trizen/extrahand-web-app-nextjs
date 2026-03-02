@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import React, { useState, useEffect, useRef } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
    AlertCircle,
@@ -48,6 +48,7 @@ const formatDate = (date: Date | string | undefined) => {
 export default function TaskDetailsPage() {
    const params = useParams();
    const router = useRouter();
+   const searchParams = useSearchParams();
    const taskId = params.id as string;
    const [task, setTask] = useState<Task | null>(null);
    const [loading, setLoading] = useState(true);
@@ -59,6 +60,7 @@ export default function TaskDetailsPage() {
    const [checkingApplication, setCheckingApplication] = useState(false);
    const [applicationCount, setApplicationCount] = useState(0);
    const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
+   const autoOfferTriggered = useRef(false);
    
    const [scrollY, setScrollY] = useState(0);
    const isMobile = useIsMobile();
@@ -126,6 +128,25 @@ export default function TaskDetailsPage() {
          fetchTask();
       }
    }, [taskId, currentUser, userProfile]);
+
+   // Auto-open the Make an Offer modal when redirected back after login with ?action=offer
+   useEffect(() => {
+      if (
+         searchParams.get("action") === "offer" &&
+         currentUser &&
+         task &&
+         !loading &&
+         !autoOfferTriggered.current
+      ) {
+         autoOfferTriggered.current = true;
+         // Remove the action param from the URL without a page reload
+         const url = new URL(window.location.href);
+         url.searchParams.delete("action");
+         router.replace(url.pathname + (url.search || ""), { scroll: false });
+         // Open the modal (isOwner is derived; delay a tick to let state settle)
+         setTimeout(() => setShowMakeOfferModal(true), 100);
+      }
+   }, [searchParams, currentUser, task, loading, router]);
 
    useEffect(() => {
       const handleScroll = () => {
@@ -212,8 +233,8 @@ export default function TaskDetailsPage() {
    const handleMakeOffer = () => {
       // Check if user is logged in before opening the offer modal
       if (!currentUser) {
-         // Redirect to login with the current task page as the return URL
-         const currentPath = `/tasks/${taskId}`;
+         // Redirect to login with the current task page (+ action) as the return URL
+         const currentPath = `/tasks/${taskId}?action=offer`;
          router.push(`/login?next=${encodeURIComponent(currentPath)}`);
          return;
       }

@@ -13,6 +13,7 @@ import { List, Plus, AlertCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserStore } from "@/lib/state/userStore";
 import { useTasksInfinite } from "@/hooks/useTasksInfinite";
+import { serviceCategories } from "@/lib/data/categories";
 
 const HYDERABAD_CENTER = { lat: 17.385, lng: 78.4867 };
 
@@ -51,6 +52,13 @@ const calculateDistance = (
 
 const getBudgetAmount = (budget: Task["budget"]) =>
   typeof budget === "number" ? budget : budget?.amount ?? 0;
+
+const normalizeCategoryValue = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 
 // Empty state
 const EmptyState = ({ searchQuery }: { searchQuery: string }) => {
@@ -130,13 +138,6 @@ export function DiscoverClient({
 
   const pages = data?.pages ?? [];
   const tasks: Task[] = pages.flatMap((page) => page.tasks || []);
-  const latestPagination =
-    pages[pages.length - 1]?.pagination || {
-      page: 1,
-      limit: 20,
-      total: 0,
-      pages: 0,
-    };
 
   // Filter and sort tasks (client-side for unsupported backend filters)
   const getFilteredTasks = useCallback((): Task[] => {
@@ -163,6 +164,36 @@ export function DiscoverClient({
           city.includes(query) ||
           address.includes(query)
         );
+      });
+    }
+
+    if (filters.categories.length > 0) {
+      const selectedCategoryValues = new Set<string>();
+
+      filters.categories.forEach((selectedId) => {
+        const category = serviceCategories.find((cat) => cat.id === selectedId);
+        const candidates = [selectedId, category?.id, category?.name].filter(
+          Boolean
+        ) as string[];
+
+        candidates.forEach((candidate) => {
+          const normalized = normalizeCategoryValue(candidate);
+          if (normalized) selectedCategoryValues.add(normalized);
+        });
+      });
+
+      filtered = filtered.filter((task) => {
+        const taskCategoryCandidates = [
+          task.category,
+          task.categorySlug,
+          task.categoryLabel,
+        ].filter(Boolean) as string[];
+
+        return taskCategoryCandidates.some((candidate) => {
+          const normalizedTaskCategory = normalizeCategoryValue(candidate);
+          if (!normalizedTaskCategory) return false;
+          return selectedCategoryValues.has(normalizedTaskCategory);
+        });
       });
     }
 
@@ -242,10 +273,14 @@ export function DiscoverClient({
     }
 
     return filtered;
-  }, [tasks, filters, userProfile?._id, searchQuery]);
+  }, [tasks, filters, userProfile, searchQuery]);
 
   const filteredTasks = getFilteredTasks();
   const selectedTask = filteredTasks.find((t) => t._id === selectedTaskId);
+  const errorMessage =
+    error instanceof Error
+      ? error.message
+      : "Failed to load tasks. Please try again.";
 
   // On mobile: go directly to task details. On desktop: show detail card overlay on map.
   const handleTaskSelect = (taskId: string) => {
@@ -271,7 +306,6 @@ export function DiscoverClient({
         onFilterChange={setFilters}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        resultCount={filteredTasks.length}
       />
 
       {/* Main content */}
@@ -294,8 +328,7 @@ export function DiscoverClient({
                     Error Loading Tasks
                   </h3>
                   <p className="text-sm text-secondary-600 mb-4 max-w-md">
-                    {(error as any)?.message ||
-                      "Failed to load tasks. Please try again."}
+                    {errorMessage}
                   </p>
                   <Button
                     onClick={() => window.location.reload()}

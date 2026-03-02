@@ -74,6 +74,16 @@ export function MakeOfferModal({
    const [portfolioInput, setPortfolioInput] = useState("");
    const [rangeStart, setRangeStart] = useState("");
    const [rangeEnd, setRangeEnd] = useState("");
+
+   // Independent local state for days/hours so each can be freely edited
+   const initialDuration = task.estimatedDuration ?? 0;
+   const [durationDays, setDurationDays] = useState<string>(
+      String(Math.floor(initialDuration / 24))
+   );
+   const [durationHours, setDurationHours] = useState<string>(
+      String(initialDuration % 24)
+   );
+
    const verificationStatus = getOfferSubmissionVerificationStatus(userData ?? null);
 
    const taskBudget =
@@ -230,6 +240,8 @@ export function MakeOfferModal({
          });
 
          form.reset();
+         setDurationDays("0");
+         setDurationHours("0");
          onOpenChange(false);
          onSuccess?.();
       } catch (error: any) {
@@ -482,6 +494,7 @@ export function MakeOfferModal({
                               </FormLabel>
                               <FormControl>
                                  <div className="flex items-center gap-3">
+                                    {/* Days */}
                                     <div className="flex-1">
                                        <div className="flex items-center gap-2">
                                           <Input
@@ -492,12 +505,18 @@ export function MakeOfferModal({
                                              step="1"
                                              inputMode="numeric"
                                              className="h-10 text-sm flex-1"
-                                             value={field.value ? Math.floor(field.value / 24) : ""}
+                                             value={durationDays}
                                              onChange={(e) => {
-                                                const days = e.target.value === "" ? 0 : parseFloat(e.target.value);
-                                                const hours = field.value ? (field.value % 24) : 0;
-                                                const total = days * 24 + hours;
+                                                const raw = e.target.value;
+                                                setDurationDays(raw);
+                                                const days = raw === "" ? 0 : Math.max(0, Math.floor(Number(raw)));
+                                                const hrs = durationHours === "" ? 0 : Math.min(23, Math.max(0, Math.floor(Number(durationHours))));
+                                                const total = days * 24 + hrs;
                                                 field.onChange(total === 0 ? undefined : total);
+                                             }}
+                                             onBlur={() => {
+                                                const days = durationDays === "" ? 0 : Math.max(0, Math.floor(Number(durationDays)));
+                                                setDurationDays(String(days));
                                              }}
                                           />
                                           <span className="text-xs text-secondary-600 font-medium min-w-fit">
@@ -505,6 +524,7 @@ export function MakeOfferModal({
                                           </span>
                                        </div>
                                     </div>
+                                    {/* Hours */}
                                     <div className="flex-1">
                                        <div className="flex items-center gap-2">
                                           <Input
@@ -515,12 +535,18 @@ export function MakeOfferModal({
                                              step="1"
                                              inputMode="numeric"
                                              className="h-10 text-sm flex-1"
-                                             value={field.value ? Math.floor(field.value % 24) : ""}
+                                             value={durationHours}
                                              onChange={(e) => {
-                                                const hours = e.target.value === "" ? 0 : parseFloat(e.target.value);
-                                                const days = field.value ? Math.floor(field.value / 24) : 0;
-                                                const total = days * 24 + hours;
+                                                const raw = e.target.value;
+                                                setDurationHours(raw);
+                                                const hrs = raw === "" ? 0 : Math.min(23, Math.max(0, Math.floor(Number(raw))));
+                                                const days = durationDays === "" ? 0 : Math.max(0, Math.floor(Number(durationDays)));
+                                                const total = days * 24 + hrs;
                                                 field.onChange(total === 0 ? undefined : total);
+                                             }}
+                                             onBlur={() => {
+                                                const hrs = durationHours === "" ? 0 : Math.min(23, Math.max(0, Math.floor(Number(durationHours))));
+                                                setDurationHours(String(hrs));
                                              }}
                                           />
                                           <span className="text-xs text-secondary-600 font-medium min-w-fit">

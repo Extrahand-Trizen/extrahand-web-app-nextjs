@@ -38,7 +38,7 @@ export const useOTP = (
    mode: "login" | "signup"
 ): UseOTPResult => {
    const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
-   const [timer, setTimer] = useState(30);
+   const [timer, setTimer] = useState(0); // Start at 0; countdown begins only after OTP is actually sent
    const [sending, setSending] = useState(false);
    const [verifying, setVerifying] = useState(false);
 

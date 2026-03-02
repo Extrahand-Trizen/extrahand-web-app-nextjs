@@ -213,11 +213,9 @@ export function OTPVerificationForm({
          return;
       }
       
-      let sendSuccess = false;
       try {
          await sendOtp(phoneInput);
-         sendSuccess = true; // Only set to true if sendOtp completes without throwing
-         resetTimer();
+         // Note: sendOtp internally calls setTimer(30) on success — no resetTimer() needed here
          // Show success toast when OTP is sent
          toast.success("Verification code sent", {
             description: `Code sent to ${phoneInput}. It will expire in 10 minutes.`,
@@ -308,7 +306,8 @@ export function OTPVerificationForm({
             await applyPendingReferralCode();
             setIsVerified(true);
             clearSession();
-            isVerifyingRef.current = false;
+            // Keep isVerifyingRef.current=true until after redirect fires so the
+            // auto-verify useEffect cannot re-trigger handleVerify with a stale state.
             toast.success(
                authType === "signup"
                   ? `Welcome to ExtraHand${userName ? `, ${userName}` : ""}!`
@@ -316,55 +315,7 @@ export function OTPVerificationForm({
                { description: "Phone verified successfully. Redirecting..." }
             );
             setTimeout(() => {
-               if (onSuccess) onSuccess();
-               else router.push(redirectTo);
-            }, 1000);
-         } catch (err: any) {
-            setOTPAuthInProgress(false);
-            isVerifyingRef.current = false;
-            toast.error("Verification failed", {
-               description: err?.message || "Invalid OTP or test user not seeded.",
-            });
-            setOtp(Array(OTP_LENGTH).fill(""));
-            focusInput(0);
-         }
-         return;
-      }
-
-      // This duplicate block should be removed - keeping for now but updating redirect
-      if (isLocalTestMode() && isTestPhone(phone)) {
-         try {
-            setOTPAuthInProgress(true);
-            const backendResult = await authApi.completeOTPDev(
-               formatPhoneNumber(phone),
-               code,
-               authType,
-               userName || undefined
-            );
-            if (!backendResult.success) {
-               throw new Error(backendResult.error || "Verification failed");
-            }
-            loginToStore({
-               user: backendResult.profile ?? undefined,
-            });
-            sessionManager.saveSession({
-               isAuthenticated: true,
-               lastRoute: "Landing",
-            });
-            setOTPAuthInProgress(false);
-            await new Promise((r) => setTimeout(r, 200));
-            await refreshUserData();
-            await applyPendingReferralCode();
-            setIsVerified(true);
-            clearSession();
-            isVerifyingRef.current = false;
-            toast.success(
-               authType === "signup"
-                  ? `Welcome to ExtraHand${userName ? `, ${userName}` : ""}!`
-                  : "Welcome back!",
-               { description: "Phone verified successfully. Redirecting..." }
-            );
-            setTimeout(() => {
+               isVerifyingRef.current = false;
                if (onSuccess) onSuccess();
                else router.push(redirectTo);
             }, 1000);
@@ -469,7 +420,8 @@ export function OTPVerificationForm({
          // 5. Success!
          setIsVerified(true);
          clearSession();
-         isVerifyingRef.current = false; // Reset verification flag on success
+         // Keep isVerifyingRef.current=true until after redirect fires so the
+         // auto-verify useEffect cannot re-trigger handleVerify with a stale state.
 
          const welcomeMessage =
             authType === "signup"
@@ -481,6 +433,7 @@ export function OTPVerificationForm({
          });
 
          setTimeout(() => {
+            isVerifyingRef.current = false;
             if (onSuccess) {
                onSuccess();
             } else {
@@ -510,13 +463,13 @@ export function OTPVerificationForm({
          setOtp(Array(OTP_LENGTH).fill(""));
          focusInput(0);
       } finally {
-         // Ensure flags are cleared regardless of success or failure to avoid duplicate flows
+         // Ensure OTP auth flag is cleared. Do NOT reset isVerifyingRef here because
+         // the success path intentionally keeps it true until the redirect setTimeout fires.
          try {
             setOTPAuthInProgress(false);
          } catch (e) {
             /* ignore */
          }
-         isVerifyingRef.current = false;
       }
    };
 

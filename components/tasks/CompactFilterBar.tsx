@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { X, ChevronDown } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -46,7 +46,6 @@ export const CompactFilterBar = ({
    onFilterChange,
    searchQuery,
    onSearchChange,
-   resultCount,
 }) => {
    const isMobile = useIsMobile();
 
@@ -77,7 +76,6 @@ export const CompactFilterBar = ({
             onFilterChange={onFilterChange}
             searchQuery={searchQuery}
             onSearchChange={onSearchChange}
-            resultCount={resultCount}
             clearAll={clearAll}
          />
       );
@@ -202,8 +200,6 @@ export const LocationFilter = ({ filters, onFilterChange }) => {
    const [open, setOpen] = useState(false);
    const [suburbSearch, setSuburbSearch] = useState(filters.suburb);
 
-   useEffect(() => setSuburbSearch(filters.suburb), [filters.suburb]);
-
    const suggestions = [
       "Hyderabad Biryani House, Attapur, Hyderabad",
       "Mehdipatnam, Hyderabad",
@@ -219,7 +215,15 @@ export const LocationFilter = ({ filters, onFilterChange }) => {
    };
 
    return (
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover
+         open={open}
+         onOpenChange={(nextOpen) => {
+            setOpen(nextOpen);
+            if (nextOpen) {
+               setSuburbSearch(filters.suburb);
+            }
+         }}
+      >
          <PopoverTrigger asChild>
             <Button
                variant="outline"
@@ -346,7 +350,6 @@ export const MobileFilterSheet = ({
    onFilterChange,
    searchQuery,
    onSearchChange,
-   resultCount,
    clearAll,
 }) => {
    const [open, setOpen] = useState(false);
@@ -358,78 +361,78 @@ export const MobileFilterSheet = ({
    const filterRowClass = "w-full [&_button]:w-full [&_button]:justify-between";
 
    return (
-      <div className="sticky bg-white border-b px-4 py-3 flex items-center justify-between">
-         <span className="text-secondary-600 text-sm">{resultCount} tasks</span>
+      <div className="sticky bg-white border-b px-4 py-3">
+         <div className="flex items-center gap-2">
+            <SearchFilter
+               value={searchQuery}
+               onChange={onSearchChange}
+               className="flex-1 min-w-0 max-w-none"
+            />
 
-         <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
-               <Button variant="outline">
-                  Filters <ChevronDown className="h-4 w-4" />
-               </Button>
-            </SheetTrigger>
-
-            <SheetContent
-               side="bottom"
-               className="h-[70vh] max-h-[560px] rounded-t-xl overflow-y-auto px-4 pt-4 pb-6"
-            >
-               <SheetHeader className="px-0 pb-4 border-b border-secondary-100">
-                  <SheetTitle className="font-semibold text-base pr-8">
-                     Filters
-                  </SheetTitle>
-               </SheetHeader>
-
-               <div className="pt-4 space-y-4">
-                  <SearchFilter
-                     value={searchQuery}
-                     onChange={onSearchChange}
-                     className="w-full max-w-none"
-                  />
-
-                  <div className={filterRowClass}>
-                     <CategoryFilter
-                        filters={filters}
-                        onFilterChange={onFilterChange}
-                     />
-                  </div>
-
-                  <div className={filterRowClass}>
-                     <LocationFilter
-                        filters={filters}
-                        onFilterChange={onFilterChange}
-                     />
-                  </div>
-
-                  <div className={filterRowClass}>
-                     <PriceFilter
-                        filters={filters}
-                        onFilterChange={onFilterChange}
-                     />
-                  </div>
-
-                  <div className={filterRowClass}>
-                     <SortFilter
-                        value={filters.sortBy}
-                        onChange={(v) =>
-                           onFilterChange({ ...filters, sortBy: v })
-                        }
-                     />
-                  </div>
-               </div>
-
-               <div className="flex justify-between items-center gap-4 border-t border-secondary-200 pt-4 mt-6">
-                  <Button
-                     variant="ghost"
-                     onClick={clearAll}
-                     className="flex items-center gap-2"
-                  >
-                     <X className="h-4 w-4 shrink-0" /> Clear
+            <Sheet open={open} onOpenChange={setOpen}>
+               <SheetTrigger asChild>
+                  <Button variant="outline" className="shrink-0">
+                     Filters <ChevronDown className="h-4 w-4" />
                   </Button>
-                  <Button onClick={handleApply} className="min-w-[100px]">
-                     Apply
-                  </Button>
-               </div>
-            </SheetContent>
-         </Sheet>
+               </SheetTrigger>
+
+               <SheetContent
+                  side="bottom"
+                  className="h-[70vh] max-h-[560px] rounded-t-xl overflow-y-auto px-4 pt-4 pb-6"
+               >
+                  <SheetHeader className="px-0 pb-4 border-b border-secondary-100">
+                     <SheetTitle className="font-semibold text-base pr-8">
+                        Filters
+                     </SheetTitle>
+                  </SheetHeader>
+
+                  <div className="pt-4 space-y-4">
+                     <div className={filterRowClass}>
+                        <CategoryFilter
+                           filters={filters}
+                           onFilterChange={onFilterChange}
+                        />
+                     </div>
+
+                     <div className={filterRowClass}>
+                        <LocationFilter
+                           filters={filters}
+                           onFilterChange={onFilterChange}
+                        />
+                     </div>
+
+                     <div className={filterRowClass}>
+                        <PriceFilter
+                           filters={filters}
+                           onFilterChange={onFilterChange}
+                        />
+                     </div>
+
+                     <div className={filterRowClass}>
+                        <SortFilter
+                           value={filters.sortBy}
+                           onChange={(v) =>
+                              onFilterChange({ ...filters, sortBy: v })
+                           }
+                        />
+                     </div>
+                  </div>
+
+                  <div className="flex justify-between items-center gap-4 border-t border-secondary-200 pt-4 mt-6">
+                     <Button
+                        variant="ghost"
+                        onClick={clearAll}
+                        className="flex items-center gap-2"
+                     >
+                        <X className="h-4 w-4 shrink-0" /> Clear
+                     </Button>
+                     <Button onClick={handleApply} className="min-w-[100px]">
+                        Apply
+                     </Button>
+                  </div>
+               </SheetContent>
+            </Sheet>
+         </div>
       </div>
    );
 };

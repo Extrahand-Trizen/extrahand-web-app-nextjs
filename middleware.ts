@@ -109,11 +109,23 @@ export function middleware(request: NextRequest) {
    // If already authenticated, avoid auth pages
    if (authenticated && isAuthPath(pathname)) {
       const url = request.nextUrl.clone();
-      // Check if there's a redirect destination
+      // Check if there's a redirect destination (may include query params like ?action=offer)
       const next = request.nextUrl.searchParams.get("next");
-      url.pathname = next || "/home";
-      // Clear the search params to avoid carrying over "next" parameter
-      url.search = "";
+      if (next) {
+         // next may be a full path+search string (e.g. /tasks/123?action=offer)
+         // We must parse it to set both pathname and search properly
+         try {
+            const nextUrl = new URL(next, request.nextUrl.origin);
+            url.pathname = nextUrl.pathname;
+            url.search = nextUrl.search;
+         } catch {
+            url.pathname = next;
+            url.search = "";
+         }
+      } else {
+         url.pathname = "/home";
+         url.search = "";
+      }
       return NextResponse.redirect(url);
    }
 
@@ -121,8 +133,9 @@ export function middleware(request: NextRequest) {
    if (!authenticated && isProtectedPath(pathname)) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
-      // Preserve intended destination
-      url.searchParams.set("next", pathname);
+      // Preserve intended destination including any query params (e.g. ?category=...)
+      const fullPath = request.nextUrl.pathname + request.nextUrl.search;
+      url.searchParams.set("next", fullPath);
       return NextResponse.redirect(url);
    }
 

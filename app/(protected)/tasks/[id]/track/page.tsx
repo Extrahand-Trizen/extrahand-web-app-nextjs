@@ -62,6 +62,7 @@ export default function TaskTrackingPage() {
    const [showReportModal, setShowReportModal] = useState(false);
    const [isLoading, setIsLoading] = useState(true);
    const [activeTab, setActiveTab] = useState("overview");
+   const [hasUnseenChanges, setHasUnseenChanges] = useState(false);
    const [chatMessages, setChatMessages] = useState<Message[]>([]);
    const [isLoadingChat, setIsLoadingChat] = useState(false);
    const [chatId, setChatId] = useState<string | null>(null);
@@ -105,8 +106,6 @@ export default function TaskTrackingPage() {
       const fetchTask = async () => {
          setIsLoading(true);
          try {
-            // Import the tasks API dynamically to avoid circular dependencies
-            
             // Fetch real task data
             const response = await tasksApi.getTask(taskId);
             
@@ -120,7 +119,6 @@ export default function TaskTrackingPage() {
             }
          } catch (error) {
             console.error("❌ Failed to fetch task:", error);
-            // Task not found or error - will show "Task not found" UI
          } finally {
             setIsLoading(false);
          }
@@ -130,6 +128,36 @@ export default function TaskTrackingPage() {
          fetchTask();
       }
    }, [taskId]);
+
+   // For taskers: detect unseen requested changes and auto-navigate to that tab
+   useEffect(() => {
+      if (!task || userRole !== "tasker") return;
+      const hasFeedback = task.feedback && task.feedback.length > 0;
+      if (!hasFeedback) return;
+
+      // Use last feedback entry timestamp to detect new changes
+      const lastFeedback = task.feedback![task.feedback!.length - 1];
+      const feedbackKey = `seen-changes-${taskId}`;
+      const seenTimestamp = localStorage.getItem(feedbackKey);
+      const lastFeedbackTime = new Date(lastFeedback.createdAt).getTime().toString();
+
+      if (seenTimestamp !== lastFeedbackTime) {
+         // Unseen changes - show red dot and auto-navigate
+         setHasUnseenChanges(true);
+         setActiveTab("requested-changes");
+      }
+   }, [task, userRole, taskId]);
+
+   const handleTabChange = (tab: string) => {
+      setActiveTab(tab);
+      // Mark requested changes as seen when tasker visits the tab
+      if (tab === "requested-changes" && userRole === "tasker" && task?.feedback?.length) {
+         const lastFeedback = task.feedback[task.feedback.length - 1];
+         const feedbackKey = `seen-changes-${taskId}`;
+         localStorage.setItem(feedbackKey, new Date(lastFeedback.createdAt).getTime().toString());
+         setHasUnseenChanges(false);
+      }
+   };
 
    // Fetch reviews for the task - only when user is involved (poster or tasker)
    useEffect(() => {
@@ -456,21 +484,15 @@ export default function TaskTrackingPage() {
 
    // Handle helpful vote
    const handleHelpful = async (reviewId: string, helpful: boolean) => {
-      // TODO: Replace with actual API call
-      // await api.voteHelpful(reviewId, helpful);
-
-      // Mock: Update review in local state
-      setReviews(
-         reviews.map((r) =>
-            r._id === reviewId
-               ? {
-                    ...r,
-                    helpful: helpful ? r.helpful + 1 : r.helpful,
-                    notHelpful: !helpful ? r.notHelpful + 1 : r.notHelpful,
-                 }
-               : r
-         )
-      );
+      try {
+         const updated = await reviewsApi.voteHelpful(reviewId, helpful);
+         // Replace the review in state with the server-returned updated review
+         setReviews((prev) =>
+            prev.map((r) => (r._id === reviewId ? (updated as unknown as Review) : r))
+         );
+      } catch (error) {
+         console.error("❌ Failed to vote on review:", error);
+      }
    };
 
    // Handle submit report
@@ -578,7 +600,7 @@ export default function TaskTrackingPage() {
                {/* Left Column - Main Content */}
                <div className="lg:col-span-2 space-y-6 min-w-0">
                   {/* Status Timeline */}
-                  <TaskStatusTimeline task={task} />
+                  <TaskStatusTimeline task={task} userRole={userRole} />
 
                   {/* Quick Actions - Mobile Only (at top) */}
                   {userRole !== "viewer" && (
@@ -595,7 +617,7 @@ export default function TaskTrackingPage() {
                   {/* Tabs: scrollable on mobile to prevent overlapping labels */}
                   <Tabs
                      value={activeTab}
-                     onValueChange={setActiveTab}
+                     onValueChange={handleTabChange}
                      className="w-full"
                   >
                      <TabsList className="flex w-full flex-nowrap overflow-x-auto overflow-y-hidden gap-0.5 md:grid md:grid-cols-5 mb-6 py-1 px-1 min-h-0 [&::-webkit-scrollbar]:h-1">
@@ -614,10 +636,13 @@ export default function TaskTrackingPage() {
                         {task.feedback && task.feedback.length > 0 && (
                            <TabsTrigger
                               value="requested-changes"
-                              className="text-xs md:text-sm shrink-0 md:shrink"
+                              className="text-xs md:text-sm shrink-0 md:shrink relative"
                            >
                               <span className="hidden sm:inline">Requested Changes</span>
                               <span className="sm:hidden">Changes</span>
+                              {hasUnseenChanges && userRole === "tasker" && (
+                                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+                              )}
                            </TabsTrigger>
                         )}
                         <TabsTrigger
