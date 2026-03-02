@@ -567,19 +567,21 @@ function ProfilePageContent() {
       return (
          <div className="bg-gray-50 min-h-screen">
             <Sheet open={navOpen} onOpenChange={setNavOpen}>
-               <SheetContent side="left" className="w-[300px] p-0">
-                  <SheetHeader className="border-b border-gray-200 p-4">
+               <SheetContent side="left" className="w-[300px] p-0 flex flex-col max-h-full">
+                  <SheetHeader className="border-b border-gray-200 p-4 shrink-0">
                      <SheetTitle className="text-left">Account</SheetTitle>
                      <p className="text-sm text-gray-500">
                         Manage your profile
                      </p>
                   </SheetHeader>
-                  <ProfileNavList
-                     onSectionChange={(s) => {
-                        goTo(s);
-                        setNavOpen(false);
-                     }}
-                  />
+                  <div className="flex-1 min-h-0 overflow-y-auto">
+                     <ProfileNavList
+                        onSectionChange={(s) => {
+                           goTo(s);
+                           setNavOpen(false);
+                        }}
+                     />
+                  </div>
                </SheetContent>
             </Sheet>
             <div className="sticky top-0 z-40 bg-white border-b border-gray-200">
