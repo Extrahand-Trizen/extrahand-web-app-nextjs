@@ -39,6 +39,7 @@ import {
    SelectItem,
    SelectValue,
 } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 
 export const CompactFilterBar = ({
@@ -53,8 +54,8 @@ export const CompactFilterBar = ({
       filters.categories.length > 0 ||
       !!filters.suburb ||
       filters.remotely !== null && typeof filters.remotely !== 'undefined' ||
-      filters.minBudget !== 0 ||
-      filters.maxBudget !== 100000 ||
+      filters.minBudget !== 50 ||
+      filters.maxBudget !== 50000 ||
       searchQuery.length > 0;
 
    const clearAll = () => {
@@ -62,8 +63,8 @@ export const CompactFilterBar = ({
          categories: [],
          suburb: "",
          remotely: null,
-         minBudget: 0,
-         maxBudget: 100000,
+         minBudget: 50,
+         maxBudget: 50000,
          sortBy: "recent",
       });
       onSearchChange("");
@@ -288,44 +289,95 @@ export const LocationFilter = ({ filters, onFilterChange }) => {
    );
 };
 
-const PRICE_RANGES = [
-   { label: "Any price", min: 0, max: 100000 },
-   { label: "Under ₹500", min: 0, max: 500 },
-   { label: "₹500 - ₹1,000", min: 500, max: 1000 },
-   { label: "₹1,000 - ₹2,500", min: 1000, max: 2500 },
-   { label: "₹2,500 - ₹5,000", min: 2500, max: 5000 },
-   { label: "Over ₹5,000", min: 5000, max: 100000 },
-];
-
 export const PriceFilter = ({ filters, onFilterChange }) => {
-   const selected = PRICE_RANGES.find(
-      (r) => r.min === filters.minBudget && r.max === filters.maxBudget
-   )?.label;
+   const [open, setOpen] = useState(false);
+   const [localMin, setLocalMin] = useState(filters.minBudget);
+   const [localMax, setLocalMax] = useState(filters.maxBudget);
+   const MIN_PRICE = 50;
+   const MAX_PRICE = 50000;
 
-   const apply = (label: string) => {
-      const r = PRICE_RANGES.find((x) => x.label === label);
-      if (!r) return;
-
+   const handleApply = () => {
       onFilterChange({
          ...filters,
-         minBudget: r.min,
-         maxBudget: r.max,
+         minBudget: localMin,
+         maxBudget: localMax,
       });
+      setOpen(false);
    };
 
+   const handleRangeChange = (values: number[]) => {
+      if (values.length === 2) {
+         setLocalMin(values[0]);
+         setLocalMax(values[1]);
+      }
+   };
+
+   const priceDisplay = `₹${localMin.toLocaleString('en-IN')} - ₹${localMax.toLocaleString('en-IN')}`;
+
    return (
-      <Select value={selected} onValueChange={apply}>
-         <SelectTrigger className="px-4 py-2 text-sm">
-            <SelectValue placeholder="Any price" />
-         </SelectTrigger>
-         <SelectContent>
-            {PRICE_RANGES.map((r) => (
-               <SelectItem key={r.label} value={r.label}>
-                  {r.label}
-               </SelectItem>
-            ))}
-         </SelectContent>
-      </Select>
+      <Popover open={open} onOpenChange={(nextOpen) => {
+         if (!nextOpen) {
+            setLocalMin(filters.minBudget);
+            setLocalMax(filters.maxBudget);
+         }
+         setOpen(nextOpen);
+      }}>
+         <PopoverTrigger asChild>
+            <Button
+               variant="outline"
+               className="px-4 py-2 text-sm"
+            >
+               {filters.minBudget === MIN_PRICE && filters.maxBudget === MAX_PRICE
+                  ? "Any price"
+                  : priceDisplay}
+               <ChevronDown className="h-4 w-4 ml-2" />
+            </Button>
+         </PopoverTrigger>
+         <PopoverContent className="w-72 p-6">
+            <div className="space-y-4">
+               {/* Title */}
+               <h3 className="text-sm font-semibold text-secondary-900">TASK PRICE</h3>
+
+               {/* Display */}
+               <div className="text-center">
+                  <p className="text-lg font-semibold text-secondary-900">
+                     ₹{localMin.toLocaleString('en-IN')} - ₹{localMax.toLocaleString('en-IN')}
+                  </p>
+               </div>
+
+               {/* Slider */}
+               <Slider
+                  value={[localMin, localMax]}
+                  onValueChange={handleRangeChange}
+                  min={MIN_PRICE}
+                  max={MAX_PRICE}
+                  step={50}
+                  className="w-full"
+               />
+
+               {/* Buttons */}
+               <div className="flex gap-3 pt-4">
+                  <Button
+                     variant="ghost"
+                     className="flex-1 text-primary-600 hover:text-primary-700 hover:bg-transparent"
+                     onClick={() => {
+                        setLocalMin(filters.minBudget);
+                        setLocalMax(filters.maxBudget);
+                        setOpen(false);
+                     }}
+                  >
+                     Cancel
+                  </Button>
+                  <Button
+                     className="flex-1 bg-primary-600 hover:bg-primary-700 text-white rounded-full font-semibold"
+                     onClick={handleApply}
+                  >
+                     Apply
+                  </Button>
+               </div>
+            </div>
+         </PopoverContent>
+      </Popover>
    );
 };
 

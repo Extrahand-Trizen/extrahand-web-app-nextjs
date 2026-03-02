@@ -106,8 +106,8 @@ export function DiscoverClient({
     categories: [],
     suburb: initialSuburb,
     remotely: null,
-    minBudget: 0,
-    maxBudget: 100000,
+    minBudget: 50,
+    maxBudget: 50000,
     sortBy: "recent",
   });
 
