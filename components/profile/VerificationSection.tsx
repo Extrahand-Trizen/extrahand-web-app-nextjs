@@ -71,7 +71,23 @@ function getTrustMeta(user: UserProfile): {
     };
   }
 
-  const badge = user.verificationBadge ?? "none";
+  // Use backend badge when present and not "none"; otherwise derive from verification flags
+  // so that PAN/email/phone etc. are reflected even if badge wasn't updated yet
+  let badge = user.verificationBadge ?? "none";
+  if (badge === "none") {
+    const hasEmail = !!user.email || user.isEmailVerified === true;
+    const hasPhone = !!user.phone;
+    const hasAadhaar = user.isAadhaarVerified === true;
+    const hasPAN =
+      user.isPanVerified === true ||
+      user.business?.pan?.isPANVerified === true;
+    const hasBank =
+      user.isBankVerified === true ||
+      user.business?.bankAccount?.isVerified === true;
+    if (hasAadhaar && hasPAN && hasBank) badge = "trusted";
+    else if (hasAadhaar) badge = "verified";
+    else if (hasEmail || hasPhone || hasPAN) badge = "basic";
+  }
   const percentage = badgeToPercentage[badge] ?? 0;
   return {
     percentage,
