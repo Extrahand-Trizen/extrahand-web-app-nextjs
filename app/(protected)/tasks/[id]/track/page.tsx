@@ -116,35 +116,6 @@ export default function TaskTrackingPage() {
       return "viewer";
    }, [task, userProfile]);
 
-<<<<<<< HEAD
-   // Fetch task data from API
-   useEffect(() => {
-      const fetchTask = async () => {
-         setIsLoading(true);
-         try {
-            // Fetch real task data
-            const response = await tasksApi.getTask(taskId);
-            
-            console.log("✅ Task details response:", response);
-            
-            // Handle different response structures
-            const taskData = (response as any)?.data || response;
-            
-            if (taskData) {
-               setTask(taskData as Task);
-            }
-         } catch (error) {
-            console.error("❌ Failed to fetch task:", error);
-         } finally {
-            setIsLoading(false);
-         }
-      };
-
-      if (taskId) {
-         fetchTask();
-      }
-   }, [taskId]);
-
    // For taskers: detect unseen requested changes and auto-navigate to that tab
    useEffect(() => {
       if (!task || userRole !== "tasker") return;
@@ -175,8 +146,6 @@ export default function TaskTrackingPage() {
       }
    };
 
-=======
->>>>>>> 59b8bb36af6d89618828c8202e1d9ad366bbbc73
    // Fetch reviews for the task - only when user is involved (poster or tasker)
    useEffect(() => {
       const fetchReviews = async () => {
