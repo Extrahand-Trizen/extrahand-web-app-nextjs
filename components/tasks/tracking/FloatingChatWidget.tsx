@@ -223,9 +223,12 @@ export function FloatingChatWidget({
                )}
             </div>
 
-            {/* Message Input */}
+            {/* Message Input - form prevents accidental submit on mobile (Enter/Send key) */}
             <div className="p-4 border-t border-secondary-200 bg-white">
-               <div className="flex items-end gap-2">
+               <form
+                  onSubmit={(e) => e.preventDefault()}
+                  className="flex items-end gap-2"
+               >
                   <Textarea
                      ref={textareaRef}
                      value={message}
@@ -249,7 +252,7 @@ export function FloatingChatWidget({
                         <Send className="w-4 h-4" />
                      )}
                   </Button>
-               </div>
+               </form>
             </div>
          </div>
       </>

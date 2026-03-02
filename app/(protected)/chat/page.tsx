@@ -597,9 +597,12 @@ export default function ChatPage() {
           )}
         </div>
 
-        {/* Message input */}
+        {/* Message input - form prevents accidental submit on mobile (Enter/Send key) */}
         <div className="p-4 border-t border-secondary-200">
-          <div className="flex items-center gap-2">
+          <form
+            onSubmit={(e) => e.preventDefault()}
+            className="flex items-center gap-2"
+          >
             <Input
               ref={messageInputRef}
               type="text"
@@ -615,6 +618,7 @@ export default function ChatPage() {
               className="flex-1"
             />
             <Button
+              type="button"
               onClick={handleSendMessage}
               disabled={!messageText.trim() || sending}
               className="bg-primary-500 hover:bg-primary-600 text-secondary-900"
@@ -625,7 +629,7 @@ export default function ChatPage() {
                 <Send className="w-5 h-5" />
               )}
             </Button>
-          </div>
+          </form>
         </div>
       </div>
     );
