@@ -73,9 +73,11 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
           ? earningsRes.data.totalEarnings || 0
           : 0;
 
+      // Sum all outgoing payments (type === "payment") regardless of status;
+      // use absolute value so Total Spent displays as a positive number.
       const totalSpent = mapped
-        .filter((t) => t.type === "payment" && t.status === "completed")
-        .reduce((sum, t) => sum + t.amount, 0);
+        .filter((t) => t.type === "payment")
+        .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
 
       set({
         transactions: mapped,

@@ -52,10 +52,10 @@ export function RequestedChangesSection({
               </div>
             </div>
 
-            {/* Content */}
+            {/* Content - title and date stack on mobile for readability */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-sm md:text-base font-semibold text-secondary-900">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3 mb-2">
+                <h4 className="text-sm md:text-base font-semibold text-secondary-900 break-words">
                   {requesterName} requested changes
                 </h4>
                 <span className="text-xs md:text-sm text-secondary-500 flex-shrink-0">
@@ -84,10 +84,10 @@ export function RequestedChangesSection({
         </div>
       ))}
 
-      {/* Info box */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
-        <p className="text-xs md:text-sm text-blue-800">
-          💡 The task was reverted to <strong>Assigned</strong> status. Please review the changes above and complete the work according to the feedback provided. Click "<strong>Start</strong>" to continue when ready.
+      {/* Info box - ensure full text wraps on mobile and isn't covered by FAB */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6 mb-6 break-words">
+        <p className="text-xs md:text-sm text-blue-800 leading-relaxed">
+          💡 The task was reverted to <strong>Assigned</strong> status. Please review the changes above and complete the work according to the feedback provided. Click &quot;<strong>Start</strong>&quot; to continue when ready.
         </p>
       </div>
     </div>

@@ -98,11 +98,11 @@ export function TaskDetailsCard({ task }: TaskDetailsCardProps) {
                icon={MapPin}
                label="Location"
                value={
-                  <div>
-                     <p className="font-medium md:font-semibold">
+                  <div className="break-words min-w-0">
+                     <p className="font-medium md:font-semibold break-words">
                         {task.location?.address || "No address provided"}
                      </p>
-                     <p className="text-xs text-secondary-500 mt-0.5">
+                     <p className="text-xs text-secondary-500 mt-0.5 break-words">
                         {task.location?.city || "N/A"}, {task.location?.state || "N/A"}
                         {task.location?.pinCode && ` - ${task.location.pinCode}`}
                      </p>

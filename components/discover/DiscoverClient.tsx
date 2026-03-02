@@ -369,18 +369,6 @@ export function DiscoverClient({
         </div>
       </div>
 
-      {/* Mobile floating post button */}
-      {isMobile && (
-        <div className="fixed bottom-4 left-4 z-40">
-          <Button
-            onClick={() => router.push("/tasks/new")}
-            className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold shadow-lg rounded-full px-6"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Post Task
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

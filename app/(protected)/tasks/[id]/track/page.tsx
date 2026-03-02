@@ -572,11 +572,11 @@ export default function TaskTrackingPage() {
             onReportClick={() => setShowReportModal(true)}
          />
 
-         {/* Main Content */}
-         <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
+         {/* Main Content - extra bottom padding on mobile so FAB doesn't cover content */}
+         <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 pb-24 md:pb-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                {/* Left Column - Main Content */}
-               <div className="lg:col-span-2 space-y-6">
+               <div className="lg:col-span-2 space-y-6 min-w-0">
                   {/* Status Timeline */}
                   <TaskStatusTimeline task={task} />
 
@@ -592,42 +592,43 @@ export default function TaskTrackingPage() {
                      </div>
                   )}
 
-                  {/* Tabs */}
+                  {/* Tabs: scrollable on mobile to prevent overlapping labels */}
                   <Tabs
                      value={activeTab}
                      onValueChange={setActiveTab}
                      className="w-full"
                   >
-                     <TabsList className="grid w-full grid-cols-5 mb-6 overflow-x-auto">
+                     <TabsList className="flex w-full flex-nowrap overflow-x-auto overflow-y-hidden gap-0.5 md:grid md:grid-cols-5 mb-6 py-1 px-1 min-h-0 [&::-webkit-scrollbar]:h-1">
                         <TabsTrigger
                            value="overview"
-                           className="text-xs md:text-sm"
+                           className="text-xs md:text-sm shrink-0 md:shrink"
                         >
                            Overview
                         </TabsTrigger>
                         <TabsTrigger
                            value="proof"
-                           className="text-xs md:text-sm"
+                           className="text-xs md:text-sm shrink-0 md:shrink"
                         >
                            Proof
                         </TabsTrigger>
                         {task.feedback && task.feedback.length > 0 && (
                            <TabsTrigger
                               value="requested-changes"
-                              className="text-xs md:text-sm"
+                              className="text-xs md:text-sm shrink-0 md:shrink"
                            >
-                              Requested Changes
+                              <span className="hidden sm:inline">Requested Changes</span>
+                              <span className="sm:hidden">Changes</span>
                            </TabsTrigger>
                         )}
                         <TabsTrigger
                            value="reviews"
-                           className="text-xs md:text-sm"
+                           className="text-xs md:text-sm shrink-0 md:shrink"
                         >
                            Reviews
                         </TabsTrigger>
                         <TabsTrigger
                            value="details"
-                           className="text-xs md:text-sm"
+                           className="text-xs md:text-sm shrink-0 md:shrink"
                         >
                            Details
                         </TabsTrigger>

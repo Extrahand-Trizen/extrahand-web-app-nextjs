@@ -39,6 +39,7 @@ import {
    SelectItem,
    SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 export const CompactFilterBar = ({
    filters,
@@ -113,16 +114,21 @@ export const CompactFilterBar = ({
    );
 };
 
-export const SearchFilter = ({ value, onChange }) => {
+export const SearchFilter = ({ value, onChange, className }) => {
    return (
-      <div className="flex-1 min-w-[200px] max-w-[320px]">
+      <div
+         className={cn(
+            "flex-1 min-w-[200px] max-w-[320px]",
+            className
+         )}
+      >
          <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary-400" />
             <Input
                value={value}
                onChange={(e) => onChange(e.target.value)}
                placeholder="Search for a task"
-               className="pl-10 pr-3 py-2 text-sm"
+               className="pl-10 pr-3 py-2 text-sm w-full"
             />
          </div>
       </div>
@@ -349,6 +355,8 @@ export const MobileFilterSheet = ({
       setOpen(false);
    };
 
+   const filterRowClass = "w-full [&_button]:w-full [&_button]:justify-between";
+
    return (
       <div className="sticky bg-white border-b px-4 py-3 flex items-center justify-between">
          <span className="text-secondary-600 text-sm">{resultCount} tasks</span>
@@ -362,44 +370,63 @@ export const MobileFilterSheet = ({
 
             <SheetContent
                side="bottom"
-               className="h-[63vh] rounded-t-xl p-3 overflow-y-auto"
+               className="h-[70vh] max-h-[560px] rounded-t-xl overflow-y-auto px-4 pt-4 pb-6"
             >
-               <SheetHeader>
-                  <SheetTitle className="font-semibold">
+               <SheetHeader className="px-0 pb-4 border-b border-secondary-100">
+                  <SheetTitle className="font-semibold text-base pr-8">
                      Filters
                   </SheetTitle>
                </SheetHeader>
 
-               <div className="space-y-3">
-                  <SearchFilter value={searchQuery} onChange={onSearchChange} />
-
-                  <CategoryFilter
-                     filters={filters}
-                     onFilterChange={onFilterChange}
+               <div className="pt-4 space-y-4">
+                  <SearchFilter
+                     value={searchQuery}
+                     onChange={onSearchChange}
+                     className="w-full max-w-none"
                   />
 
-                  <LocationFilter
-                     filters={filters}
-                     onFilterChange={onFilterChange}
-                  />
+                  <div className={filterRowClass}>
+                     <CategoryFilter
+                        filters={filters}
+                        onFilterChange={onFilterChange}
+                     />
+                  </div>
 
-                  <PriceFilter
-                     filters={filters}
-                     onFilterChange={onFilterChange}
-                  />
+                  <div className={filterRowClass}>
+                     <LocationFilter
+                        filters={filters}
+                        onFilterChange={onFilterChange}
+                     />
+                  </div>
 
-                  <SortFilter
-                     value={filters.sortBy}
-                     onChange={(v) => onFilterChange({ ...filters, sortBy: v })}
-                  />
+                  <div className={filterRowClass}>
+                     <PriceFilter
+                        filters={filters}
+                        onFilterChange={onFilterChange}
+                     />
+                  </div>
+
+                  <div className={filterRowClass}>
+                     <SortFilter
+                        value={filters.sortBy}
+                        onChange={(v) =>
+                           onFilterChange({ ...filters, sortBy: v })
+                        }
+                     />
+                  </div>
                </div>
 
-               <div className="flex justify-between items-center border-t pt-4 mt-6">
-                  <Button variant="ghost" onClick={clearAll}>
-                     <X className="h-4 w-4" /> Clear
+               <div className="flex justify-between items-center gap-4 border-t border-secondary-200 pt-4 mt-6">
+                  <Button
+                     variant="ghost"
+                     onClick={clearAll}
+                     className="flex items-center gap-2"
+                  >
+                     <X className="h-4 w-4 shrink-0" /> Clear
                   </Button>
-
-                  <Button onClick={handleApply}>Apply</Button>
+                  <Button onClick={handleApply} className="min-w-[100px]">
+                     Apply
+                  </Button>
                </div>
             </SheetContent>
          </Sheet>

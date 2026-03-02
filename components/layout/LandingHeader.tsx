@@ -461,18 +461,29 @@ export const LandingHeader: React.FC = () => {
                      )}
                   </div>
 
-                  {/* Mobile Menu Button */}
-                  <button
-                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                     className="lg:hidden p-2 rounded-lg hover:bg-secondary-100 transition-colors"
-                     aria-label="Toggle menu"
-                  >
-                     {isMobileMenuOpen ? (
-                        <X className="w-6 h-6 text-secondary-700" />
-                     ) : (
-                        <Menu className="w-6 h-6 text-secondary-700" />
-                     )}
-                  </button>
+                  {/* Mobile: Post Task + Menu Button */}
+                  <div className="flex items-center gap-2 lg:hidden">
+                     <Link href="/tasks/new">
+                        <Button
+                           size="sm"
+                           className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold shadow-sm"
+                        >
+                           <PlusCircle className="w-4 h-4 mr-1.5" />
+                           Post Task
+                        </Button>
+                     </Link>
+                     <button
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        className="p-2 rounded-lg hover:bg-secondary-100 transition-colors"
+                        aria-label="Toggle menu"
+                     >
+                        {isMobileMenuOpen ? (
+                           <X className="w-6 h-6 text-secondary-700" />
+                        ) : (
+                           <Menu className="w-6 h-6 text-secondary-700" />
+                        )}
+                     </button>
+                  </div>
                </div>
             </div>
          </header>
