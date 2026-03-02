@@ -810,7 +810,7 @@ function renderSection(s: ProfileSection, p: Props) {
          return (
             <div>
                <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Badges</h2>
-               <BadgeDisplaySimple className="mb-12" />
+               <BadgeDisplaySimple className="mb-6" />
             </div>
          );
       // business-verification section removed - now integrated into verifications section
