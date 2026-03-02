@@ -10,6 +10,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, MapPin, Clock, Tag, Loader2 } from "lucide-react";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
+import { PrefetchTaskWrapper } from "@/hooks/usePrefetchTaskDetails";
 
 interface Task {
    _id: string;
@@ -163,8 +164,9 @@ export function RecommendedTasks() {
                className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4 -mx-2 px-2 snap-x snap-mandatory"
             >
                {tasks.map((task) => (
-                  <div
+                  <PrefetchTaskWrapper
                      key={task._id}
+                     taskId={task._id}
                      className="task-card snap-start flex-shrink-0 w-[calc(100%-1rem)] sm:w-[calc(50%-1.5rem)] lg:w-[calc(33.333%-1.5rem)] min-w-[280px]"
                   >
                      <TaskCard
@@ -179,7 +181,7 @@ export function RecommendedTasks() {
                         }}
                         onClick={() => router.push(`/tasks/${task._id}`)}
                      />
-                  </div>
+                  </PrefetchTaskWrapper>
                ))}
             </div>
          </div>

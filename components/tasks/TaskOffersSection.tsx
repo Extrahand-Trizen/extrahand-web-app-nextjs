@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Star, CheckCircle, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -16,6 +17,7 @@ import { toast } from "sonner";
 
 import type { TaskApplication } from "@/types/application";
 import { applicationsApi } from "@/lib/api/endpoints/applications";
+import { taskDetailsQueryKeys } from "@/lib/queryKeys";
 import { PaymentConfirmationModal } from "@/components/payments/PaymentConfirmationModal";
 import { useAuth } from "@/lib/auth/context";
 
@@ -70,8 +72,16 @@ export function TaskOffersSection({
    checkingApplication = false,
    onHasAppliedChange,
 }: TaskOffersSectionProps) {
-   const [applications, setApplications] = useState<TaskApplication[]>([]);
-   const [loading, setLoading] = useState(true);
+   const applicationsQuery = useQuery({
+      queryKey: taskDetailsQueryKeys.applications(taskId),
+      queryFn: () => applicationsApi.getTaskApplications(taskId),
+      enabled: !!taskId,
+      staleTime: 60 * 1000,
+   });
+
+   const applications = applicationsQuery.data?.applications ?? [];
+   const loading = applicationsQuery.isLoading;
+
    const [sortBy, setSortBy] = useState<"newest" | "price-low" | "rating">(
       "newest"
    );
@@ -81,47 +91,24 @@ export function TaskOffersSection({
    const { currentUser } = useAuth();
    const onApplicationsCountChangeRef = useRef(onApplicationsCountChange);
 
-   // Keep ref updated with latest callback
    useEffect(() => {
       onApplicationsCountChangeRef.current = onApplicationsCountChange;
    }, [onApplicationsCountChange]);
 
    useEffect(() => {
-      const loadApplications = async () => {
-         try {
-            setLoading(true);
-            
-            // Fetch applications for this task
-            // Backend handles authorization: owners get all, taskers get only their own
-            const response = await applicationsApi.getTaskApplications(taskId);
-            
-            // Standardized response format: { applications: [...], pagination: {...} }
-            const apps = response.applications || [];
-            
-            // Show applications
-            setApplications(apps);
-         } catch (error: unknown) {
-            const message = error instanceof Error ? error.message : "Unknown error";
-            console.error("Error loading applications:", message);
-            setApplications([]);
-         } finally {
-            setLoading(false);
-         }
-      };
-
-      if (taskId) {
-         loadApplications();
-      }
-   }, [taskId, hasApplied]);
-
-   // Notify parent of count changes in a separate effect to avoid render issues
-   useEffect(() => {
-      // Defer the callback to avoid setState during render
       const timeoutId = setTimeout(() => {
          onApplicationsCountChangeRef.current?.(applications.length);
       }, 0);
       return () => clearTimeout(timeoutId);
    }, [applications.length]);
+
+   // Notify parent when applications load (for hasApplied) – page also derives from same query; keep for any other consumers
+   useEffect(() => {
+      if (!onHasAppliedChange || !userProfile || !applicationsQuery.data) return;
+      const userId = (userProfile as { _id?: string })._id;
+      const userApplication = applications.find((app) => app.applicantId === userId);
+      onHasAppliedChange(!!userApplication);
+   }, [applicationsQuery.data, applications, userProfile, onHasAppliedChange]);
 
    const handleAcceptOffer = (application: TaskApplication) => {
       setSelectedApplication(application);

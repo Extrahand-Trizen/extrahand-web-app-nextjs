@@ -16,6 +16,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { Task } from "@/types/task";
 import { useRouter } from "next/navigation";
+import { usePrefetchTaskDetails } from "@/hooks/usePrefetchTaskDetails";
 
 interface TaskDetailCardProps {
    task: Task;
@@ -28,6 +29,7 @@ interface TaskDetailCardProps {
  */
 export function TaskDetailCard({ task, onClose }: TaskDetailCardProps) {
    const router = useRouter();
+   const { onMouseEnter: prefetchTask } = usePrefetchTaskDetails(task._id);
 
    const budgetAmount =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
@@ -242,6 +244,7 @@ export function TaskDetailCard({ task, onClose }: TaskDetailCardProps) {
             </Button>
             <Button
                onClick={() => router.push(`/tasks/${task._id}`)}
+               onMouseEnter={prefetchTask}
                className="flex-1 bg-primary-500 hover:bg-primary-600 text-gray-900 font-semibold shadow-sm"
             >
                View Details

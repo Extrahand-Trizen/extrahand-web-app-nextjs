@@ -13,6 +13,7 @@ import { List, Plus, AlertCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserStore } from "@/lib/state/userStore";
 import { useTasksInfinite } from "@/hooks/useTasksInfinite";
+import { PrefetchTaskWrapper } from "@/hooks/usePrefetchTaskDetails";
 
 const HYDERABAD_CENTER = { lat: 17.385, lng: 78.4867 };
 
@@ -313,12 +314,13 @@ export function DiscoverClient({
               ) : (
                 <div className="space-y-5">
                   {filteredTasks.map((task) => (
-                    <TaskCard
-                      key={task._id}
-                      task={task}
-                      isSelected={selectedTaskId === task._id}
-                      onClick={() => handleTaskSelect(task._id)}
-                    />
+                    <PrefetchTaskWrapper key={task._id} taskId={task._id}>
+                      <TaskCard
+                        task={task}
+                        isSelected={selectedTaskId === task._id}
+                        onClick={() => handleTaskSelect(task._id)}
+                      />
+                    </PrefetchTaskWrapper>
                   ))}
                 </div>
               )}
