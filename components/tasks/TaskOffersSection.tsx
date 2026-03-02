@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { Star, CheckCircle, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
