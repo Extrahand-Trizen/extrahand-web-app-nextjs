@@ -92,13 +92,15 @@ export function PaymentsSection({
    const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false);
    const [showPayoutMethodModal, setShowPayoutMethodModal] = useState(false);
 
-   // Fetch earnings + transactions from shared payments store
+   // Fetch earnings + transactions as soon as Payments section is shown (use userId
+   // from parent so Total Earnings/Total Spent load without waiting for auth or tab).
+   const effectiveUserId = userId ?? currentUser?.uid;
    useEffect(() => {
-      if (!currentUser?.uid) return;
-      fetchPayments(currentUser.uid).catch((error) => {
+      if (!effectiveUserId) return;
+      fetchPayments(effectiveUserId).catch((error) => {
          console.error("Failed to load payments:", error);
       });
-   }, [currentUser?.uid, fetchPayments]);
+   }, [effectiveUserId, fetchPayments]);
 
    // Check if any range filters are active
    const hasActiveRangeFilters = useMemo(() => {

@@ -731,6 +731,7 @@ function renderSection(s: ProfileSection, p: Props) {
       case "payments":
          return (
             <PaymentsSection
+               userId={p.user.uid}
                paymentMethods={p.paymentMethods}
                payoutMethods={p.payoutMethods}
                onRemovePaymentMethod={p.onRemovePaymentMethod}

@@ -511,8 +511,8 @@ export default function ChatPage() {
     </div>
   );
 
-  // Chat messages component
-  const ChatMessages = () => {
+  // Chat messages content - inlined (not a nested component) so the message input doesn't remount on every keystroke and lose focus
+  const chatMessagesContent = (() => {
     if (!selectedChat) {
       return (
         <div className="hidden md:flex flex-col items-center justify-center h-full bg-secondary-50">
@@ -633,7 +633,7 @@ export default function ChatPage() {
         </div>
       </div>
     );
-  };
+  })();
 
   return (
     <div className="h-[calc(100vh-64px)] flex">
@@ -643,13 +643,13 @@ export default function ChatPage() {
           <ChatList />
         </div>
         <div className="flex-1">
-          <ChatMessages />
+          {chatMessagesContent}
         </div>
       </div>
 
       {/* Mobile: toggle between list and chat */}
       <div className="md:hidden w-full">
-        {showMobileList ? <ChatList /> : <ChatMessages />}
+        {showMobileList ? <ChatList /> : chatMessagesContent}
       </div>
     </div>
   );
