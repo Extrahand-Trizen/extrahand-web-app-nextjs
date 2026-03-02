@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +29,7 @@ import { SavedAddress, AddressType } from "@/types/profile";
 import { addressesApi } from "@/lib/api/endpoints/addresses";
 import { toast } from "sonner";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { PROFILE_ADDRESSES_QUERY_KEY } from "@/components/profile/ProfileDataPrefetcher";
 
 interface AddressesSectionProps {
    addresses?: SavedAddress[];
@@ -39,6 +41,8 @@ interface AddressesSectionProps {
 
 
 
+const ADDRESSES_STALE_MS = 5 * 60 * 1000;
+
 export function AddressesSection({
    addresses: propAddresses,
    onEditAddress,
@@ -46,8 +50,27 @@ export function AddressesSection({
    onSetDefault,
    onSaveAddress,
 }: AddressesSectionProps) {
-   const [addresses, setAddresses] = useState<SavedAddress[]>(propAddresses || []);
-   const [loading, setLoading] = useState(false);
+   const queryClient = useQueryClient();
+   const useQueryForAddresses = propAddresses == null;
+
+   const { data: addressesFromQuery, isLoading, isError, error } = useQuery({
+      queryKey: PROFILE_ADDRESSES_QUERY_KEY,
+      queryFn: () => addressesApi.getAddresses(),
+      staleTime: ADDRESSES_STALE_MS,
+      enabled: useQueryForAddresses,
+   });
+
+   useEffect(() => {
+      if (useQueryForAddresses && isError && error) {
+         toast.error("Failed to load addresses", {
+            description: error instanceof Error ? error.message : "Please try again later",
+         });
+      }
+   }, [useQueryForAddresses, isError, error]);
+
+   const addresses = propAddresses ?? addressesFromQuery ?? [];
+   const loading = useQueryForAddresses && isLoading;
+
    const [expandedId, setExpandedId] = useState<string | null>(null);
 
    // Internal modal state
@@ -56,27 +79,9 @@ export function AddressesSection({
       SavedAddress | undefined
    >(undefined);
 
-   // Fetch addresses on mount
-   useEffect(() => {
-      const fetchAddresses = async () => {
-         setLoading(true);
-         try {
-            const data = await addressesApi.getAddresses();
-            setAddresses(data);
-         } catch (error: any) {
-            console.error('Failed to fetch addresses:', error);
-            toast.error('Failed to load addresses', {
-               description: error.message || 'Please try again later'
-            });
-         } finally {
-            setLoading(false);
-         }
-      };
-      
-      if (!propAddresses) {
-         fetchAddresses();
-      }
-   }, [propAddresses]);
+   const invalidateAddresses = () => {
+      queryClient.invalidateQueries({ queryKey: PROFILE_ADDRESSES_QUERY_KEY });
+   };
 
    // Internal handlers
    const handleAddAddress = () => {
@@ -100,20 +105,15 @@ export function AddressesSection({
 
       try {
          if (editingAddress) {
-            // Update existing address
-            const updated = await addressesApi.updateAddress(editingAddress.id, data);
-            setAddresses(prev => prev.map(addr => 
-               addr.id === editingAddress.id ? updated : addr
-            ));
+            await addressesApi.updateAddress(editingAddress.id, data);
             toast.success('Address updated successfully');
          } else {
-            // Add new address
-            const newAddress = await addressesApi.addAddress(data);
-            setAddresses(prev => [...prev, newAddress]);
+            await addressesApi.addAddress(data);
             toast.success('Address added successfully');
          }
          setShowAddressModal(false);
          setEditingAddress(undefined);
+         invalidateAddresses();
       } catch (error: any) {
          console.error('Failed to save address:', error);
          toast.error('Failed to save address', {
@@ -130,7 +130,7 @@ export function AddressesSection({
 
       try {
          await addressesApi.deleteAddress(id);
-         setAddresses(prev => prev.filter(addr => addr.id !== id));
+         invalidateAddresses();
          toast.success('Address deleted successfully');
       } catch (error: any) {
          console.error('Failed to delete address:', error);
@@ -147,11 +147,8 @@ export function AddressesSection({
       }
 
       try {
-         const updated = await addressesApi.setDefaultAddress(id);
-         setAddresses(prev => prev.map(addr => ({
-            ...addr,
-            isDefault: addr.id === id
-         })));
+         await addressesApi.setDefaultAddress(id);
+         invalidateAddresses();
          toast.success('Default address updated');
       } catch (error: any) {
          console.error('Failed to set default address:', error);
