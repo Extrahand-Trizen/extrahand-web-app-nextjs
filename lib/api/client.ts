@@ -253,7 +253,7 @@ async function fetchWithAuth(
 
 /**
  * Public fetch function for endpoints that don't require authentication
- * Does NOT send authentication cookies
+ * Sends cookies when available so optional-auth endpoints can personalize responses.
  */
 async function fetchPublic(
    path: string,
@@ -273,12 +273,12 @@ async function fetchPublic(
       }
 
       console.log("🔧 Making public fetch request to:", fullUrl);
-      console.log("🔧 Credentials:", "omit (no cookies will be sent)");
+      console.log("🔧 Credentials:", "include (cookies sent when present)");
 
       const res = await fetch(fullUrl, {
          ...init,
          headers,
-         credentials: 'omit', // Explicitly prevent sending cookies
+         credentials: 'include',
       });
 
       console.log("🔧 Response status:", res.status);

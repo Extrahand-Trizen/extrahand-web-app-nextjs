@@ -77,11 +77,12 @@ export const applicationsApi = {
   /**
    * Get applications for a specific task
    * GET /api/v1/applications?taskId=:taskId
-   * Uses fetchPublic since endpoint supports optional auth
+   * Uses fetchPublic (with credentials included when available) since endpoint supports optional auth
    */
   async getTaskApplications(taskId: string): Promise<ApplicationsResponse> {
-    // Use fetchPublic since the endpoint supports optional auth
-    // This works for both logged-in and non-logged-in users
+    // Use fetchPublic since the endpoint supports optional auth.
+    // It sends cookies when present, so logged-in users are personalized,
+    // and still works for non-logged-in users when backend allows public access.
     const response = await fetchPublic(`applications?taskId=${taskId}`);
     
     // Handle standardized response format
