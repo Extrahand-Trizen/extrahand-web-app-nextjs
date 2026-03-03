@@ -84,15 +84,20 @@ export const applicationsApi = {
     // This works for both logged-in and non-logged-in users
     const response = await fetchPublic(`applications?taskId=${taskId}`);
     
-    // Handle standardized response format
-    if (response.data && response.meta?.pagination) {
-      return {
-        applications: response.data,
-        pagination: response.meta.pagination,
-      };
-    }
-    
-    return response.data || response;
+    // Backend returns: { success: true, data: [...], meta: { pagination: {...} } }
+    const applications = Array.isArray(response.data) ? response.data : (Array.isArray(response) ? response : []);
+    const pagination = response.meta?.pagination || {
+      page: 1,
+      pageSize: 20,
+      total: applications.length,
+      totalPages: 1,
+    };
+
+    return {
+      applications,
+      pagination,
+    };
+  },
   },
 
   /**

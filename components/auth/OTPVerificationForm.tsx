@@ -81,6 +81,7 @@ export function OTPVerificationForm({
    const [isVerified, setIsVerified] = useState(false);
    const [hasError, setHasError] = useState(false);
    const isVerifyingRef = useRef(false); // Prevent duplicate verification attempts
+   const verificationCompletedRef = useRef(false); // Track if verification succeeded
 
    const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -304,6 +305,9 @@ export function OTPVerificationForm({
             await new Promise((r) => setTimeout(r, 200));
             await refreshUserData();
             await applyPendingReferralCode();
+            
+            // Mark verification as completed BEFORE setting isVerified
+            verificationCompletedRef.current = true;
             setIsVerified(true);
             clearSession();
             
@@ -326,9 +330,13 @@ export function OTPVerificationForm({
          } catch (err: any) {
             setOTPAuthInProgress(false);
             isVerifyingRef.current = false;
-            toast.error("Verification failed", {
-               description: err?.message || "Invalid OTP or test user not seeded.",
-            });
+            
+            // Only show error if verification didn't complete
+            if (!verificationCompletedRef.current) {
+               toast.error("Verification failed", {
+                  description: err?.message || "Invalid OTP or test user not seeded.",
+               });
+            }
             setOtp(Array(OTP_LENGTH).fill(""));
             focusInput(0);
          }
@@ -346,9 +354,9 @@ export function OTPVerificationForm({
             // Reset verification flag on error
             isVerifyingRef.current = false;
             
-            // Don't show error toasts if verification already succeeded elsewhere
-            if (isVerified) {
-               console.warn("Firebase verification failed but already verified elsewhere - ignoring");
+            // Don't show any error toasts if verification already completed successfully
+            if (verificationCompletedRef.current) {
+               console.warn("Firebase verification failed but already verified - ignoring");
                return;
             }
             
@@ -428,6 +436,8 @@ export function OTPVerificationForm({
          await applyPendingReferralCode();
 
          // 5. Success!
+         // Mark verification as completed BEFORE setting isVerified and showing toast
+         verificationCompletedRef.current = true;
          setIsVerified(true);
          clearSession();
          
@@ -456,15 +466,20 @@ export function OTPVerificationForm({
             }
          }, 800);
       } catch (error: any) {
-         // Don't show error toast if verification already succeeded
-         // This prevents duplicate toasts where both success and error are shown
+         // Don't show ANY error toasts if verification already completed successfully
+         // This is the key fix to prevent both success and error messages from appearing
+         if (verificationCompletedRef.current) {
+            console.info("Verification already completed successfully - suppressing error:", error?.message);
+            return;
+         }
+         
+         // Don't show error toast if verification already succeeded (state-based check)
          if (isVerified) {
             console.warn("Error caught after successful verification - ignoring:", error);
             return;
          }
          
-         // Don't show error toast for code-expired if verification already succeeded
-         // This prevents duplicate toasts
+         // Don't show error toast for code-expired errors
          const errorMessage = error?.message || "";
          const errorCode = error?.code || "";
          
