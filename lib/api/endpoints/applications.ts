@@ -98,7 +98,6 @@ export const applicationsApi = {
       pagination,
     };
   },
-  },
 
   /**
    * Get current user's applications
