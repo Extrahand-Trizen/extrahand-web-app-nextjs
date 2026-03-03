@@ -56,6 +56,8 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
       queryFn: () => applicationsApi.getTaskApplications(taskId),
       enabled: !!taskId,
       staleTime: TASK_STALE_MS,
+      refetchOnMount: true, // Always check for latest applications on mount
+      refetchOnWindowFocus: true, // Refetch when user returns to tab
    });
 
    const isMobile = useIsMobile();
@@ -264,6 +266,7 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
                      isOwner={isOwner}
                      onMakeOffer={handleMakeOffer}
                      hasApplied={hasApplied}
+                     checkingApplication={checkingApplication}
                      isSubmittingOffer={isSubmittingOffer}
                   />
                </div>
@@ -303,14 +306,23 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
                onOpenChange={setShowMakeOfferModal}
                onSubmittingChange={setIsSubmittingOffer}
                onSuccess={async () => {
-                  // Refetch applications immediately to show the new offer
-                  await queryClient.invalidateQueries({ 
-                     queryKey: taskDetailsQueryKeys.applications(taskId) 
+                  // Immediately refetch applications to show the new offer
+                  await queryClient.refetchQueries({ 
+                     queryKey: taskDetailsQueryKeys.applications(taskId),
+                     type: 'active'
                   });
-                  // Wait a brief moment for the UI to update
-                  await new Promise(resolve => setTimeout(resolve, 300));
+                  // Small delay to ensure UI updates smoothly
+                  await new Promise(resolve => setTimeout(resolve, 200));
                   setIsSubmittingOffer(false);
                   setShowMakeOfferModal(false);
+                  // Scroll to offers section to show the user their application
+                  setActiveTab("offers");
+                  setTimeout(() => {
+                     document.querySelector('[data-offers-section]')?.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                     });
+                  }, 100);
                }}
             />
          )}

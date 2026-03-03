@@ -14,6 +14,7 @@ interface TaskDetailsSidebarProps {
    isOwner?: boolean;
    onMakeOffer?: () => void;
    hasApplied?: boolean;
+   checkingApplication?: boolean;
    isSubmittingOffer?: boolean;
 }
 
@@ -22,6 +23,7 @@ export function TaskDetailsSidebar({
    isOwner = false, 
    onMakeOffer,
    hasApplied = false,
+   checkingApplication = false,
    isSubmittingOffer = false,
 }: TaskDetailsSidebarProps) {
    
@@ -80,10 +82,15 @@ export function TaskDetailsSidebar({
                <div className="space-y-2">
                   <Button
                      onClick={onMakeOffer}
-                     disabled={hasApplied || isSubmittingOffer}
+                     disabled={hasApplied || checkingApplication || isSubmittingOffer}
                      className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold h-12 rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                     {isSubmittingOffer ? (
+                     {checkingApplication ? (
+                        <>
+                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                           Checking...
+                        </>
+                     ) : isSubmittingOffer ? (
                         <>
                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                            Submitting...

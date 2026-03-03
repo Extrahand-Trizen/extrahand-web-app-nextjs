@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { Star, CheckCircle, MessageSquare } from "lucide-react";
+import { Star, CheckCircle, MessageSquare, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
@@ -231,15 +231,29 @@ export function TaskOffersSection({
             {/* User's Application Highlight (if exists and not owner) */}
             {!isOwner && myApplication && (
                <div className="mb-6">
-                  <div className="bg-primary-50 border border-primary-200 rounded-xl p-5">
-                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-bold text-secondary-900">Your Offer</h3>
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                  <div className="flex items-center gap-2 mb-3">
+                     <User className="w-5 h-5 text-primary-600" />
+                     <h3 className="font-bold text-primary-700">Your Offer</h3>
+                  </div>
+                  <div className="bg-primary-50 border-2 border-primary-300 rounded-xl p-5 shadow-sm">
+                     <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                           <div className="w-12 h-12 rounded-full bg-primary-600 flex items-center justify-center text-white text-lg font-bold shrink-0 shadow-md">
+                              {((userProfile as { name?: string })?.name || "You").charAt(0).toUpperCase()}
+                           </div>
+                           <div>
+                              <h4 className="font-bold text-secondary-900 text-base">
+                                 {(userProfile as { name?: string })?.name || "You"}
+                              </h4>
+                              <p className="text-xs text-secondary-600">Your application</p>
+                           </div>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold shrink-0 ${
                            myApplication.status === "pending" 
-                              ? "bg-yellow-100 text-yellow-800" 
+                              ? "bg-yellow-100 text-yellow-800 border border-yellow-200" 
                               : myApplication.status === "accepted"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
+                              ? "bg-green-100 text-green-800 border border-green-200"
+                              : "bg-red-100 text-red-800 border border-red-200"
                         }`}>
                            {myApplication.status.toUpperCase()}
                         </span>
