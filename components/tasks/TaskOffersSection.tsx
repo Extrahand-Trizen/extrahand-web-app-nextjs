@@ -433,18 +433,23 @@ export function TaskOffersSection({
                                           </div>
                                        </div>
                                        <div className="text-right">
-                                          <div className="text-xl font-bold text-green-700 mb-1">
-                                             ₹{(acceptedApplication.proposedBudget.amount * (acceptedApplication.selectedDates?.length || 1)).toLocaleString()}
-                                          </div>
-                                          {acceptedApplication.selectedDates && acceptedApplication.selectedDates.length > 0 && (
-                                             <div className="text-xs text-secondary-500">
-                                                ₹{acceptedApplication.proposedBudget.amount} × {acceptedApplication.selectedDates.length} days
-                                             </div>
-                                          )}
-                                          {acceptedApplication.proposedTime?.estimatedDuration && !acceptedApplication.selectedDates?.length && (
-                                             <div className="text-xs text-secondary-500">
-                                                Est. {acceptedApplication.proposedTime.estimatedDuration}h
-                                             </div>
+                                          {/* Only show budget to task owner */}
+                                          {isOwner && (
+                                             <>
+                                                <div className="text-xl font-bold text-green-700 mb-1">
+                                                   ₹{(acceptedApplication.proposedBudget.amount * (acceptedApplication.selectedDates?.length || 1)).toLocaleString()}
+                                                </div>
+                                                {acceptedApplication.selectedDates && acceptedApplication.selectedDates.length > 0 && (
+                                                   <div className="text-xs text-secondary-500">
+                                                      ₹{acceptedApplication.proposedBudget.amount} × {acceptedApplication.selectedDates.length} days
+                                                   </div>
+                                                )}
+                                                {acceptedApplication.proposedTime?.estimatedDuration && !acceptedApplication.selectedDates?.length && (
+                                                   <div className="text-xs text-secondary-500">
+                                                      Est. {acceptedApplication.proposedTime.estimatedDuration}h
+                                                   </div>
+                                                )}
+                                             </>
                                           )}
                                        </div>
                                     </div>
@@ -559,7 +564,7 @@ export function TaskOffersSection({
 
                                  <div className="text-right">
                                     {/* Only show budget to task owner */}
-                                    {isOwner ? (
+                                    {isOwner && (
                                        <>
                                           <div className="text-lg font-bold text-primary-600 mb-1">
                                              ₹
@@ -571,10 +576,6 @@ export function TaskOffersSection({
                                              </div>
                                           )}
                                        </>
-                                    ) : (
-                                       <div className="text-xs text-secondary-500 mb-1">
-                                          Applied
-                                       </div>
                                     )}
                                     <div className="flex items-center gap-2 justify-end">
                                        <span className="text-xs text-secondary-400 font-medium">
@@ -618,6 +619,7 @@ export function TaskOffersSection({
                                        Dates: {formatSelectedDates(application.selectedDates)}
                                     </span>
                                  )}
+                                 {/* Only show negotiable status to task owner */}
                                  {isOwner && application.proposedBudget.isNegotiable && (
                                     <span className="text-primary-600">
                                        Negotiable

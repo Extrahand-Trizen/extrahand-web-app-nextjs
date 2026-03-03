@@ -346,6 +346,12 @@ export function OTPVerificationForm({
             // Reset verification flag on error
             isVerifyingRef.current = false;
             
+            // Don't show error toasts if verification already succeeded elsewhere
+            if (isVerified) {
+               console.warn("Firebase verification failed but already verified elsewhere - ignoring");
+               return;
+            }
+            
             // Handle Firebase verification errors
             if (
                firebaseResult.code === "auth/no-session" ||
@@ -450,17 +456,21 @@ export function OTPVerificationForm({
             }
          }, 800);
       } catch (error: any) {
+         // Don't show error toast if verification already succeeded
+         // This prevents duplicate toasts where both success and error are shown
+         if (isVerified) {
+            console.warn("Error caught after successful verification - ignoring:", error);
+            return;
+         }
+         
          // Don't show error toast for code-expired if verification already succeeded
          // This prevents duplicate toasts
          const errorMessage = error?.message || "";
          const errorCode = error?.code || "";
          
          if (errorCode === "auth/code-expired" || errorMessage.includes("code-expired")) {
-            // If we're already verified, don't show the error
-            if (isVerified) {
-               console.warn("Code expired error after successful verification - ignoring");
-               return;
-            }
+            console.warn("Code expired error:", errorCode);
+            return;
          }
          
          console.error("OTP verification error:", error);

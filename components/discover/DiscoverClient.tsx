@@ -27,6 +27,7 @@ type CompactFilterState = {
   sortBy: "recent" | "nearest" | "price-low" | "price-high" | "date";
   availableOnly: boolean;
   noOffersOnly: boolean;
+  status: "open" | "assigned" | "completed";
 };
 
 // tweak these to match your header/filter/footer sizes
@@ -114,6 +115,7 @@ export function DiscoverClient({
     sortBy: "recent",
     availableOnly: false,
     noOffersOnly: false,
+    status: "open",
   });
 
   const isMobile = useIsMobile();
@@ -129,7 +131,7 @@ export function DiscoverClient({
     isFetchingNextPage,
   } = useTasksInfinite(
     {
-      status: "open",
+      status: filters.status,
       categories: filters.categories,
       search: searchQuery,
       suburb: filters.suburb,
