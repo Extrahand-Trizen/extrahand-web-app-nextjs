@@ -57,22 +57,6 @@ const Toaster = ({ ...props }: ToasterProps) => {
          }}
          {...props}
       />
-      
-      <style jsx>{`
-        @media (max-width: 460px) {
-          .toaster {
-            top: 0.25rem !important;
-            right: 0.25rem !important;
-            gap: 0.25rem !important;
-            max-width: 100vw !important;
-          }
-          
-          .toaster > div {
-            max-width: 75vw !important;
-            padding: 0.5rem 0.75rem !important;
-          }
-        }
-      `}</style>
    );
 };
 
