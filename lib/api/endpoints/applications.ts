@@ -77,20 +77,38 @@ export const applicationsApi = {
   /**
    * Get applications for a specific task
    * GET /api/v1/applications?taskId=:taskId
-   * Public endpoint - works without authentication
+   * Uses fetchWithAuth to include current user's application
    */
   async getTaskApplications(taskId: string): Promise<ApplicationsResponse> {
-    const response = await fetchPublic(`applications?taskId=${taskId}`);
-    
-    // Handle standardized response format
-    if (response.data && response.meta?.pagination) {
-      return {
-        applications: response.data,
-        pagination: response.meta.pagination,
-      };
+    try {
+      // Try with auth first to get all applications including user's own
+      const response = await fetchWithAuth(`applications?taskId=${taskId}`);
+      
+      // Handle standardized response format
+      if (response.data && response.meta?.pagination) {
+        return {
+          applications: response.data,
+          pagination: response.meta.pagination,
+        };
+      }
+      
+      return response.data || response;
+    } catch (error: any) {
+      // If auth fails (e.g., not logged in), fall back to public endpoint
+      if (error?.status === 401 || error?.status === 403) {
+        const response = await fetchPublic(`applications?taskId=${taskId}`);
+        
+        if (response.data && response.meta?.pagination) {
+          return {
+            applications: response.data,
+            pagination: response.meta.pagination,
+          };
+        }
+        
+        return response.data || response;
+      }
+      throw error;
     }
-    
-    return response.data || response;
   },
 
   /**

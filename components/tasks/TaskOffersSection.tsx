@@ -77,7 +77,8 @@ export function TaskOffersSection({
       queryKey: taskDetailsQueryKeys.applications(taskId),
       queryFn: () => applicationsApi.getTaskApplications(taskId),
       enabled: !!taskId,
-      staleTime: 60 * 1000,
+      staleTime: 30 * 1000, // 30 seconds - refresh more frequently
+      refetchOnMount: true, // Always refetch when component mounts
    });
 
    const applications = useMemo(
@@ -174,9 +175,24 @@ export function TaskOffersSection({
       : sortedApplications;
 
    // Find user's own application by comparing applicantId with userProfile._id
-   const myApplication = !isOwner && userProfile
-      ? applications.find((app) => app.applicantId === userProfileId)
-      : null;
+   const myApplication = useMemo(() => {
+      if (isOwner || !userProfile || !userProfileId) return null;
+      const found = applications.find((app) => String(app.applicantId) === String(userProfileId));
+      if (found) {
+         console.log("✅ Found user's application:", { 
+            applicantId: found.applicantId, 
+            userProfileId,
+            status: found.status 
+         });
+      } else if (userProfileId && applications.length > 0) {
+         console.log("❌ No application found for user:", {
+            userProfileId,
+            totalApplications: applications.length,
+            applicantIds: applications.map(app => app.applicantId)
+         });
+      }
+      return found || null;
+   }, [isOwner, userProfile, userProfileId, applications]);
 
    // Inform parent whether current user has an application
    useEffect(() => {

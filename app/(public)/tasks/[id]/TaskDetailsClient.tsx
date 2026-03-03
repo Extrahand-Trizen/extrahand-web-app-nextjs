@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -55,7 +55,7 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
       queryKey: taskDetailsQueryKeys.applications(taskId),
       queryFn: () => applicationsApi.getTaskApplications(taskId),
       enabled: !!taskId,
-      staleTime: TASK_STALE_MS,
+      staleTime: 30 * 1000, // 30 seconds - refresh more frequently
       refetchOnMount: true, // Always check for latest applications on mount
       refetchOnWindowFocus: true, // Refetch when user returns to tab
    });
@@ -68,9 +68,38 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
    const loading = taskQuery.isLoading && !taskQuery.data;
    const applications = applicationsQuery.data?.applications ?? [];
    const userId = (userProfile as { _id?: string } | null)?._id;
-   const hasApplied = applications.some((app) => app.applicantId === userId);
+   
+   // Debug logging for application check
+   useEffect(() => {
+      if (userId && applications.length > 0) {
+         console.log("🔍 Checking applications:", {
+            userId,
+            totalApplications: applications.length,
+            applicantIds: applications.map(app => app.applicantId),
+            hasMatch: applications.some(app => app.applicantId === userId)
+         });
+      }
+   }, [userId, applications]);
+   
+   const hasApplied = useMemo(() => {
+      if (!userId || !applications.length) {
+         console.log("🔍 hasApplied check: false (no userId or no applications)", { userId, applicationsLength: applications.length });
+         return false;
+      }
+      const result = applications.some((app) => String(app.applicantId) === String(userId));
+      console.log("🔍 hasApplied check:", result, { userId, applicationsLength: applications.length });
+      return result;
+   }, [applications, userId]);
+
+   // Log when hasApplied changes
+   useEffect(() => {
+      console.log("📊 hasApplied state changed:", hasApplied);
+   }, [hasApplied]);
+   
    const applicationCount = applications.length;
-   const checkingApplication = applicationsQuery.isLoading;
+   // Only show "checking" if we're loading applications AND we don't have userProfile yet
+   // Once we have both, we can determine hasApplied
+   const checkingApplication = applicationsQuery.isLoading || (applicationsQuery.isFetching && !userId);
 
    const [activeTab, setActiveTab] = useState<"offers" | "questions">("offers");
    const [showFixedCTA, setShowFixedCTA] = useState(false);
@@ -306,23 +335,28 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
                onOpenChange={setShowMakeOfferModal}
                onSubmittingChange={setIsSubmittingOffer}
                onSuccess={async () => {
+                  console.log("🎉 Offer submitted successfully, refetching applications...");
                   // Immediately refetch applications to show the new offer
-                  await queryClient.refetchQueries({ 
+                  const result = await queryClient.refetchQueries({ 
                      queryKey: taskDetailsQueryKeys.applications(taskId),
                      type: 'active'
                   });
+                  console.log("✅ Applications refetched:", result);
                   // Small delay to ensure UI updates smoothly
-                  await new Promise(resolve => setTimeout(resolve, 200));
+                  await new Promise(resolve => setTimeout(resolve, 100));
                   setIsSubmittingOffer(false);
                   setShowMakeOfferModal(false);
                   // Scroll to offers section to show the user their application
                   setActiveTab("offers");
                   setTimeout(() => {
-                     document.querySelector('[data-offers-section]')?.scrollIntoView({ 
-                        behavior: 'smooth', 
-                        block: 'start' 
-                     });
-                  }, 100);
+                     const offersSection = document.querySelector('[data-offers-section]');
+                     if (offersSection) {
+                        offersSection.scrollIntoView({ 
+                           behavior: 'smooth', 
+                           block: 'start' 
+                        });
+                     }
+                  }, 150);
                }}
             />
          )}
