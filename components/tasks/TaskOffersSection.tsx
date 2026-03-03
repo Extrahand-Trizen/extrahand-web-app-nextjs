@@ -121,6 +121,30 @@ export function TaskOffersSection({
       setShowPaymentModal(true);
    };
 
+   const handleRejectOffer = async (application: TaskApplication) => {
+      if (!window.confirm("Are you sure you want to reject this offer?")) {
+         return;
+      }
+
+      try {
+         await applicationsApi.updateApplicationStatus(application._id, {
+            status: "rejected",
+         });
+
+         toast.success("Offer rejected", {
+            description: "The applicant has been notified.",
+         });
+
+         // Refetch applications to update the UI
+         await applicationsQuery.refetch();
+      } catch (error) {
+         console.error("Error rejecting application:", error);
+         toast.error("Failed to reject offer", {
+            description: "Please try again.",
+         });
+      }
+   };
+
    const handlePaymentSuccess = async () => {
       const application = selectedApplication;
       setSelectedApplication(null);
@@ -338,7 +362,7 @@ export function TaskOffersSection({
                   </p>
                   <Button
                      onClick={onMakeOffer}
-                     disabled={checkingApplication || hasApplied}
+                     disabled={checkingApplication || hasApplied || myApplication !== null}
                      className="bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                      {checkingApplication ? (
@@ -346,7 +370,7 @@ export function TaskOffersSection({
                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                            Checking...
                         </span>
-                     ) : hasApplied ? (
+                     ) : hasApplied || myApplication ? (
                         "Already Applied"
                      ) : (
                         "Make an Offer"
@@ -505,13 +529,13 @@ export function TaskOffersSection({
                            <h3 className="font-semibold text-secondary-700 text-sm mb-2">Other Offers</h3>
                         )}
                         {otherApplications.map((application) => {
+                     const applicantProfile = application.applicantProfile || {};
                      const user = {
-                        ...application.applicantProfile,
-                        name: application.applicantProfile?.name || 
-                              (application.applicantId ? `User ${application.applicantId.slice(-4)}` : "Unknown User"),
-                        rating: application.applicantProfile?.rating || 0,
-                        totalReviews: application.applicantProfile?.totalReviews || 0,
-                        photoURL: application.applicantProfile?.photoURL || null,
+                        name: applicantProfile?.name || (application.applicantId ? `User ${String(application.applicantId).slice(-4)}` : "Unknown User"),
+                        photoURL: applicantProfile?.photoURL || null,
+                        rating: applicantProfile?.rating || 0,
+                        totalReviews: applicantProfile?.totalReviews || 0,
+                        skills: applicantProfile?.skills,
                      };
 
                      return (
@@ -658,15 +682,27 @@ export function TaskOffersSection({
                                     </Link>
 
                                     {application.status === "pending" && (
-                                       <Button
-                                          size="sm"
-                                          onClick={() =>
-                                             handleAcceptOffer(application)
-                                          }
-                                          className="bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-[10px] md:text-xs font-semibold px-5"
-                                       >
-                                          Accept Offer
-                                       </Button>
+                                       <>
+                                          <Button
+                                             size="sm"
+                                             onClick={() =>
+                                                handleAcceptOffer(application)
+                                             }
+                                             className="bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-[10px] md:text-xs font-semibold px-5"
+                                          >
+                                             Accept Offer
+                                          </Button>
+                                          <Button
+                                             size="sm"
+                                             onClick={() =>
+                                                handleRejectOffer(application)
+                                             }
+                                             variant="outline"
+                                             className="text-secondary-600 hover:text-red-600 hover:bg-red-50 border-secondary-300 rounded-lg text-[10px] md:text-xs font-semibold px-5"
+                                          >
+                                             Reject
+                                          </Button>
+                                       </>
                                     )}
                                  </div>
                               )}
