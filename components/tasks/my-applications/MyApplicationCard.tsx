@@ -58,6 +58,16 @@ export function MyApplicationCard({
 
    // Status badge styling
    const getStatusBadge = () => {
+      // Show completed status if task is completed, regardless of application status
+      if (task?.status === "completed" && application.status === "accepted") {
+         return (
+            <span className="inline-flex items-center px-2 md:px-2.5 py-0.5 rounded-full text-[9px] md:text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+               <CheckCircle className="w-3 h-3 mr-1" />
+               Completed
+            </span>
+         );
+      }
+
       switch (application.status) {
          case "pending":
             return (

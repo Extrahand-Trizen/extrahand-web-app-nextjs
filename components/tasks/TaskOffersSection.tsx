@@ -199,7 +199,7 @@ export function TaskOffersSection({
 
    return (
       <>
-         <div className="p-4 md:p-8">
+         <div className="p-4 md:p-8" data-offers-section>
             {/* Header */}
             <div className="flex items-center justify-between mb-5 md:mb-8">
                <h2 className="md:text-lg font-bold text-secondary-900">

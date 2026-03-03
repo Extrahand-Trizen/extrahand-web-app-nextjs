@@ -246,15 +246,27 @@ export function MakeOfferModal({
          onSuccess?.();
       } catch (error: any) {
          console.error("Error submitting offer:", error);
+         const errorMessage = getErrorMessage(error);
          const isUnauthorized = error?.status === 401 || error?.status === 403;
+         const isDuplicate = errorMessage.toLowerCase().includes("already applied") || 
+                           errorMessage.toLowerCase().includes("duplicate");
+         
          if (isUnauthorized) {
             toast.error("Session expired", {
                description:
                   "Please log in again to submit an offer. Your session may have expired.",
             });
+         } else if (isDuplicate) {
+            toast.info("Already applied", {
+               description: "You have already submitted an offer for this task. Check the Offers section below.",
+            });
+            // Close modal and wait for UI to update
+            form.reset();
+            onOpenChange(false);
+            onSuccess?.();
          } else {
             toast.error("Failed to submit offer", {
-               description: getErrorMessage(error),
+               description: errorMessage,
             });
          }
       } finally {

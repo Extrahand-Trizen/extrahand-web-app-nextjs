@@ -161,6 +161,20 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
          });
          return;
       }
+      if (hasApplied) {
+         toast.info("Already applied", {
+            description: "You have already submitted an offer for this task.",
+         });
+         // Scroll to offers section
+         setActiveTab("offers");
+         setTimeout(() => {
+            document.querySelector('[data-offers-section]')?.scrollIntoView({ 
+               behavior: 'smooth', 
+               block: 'start' 
+            });
+         }, 100);
+         return;
+      }
       setShowMakeOfferModal(true);
    };
 
@@ -288,8 +302,13 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
                open={showMakeOfferModal}
                onOpenChange={setShowMakeOfferModal}
                onSubmittingChange={setIsSubmittingOffer}
-               onSuccess={() => {
-                  queryClient.invalidateQueries({ queryKey: taskDetailsQueryKeys.applications(taskId) });
+               onSuccess={async () => {
+                  // Refetch applications immediately to show the new offer
+                  await queryClient.invalidateQueries({ 
+                     queryKey: taskDetailsQueryKeys.applications(taskId) 
+                  });
+                  // Wait a brief moment for the UI to update
+                  await new Promise(resolve => setTimeout(resolve, 300));
                   setIsSubmittingOffer(false);
                   setShowMakeOfferModal(false);
                }}
