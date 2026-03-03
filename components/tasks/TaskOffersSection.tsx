@@ -95,8 +95,26 @@ export function TaskOffersSection({
       useState<TaskApplication | null>(null);
    const [showPaymentModal, setShowPaymentModal] = useState(false);
    const { currentUser } = useAuth();
+   const currentUid = currentUser?.uid;
    const router = useRouter();
    const onApplicationsCountChangeRef = useRef(onApplicationsCountChange);
+
+   const matchesCurrentUserApplication = (app: { applicantId?: unknown; applicantUid?: string }) => {
+      const applicantProfileId = String(app.applicantId ?? "");
+      const normalizedUserProfileId = String(
+         (userProfile as { _id?: string; id?: string; profileId?: string } | null)?._id ||
+            (userProfile as { _id?: string; id?: string; profileId?: string } | null)?.id ||
+            (userProfile as { _id?: string; id?: string; profileId?: string } | null)?.profileId ||
+            ""
+      );
+      const applicantUid = String(app.applicantUid ?? "");
+      const normalizedCurrentUid = String(currentUid ?? "");
+
+      return (
+         (normalizedUserProfileId !== "" && applicantProfileId === normalizedUserProfileId) ||
+         (normalizedCurrentUid !== "" && applicantUid === normalizedCurrentUid)
+      );
+   };
 
    useEffect(() => {
       onApplicationsCountChangeRef.current = onApplicationsCountChange;
@@ -112,9 +130,9 @@ export function TaskOffersSection({
    // Notify parent when applications load (for hasApplied) – page also derives from same query; keep for any other consumers
    useEffect(() => {
       if (!onHasAppliedChange || !userProfile || !applicationsQuery.data) return;
-      const userApplication = applications.find((app) => app.applicantId === userProfileId);
+      const userApplication = applications.find((app) => matchesCurrentUserApplication(app));
       onHasAppliedChange(!!userApplication);
-   }, [applicationsQuery.data, applications, userProfile, userProfileId, onHasAppliedChange]);
+   }, [applicationsQuery.data, applications, userProfile, userProfileId, currentUid, onHasAppliedChange]);
 
    const handleAcceptOffer = (application: TaskApplication) => {
       setSelectedApplication(application);
@@ -200,23 +218,27 @@ export function TaskOffersSection({
 
    // Find user's own application by comparing applicantId with userProfile._id
    const myApplication = useMemo(() => {
-      if (isOwner || !userProfile || !userProfileId) return null;
-      const found = applications.find((app) => String(app.applicantId) === String(userProfileId));
+      if (isOwner || !userProfile) return null;
+      const found = applications.find((app) => matchesCurrentUserApplication(app));
       if (found) {
          console.log("✅ Found user's application:", { 
             applicantId: found.applicantId, 
             userProfileId,
+            applicantUid: found.applicantUid,
+            currentUid,
             status: found.status 
          });
-      } else if (userProfileId && applications.length > 0) {
+      } else if ((userProfileId || currentUid) && applications.length > 0) {
          console.log("❌ No application found for user:", {
             userProfileId,
+            currentUid,
             totalApplications: applications.length,
-            applicantIds: applications.map(app => app.applicantId)
+            applicantIds: applications.map(app => app.applicantId),
+            applicantUids: applications.map((app) => app.applicantUid),
          });
       }
       return found || null;
-   }, [isOwner, userProfile, userProfileId, applications]);
+   }, [isOwner, userProfile, userProfileId, currentUid, applications]);
 
    // Inform parent whether current user has an application
    useEffect(() => {

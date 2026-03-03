@@ -68,28 +68,56 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
    const loading = taskQuery.isLoading && !taskQuery.data;
    const applications = applicationsQuery.data?.applications ?? [];
    const userId = (userProfile as { _id?: string } | null)?._id;
+   const currentUid = currentUser?.uid;
+
+   const matchesCurrentUserApplication = (app: { applicantId?: unknown; applicantUid?: string }) => {
+      const applicantProfileId = String(app.applicantId ?? "");
+      const normalizedUserProfileId = String(
+         (userProfile as { _id?: string; id?: string; profileId?: string } | null)?._id ||
+            (userProfile as { _id?: string; id?: string; profileId?: string } | null)?.id ||
+            (userProfile as { _id?: string; id?: string; profileId?: string } | null)?.profileId ||
+            ""
+      );
+      const applicantUid = String(app.applicantUid ?? "");
+      const normalizedCurrentUid = String(currentUid ?? "");
+
+      return (
+         (normalizedUserProfileId !== "" && applicantProfileId === normalizedUserProfileId) ||
+         (normalizedCurrentUid !== "" && applicantUid === normalizedCurrentUid)
+      );
+   };
    
    // Debug logging for application check
    useEffect(() => {
-      if (userId && applications.length > 0) {
+      if ((userId || currentUid) && applications.length > 0) {
          console.log("🔍 Checking applications:", {
             userId,
+            currentUid,
             totalApplications: applications.length,
             applicantIds: applications.map(app => app.applicantId),
-            hasMatch: applications.some(app => app.applicantId === userId)
+            applicantUids: applications.map((app) => app.applicantUid),
+            hasMatch: applications.some((app) => matchesCurrentUserApplication(app))
          });
       }
-   }, [userId, applications]);
+   }, [userId, currentUid, applications]);
    
    const hasApplied = useMemo(() => {
-      if (!userId || !applications.length) {
-         console.log("🔍 hasApplied check: false (no userId or no applications)", { userId, applicationsLength: applications.length });
+      if ((!userId && !currentUid) || !applications.length) {
+         console.log("🔍 hasApplied check: false (no identity or no applications)", {
+            userId,
+            currentUid,
+            applicationsLength: applications.length,
+         });
          return false;
       }
-      const result = applications.some((app) => String(app.applicantId) === String(userId));
-      console.log("🔍 hasApplied check:", result, { userId, applicationsLength: applications.length });
+      const result = applications.some((app) => matchesCurrentUserApplication(app));
+      console.log("🔍 hasApplied check:", result, {
+         userId,
+         currentUid,
+         applicationsLength: applications.length,
+      });
       return result;
-   }, [applications, userId]);
+   }, [applications, userId, currentUid]);
 
    // Log when hasApplied changes
    useEffect(() => {
@@ -99,7 +127,7 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
    const applicationCount = applications.length;
    // Only show "checking" if we're loading applications AND we don't have userProfile yet
    // Once we have both, we can determine hasApplied
-   const checkingApplication = applicationsQuery.isLoading || (applicationsQuery.isFetching && !userId);
+   const checkingApplication = applicationsQuery.isLoading || (applicationsQuery.isFetching && !userId && !currentUid);
 
    const [activeTab, setActiveTab] = useState<"offers" | "questions">("offers");
    const [showFixedCTA, setShowFixedCTA] = useState(false);

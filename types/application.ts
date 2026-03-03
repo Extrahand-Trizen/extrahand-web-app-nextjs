@@ -12,6 +12,7 @@ export interface TaskApplication {
   // Task and applicant relationship
   taskId: string | Task;
   applicantId: string; // MongoDB ObjectId as string
+  applicantUid?: string;
   applicantProfile?: {
     name: string;
     rating?: number;
