@@ -21,7 +21,6 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 import { TaskBasicsStep } from "@/components/tasks/steps/TaskBasicsStep";
 import { LocationScheduleStep } from "@/components/tasks/steps/LocationScheduleStep";
-import { BudgetStep } from "@/components/tasks/steps/BudgetStep";
 
 import { editTaskSchema, type EditTaskFormData } from "@/lib/validations/task";
 import type { Task } from "@/types/task";
@@ -127,7 +126,31 @@ export default function EditTaskPage() {
    const form = useForm({
       resolver: zodResolver(editTaskSchema),
       mode: "onChange" as const,
-      defaultValues: {} as Partial<EditTaskFormData>,
+      defaultValues: {
+         title: "",
+         description: "",
+         category: "",
+         subcategory: "",
+         requirements: [],
+         estimatedDuration: null,
+         tags: [],
+         priority: "normal",
+         attachments: [],
+         location: {
+            address: "",
+            city: "",
+            state: "",
+            pinCode: "",
+            country: "India",
+         },
+         scheduledDate: null,
+         scheduledTimeStart: undefined,
+         scheduledTimeEnd: undefined,
+         flexibility: "flexible",
+         budgetType: "fixed",
+         budget: null,
+         urgency: "standard",
+      } as Partial<EditTaskFormData>,
    }) as UseFormReturn<Partial<EditTaskFormData>>;
 
    useEffect(() => {
@@ -149,7 +172,7 @@ export default function EditTaskPage() {
       }
    }, [taskId, taskQuery.isError, taskQuery.isSuccess, task, router]);
 
-   const totalSteps = 3;
+   const totalSteps = 2;
    const progress = (currentStep / totalSteps) * 100;
 
    const handleNext = async () => {
@@ -175,14 +198,36 @@ export default function EditTaskPage() {
             "scheduledTimeStart",
             "scheduledTimeEnd",
             "flexibility",
+            "budget",
          ]);
-      } else if (currentStep === 3) {
-         isValid = await form.trigger(["budgetType", "budget", "urgency"]);
+
+         const budgetValue = form.getValues("budget");
+         const isBudgetValid =
+            typeof budgetValue === "number" &&
+            budgetValue >= 50 &&
+            budgetValue <= 50000;
+
+         if (!isBudgetValid) {
+            form.setError("budget", {
+               type: "manual",
+               message: "Enter a budget between ₹50 and ₹50,000.",
+            });
+            toast.error("Enter a valid budget", {
+               description: "Budget must be between ₹50 and ₹50,000.",
+            });
+            return;
+         }
       }
 
-      if (isValid && currentStep < totalSteps) {
+      if (!isValid) {
+         return;
+      }
+
+      if (currentStep < totalSteps) {
          setCurrentStep((prev) => prev + 1);
          window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+         form.handleSubmit(onSubmit)();
       }
    };
 
@@ -459,21 +504,6 @@ export default function EditTaskPage() {
                      />
                   )}
 
-                  {currentStep === 3 && (
-                     <BudgetStep
-                        form={form as unknown as UseFormReturn<TaskFormData>}
-                        onNext={async () => {
-                           const isValid = await form.trigger([
-                              "budgetType",
-                              "budget",
-                              "urgency",
-                           ]);
-                           if (isValid) {
-                              form.handleSubmit(onSubmit)();
-                           }
-                        }}
-                     />
-                  )}
                </form>
             </Form>
          </main>

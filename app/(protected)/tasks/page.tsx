@@ -36,11 +36,12 @@ export default function TasksPage() {
    useEffect(() => {
       if (!stats) return;
 
-      if (!tasksCount) {
-         setTasksCount(stats.totalTasks ?? 0);
+      // Update counts from stats if we don't have them yet
+      if (stats.totalTasks !== undefined && tasksCount === 0) {
+         setTasksCount(stats.totalTasks);
       }
-      if (!applicationsCount) {
-         setApplicationsCount(stats.totalApplications ?? 0);
+      if (stats.totalApplications !== undefined && applicationsCount === 0) {
+         setApplicationsCount(stats.totalApplications);
       }
    }, [stats, tasksCount, applicationsCount]);
 
@@ -89,11 +90,9 @@ export default function TasksPage() {
                               className="px-3 py-2 rounded-lg border-b-2 border-transparent data-[state=active]:border-primary-600 data-[state=active]:text-primary-600 text-secondary-600 font-medium text-sm sm:text-base"
                            >
                               My Tasks
-                              {tasksCount > 0 && (
-                                 <span className="ml-2 text-secondary-400">
-                                    {tasksCount}
-                                 </span>
-                              )}
+                              <span className="ml-2 text-secondary-400">
+                                 {tasksCount}
+                              </span>
                            </TabsTrigger>
 
                            <TabsTrigger
@@ -101,11 +100,9 @@ export default function TasksPage() {
                               className="px-3 py-2 rounded-lg border-b-2 border-transparent data-[state=active]:border-primary-600 data-[state=active]:text-primary-600 text-secondary-600 font-medium text-sm sm:text-base"
                            >
                               My Applications
-                              {applicationsCount > 0 && (
-                                 <span className="ml-2 text-secondary-400">
-                                    {applicationsCount}
-                                 </span>
-                              )}
+                              <span className="ml-2 text-secondary-400">
+                                 {applicationsCount}
+                              </span>
                            </TabsTrigger>
                         </TabsList>
                      </div>
@@ -115,13 +112,14 @@ export default function TasksPage() {
 
             {/* Content */}
             <main className="w-full">
-               <TabsContent value="mytasks" className="mt-0">
+               {/* Always render both components to fetch counts, but only show the active one */}
+               <div className={activeTab === "mytasks" ? "" : "hidden"}>
                   <MyTasksContent onCountChange={setTasksCount} />
-               </TabsContent>
+               </div>
 
-               <TabsContent value="myapplications" className="mt-0">
+               <div className={activeTab === "myapplications" ? "" : "hidden"}>
                   <MyApplicationsContent onCountChange={setApplicationsCount} />
-               </TabsContent>
+               </div>
             </main>
          </Tabs>
       </div>

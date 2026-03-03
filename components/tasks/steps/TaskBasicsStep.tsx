@@ -95,33 +95,13 @@ const SUBCATEGORIES: Record<string, string[]> = {
 };
 
 export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
-   const [requirementInput, setRequirementInput] = useState("");
    const [tagInput, setTagInput] = useState("");
    const [showAllCategories, setShowAllCategories] = useState(false);
    const category = form.watch("category");
-   const requirements = form.watch("requirements") || [];
    const tags = form.watch("tags") || [];
    const attachments = form.watch("attachments") || [];
    const title = form.watch("title");
    const description = form.watch("description");
-
-   const addRequirement = () => {
-      const sanitized = sanitizeString(requirementInput);
-      if (sanitized && sanitized.length >= 3 && requirements.length < 10) {
-         form.setValue("requirements", [...requirements, sanitized]);
-         setRequirementInput("");
-      } else if (sanitized && sanitized.length < 3) {
-         // Don't add too short requirements
-         return;
-      }
-   };
-
-   const removeRequirement = (index: number) => {
-      form.setValue(
-         "requirements",
-         requirements.filter((_, i) => i !== index)
-      );
-   };
 
    const addTag = () => {
       const sanitized = sanitizeString(tagInput.toLowerCase());
@@ -142,13 +122,6 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
          "tags",
          tags.filter((_, i) => i !== index)
       );
-   };
-
-   const handleKeyDown = (e: React.KeyboardEvent) => {
-      if (e.key === "Enter") {
-         e.preventDefault();
-         addRequirement();
-      }
    };
 
    const handleTagKeyDown = (e: React.KeyboardEvent) => {
@@ -407,54 +380,6 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
                )}
             />
          )}
-
-         {/* Requirements */}
-         <FormField
-            control={form.control}
-            name="requirements"
-            render={({ field }) => (
-               <FormItem>
-                  <FormLabel className="text-xs md:text-sm">Special requirements (optional)</FormLabel>
-                  <FormControl>
-                     <div>
-                        <Input
-                           value={requirementInput}
-                           onChange={(e) => setRequirementInput(e.target.value)}
-                           onKeyDown={handleKeyDown}
-                           placeholder="Type and press Enter"
-                           className="h-10 text-sm"
-                           disabled={requirements.length >= 10}
-                        />
-                     </div>
-                  </FormControl>
-                  <FormDescription className="text-xs">
-                     e.g., pet-friendly, tools needed, parking available
-                  </FormDescription>
-                  {requirements.length > 0 && (
-                     <div className="flex flex-wrap gap-2 mt-1">
-                        {requirements.map((req, index) => (
-                           <Badge
-                              key={index}
-                              variant="secondary"
-                              className="h-5 px-3 text-xs md:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200"
-                           >
-                              {req}
-                              <button
-                                 type="button"
-                                 onClick={() => removeRequirement(index)}
-                                 className="ml-1.5 hover:text-gray-900"
-                                 aria-label="Remove requirement"
-                              >
-                                 <X className="size-2 md:size-3" />
-                              </button>
-                           </Badge>
-                        ))}
-                     </div>
-                  )}
-                  <FormMessage />
-               </FormItem>
-            )}
-         />
 
          {/* Estimated Duration */}
          <FormField

@@ -174,25 +174,6 @@ export function ReviewStep({
                   </p>
                </div>
 
-               {data.requirements.length > 0 && (
-                  <div>
-                     <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 block">
-                        Requirements
-                     </span>
-                     <div className="flex flex-wrap gap-2">
-                        {data.requirements.map((req, index) => (
-                           <Badge
-                              key={index}
-                              variant="secondary"
-                              className="h-4 md:h-6 px-1 md:px-3 text-[9px] md:text-xs bg-gray-100 text-gray-700"
-                           >
-                              {req}
-                           </Badge>
-                        ))}
-                     </div>
-                  </div>
-               )}
-
                {data.estimatedDuration && (
                   <div className="flex items-center gap-2 text-xs md:text-sm text-gray-600">
                      <Clock className="w-4 h-4" />
@@ -280,7 +261,7 @@ export function ReviewStep({
                <h3 className="md:text-base font-semibold text-gray-900">Budget</h3>
                <button
                   type="button"
-                  onClick={() => onEdit(3)}
+                  onClick={() => onEdit(2)}
                   className="flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-700"
                >
                   <Edit2 className="w-4 h-4" />

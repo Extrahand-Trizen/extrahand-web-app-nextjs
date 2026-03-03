@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Star, CheckCircle, MessageSquare } from "lucide-react";
@@ -80,8 +80,12 @@ export function TaskOffersSection({
       staleTime: 60 * 1000,
    });
 
-   const applications = applicationsQuery.data?.applications ?? [];
+   const applications = useMemo(
+      () => applicationsQuery.data?.applications ?? [],
+      [applicationsQuery.data?.applications]
+   );
    const loading = applicationsQuery.isLoading;
+   const userProfileId = (userProfile as { _id?: string } | null)?._id;
 
    const [sortBy, setSortBy] = useState<"newest" | "price-low" | "rating">(
       "newest"
@@ -107,10 +111,9 @@ export function TaskOffersSection({
    // Notify parent when applications load (for hasApplied) – page also derives from same query; keep for any other consumers
    useEffect(() => {
       if (!onHasAppliedChange || !userProfile || !applicationsQuery.data) return;
-      const userId = (userProfile as { _id?: string })._id;
-      const userApplication = applications.find((app) => app.applicantId === userId);
+      const userApplication = applications.find((app) => app.applicantId === userProfileId);
       onHasAppliedChange(!!userApplication);
-   }, [applicationsQuery.data, applications, userProfile, onHasAppliedChange]);
+   }, [applicationsQuery.data, applications, userProfile, userProfileId, onHasAppliedChange]);
 
    const handleAcceptOffer = (application: TaskApplication) => {
       setSelectedApplication(application);
@@ -172,7 +175,7 @@ export function TaskOffersSection({
 
    // Find user's own application by comparing applicantId with userProfile._id
    const myApplication = !isOwner && userProfile
-      ? applications.find((app) => app.applicantId === (userProfile as any)._id)
+      ? applications.find((app) => app.applicantId === userProfileId)
       : null;
 
    // Inform parent whether current user has an application
@@ -192,90 +195,7 @@ export function TaskOffersSection({
       );
    }
 
-   // If not owner and has application, show their own application
-   if (!isOwner && myApplication) {
-      return (
-         <div className="p-6">
-            <div className="bg-primary-50 border border-primary-200 rounded-xl p-5">
-               <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-secondary-900">Your Offer</h3>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                     myApplication.status === "pending" 
-                        ? "bg-yellow-100 text-yellow-800" 
-                        : myApplication.status === "accepted"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                  }`}>
-                     {myApplication.status.toUpperCase()}
-                  </span>
-               </div>
-               <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                     <span className="text-secondary-600">Proposed Budget:</span>
-                     <span className="font-semibold text-secondary-900">
-                        ₹{(
-                           (myApplication.proposedBudget?.amount || 0) *
-                           (myApplication.selectedDates?.length || 1)
-                        ).toLocaleString()}
-                     </span>
-                  </div>
-                  {myApplication.selectedDates && myApplication.selectedDates.length > 0 && (
-                     <div className="flex justify-between text-xs text-secondary-500">
-                        <span>Calculation:</span>
-                        <span>
-                           ₹{myApplication.proposedBudget?.amount || 0} × {myApplication.selectedDates.length} days
-                        </span>
-                     </div>
-                  )}
-                  {myApplication.proposedTime?.estimatedDuration && (
-                     <div className="flex justify-between text-sm">
-                        <span className="text-secondary-600">Estimated Time:</span>
-                        <span className="font-semibold text-secondary-900">
-                           {Math.floor(myApplication.proposedTime.estimatedDuration / 24)}d{" "}
-                           {(myApplication.proposedTime.estimatedDuration % 24).toFixed(0)}h
-                        </span>
-                     </div>
-                  )}
-                  {myApplication.selectedDates && myApplication.selectedDates.length > 0 && (
-                     <div className="flex justify-between text-sm">
-                        <span className="text-secondary-600">Selected Dates:</span>
-                        <span className="font-semibold text-secondary-900">
-                           {formatSelectedDates(myApplication.selectedDates)}
-                        </span>
-                     </div>
-                  )}
-                  {myApplication.coverLetter && (
-                     <div className="mt-3 pt-3 border-t border-primary-200">
-                        <p className="text-xs text-secondary-600 mb-1">Your Message:</p>
-                        <p className="text-sm text-secondary-700">{myApplication.coverLetter}</p>
-                     </div>
-                  )}
-                  <div className="flex justify-between text-xs text-secondary-500 pt-2">
-                     <span>Submitted: {new Date(myApplication.createdAt).toLocaleDateString()}</span>
-                  </div>
-               </div>
-            </div>
-         </div>
-      );
-   }
-
-   // If not owner and no application, show make offer button
-   if (!isOwner && !myApplication && !hasApplied) {
-      return (
-         <div className="p-8 text-center">
-            <p className="text-secondary-600 mb-4">
-               {checkingApplication ? "Checking application status..." : "Interested in this task? Submit your offer!"}
-            </p>
-            <Button
-               onClick={onMakeOffer}
-               disabled={checkingApplication}
-               className="bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-               {checkingApplication ? "Please Wait..." : "Make an Offer"}
-            </Button>
-         </div>
-      );
-   }
+   // Show offers list for everyone, but with different views
 
    return (
       <>
@@ -308,6 +228,103 @@ export function TaskOffersSection({
                )}
             </div>
 
+            {/* User's Application Highlight (if exists and not owner) */}
+            {!isOwner && myApplication && (
+               <div className="mb-6">
+                  <div className="bg-primary-50 border border-primary-200 rounded-xl p-5">
+                     <div className="flex items-center justify-between mb-4">
+                        <h3 className="font-bold text-secondary-900">Your Offer</h3>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                           myApplication.status === "pending" 
+                              ? "bg-yellow-100 text-yellow-800" 
+                              : myApplication.status === "accepted"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                        }`}>
+                           {myApplication.status.toUpperCase()}
+                        </span>
+                     </div>
+                     <div className="space-y-3">
+                        <div className="flex justify-between text-sm">
+                           <span className="text-secondary-600">Proposed Budget:</span>
+                           <span className="font-semibold text-secondary-900">
+                              ₹{(
+                                 (myApplication.proposedBudget?.amount || 0) *
+                                 (myApplication.selectedDates?.length || 1)
+                              ).toLocaleString()}
+                           </span>
+                        </div>
+                        {myApplication.selectedDates && myApplication.selectedDates.length > 0 && (
+                           <div className="flex justify-between text-xs text-secondary-500">
+                              <span>Calculation:</span>
+                              <span>
+                                 ₹{myApplication.proposedBudget?.amount || 0} × {myApplication.selectedDates.length} days
+                              </span>
+                           </div>
+                        )}
+                        {myApplication.proposedTime?.estimatedDuration && (
+                           <div className="flex justify-between text-sm">
+                              <span className="text-secondary-600">Estimated Time:</span>
+                              <span className="font-semibold text-secondary-900">
+                                 {Math.floor(myApplication.proposedTime.estimatedDuration / 24)}d{" "}
+                                 {(myApplication.proposedTime.estimatedDuration % 24).toFixed(0)}h
+                              </span>
+                           </div>
+                        )}
+                        {myApplication.selectedDates && myApplication.selectedDates.length > 0 && (
+                           <div className="flex justify-between text-sm">
+                              <span className="text-secondary-600">Selected Dates:</span>
+                              <span className="font-semibold text-secondary-900">
+                                 {formatSelectedDates(myApplication.selectedDates)}
+                              </span>
+                           </div>
+                        )}
+                        {myApplication.coverLetter && (
+                           <div className="mt-3 pt-3 border-t border-primary-200">
+                              <p className="text-xs text-secondary-600 mb-1">Your Message:</p>
+                              <p className="text-sm text-secondary-700">{myApplication.coverLetter}</p>
+                           </div>
+                        )}
+                        <div className="flex justify-between text-xs text-secondary-500 pt-2">
+                           <span>Submitted: {new Date(myApplication.createdAt).toLocaleDateString()}</span>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            )}
+
+            {/* Call to action for non-applied users */}
+            {!isOwner && !myApplication && (
+               <div className="p-6 text-center bg-primary-50 rounded-xl mb-6">
+                  <p className="text-secondary-700 mb-4">
+                     {checkingApplication ? (
+                        <span className="flex items-center justify-center gap-2">
+                           <div className="w-4 h-4 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
+                           Checking your application status...
+                        </span>
+                     ) : (
+                        "Interested in this task? Submit your offer!"
+                     )}
+                  </p>
+                  <Button
+                     onClick={onMakeOffer}
+                     disabled={checkingApplication || hasApplied}
+                     className="bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                     {checkingApplication ? (
+                        <span className="flex items-center gap-2">
+                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                           Checking...
+                        </span>
+                     ) : hasApplied ? (
+                        "Already Applied"
+                     ) : (
+                        "Make an Offer"
+                     )}
+                  </Button>
+               </div>
+            )}
+
             {/* Applications List */}
             {applications.length === 0 ? (
                <div className="text-center py-16">
@@ -335,7 +352,7 @@ export function TaskOffersSection({
                      No offers yet
                   </h3>
                   <p className="text-sm text-secondary-500 max-w-xs mx-auto">
-                     Make the first offer and get ahead of the competition!
+                     {isOwner ? "No offers received yet. Share your task to get more offers!" : "Be the first to make an offer!"}
                   </p>
                </div>
             ) : (
@@ -511,13 +528,22 @@ export function TaskOffersSection({
                                  </div>
 
                                  <div className="text-right">
-                                    <div className="text-lg font-bold text-primary-600 mb-1">
-                                       ₹
-                                       {(application.proposedBudget.amount * (application.selectedDates?.length || 1)).toLocaleString()}
-                                    </div>
-                                    {application.selectedDates && application.selectedDates.length > 0 && (
-                                       <div className="text-xs text-secondary-400 font-medium mb-1">
-                                          ₹{application.proposedBudget.amount} × {application.selectedDates.length} days
+                                    {/* Only show budget to task owner */}
+                                    {isOwner ? (
+                                       <>
+                                          <div className="text-lg font-bold text-primary-600 mb-1">
+                                             ₹
+                                             {(application.proposedBudget.amount * (application.selectedDates?.length || 1)).toLocaleString()}
+                                          </div>
+                                          {application.selectedDates && application.selectedDates.length > 0 && (
+                                             <div className="text-xs text-secondary-400 font-medium mb-1">
+                                                ₹{application.proposedBudget.amount} × {application.selectedDates.length} days
+                                             </div>
+                                          )}
+                                       </>
+                                    ) : (
+                                       <div className="text-xs text-secondary-500 mb-1">
+                                          Applied
                                        </div>
                                     )}
                                     <div className="flex items-center gap-2 justify-end">
@@ -562,7 +588,7 @@ export function TaskOffersSection({
                                        Dates: {formatSelectedDates(application.selectedDates)}
                                     </span>
                                  )}
-                                 {application.proposedBudget.isNegotiable && (
+                                 {isOwner && application.proposedBudget.isNegotiable && (
                                     <span className="text-primary-600">
                                        Negotiable
                                     </span>
@@ -586,30 +612,32 @@ export function TaskOffersSection({
                                     </div>
                                  )}
 
-                              {/* Actions */}
-                              <div className="flex gap-2 w-full flex-wrap">
-                                 <Link href={`/profile/${application.applicantId}`}>
-                                    <Button
-                                       size="sm"
-                                       variant="ghost"
-                                       className="text-secondary-600 hover:bg-secondary-50 rounded-lg text-[10px] md:text-xs font-medium"
-                                    >
-                                       View Profile
-                                    </Button>
-                                 </Link>
+                              {/* Actions - Only show for owner */}
+                              {isOwner && (
+                                 <div className="flex gap-2 w-full flex-wrap">
+                                    <Link href={`/profile/${application.applicantId}`}>
+                                       <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="text-secondary-600 hover:bg-secondary-50 rounded-lg text-[10px] md:text-xs font-medium"
+                                       >
+                                          View Profile
+                                       </Button>
+                                    </Link>
 
-                                 {application.status === "pending" && (
-                                    <Button
-                                       size="sm"
-                                       onClick={() =>
-                                          handleAcceptOffer(application)
-                                       }
-                                       className="bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-[10px] md:text-xs font-semibold px-5"
-                                    >
-                                       Accept Offer
-                                    </Button>
-                                 )}
-                              </div>
+                                    {application.status === "pending" && (
+                                       <Button
+                                          size="sm"
+                                          onClick={() =>
+                                             handleAcceptOffer(application)
+                                          }
+                                          className="bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-[10px] md:text-xs font-semibold px-5"
+                                       >
+                                          Accept Offer
+                                       </Button>
+                                    )}
+                                 </div>
+                              )}
                            </div>
                         </div>
                      );

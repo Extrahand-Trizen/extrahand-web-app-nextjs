@@ -95,6 +95,20 @@ export function MyApplicationCard({
          ? application.taskId
          : application.taskId._id;
 
+   const isTaskInNonWithdrawableState =
+      !!task &&
+      [
+         "assigned",
+         "started",
+         "in_progress",
+         "review",
+         "completed",
+         "cancelled",
+      ].includes(task.status);
+
+   const canWithdraw =
+      application.status === "pending" && !isTaskInNonWithdrawableState;
+
    return (
       <div className="group bg-white rounded-lg border-2 transition-all hover:shadow-md p-3 md:p-4 border-secondary-200 hover:border-primary-300">
          {/* Header - Status and Time */}
@@ -220,7 +234,7 @@ export function MyApplicationCard({
                <span className="hidden sm:inline">View Task</span>
                <span className="sm:hidden">View</span>
             </Button>
-            {application.status === "pending" && onWithdraw && (
+            {canWithdraw && onWithdraw && (
                <Button
                   variant="outline"
                   size="sm"

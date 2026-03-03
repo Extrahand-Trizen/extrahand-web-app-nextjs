@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Calendar, Clock, Tag, User } from "lucide-react";
+import { MapPin, Calendar, Clock, Tag, User, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Task } from "@/types/task";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -220,18 +220,24 @@ export function TaskDetailsHeader({
                   <Button 
                      onClick={onMakeOffer}
                      disabled={hasApplied || checkingApplication || isSubmittingOffer}
-                     className="bg-primary-600 hover:bg-primary-700 text-white h-10 font-semibold rounded-xl shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" 
+                     className="bg-primary-600 hover:bg-primary-700 text-white h-10 font-semibold rounded-xl shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" 
                      size="lg"
                   >
                      {checkingApplication ? (
-                        "Checking..."
+                        <>
+                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                           Checking...
+                        </>
                      ) : isSubmittingOffer ? (
                         <>
-                           <LoadingSpinner className="w-4 h-4 mr-2" />
+                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                            Submitting...
                         </>
                      ) : hasApplied ? (
-                        "Already Applied"
+                        <>
+                           <CheckCircle className="w-4 h-4" />
+                           Already Applied
+                        </>
                      ) : (
                         "Make an Offer"
                      )}

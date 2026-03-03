@@ -10,12 +10,6 @@ import React, { useEffect, useMemo } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { TaskFormData } from "../TaskCreationFlow";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-   Popover,
-   PopoverContent,
-   PopoverTrigger,
-} from "@/components/ui/popover";
 import {
    FormControl,
    FormField,
@@ -25,8 +19,8 @@ import {
    FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { format, addDays, startOfDay } from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { startOfDay } from "date-fns";
+import { IndianRupee } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { InteractiveLocationPicker } from "../../shared/InteractiveLocationPicker";
 import { DateTimePicker } from "@/components/shared";
@@ -43,13 +37,6 @@ interface LocationScheduleStepProps {
    onNext: () => Promise<void>;
 }
 
-const QUICK_DATES = [
-   { label: "Today", value: 0 },
-   { label: "Tomorrow", value: 1 },
-   { label: "In 3 days", value: 3 },
-   { label: "Next week", value: 7 },
-];
-
 export function LocationScheduleStep({
    form,
    onNext,
@@ -60,8 +47,6 @@ export function LocationScheduleStep({
    const location = form.watch("location");
    const category = form.watch("category");
    const recurringEnabled = form.watch("recurringEnabled");
-   const recurringStartDate = form.watch("recurringStartDate");
-   const recurringEndDate = form.watch("recurringEndDate");
 
    const recurringEligibleCategories = [
       "home-cleaning",
@@ -182,10 +167,13 @@ export function LocationScheduleStep({
       }
    }, [canUseRecurring, recurringEnabled, form]);
 
-   const handleQuickDate = (daysOffset: number) => {
-      const date = addDays(new Date(), daysOffset);
-      form.setValue("scheduledDate", date);
-   };
+   useEffect(() => {
+      if (!recurringEnabled && scheduledTimeStart) {
+         const dateOnly = new Date(scheduledTimeStart);
+         dateOnly.setHours(0, 0, 0, 0);
+         form.setValue("scheduledDate", dateOnly);
+      }
+   }, [recurringEnabled, scheduledTimeStart, form]);
 
    return (
       <div className="space-y-6">
@@ -292,78 +280,68 @@ export function LocationScheduleStep({
             )}
          />
 
-         {!recurringEnabled && (
-            <FormField
-               control={form.control}
-               name="scheduledDate"
-               render={({ field }) => (
-                  <FormItem>
-                     <FormLabel className="text-xs md:text-sm">Task date</FormLabel>
-                     <FormControl>
-                        <div className="space-y-2">
-                           {/* Quick date buttons */}
-                           <div className="grid grid-cols-4 gap-2">
-                              {QUICK_DATES.map((quick) => (
-                                 <button
-                                    key={quick.value}
-                                    type="button"
-                                    onClick={() => handleQuickDate(quick.value)}
-                                    className={cn(
-                                       "h-10 rounded-lg border-2 text-sm font-medium transition-all",
-                                       scheduledDate &&
-                                          format(scheduledDate, "yyyy-MM-dd") ===
-                                             format(
-                                                addDays(new Date(), quick.value),
-                                                "yyyy-MM-dd"
-                                             )
-                                          ? "border-primary-600 bg-primary-50 text-primary-600"
-                                          : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                                    )}
-                                 >
-                                    {quick.label}
-                                 </button>
-                              ))}
-                           </div>
+         {/* Budget */}
+         <FormField
+            control={form.control}
+            name="budget"
+            render={({ field }) => {
+               const isOutOfRange =
+                  field.value !== null &&
+                  field.value !== undefined &&
+                  (field.value < 50 || field.value > 50000);
 
-                           {/* Calendar picker */}
-                           <Popover>
-                              <PopoverTrigger asChild>
-                                 <Button
-                                    type="button"
-                                    variant="outline"
-                                    className={cn(
-                                       "w-full h-10 justify-start text-left font-normal",
-                                       !field.value && "text-gray-500"
-                                    )}
-                                 >
-                                    <CalendarIcon className="mr-2 h-5 w-5" />
-                                    {field.value ? (
-                                       format(field.value, "PPP")
-                                    ) : (
-                                       <span>Pick a date</span>
-                                    )}
-                                 </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                 <Calendar
-                                    mode="single"
-                                    selected={field.value}
-                                    onSelect={field.onChange}
-                                    disabled={(date) =>
-                                       date <
-                                       new Date(new Date().setHours(0, 0, 0, 0))
-                                    }
-                                    initialFocus
-                                 />
-                              </PopoverContent>
-                           </Popover>
+               return (
+                  <FormItem>
+                     <FormLabel className="text-xs md:text-sm">Your budget</FormLabel>
+                     <FormControl>
+                        <div className="relative">
+                           <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 size-4 md:size-5 text-gray-400" />
+                           <Input
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              placeholder="500"
+                              className="h-10 pl-12 text-sm"
+                              value={field.value ?? ""}
+                              onChange={(e) => {
+                                 const digits = e.target.value.replace(/[^0-9]/g, "");
+                                 if (!digits) {
+                                    field.onChange(null);
+                                    form.clearErrors("budget");
+                                    return;
+                                 }
+
+                                 const parsed = parseInt(digits, 10);
+                                 field.onChange(parsed);
+
+                                 if (parsed < 50 || parsed > 50000) {
+                                    form.setError("budget", {
+                                       type: "manual",
+                                       message: `Budget must be between ₹50 and ₹50,000. Entered: ₹${parsed}`,
+                                    });
+                                 } else {
+                                    form.clearErrors("budget");
+                                 }
+                              }}
+                              onKeyDown={(e) => {
+                                 if (e.key === "Enter") {
+                                    e.preventDefault();
+                                 }
+                              }}
+                           />
                         </div>
                      </FormControl>
+                     <FormDescription className={cn(
+                        "text-xs",
+                        isOutOfRange && "text-red-600 font-medium"
+                     )}>
+                        Enter a budget between ₹50 and ₹50,000.
+                     </FormDescription>
                      <FormMessage />
                   </FormItem>
-               )}
-            />
-         )}
+               );
+            }}
+         />
 
          {recurringEnabled && (
             <div className="space-y-4">

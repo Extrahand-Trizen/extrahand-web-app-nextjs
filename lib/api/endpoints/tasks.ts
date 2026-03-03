@@ -105,6 +105,14 @@ export const tasksApi = {
    * POST /api/v1/tasks
    */
   async createTask(taskData: Partial<Task>): Promise<Task> {
+    // DEBUG: Log images field before sending
+    console.log('[API DEBUG] createTask payload:', {
+      hasImages: !!taskData.images,
+      imagesCount: taskData.images?.length || 0,
+      images: taskData.images,
+      title: taskData.title
+    });
+    
     const response = await fetchWithAuth('tasks', {
       method: 'POST',
       body: JSON.stringify(taskData),

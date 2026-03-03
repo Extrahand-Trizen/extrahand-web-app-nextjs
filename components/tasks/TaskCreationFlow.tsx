@@ -18,7 +18,6 @@ import { Form } from "@/components/ui/form";
 import {
    TaskBasicsStep,
    LocationScheduleStep,
-   BudgetStep,
    ReviewStep,
 } from "@/components/tasks";
 
@@ -46,7 +45,7 @@ export type TaskFormData = CompleteTaskFormData;
 // Constants
 // ============================================================================
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 3;
 const MAX_RETRY_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 1000;
 const DRAFT_KEY = "taskDraft";
@@ -185,6 +184,14 @@ const formatTimeToString = (date: Date | null | undefined): string | undefined =
 const transformFormDataToTask = (
    formData: TaskFormData
 ): Record<string, unknown> => {
+   // DEBUG: Log attachments before transform
+   console.log('[TRANSFORM DEBUG] Form data attachments:', {
+      hasAttachments: !!formData.attachments,
+      attachmentsCount: formData.attachments?.length || 0,
+      attachments: formData.attachments,
+      title: formData.title
+   });
+   
    // Ensure coordinates are a proper tuple
    const coords = formData.location.coordinates;
    const coordinates: [number, number] = [coords?.[0] ?? 0, coords?.[1] ?? 0];
@@ -252,6 +259,16 @@ const transformFormDataToTask = (
       budget,
       urgency: mapUrgencyToBackend(formData.urgency),
    };
+};
+
+const logTransformedTask = (task: Record<string, unknown>) => {
+   console.log('[TRANSFORM DEBUG] Transformed payload:', {
+      hasImages: !!task.images,
+      imagesCount: Array.isArray(task.images) ? task.images.length : 0,
+      images: task.images,
+      title: task.title
+   });
+   return task;
 };
 
 /**
@@ -457,8 +474,8 @@ export function TaskCreationFlow() {
             "scheduledTimeStart",
             "scheduledTimeEnd",
             "flexibility",
+            "budget",
          ] as const,
-         3: ["budgetType", "budget", "urgency"] as const,
       }),
       []
    );
@@ -467,6 +484,25 @@ export function TaskCreationFlow() {
    const handleNext = useCallback(async () => {
       const fieldsToValidate =
          stepValidationFields[currentStep as keyof typeof stepValidationFields];
+
+      if (currentStep === 2) {
+         const budgetValue = form.getValues("budget");
+         const isBudgetValid =
+            typeof budgetValue === "number" &&
+            budgetValue >= 50 &&
+            budgetValue <= 50000;
+
+         if (!isBudgetValid) {
+            form.setError("budget", {
+               type: "manual",
+               message: "Enter a budget between ₹50 and ₹50,000.",
+            });
+            toast.error("Enter a valid budget", {
+               description: "Budget must be between ₹50 and ₹50,000.",
+            });
+            return;
+         }
+      }
 
       if (fieldsToValidate) {
          const isValid = await form.trigger(fieldsToValidate as any);
@@ -593,6 +629,7 @@ export function TaskCreationFlow() {
 
             // Transform form data to match backend Task schema
             const taskPayload = transformFormDataToTask(data);
+            logTransformedTask(taskPayload);
 
             // Use toast.promise for loading state
             const response = await toast.promise(
@@ -645,6 +682,15 @@ export function TaskCreationFlow() {
    // Save draft handler
    const handleSaveDraft = useCallback(() => {
       const values = form.getValues();
+      
+      // DEBUG: Log attachments in draft
+      console.log('[DRAFT DEBUG] Saving draft:', {
+         hasAttachments: !!values.attachments,
+         attachmentsCount: values.attachments?.length || 0,
+         attachments: values.attachments,
+         title: values.title
+      });
+      
       localStorage.setItem(DRAFT_KEY, JSON.stringify(values));
       setHasUnsavedChanges(false);
       toast.success("Draft saved", {
@@ -744,10 +790,6 @@ export function TaskCreationFlow() {
                   )}
 
                   {currentStep === 3 && (
-                     <BudgetStep form={form} onNext={handleNext} />
-                  )}
-
-                  {currentStep === 4 && (
                      <ReviewStep
                         form={form}
                         onEdit={handleEdit}

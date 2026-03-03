@@ -24,6 +24,24 @@ export function TaskDetailsMain({ task }: TaskDetailsMainProps) {
          ? description
          : description.substring(0, TRUNCATE_LENGTH) + "...";
 
+   const imagesFromTask = Array.isArray((task as Task & { images?: string[] }).images)
+      ? ((task as Task & { images?: string[] }).images as string[])
+           .filter((url) => typeof url === "string" && url.trim().length > 0)
+           .map((url) => url.trim())
+      : [];
+
+   const imagesFromAttachments = Array.isArray(task.attachments)
+      ? task.attachments
+           .map((attachment) => {
+              if (typeof attachment === "string") return attachment;
+              return attachment?.url;
+           })
+           .filter((url): url is string => typeof url === "string" && url.trim().length > 0)
+           .map((url) => url.trim())
+      : [];
+
+   const taskImages = Array.from(new Set([...imagesFromTask, ...imagesFromAttachments]));
+
    return (
       <div className="space-y-4 lg:space-y-6">
          {/* Description Section */}
@@ -53,21 +71,21 @@ export function TaskDetailsMain({ task }: TaskDetailsMainProps) {
          </div>
 
          {/* Images Section */}
-         {task.attachments && task.attachments.length > 0 && (
+         {taskImages.length > 0 && (
             <div className="bg-white/70 backdrop-blur-sm rounded-xl lg:rounded-2xl p-5 lg:p-8 shadow-sm border border-secondary-100/50">
                <h2 className="md:text-lg font-bold text-secondary-900 mb-3 lg:mb-4 flex items-center gap-2">
                   <ImageIcon className="w-5 h-5" />
-                  Photos ({task.attachments.length})
+                  Photos ({taskImages.length})
                </h2>
                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 lg:gap-4">
-                  {task.attachments.map((image, index) => (
+                  {taskImages.map((imageUrl, index) => (
                      <div
                         key={index}
                         className="aspect-square rounded-lg lg:rounded-xl overflow-hidden bg-secondary-100 shadow-sm"
                      >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                           src={image.url}
+                           src={imageUrl}
                            alt={`Task image ${index + 1}`}
                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300 cursor-pointer"
                         />

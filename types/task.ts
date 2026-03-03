@@ -55,6 +55,7 @@ export interface Task {
     assigneeUid?: string | null;
   }>;
   requirements?: string[];
+  images?: string[];
   attachments?: Array<{
     type: string;
     url: string;

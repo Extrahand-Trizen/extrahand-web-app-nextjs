@@ -81,15 +81,18 @@ export function TaskDetailsSidebar({
                   <Button
                      onClick={onMakeOffer}
                      disabled={hasApplied || isSubmittingOffer}
-                     className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold h-12 rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                     className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold h-12 rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                      {isSubmittingOffer ? (
                         <>
-                           <LoadingSpinner className="w-4 h-4 mr-2" />
+                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                            Submitting...
                         </>
                      ) : hasApplied ? (
-                        "Already Applied"
+                        <>
+                           <CheckCircle className="w-4 h-4" />
+                           Already Applied
+                        </>
                      ) : (
                         "Make an Offer"
                      )}

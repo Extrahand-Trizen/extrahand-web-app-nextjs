@@ -176,13 +176,16 @@ export function MyApplicationsContent({
    const handleWithdraw = async (applicationId: string) => {
       if (withdrawingApplicationId) return;
 
+      const application = allApplications.find((app) => app._id === applicationId);
+      if (!application || application.status !== "pending") {
+         toast.error("This application can no longer be withdrawn");
+         return;
+      }
+
       setWithdrawingApplicationId(applicationId);
 
       try {
-         // Call real API to withdraw
-         await applicationsApi.updateApplicationStatus(applicationId, {
-            status: "withdrawn" as any,
-         });
+         await applicationsApi.withdrawApplication(applicationId);
 
          // Update local state
          setAllApplications((prev) =>

@@ -65,6 +65,16 @@ export const applicationsApi = {
   },
 
   /**
+   * Withdraw current user's pending application
+   * DELETE /api/v1/applications/:id
+   */
+  async withdrawApplication(applicationId: string): Promise<void> {
+    await fetchWithAuth(`applications/${applicationId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  /**
    * Get applications for a specific task
    * GET /api/v1/applications?taskId=:taskId
    * Public endpoint - works without authentication

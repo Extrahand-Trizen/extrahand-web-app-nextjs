@@ -216,14 +216,55 @@ body {
 }
 
 /* Custom Toast Styles - ExtraHand Branded */
+.toaster {
+   position: fixed !important;
+   top: 8px !important;
+   right: 8px !important;
+   left: auto !important;
+   bottom: auto !important;
+   margin: 0 !important;
+   padding: 0 !important;
+   z-index: 9999 !important;
+   display: flex !important;
+   flex-direction: column !important;
+   gap: 12px !important;
+   width: 380px !important;
+   max-width: 380px !important;
+   height: auto !important;
+   transform: none !important;
+}
+
+html .toaster {
+   position: fixed !important;
+   top: 8px !important;
+   right: 8px !important;
+   left: auto !important;
+}
+
 [data-sonner-toaster] {
    font-family: var(--font-family-sans) !important;
+   position: fixed !important;
+   top: 8px !important;
+   right: 8px !important;
+   left: auto !important;
+   bottom: auto !important;
+   margin: 0 !important;
+   padding: 0 !important;
+   z-index: 9999 !important;
+   display: flex !important;
+   flex-direction: column !important;
+   gap: 12px !important;
+   width: 380px !important;
+   max-width: 380px !important;
+   height: auto !important;
+   transform: none !important;
 }
 
 [data-sonner-toast] {
    animation: slideInRight 0.35s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
-   min-width: 360px;
-   max-width: 450px;
+   width: 100% !important;
+   min-width: unset !important;
+   max-width: unset !important;
    background: white !important;
    border: 1px solid #e5e7eb !important;
    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1),
@@ -232,7 +273,8 @@ body {
 }
 
 [data-sonner-toast][data-styled="true"] {
-   padding: 16px 20px !important;
+   padding: 16px 44px 16px 20px !important;
+   position: relative !important;
 }
 
 /* Success Toast - Clean Green */
@@ -350,24 +392,104 @@ body {
    transition: all 0.2s ease;
 }
 
-/* Close button styling */
+/* Close button styling - Circle outline style */
 [data-sonner-toast] [data-close-button] {
-   background: transparent !important;
-   border: none !important;
-   color: #9ca3af !important;
+   position: absolute !important;
+   top: 1px !important;
+   transform: none !important;
+   right: 12px !important;
+   left: auto !important;
+   background: white !important;
+   border: 2px solid #e5e7eb !important;
+   color: #6b7280 !important;
    padding: 4px !important;
-   border-radius: 4px !important;
+   border-radius: 50% !important;
    transition: all 0.2s ease !important;
+   cursor: pointer !important;
+   z-index: 10 !important;
+   width: 22px !important;
+   height: 22px !important;
+   display: flex !important;
+   align-items: center !important;
+   justify-content: center !important;
+   font-size: 12px !important;
+}
+
+[data-sonner-toast] [data-close-button] svg {
+   width: 12px !important;
+   height: 12px !important;
 }
 
 [data-sonner-toast] [data-close-button]:hover {
-   background: #f3f4f6 !important;
+   background: #f9fafb !important;
    color: #111827 !important;
+   border-color: #d1d5db !important;
+   transform: scale(1.1) !important;
 }
 
-/* Icon styling */
+[data-sonner-toast] [data-close-button]:active {
+   transform: scale(0.95) !important;
+}
+
+/* Error toast close button - red circle outline */
+[data-sonner-toast][data-type="error"] [data-close-button] {
+   background: white !important;
+   border: 2px solid #ef4444 !important;
+   color: #ef4444 !important;
+}
+
+[data-sonner-toast][data-type="error"] [data-close-button]:hover {
+   background: #fef2f2 !important;
+   border-color: #dc2626 !important;
+   color: #dc2626 !important;
+   transform: scale(1.1) !important;
+}
+
+/* Success toast close button - green circle outline */
+[data-sonner-toast][data-type="success"] [data-close-button] {
+   background: white !important;
+   border: 2px solid #10b981 !important;
+   color: #10b981 !important;
+}
+
+[data-sonner-toast][data-type="success"] [data-close-button]:hover {
+   background: #f0fdf4 !important;
+   border-color: #059669 !important;
+   color: #059669 !important;
+   transform: scale(1.1) !important;
+}
+
+/* Warning toast close button - amber circle outline */
+[data-sonner-toast][data-type="warning"] [data-close-button] {
+   background: white !important;
+   border: 2px solid #f59e0b !important;
+   color: #f59e0b !important;
+}
+
+[data-sonner-toast][data-type="warning"] [data-close-button]:hover {
+   background: #fffbeb !important;
+   border-color: #d97706 !important;
+   color: #d97706 !important;
+   transform: scale(1.1) !important;
+}
+
+/* Info toast close button - blue circle outline */
+[data-sonner-toast][data-type="info"] [data-close-button] {
+   background: white !important;
+   border: 2px solid #3b82f6 !important;
+   color: #3b82f6 !important;
+}
+
+[data-sonner-toast][data-type="info"] [data-close-button]:hover {
+   background: #eff6ff !important;
+   border-color: #2563eb !important;
+   color: #2563eb !important;
+   transform: scale(1.1) !important;
+}
+
+/* Hide the default toast icon */
 [data-sonner-toast] [data-icon] {
-   margin-right: 12px !important;
+   display: none !important;
 }
 
 /* Dark mode support */
@@ -382,6 +504,45 @@ body {
 
 .dark [data-sonner-toast] [data-description] {
    color: #d1d5db !important;
+}
+
+/* Dark mode close button */
+.dark [data-sonner-toast] [data-close-button] {
+   background: #1f2937 !important;
+   border: 2px solid #4b5563 !important;
+   color: #9ca3af !important;
+}
+
+.dark [data-sonner-toast] [data-close-button]:hover {
+   background: #374151 !important;
+   color: #f9fafb !important;
+   border-color: #6b7280 !important;
+}
+
+/* Dark mode error toast close button */
+.dark [data-sonner-toast][data-type="error"] [data-close-button] {
+   background: #1f2937 !important;
+   border: 2px solid #ef4444 !important;
+   color: #ef4444 !important;
+}
+
+.dark [data-sonner-toast][data-type="error"] [data-close-button]:hover {
+   background: #7f1d1d !important;
+   border-color: #dc2626 !important;
+   color: #fca5a5 !important;
+}
+
+/* Dark mode success toast close button */
+.dark [data-sonner-toast][data-type="success"] [data-close-button] {
+   background: #1f2937 !important;
+   border: 2px solid #10b981 !important;
+   color: #10b981 !important;
+}
+
+.dark [data-sonner-toast][data-type="success"] [data-close-button]:hover {
+   background: #064e3b !important;
+   border-color: #059669 !important;
+   color: #6ee7b7 !important;
 }
 
 .dark [data-sonner-toast][data-type="success"] {
