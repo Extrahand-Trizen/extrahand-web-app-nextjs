@@ -58,7 +58,6 @@ export const CompactFilterBar = ({
       filters.maxBudget !== 50000 ||
       filters.availableOnly ||
       filters.noOffersOnly ||
-      filters.status !== "open" ||
       searchQuery.length > 0;
 
    const clearAll = () => {
@@ -71,7 +70,6 @@ export const CompactFilterBar = ({
          sortBy: "recent",
          availableOnly: false,
          noOffersOnly: false,
-         status: "open",
       });
       onSearchChange("");
    };
@@ -103,8 +101,6 @@ export const CompactFilterBar = ({
                value={filters.sortBy}
                onChange={(v) => onFilterChange({ ...filters, sortBy: v })}
             />
-
-            <StatusFilter filters={filters} onFilterChange={onFilterChange} />
 
             <OtherFilters filters={filters} onFilterChange={onFilterChange} />
 
@@ -528,34 +524,7 @@ export const SortFilter = ({ value, onChange }) => {
       </Select>
    );
 };
-export const StatusFilter = ({ filters, onFilterChange }) => {
-   const statuses = [
-      { value: "open" as const, label: "Open" },
-      { value: "assigned" as const, label: "Assigned" },
-      { value: "completed" as const, label: "Completed" },
-   ];
 
-   return (
-      <div className="flex items-center gap-1 bg-secondary-100 rounded-lg p-1">
-         {statuses.map((status) => (
-            <Button
-               key={status.value}
-               size="sm"
-               variant={filters.status === status.value ? "default" : "ghost"}
-               onClick={() => onFilterChange({ ...filters, status: status.value })}
-               className={cn(
-                  "text-xs sm:text-sm px-3 sm:px-4",
-                  filters.status === status.value
-                     ? "bg-primary-600 hover:bg-primary-700 text-white"
-                     : "text-secondary-700 hover:bg-secondary-200"
-               )}
-            >
-               {status.label}
-            </Button>
-         ))}
-      </div>
-   );
-};
 export const MobileFilterSheet = ({
    filters,
    onFilterChange,
@@ -625,13 +594,6 @@ export const MobileFilterSheet = ({
                            onChange={(v) =>
                               onFilterChange({ ...filters, sortBy: v })
                            }
-                        />
-                     </div>
-
-                     <div className={filterRowClass}>
-                        <StatusFilter
-                           filters={filters}
-                           onFilterChange={onFilterChange}
                         />
                      </div>
 
