@@ -273,7 +273,6 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
                            key={task._id}
                            task={task}
                            deletingTaskId={deletingTaskId}
-                           onView={handleViewTask}
                            onEdit={handleEditTask}
                            onDelete={handleDeleteTask}
                            onViewApplications={handleViewApplications}

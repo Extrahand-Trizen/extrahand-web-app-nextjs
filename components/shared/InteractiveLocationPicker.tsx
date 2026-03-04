@@ -185,7 +185,6 @@ export function InteractiveLocationPicker({
          setMapCenter(coords);
          setMarkerPosition(coords);
          onCoordinatesChange?.(coords);
-         toast.success(`Selected: ${address.label}`);
       } else {
          // No coordinates - geocode the address
          setIsLoadingLocation(true);
@@ -224,7 +223,6 @@ export function InteractiveLocationPicker({
 
                   onChange(updatedLocation);
                   onCoordinatesChange?.(coords);
-                  toast.success(`Selected: ${address.label}`);
                   setIsLoadingLocation(false);
                   return;
                }
@@ -263,9 +261,6 @@ export function InteractiveLocationPicker({
 
                   onChange(updatedLocation);
                   onCoordinatesChange?.(coords);
-                  toast.success(`Selected: ${address.label}`, {
-                     description: "Showing city center location"
-                  });
                   setIsLoadingLocation(false);
                   return;
                }
@@ -280,9 +275,6 @@ export function InteractiveLocationPicker({
                country: address.country || "India",
             };
             onChange(updatedLocation);
-            toast.warning(`Selected: ${address.label}`, {
-               description: "Location not found on map"
-            });
          } catch (error) {
             console.error("Geocoding failed:", error);
             const updatedLocation: LocationData = {
@@ -293,9 +285,6 @@ export function InteractiveLocationPicker({
                country: address.country || "India",
             };
             onChange(updatedLocation);
-            toast.warning(`Selected: ${address.label}`, {
-               description: "Couldn't locate on map"
-            });
          } finally {
             setIsLoadingLocation(false);
          }

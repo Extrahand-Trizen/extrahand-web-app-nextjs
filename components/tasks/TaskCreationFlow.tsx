@@ -248,6 +248,9 @@ const transformFormDataToTask = (
              return merged;
            })()
          : formData.scheduledDate || undefined,
+      scheduledTime: formatTimeToString(formData.scheduledTimeStart),
+      dateOption: formData.dateOption,
+      timeSlot: formData.timeSlot,
       scheduledTimeStart: formatTimeToString(formData.scheduledTimeStart),
       scheduledTimeEnd: formatTimeToString(formData.scheduledTimeEnd),
       flexibility: mapFlexibilityToBackend(formData.flexibility),

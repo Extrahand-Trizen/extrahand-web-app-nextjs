@@ -50,6 +50,18 @@ export function TaskCard({ task, isSelected = false, onClick }: TaskCardProps) {
          {/* Top Row - Title and Amount */}
          <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
+               <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  {task.status === "open" && (
+                     <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] md:text-xs font-medium bg-green-100 text-green-800">
+                        Open
+                     </span>
+                  )}
+                  {task.applications > 0 && (
+                     <span className="inline-flex items-center px-2 md:px-2.5 py-0.5 rounded text-[9px] md:text-xs font-medium bg-purple-100 text-purple-700">
+                        {task.applications} {task.applications === 1 ? "offer" : "offers"}
+                     </span>
+                  )}
+               </div>
                <h3 className="text-lg md:text-xl font-bold text-secondary-900 line-clamp-1 group-hover:text-primary-600 transition-colors">
                   {task.title}
                </h3>
@@ -85,24 +97,21 @@ export function TaskCard({ task, isSelected = false, onClick }: TaskCardProps) {
                      ? new Date(task.scheduledDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })
                      : "Flexible"}
                </span>
-               {task.timeSlot && (
-                  <>
-                     <Clock className="size-4 shrink-0" />
-                     <span>{task.timeSlot.charAt(0).toUpperCase() + task.timeSlot.slice(1)}</span>
-                  </>
-               )}
+            </div>
+            <div className="flex items-center gap-2 text-secondary-700 text-sm md:text-base font-medium">
+               <Clock className="size-4 shrink-0" />
+               <span>
+                  {task.timeSlot
+                     ? task.timeSlot.charAt(0).toUpperCase() + task.timeSlot.slice(1)
+                     : "Anytime"}
+               </span>
             </div>
          </div>
 
-         {/* Bottom Row - Status, Offers and User Profile */}
+         {/* Bottom Row - Status and User Profile */}
          <div className="flex items-center justify-between pt-3 border-t border-secondary-100">
             <div className="flex items-center gap-3">
                {getStatusBadge()}
-               {task.applications > 0 && (
-                  <span className="text-xs md:text-sm font-medium text-secondary-600">
-                     {task.applications} offer{task.applications > 1 ? "s" : ""}
-                  </span>
-               )}
             </div>
 
             {/* User Profile Avatar */}

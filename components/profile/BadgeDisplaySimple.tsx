@@ -147,7 +147,11 @@ export default function BadgeDisplaySimple({ className = '' }: BadgeDisplaySimpl
                         {badge} Badge
                       </p>
                       <p className={`text-xs ${isCurrentOrPassed ? 'text-gray-700' : 'text-gray-600'}`}>
-                        {req.description}
+                        {badge === 'none' ? 'New user - Browse tasks' : 
+                         badge === 'verified' ? 'Aadhaar verified' :
+                         badge === 'trusted' ? '10 tasks and 4.0 above rating' :
+                         badge === 'elite' ? '25 tasks and 4.5 rating' :
+                         req.description}
                       </p>
                     </div>
                   </div>

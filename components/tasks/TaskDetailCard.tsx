@@ -67,8 +67,9 @@ export function TaskDetailCard({ task, onClose }: TaskDetailCardProps) {
    // Smart time display
    const scheduledSubLabel = displayTask.timeSlot
       ? displayTask.timeSlot.charAt(0).toUpperCase() + displayTask.timeSlot.slice(1)
-      : displayTask.scheduledTime ||
-        (displayTask.flexibility === "anytime" ? "Anytime" : "Anytime");
+      : displayTask.scheduledTime
+      ? displayTask.scheduledTime
+      : "Anytime";
    
    const locationLabel =
       displayTask.location?.city?.trim() || displayTask.location?.address?.trim() || "Remote";

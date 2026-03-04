@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import {
    Edit,
    Trash2,
-   Eye,
    TrendingUp,
    Calendar,
    MapPin,
@@ -26,7 +25,6 @@ import { TaskStatusBadge } from "../TaskStatusBadge";
 interface MyTaskCardProps {
    task: Task;
    deletingTaskId: string | null;
-   onView: (taskId: string) => void;
    onEdit: (taskId: string) => void;
    onDelete: (taskId: string, taskTitle: string) => void;
    onViewApplications: (taskId: string) => void;
@@ -36,7 +34,6 @@ interface MyTaskCardProps {
 export function MyTaskCard({
    task,
    deletingTaskId,
-   onView,
    onEdit,
    onDelete,
    onViewApplications,
@@ -90,20 +87,27 @@ export function MyTaskCard({
 
    return (
       <div
-         onClick={() => onView(task._id)}
-         className="group bg-white rounded-lg border-2 transition-all cursor-pointer hover:shadow-md p-3 md:p-4 border-secondary-200 hover:border-primary-300"
+         className="group bg-white rounded-lg border-2 transition-all p-3 md:p-4 border-secondary-200 hover:shadow-lg"
       >
-         {/* Header - Status, Urgency, Category */}
-         <div className="flex justify-between mb-2">
-            <div className="flex flex-wrap items-center gap-2">
-               <TaskStatusBadge status={task.status} size="sm" />
-               {getUrgencyBadge()}
-               <span className="inline-flex items-center px-1 md:px-2 py-0.5 rounded text-[10px] md:text-xs font-medium bg-secondary-100 text-secondary-700">
-                  <Tag className="size-2 md:size-3 mr-1" />
-                  {task.category}
-               </span>
+         {/* Header - Status, Offers Badge with Title */}
+         <div className="flex items-start justify-between gap-3 mb-2">
+            <div className="flex-1 min-w-0">
+               <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <TaskStatusBadge status={task.status} size="sm" />
+                  {task.applications > 0 && (
+                     <span className="inline-flex items-center px-2 md:px-2.5 py-0.5 rounded text-[10px] md:text-xs font-medium bg-purple-100 text-purple-700">
+                        <MessageSquare className="size-2 md:size-3 mr-1" />
+                        {task.applications} {task.applications === 1 ? "offer" : "offers"}
+                     </span>
+                  )}
+                  {getUrgencyBadge()}
+                  <span className="inline-flex items-center px-1 md:px-2 py-0.5 rounded text-[10px] md:text-xs font-medium bg-secondary-100 text-secondary-700">
+                     <Tag className="size-2 md:size-3 mr-1" />
+                     {task.category}
+                  </span>
+               </div>
             </div>
-            <div className="text-[10px] md:text-xs text-secondary-500 flex items-center gap-1">
+            <div className="text-[10px] md:text-xs text-secondary-500 flex items-center gap-1 shrink-0">
                <Clock className="size-2 md:size-3" />
                {getTimeAgo(task.createdAt)}
             </div>
@@ -122,20 +126,41 @@ export function MyTaskCard({
          )}
 
          {/* Location and Meta Info */}
-         <div className="flex items-center mb-3 text-sm">
-            <div className="flex items-center justify-between w-full text-secondary-600">
-               <span className="flex items-center gap-1 text-xs md:text-sm">
-                  <MapPin className="size-3 md:size-4" />
-                  <span className="font-medium">{task.location.city}</span>
-               </span>
-               {/* Scheduled Date/Time if available */}
-               {task.scheduledDate && (
-                  <div className="flex text-xs text-secondary-600 bg-secondary-50 p-2 rounded">
-                     <Calendar className="size-3 md:size-4 mr-2" /> Scheduled:{" "}
-                     {new Date(task.scheduledDate).toLocaleDateString()}{" "}
-                  </div>
-               )}
+         <div className="flex flex-col gap-2 mb-3 text-sm">
+            <div className="flex items-center gap-1 text-xs md:text-sm text-secondary-600">
+               <MapPin className="size-3 md:size-4 shrink-0" />
+               <span className="font-medium">{task.location.city}</span>
             </div>
+            {/* Scheduled Date/Time if available */}
+            {task.scheduledDate ? (
+               <div className="flex flex-col gap-1.5 text-xs text-secondary-600">
+                  <div className="flex items-center gap-1">
+                     <Calendar className="size-3 md:size-4 shrink-0" />
+                     <span>
+                        {task.dateOption === "flexible" || !task.dateOption
+                           ? "Flexible"
+                           : task.dateOption === "on-date"
+                           ? `On ${new Date(task.scheduledDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                           : task.dateOption === "before-date"
+                           ? `Before ${new Date(task.scheduledDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                           : new Date(task.scheduledDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                     </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                     <Clock className="size-3 md:size-4 shrink-0" />
+                     <span>
+                        {task.timeSlot
+                           ? task.timeSlot.charAt(0).toUpperCase() + task.timeSlot.slice(1)
+                           : "Anytime"}
+                     </span>
+                  </div>
+               </div>
+            ) : (
+               <div className="flex items-center gap-1 text-xs text-secondary-600">
+                  <Calendar className="size-3 md:size-4 shrink-0" />
+                  <span>Flexible • Anytime</span>
+               </div>
+            )}
          </div>
 
          {/* Assigned Performer (if assigned) */}
@@ -199,15 +224,6 @@ export function MyTaskCard({
             className="flex flex-wrap gap-2 pt-3 border-t border-secondary-200"
             onClick={(e) => e.stopPropagation()}
          >
-            <Button
-               variant="outline"
-               size="sm"
-               onClick={() => onView(task._id)}
-               className="flex-1 sm:flex-initial text-xs md:text-sm"
-            >
-               <Eye className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
-               <span className="hidden sm:inline">View</span>
-            </Button>
             {canEditOrDelete && (
                <Button
                   variant="outline"
