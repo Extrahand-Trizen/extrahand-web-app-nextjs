@@ -51,11 +51,6 @@ export function TaskCard({ task, isSelected = false, onClick }: TaskCardProps) {
          <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
                <div className="flex items-center gap-2 mb-2 flex-wrap">
-                  {task.status === "open" && (
-                     <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] md:text-xs font-medium bg-green-100 text-green-800">
-                        Open
-                     </span>
-                  )}
                   {task.applications > 0 && (
                      <span className="inline-flex items-center px-2 md:px-2.5 py-0.5 rounded text-[9px] md:text-xs font-medium bg-purple-100 text-purple-700">
                         {task.applications} {task.applications === 1 ? "offer" : "offers"}
