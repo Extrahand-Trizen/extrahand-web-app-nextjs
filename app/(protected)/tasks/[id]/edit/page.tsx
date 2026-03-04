@@ -81,12 +81,12 @@ function taskToFormData(task: Task): Partial<EditTaskFormData> {
             uploadedAt: att.uploadedAt || new Date(),
          })) || [],
       location: {
-         address: task.location.address,
-         city: task.location.city,
-         state: task.location.state,
-         pinCode: task.location.pinCode || "",
-         country: task.location.country || "India",
-         coordinates: task.location.coordinates
+         address: task.location?.address || "",
+         city: task.location?.city || "",
+         state: task.location?.state || "",
+         pinCode: task.location?.pinCode || "",
+         country: task.location?.country || "India",
+         coordinates: task.location?.coordinates
             ? ([task.location.coordinates[0], task.location.coordinates[1]] as [
                  number,
                  number
@@ -94,10 +94,10 @@ function taskToFormData(task: Task): Partial<EditTaskFormData> {
             : undefined,
       },
       scheduledDate: task.scheduledDate ? new Date(task.scheduledDate) : null,
-      // AirTasker-style scheduling fields
-      dateOption: "flexible" as const,
-      needsTimeOfDay: false,
-      timeSlot: null,
+      // AirTasker-style scheduling fields - set based on what we can infer
+      dateOption: task.scheduledDate ? ("on-date" as const) : ("flexible" as const),
+      needsTimeOfDay: !!task.scheduledTime && task.scheduledTime.trim().length > 0,
+      timeSlot: task.scheduledTime ? (task.scheduledTime.toLowerCase() as any) : null,
       // Legacy fields
       scheduledTimeStart,
       scheduledTimeEnd,

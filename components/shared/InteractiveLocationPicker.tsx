@@ -96,6 +96,7 @@ export function InteractiveLocationPicker({
       address: Partial<LocationData>;
    } | null>(null);
    const [selectedAddressType, setSelectedAddressType] = useState<"Home" | "Work" | "Other">("Home");
+   const autoSelectRef = useRef(false); // Prevent duplicate auto-select
 
    // Fetch saved addresses on mount
    useEffect(() => {
@@ -105,10 +106,11 @@ export function InteractiveLocationPicker({
             const addresses = await addressesApi.getAddresses();
             setSavedAddresses(addresses || []);
             
-            // Auto-select default address if no address is set yet and we're mounting fresh
-            if ((!value.address || value.address === "") && !value.coordinates) {
+            // Auto-select default address only once, if no address is set yet
+            if (!autoSelectRef.current && (!value.address || value.address === "") && !value.coordinates) {
                const defaultAddress = addresses?.find(addr => addr.isDefault);
                if (defaultAddress) {
+                  autoSelectRef.current = true; // Prevent future auto-selects
                   await handleSelectSavedAddress(defaultAddress);
                }
             }
@@ -120,6 +122,17 @@ export function InteractiveLocationPicker({
       };
       fetchAddresses();
    }, []);
+
+   // Initialize location picker with value when editing task
+   useEffect(() => {
+      if (value && value.address && addressInput !== value.address) {
+         setAddressInput(value.address);
+      }
+      if (value && value.coordinates) {
+         setMapCenter(value.coordinates);
+         setMarkerPosition(value.coordinates);
+      }
+   }, [value?.address, value?.coordinates]);
 
    // Fetch Google Maps API key only when user clicks "Add New Address"
    const handleAddNewAddressClick = useCallback(async () => {
@@ -176,7 +189,6 @@ export function InteractiveLocationPicker({
       } else {
          // No coordinates - geocode the address
          setIsLoadingLocation(true);
-         toast.info("Locating address on map...");
          
          try {
             // Step 1: Get place suggestions from search endpoint

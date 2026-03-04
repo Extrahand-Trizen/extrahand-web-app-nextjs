@@ -52,16 +52,24 @@ export function TaskDetailCard({ task, onClose }: TaskDetailCardProps) {
       displayTask.categoryLabel ||
       displayTask.subcategory ||
       displayTask.category;
-   const scheduledDateLabel = displayTask.scheduledDate
-      ? new Date(displayTask.scheduledDate).toLocaleDateString("en-US", {
-           month: "short",
-           day: "numeric",
-           year: "numeric",
-        })
+   
+   // Smart date display
+   const scheduledDateLabel = displayTask.dateOption === "flexible" || !displayTask.dateOption || !displayTask.scheduledDate
+      ? "Flexible"
+      : displayTask.dateOption === "on-date" && displayTask.scheduledDate
+      ? `On ${new Date(displayTask.scheduledDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+      : displayTask.dateOption === "before-date" && displayTask.scheduledDate
+      ? `Before ${new Date(displayTask.scheduledDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+      : displayTask.scheduledDate
+      ? new Date(displayTask.scheduledDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
       : "Flexible";
-   const scheduledSubLabel =
-      displayTask.scheduledTime ||
-      (displayTask.flexibility === "anytime" ? "Anytime" : "");
+   
+   // Smart time display
+   const scheduledSubLabel = displayTask.timeSlot
+      ? displayTask.timeSlot.charAt(0).toUpperCase() + displayTask.timeSlot.slice(1)
+      : displayTask.scheduledTime ||
+        (displayTask.flexibility === "anytime" ? "Anytime" : "Anytime");
+   
    const locationLabel =
       displayTask.location?.city?.trim() || displayTask.location?.address?.trim() || "Remote";
 

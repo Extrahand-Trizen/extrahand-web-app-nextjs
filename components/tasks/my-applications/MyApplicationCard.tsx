@@ -68,6 +68,16 @@ export function MyApplicationCard({
          );
       }
 
+      // Show cancelled status if task is cancelled, regardless of application status
+      if (task?.status === "cancelled") {
+         return (
+            <span className="inline-flex items-center px-2 md:px-2.5 py-0.5 rounded-full text-[9px] md:text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
+               <XCircle className="w-3 h-3 mr-1" />
+               Cancelled
+            </span>
+         );
+      }
+
       switch (application.status) {
          case "pending":
             return (

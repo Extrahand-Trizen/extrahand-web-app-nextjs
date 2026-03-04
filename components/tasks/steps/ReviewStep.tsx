@@ -228,29 +228,25 @@ export function ReviewStep({
                                 "MMM d, yyyy"
                              )} (${recurringDays} days)`
                            : "Date range not set"
+                        : data.dateOption === "flexible" || !data.dateOption
+                        ? "Flexible"
+                        : data.dateOption === "on-date" && data.scheduledDate
+                        ? `On ${format(data.scheduledDate, "MMM d")}`
+                        : data.dateOption === "before-date" && data.scheduledDate
+                        ? `Before ${format(data.scheduledDate, "MMM d")}`
                         : data.scheduledDate
-                        ? format(data.scheduledDate, "EEEE, MMMM d, yyyy")
-                        : "Date not set"}
+                        ? format(data.scheduledDate, "MMM d")
+                        : "Flexible"}
                   </span>
                </div>
 
                <div className="flex items-center gap-3">
                   <Clock className="size-4 md:size-5 text-gray-400" />
-                  <div className="flex items-center gap-2">
-                     <span className="text-xs md:text-sm text-gray-900">
-                        {format(data.scheduledTimeStart, "MMM d, h:mm aa")} -{" "}
-                        {format(data.scheduledTimeEnd, "MMM d, h:mm aa")}
-                     </span>
-                     {data.flexibility !== "exact" && (
-                        <Badge
-                           variant="secondary"
-                           className="h-5 px-2 text-[10px] md:text-xs bg-primary-50 text-primary-700"
-                        >
-                           {data.flexibility === "flexible" && "±1 hour"}
-                           {data.flexibility === "very_flexible" && "±3 hours"}
-                        </Badge>
-                     )}
-                  </div>
+                  <span className="text-xs md:text-sm text-gray-900">
+                     {data.needsTimeOfDay && data.timeSlot
+                        ? data.timeSlot.charAt(0).toUpperCase() + data.timeSlot.slice(1)
+                        : "Anytime"}
+                  </span>
                </div>
             </div>
          </div>

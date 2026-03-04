@@ -91,7 +91,11 @@ export function MyApplicationsContent({
 
       setTasks(taskMap);
       setAllApplications(apps);
-   }, [data]);
+      
+      // Report count to parent component immediately after loading
+      const validApps = apps.filter((app) => app.taskId !== null && app.taskId !== undefined);
+      onCountChange?.(validApps.length);
+   }, [data, onCountChange]);
 
    // Client-side filtering and sorting
    const filteredApplications = useMemo(() => {
@@ -162,13 +166,6 @@ export function MyApplicationsContent({
    const totalApplicationsCount = useMemo(() => {
       return allApplications.filter((app) => app.taskId !== null && app.taskId !== undefined).length;
    }, [allApplications]);
-
-   // Notify parent of count change when total count changes
-   // Only call after data has loaded (not during initial loading)
-   useEffect(() => {
-      if (isLoading) return; // Don't report count while still loading
-      onCountChange?.(totalApplicationsCount);
-   }, [totalApplicationsCount, onCountChange, isLoading]);
 
    // Handlers
    const handleViewTask = (taskId: string) => {

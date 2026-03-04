@@ -72,18 +72,23 @@ export function TaskCard({ task, isSelected = false, onClick }: TaskCardProps) {
                <MapPin className="size-4 shrink-0" />
                <span className="text-sm md:text-base font-medium truncate">{task.location.city}</span>
             </div>
-            <div className="flex items-center gap-2 text-secondary-700">
+            <div className="flex items-center gap-2 text-secondary-700 text-sm md:text-base font-medium">
                <Calendar className="size-4 shrink-0" />
-               <span className="text-sm md:text-base font-medium">
-                  {task.scheduledDate 
+               <span>
+                  {task.dateOption === "flexible" || !task.dateOption || !task.scheduledDate
+                     ? "Flexible"
+                     : task.dateOption === "on-date" && task.scheduledDate
+                     ? `On ${new Date(task.scheduledDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                     : task.dateOption === "before-date" && task.scheduledDate
+                     ? `Before ${new Date(task.scheduledDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                     : task.scheduledDate
                      ? new Date(task.scheduledDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })
-                     : "Flexible"
-                  }
+                     : "Flexible"}
                </span>
-               {task.scheduledTime && (
+               {task.timeSlot && (
                   <>
                      <Clock className="size-4 shrink-0" />
-                     <span className="text-sm md:text-base font-medium">{task.scheduledTime}</span>
+                     <span>{task.timeSlot.charAt(0).toUpperCase() + task.timeSlot.slice(1)}</span>
                   </>
                )}
             </div>
