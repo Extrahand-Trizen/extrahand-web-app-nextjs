@@ -125,42 +125,10 @@ export function MyTaskCard({
             </p>
          )}
 
-         {/* Location and Meta Info */}
-         <div className="flex flex-col gap-2 mb-3 text-sm">
-            <div className="flex items-center gap-1 text-xs md:text-sm text-secondary-600">
-               <MapPin className="size-3 md:size-4 shrink-0" />
-               <span className="font-medium">{task.location.city}</span>
-            </div>
-            {/* Scheduled Date/Time if available */}
-            {task.scheduledDate ? (
-               <div className="flex flex-col gap-1.5 text-xs text-secondary-600">
-                  <div className="flex items-center gap-1">
-                     <Calendar className="size-3 md:size-4 shrink-0" />
-                     <span>
-                        {task.dateOption === "flexible" || !task.dateOption
-                           ? "Flexible"
-                           : task.dateOption === "on-date"
-                           ? `On ${new Date(task.scheduledDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-                           : task.dateOption === "before-date"
-                           ? `Before ${new Date(task.scheduledDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-                           : new Date(task.scheduledDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                     </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                     <Clock className="size-3 md:size-4 shrink-0" />
-                     <span>
-                        {task.timeSlot
-                           ? task.timeSlot.charAt(0).toUpperCase() + task.timeSlot.slice(1)
-                           : "Anytime"}
-                     </span>
-                  </div>
-               </div>
-            ) : (
-               <div className="flex items-center gap-1 text-xs text-secondary-600">
-                  <Calendar className="size-3 md:size-4 shrink-0" />
-                  <span>Flexible • Anytime</span>
-               </div>
-            )}
+         {/* Location Only */}
+         <div className="flex items-center gap-1 text-xs md:text-sm text-secondary-600 mb-3">
+            <MapPin className="size-3 md:size-4 shrink-0" />
+            <span className="font-medium">{task.location.city}</span>
          </div>
 
          {/* Assigned Performer (if assigned) */}
