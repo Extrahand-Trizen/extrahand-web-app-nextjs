@@ -3,11 +3,9 @@
 import {
    X,
    MapPin,
-   Clock,
    MessageSquare,
    Tag,
    Calendar,
-   ExternalLink,
    User,
    ArrowRight,
 } from "lucide-react";
@@ -17,6 +15,9 @@ import { Badge } from "@/components/ui/badge";
 import type { Task } from "@/types/task";
 import { useRouter } from "next/navigation";
 import { usePrefetchTaskDetails } from "@/hooks/usePrefetchTaskDetails";
+import { useQuery } from "@tanstack/react-query";
+import { taskDetailsQueryKeys } from "@/lib/queryKeys";
+import { tasksApi } from "@/lib/api/endpoints/tasks";
 
 interface TaskDetailCardProps {
    task: Task;
@@ -30,12 +31,39 @@ interface TaskDetailCardProps {
 export function TaskDetailCard({ task, onClose }: TaskDetailCardProps) {
    const router = useRouter();
    const { onMouseEnter: prefetchTask } = usePrefetchTaskDetails(task._id);
+   const { data: fetchedTask } = useQuery<Task>({
+      queryKey: taskDetailsQueryKeys.task(task._id),
+      queryFn: () => tasksApi.getTask(task._id),
+      initialData: task,
+      staleTime: 60 * 1000,
+   });
+
+   const displayTask = fetchedTask || task;
 
    const budgetAmount =
-      typeof task.budget === "object" ? task.budget.amount : task.budget;
+      typeof displayTask.budget === "object"
+         ? displayTask.budget.amount
+         : displayTask.budget;
    const budgetNegotiable =
-      typeof task.budget === "object" ? task.budget.negotiable : false;
-   const categoryLabel = task.categoryLabel || task.subcategory || task.category;
+      typeof displayTask.budget === "object"
+         ? displayTask.budget.negotiable
+         : false;
+   const categoryLabel =
+      displayTask.categoryLabel ||
+      displayTask.subcategory ||
+      displayTask.category;
+   const scheduledDateLabel = displayTask.scheduledDate
+      ? new Date(displayTask.scheduledDate).toLocaleDateString("en-US", {
+           month: "short",
+           day: "numeric",
+           year: "numeric",
+        })
+      : "Flexible";
+   const scheduledSubLabel =
+      displayTask.scheduledTime ||
+      (displayTask.flexibility === "anytime" ? "Anytime" : "");
+   const locationLabel =
+      displayTask.location?.city?.trim() || displayTask.location?.address?.trim() || "Remote";
 
    const getTimeAgo = (date: Date) => {
       const now = new Date();
@@ -53,7 +81,7 @@ export function TaskDetailCard({ task, onClose }: TaskDetailCardProps) {
    };
 
    const getUrgencyBadge = () => {
-      switch (task.urgency) {
+      switch (displayTask.urgency) {
          case "urgent":
             return (
                <Badge className="bg-red-50 text-red-700 border-red-200 text-xs font-medium">
@@ -78,7 +106,7 @@ export function TaskDetailCard({ task, onClose }: TaskDetailCardProps) {
    };
 
    const getStatusBadge = () => {
-      switch (task.status) {
+      switch (displayTask.status) {
          case "open":
             return (
                <Badge className="bg-green-50 text-green-700 border-green-200 text-xs font-medium">
@@ -116,107 +144,127 @@ export function TaskDetailCard({ task, onClose }: TaskDetailCardProps) {
          <div className="max-h-[70vh] overflow-y-auto">
             {/* Header Section */}
             <div className="p-5 pb-4">
-               {/* Badges Row */}
-               <div className="flex items-center gap-2 mb-3 flex-wrap">
-                  {getStatusBadge()}
-                  {getUrgencyBadge()}
-                  <Badge
-                     variant="outline"
-                     className="text-xs font-medium border-gray-200"
-                  >
-                     <Tag className="w-3 h-3 mr-1" />
-                     {categoryLabel}
-                  </Badge>
-               </div>
+               {/* Top Row - Content and Budget Side by Side */}
+               <div className="flex gap-4 mb-2">
+                  {/* Left Column - Badges and Title */}
+                  <div className="flex-1">
+                     {/* Badges Row */}
+                     <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        {getStatusBadge()}
+                        {getUrgencyBadge()}
+                        <Badge
+                           variant="outline"
+                           className="text-xs font-medium border-gray-200"
+                        >
+                           <Tag className="w-3 h-3 mr-1" />
+                           {categoryLabel}
+                        </Badge>
+                     </div>
 
-               {/* Title */}
-               <h2 className="text-xl font-bold text-gray-900 mb-2 leading-tight">
-                  {task.title}
-               </h2>
-
-               {/* Description */}
-               {task.description && (
-                  <p className="text-sm text-gray-600 leading-relaxed line-clamp-2 mb-3">
-                     {task.description}
-                  </p>
-               )}
-
-               {/* Meta Info */}
-               <div className="flex items-center gap-4 text-xs text-gray-500">
-                  <div className="flex items-center gap-1">
-                     <Clock className="w-3.5 h-3.5" />
-                     <span>{getTimeAgo(task.createdAt)}</span>
+                     {/* Title */}
+                     <h2 className="text-3xl font-bold text-gray-900 leading-tight">
+                        {displayTask.title}
+                     </h2>
                   </div>
-                  <div className="flex items-center gap-1">
-                     <MapPin className="w-3.5 h-3.5" />
-                     <span>{task.location.city}</span>
-                  </div>
-               </div>
-            </div>
 
-            {/* Budget Section - Highlighted */}
-            <div className="mx-5 mb-4 bg-linear-to-br from-yellow-50 to-amber-50 rounded-xl p-4 border border-yellow-200/50">
-               <div className="flex items-center justify-between">
-                  <div>
-                     <div className="text-3xl font-bold text-gray-900 mb-1">
+                  {/* Right Column - Budget Section */}
+                  <div className="shrink-0 rounded-lg bg-gray-50 px-5 py-4 text-center w-40 h-fit">
+                     <h3 className="text-[11px] uppercase tracking-wide text-gray-500 font-normal mb-2">
+                        Task Budget
+                     </h3>
+                     <div className="text-3xl font-bold text-secondary-900 mb-1">
                         ₹{budgetAmount.toLocaleString()}
                      </div>
-                     <div className="text-xs text-gray-600 font-medium">
-                        {task.budgetType === "fixed" && "Fixed price"}
-                        {task.budgetType === "hourly" && "Per hour"}
-                        {task.budgetType === "negotiable" && "Negotiable"}
+                     <div className="text-xs text-secondary-600 font-normal">
+                        {displayTask.budgetType === "fixed" && "Fixed price"}
+                        {displayTask.budgetType === "hourly" && "Per hour"}
+                        {displayTask.budgetType === "negotiable" && "Negotiable"}
                         {budgetNegotiable && " • Open to offers"}
                      </div>
                   </div>
-                  {task.estimatedDuration && (
-                     <div className="text-right bg-white/80 rounded-lg px-3 py-2">
-                        <div className="text-lg font-bold text-gray-900">
-                           {task.estimatedDuration}h
+               </div>
+
+               {/* Task Meta - Requested format */}
+               <div className="space-y-2 mb-4">
+                  <div className="flex items-start justify-between gap-3">
+                     <div className="flex items-start gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-full bg-secondary-100 border border-secondary-200 flex items-center justify-center shrink-0">
+                           <User className="w-5 h-5 text-secondary-600" />
                         </div>
-                        <div className="text-xs text-gray-600">Duration</div>
+                        <div className="min-w-0">
+                           <div className="text-[11px] uppercase tracking-wide text-secondary-500 font-normal">
+                              Posted by
+                           </div>
+                           <div className="text-base font-normal text-secondary-900 truncate">
+                              {displayTask.requesterName || "Task poster"}
+                           </div>
+                        </div>
                      </div>
-                  )}
+                     <div className="text-xs text-secondary-400 whitespace-nowrap pt-1 font-normal">
+                        {getTimeAgo(displayTask.createdAt)}
+                     </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                     <div className="w-10 h-10 shrink-0 flex items-center justify-center">
+                        <MapPin className="w-6 h-6 text-secondary-800" />
+                     </div>
+                     <div>
+                        <div className="text-[11px] uppercase tracking-wide text-secondary-500 font-normal">
+                           Location
+                        </div>
+                        <div className="text-base font-normal text-secondary-900">
+                           {locationLabel}
+                        </div>
+                     </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                     <div className="w-10 h-10 shrink-0 flex items-center justify-center">
+                        <Calendar className="w-6 h-6 text-secondary-800" />
+                     </div>
+                     <div>
+                        <div className="text-[11px] uppercase tracking-wide text-secondary-500 font-normal">
+                           To be done on
+                        </div>
+                        <div className="text-base font-normal text-secondary-900">
+                           {scheduledDateLabel}
+                        </div>
+                        {scheduledSubLabel && (
+                           <div className="text-sm text-secondary-700 font-normal">
+                              {scheduledSubLabel}
+                           </div>
+                        )}
+                     </div>
+                  </div>
                </div>
             </div>
 
-            {/* Scheduled Date */}
-            {task.scheduledDate && (
-               <div className="mx-5 mb-4 flex items-center gap-3 bg-blue-50 p-3.5 rounded-xl border border-blue-200/50">
-                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                     <Calendar className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                     <div className="font-semibold text-gray-900 text-sm">
-                        {new Date(task.scheduledDate).toLocaleDateString(
-                           "en-US",
-                           {
-                              weekday: "short",
-                              month: "short",
-                              day: "numeric",
-                           }
-                        )}
-                        {task.scheduledTime && ` at ${task.scheduledTime}`}
-                     </div>
-                     <div className="text-xs text-gray-600">Scheduled time</div>
-                  </div>
-               </div>
-            )}
+            {/* Details Section */}
+            <div className="mx-5 mb-5 pl-2">
+             <h3 className="text-lg font-bold text-secondary-900 mb-2">
+  Details
+</h3>
+               <p className="text-sm text-secondary-700 font-normal leading-relaxed whitespace-pre-wrap wrap-break-word">
+                  {displayTask.description || "No description provided."}
+               </p>
+            </div>
 
             {/* Applications Badge */}
-            {task.applications > 0 && (
+            {displayTask.applications > 0 && (
                <div className="mx-5 mb-4 flex items-center gap-2 bg-orange-50 p-3 rounded-xl border border-orange-200/50">
                   <MessageSquare className="w-4 h-4 text-orange-600" />
-                  <span className="text-sm font-semibold text-orange-700">
-                     {task.applications}{" "}
-                     {task.applications === 1 ? "offer" : "offers"} received
+                  <span className="text-sm font-normal text-orange-700">
+                     {displayTask.applications}{" "}
+                     {displayTask.applications === 1 ? "offer" : "offers"} received
                   </span>
                </div>
             )}
 
             {/* Tags */}
-            {task.tags && task.tags.length > 0 && (
+            {displayTask.tags && displayTask.tags.length > 0 && (
                <div className="mx-5 mb-4 flex flex-wrap gap-2">
-                  {task.tags.slice(0, 4).map((tag, index) => (
+                  {displayTask.tags.slice(0, 4).map((tag, index) => (
                      <span
                         key={index}
                         className="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-full"
@@ -224,9 +272,9 @@ export function TaskDetailCard({ task, onClose }: TaskDetailCardProps) {
                         {tag}
                      </span>
                   ))}
-                  {task.tags.length > 4 && (
+                  {displayTask.tags.length > 4 && (
                      <span className="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-500 text-xs font-medium rounded-full">
-                        +{task.tags.length - 4} more
+                        +{displayTask.tags.length - 4} more
                      </span>
                   )}
                </div>

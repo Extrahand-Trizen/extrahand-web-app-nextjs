@@ -164,9 +164,11 @@ export function MyApplicationsContent({
    }, [allApplications]);
 
    // Notify parent of count change when total count changes
+   // Only call after data has loaded (not during initial loading)
    useEffect(() => {
+      if (isLoading) return; // Don't report count while still loading
       onCountChange?.(totalApplicationsCount);
-   }, [totalApplicationsCount, onCountChange]);
+   }, [totalApplicationsCount, onCountChange, isLoading]);
 
    // Handlers
    const handleViewTask = (taskId: string) => {

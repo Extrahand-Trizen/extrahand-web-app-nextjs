@@ -500,46 +500,83 @@ export function AddressForm({
    onClose,
    onSave,
 }: AddressFormProps) {
-   const [formData, setFormData] = useState<Partial<SavedAddress>>(
-      address || {
-         type: "home",
-         label: "",
-         name: "",
-         addressLine1: "",
-         addressLine2: "",
-         landmark: "",
-         city: "",
-         state: "",
-         pinCode: "",
-         country: "India",
-         phone: "",
-      }
-   );
+   const [formData, setFormData] = useState<Partial<SavedAddress>>({
+      type: "home",
+      label: "",
+      name: "",
+      addressLine1: "",
+      addressLine2: "",
+      landmark: "",
+      city: "",
+      state: "",
+      pinCode: "",
+      country: "India",
+      phone: "",
+   });
 
    const [errors, setErrors] = useState<Record<string, string>>({});
+
+   // Update form when address prop changes
+   useEffect(() => {
+      if (address) {
+         setFormData(address);
+      } else {
+         setFormData({
+            type: "home",
+            label: "",
+            name: "",
+            addressLine1: "",
+            addressLine2: "",
+            landmark: "",
+            city: "",
+            state: "",
+            pinCode: "",
+            country: "India",
+            phone: "",
+         });
+      }
+      setErrors({});
+   }, [address, isOpen]);
 
    if (!isOpen) return null;
 
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
 
-      // Basic validation
+      // Enhanced validation
       const newErrors: Record<string, string> = {};
-      if (!formData.label) newErrors.label = "Label is required";
-      if (!formData.name) newErrors.name = "Name is required";
-      if (!formData.addressLine1)
+      
+      // Auto-generate label from type if not provided
+      if (!formData.label) {
+         const typeLabels = { home: "Home", work: "Work", billing: "Billing", other: "Other" };
+         formData.label = typeLabels[formData.type || "home"];
+      }
+      
+      if (!formData.name?.trim()) newErrors.name = "Name is required";
+      if (!formData.addressLine1?.trim())
          newErrors.addressLine1 = "Address is required";
-      if (!formData.city) newErrors.city = "City is required";
-      if (!formData.state) newErrors.state = "State is required";
-      if (!formData.pinCode) newErrors.pinCode = "PIN code is required";
+      if (!formData.city?.trim()) newErrors.city = "City is required";
+      if (!formData.state?.trim()) newErrors.state = "State is required";
+      
+      // PIN code validation (6 digits)
+      if (!formData.pinCode?.trim()) {
+         newErrors.pinCode = "PIN code is required";
+      } else if (!/^\d{6}$/.test(formData.pinCode.trim())) {
+         newErrors.pinCode = "PIN code must be 6 digits";
+      }
+      
+      // Phone number validation (10 digits, optional)
+      if (formData.phone?.trim() && !/^[6-9]\d{9}$/.test(formData.phone.replace(/\D/g, ""))) {
+         newErrors.phone = "Enter valid 10-digit mobile number";
+      }
 
       if (Object.keys(newErrors).length > 0) {
          setErrors(newErrors);
+         toast.error("Please fix the errors");
          return;
       }
 
       onSave(formData);
-      onClose();
    };
 
    const addressTypes: { value: AddressType; label: string }[] = [
@@ -593,27 +630,7 @@ export function AddressForm({
                   </div>
                </div>
 
-               {/* Label */}
-               <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                     Label *
-                  </label>
-                  <input
-                     type="text"
-                     value={formData.label || ""}
-                     onChange={(e) =>
-                        setFormData({ ...formData, label: e.target.value })
-                     }
-                     placeholder="e.g., Home, Office, Mom's Place"
-                     className={cn(
-                        "w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500",
-                        errors.label ? "border-red-300" : "border-gray-300"
-                     )}
-                  />
-                  {errors.label && (
-                     <p className="text-xs text-red-500 mt-1">{errors.label}</p>
-                  )}
-               </div>
+
 
                {/* Recipient Name */}
                <div>
@@ -757,10 +774,15 @@ export function AddressForm({
                      </label>
                      <input
                         type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         value={formData.pinCode || ""}
-                        onChange={(e) =>
-                           setFormData({ ...formData, pinCode: e.target.value })
-                        }
+                        onChange={(e) => {
+                           const value = e.target.value.replace(/\D/g, "");
+                           if (value.length <= 6) {
+                              setFormData({ ...formData, pinCode: value });
+                           }
+                        }}
                         placeholder="6-digit PIN"
                         maxLength={6}
                         className={cn(
@@ -796,13 +818,25 @@ export function AddressForm({
                   </label>
                   <input
                      type="tel"
+                     inputMode="numeric"
+                     pattern="[0-9]*"
                      value={formData.phone || ""}
-                     onChange={(e) =>
-                        setFormData({ ...formData, phone: e.target.value })
-                     }
-                     placeholder="+91 XXXXX XXXXX"
-                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                     onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, "");
+                        if (value.length <= 10) {
+                           setFormData({ ...formData, phone: value });
+                        }
+                     }}
+                     placeholder="10-digit mobile number"
+                     maxLength={10}
+                     className={cn(
+                        "w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500",
+                        errors.phone ? "border-red-300" : "border-gray-300"
+                     )}
                   />
+                  {errors.phone && (
+                     <p className="text-xs text-red-500 mt-1">{errors.phone}</p>
+                  )}
                </div>
 
                {/* Submit */}

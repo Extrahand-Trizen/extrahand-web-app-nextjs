@@ -16,7 +16,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
    return (
       <Sonner
          theme={theme as ToasterProps["theme"]}
-         className="toaster group fixed top-2 right-2 z-[9999] flex flex-col gap-1 pointer-events-none max-w-[90vw]"
+         className="toaster group fixed top-2 right-2 z-9999 flex flex-col gap-1 max-w-[90vw]"
          position="top-right"
          expand={false}
          richColors={false}
@@ -34,7 +34,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
          toastOptions={{
             unstyled: false,
             classNames: {
-               toast: "group-[.toaster]:bg-white group-[.toaster]:border-l-4 group-[.toaster]:shadow-md group-[.toaster]:rounded group-[.toaster]:px-2 group-[.toaster]:py-1 sm:group-[.toaster]:p-2.5 sm:group-[.toaster]:gap-1.5 group-[.toaster]:gap-1 group-[.toaster]:backdrop-blur-sm max-w-[260px] sm:max-w-sm group-[.toaster]:min-w-0",
+               toast: "group-[.toast]:pointer-events-auto group-[.toaster]:bg-white group-[.toaster]:border-l-4 group-[.toaster]:shadow-md group-[.toaster]:rounded group-[.toaster]:px-2 group-[.toaster]:py-1 sm:group-[.toaster]:p-2.5 sm:group-[.toaster]:gap-1.5 group-[.toaster]:gap-1 group-[.toaster]:backdrop-blur-sm max-w-[260px] sm:max-w-sm group-[.toaster]:min-w-0",
                title: "sm:group-[.toast]:text-[13px] group-[.toast]:text-[10px] group-[.toast]:font-semibold group-[.toast]:text-gray-900 group-[.toast]:leading-tight",
                description:
                   "sm:group-[.toast]:text-[12px] group-[.toast]:text-[9px] group-[.toast]:text-gray-600 group-[.toast]:mt-0 group-[.toast]:leading-tight font-normal",
@@ -43,7 +43,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
                cancelButton:
                   "group-[.toast]:bg-gray-100 group-[.toast]:text-gray-700 group-[.toast]:font-medium group-[.toast]:rounded sm:group-[.toast]:px-2 sm:group-[.toast]:py-1 group-[.toast]:px-1 group-[.toast]:py-0.5 sm:group-[.toast]:text-xs group-[.toast]:text-[8px] hover:group-[.toast]:bg-gray-200",
                closeButton:
-                  "group-[.toast]:bg-white group-[.toast]:border group-[.toast]:border-gray-200 group-[.toast]:text-gray-400 hover:group-[.toast]:text-gray-600 hover:group-[.toast]:bg-gray-50 group-[.toast]:rounded group-[.toast]:w-3.5 group-[.toast]:h-3.5 group-[.toast]:p-0 group-[.toast]:flex group-[.toast]:items-center group-[.toast]:justify-center group-[.toast]:flex-shrink-0",
+                  "group-[.toast]:pointer-events-auto group-[.toast]:bg-white group-[.toast]:border group-[.toast]:border-gray-200 group-[.toast]:text-gray-400 hover:group-[.toast]:text-gray-600 hover:group-[.toast]:bg-gray-50 group-[.toast]:rounded group-[.toast]:w-3.5 group-[.toast]:h-3.5 group-[.toast]:p-0 group-[.toast]:flex group-[.toast]:items-center group-[.toast]:justify-center group-[.toast]:flex-shrink-0",
                success:
                   "group-[.toaster]:border-l-emerald-500 group-[.toaster]:bg-gradient-to-r group-[.toaster]:from-emerald-50/80 group-[.toaster]:to-white",
                error: "group-[.toaster]:border-l-rose-500 group-[.toaster]:bg-gradient-to-r group-[.toaster]:from-rose-50/80 group-[.toaster]:to-white",

@@ -381,67 +381,6 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
             />
          )}
 
-         {/* Estimated Duration */}
-         <FormField
-            control={form.control}
-            name="estimatedDuration"
-            render={({ field }) => (
-               <FormItem>
-                  <FormLabel className="text-xs md:text-sm">Estimated time needed (optional)</FormLabel>
-                  <FormControl>
-                     <div className="flex items-center gap-3">
-                        <div className="flex-1">
-                           <div className="flex items-center gap-2">
-                              <Input
-                                 type="number"
-                                 placeholder="0"
-                                 min="0"
-                                 max="365"
-                                 step="1"
-                                 className="h-10 text-sm flex-1"
-                                 value={field.value && Math.floor(field.value / 24) > 0 ? Math.floor(field.value / 24) : ""}
-                                 onChange={(e) => {
-                                    const days = e.target.value ? parseFloat(e.target.value) : 0;
-                                    const hours = field.value ? (field.value % 24) : 0;
-                                    field.onChange(days * 24 + hours || null);
-                                 }}
-                              />
-                              <span className="text-xs text-gray-600 font-medium min-w-fit">
-                                 days
-                              </span>
-                           </div>
-                        </div>
-                        <div className="flex-1">
-                           <div className="flex items-center gap-2">
-                              <Input
-                                 type="number"
-                                 placeholder="0"
-                                 min="0"
-                                 max="23"
-                                 step="1"
-                                 className="h-10 text-sm flex-1"
-                                 value={field.value && Math.floor(field.value % 24) > 0 ? Math.floor(field.value % 24) : ""}
-                                 onChange={(e) => {
-                                    const hours = e.target.value ? parseFloat(e.target.value) : 0;
-                                    const days = field.value ? Math.floor(field.value / 24) : 0;
-                                    field.onChange(days * 24 + hours || null);
-                                 }}
-                              />
-                              <span className="text-xs text-gray-600 font-medium min-w-fit">
-                                 hours
-                              </span>
-                           </div>
-                        </div>
-                     </div>
-                  </FormControl>
-                  <FormDescription className="text-xs">
-                     Your best guess helps taskers plan
-                  </FormDescription>
-                  <FormMessage />
-               </FormItem>
-            )}
-         />
-
          {/* Tags */}
          <FormField
             control={form.control}

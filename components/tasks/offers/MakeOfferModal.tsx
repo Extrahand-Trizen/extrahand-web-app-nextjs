@@ -543,22 +543,44 @@ export function MakeOfferModal({
                                              type="number"
                                              placeholder="0"
                                              min="0"
-                                             max="23"
                                              step="1"
                                              inputMode="numeric"
                                              className="h-10 text-sm flex-1"
                                              value={durationHours}
                                              onChange={(e) => {
                                                 const raw = e.target.value;
-                                                setDurationHours(raw);
-                                                const hrs = raw === "" ? 0 : Math.min(23, Math.max(0, Math.floor(Number(raw))));
-                                                const days = durationDays === "" ? 0 : Math.max(0, Math.floor(Number(durationDays)));
-                                                const total = days * 24 + hrs;
+                                                if (raw === "") {
+                                                   setDurationHours(raw);
+                                                   const days = durationDays === "" ? 0 : Math.max(0, Math.floor(Number(durationDays)));
+                                                   const total = days * 24;
+                                                   field.onChange(total === 0 ? undefined : total);
+                                                   return;
+                                                }
+
+                                                const inputHours = Math.max(0, Math.floor(Number(raw)));
+                                                const currentDays = durationDays === "" ? 0 : Math.max(0, Math.floor(Number(durationDays)));
+                                                const extraDays = Math.floor(inputHours / 24);
+                                                const normalizedHours = inputHours % 24;
+                                                const nextDays = currentDays + extraDays;
+
+                                                setDurationDays(String(nextDays));
+                                                setDurationHours(String(normalizedHours));
+
+                                                const total = nextDays * 24 + normalizedHours;
                                                 field.onChange(total === 0 ? undefined : total);
                                              }}
                                              onBlur={() => {
-                                                const hrs = durationHours === "" ? 0 : Math.min(23, Math.max(0, Math.floor(Number(durationHours))));
-                                                setDurationHours(String(hrs));
+                                                const hrs = durationHours === "" ? 0 : Math.max(0, Math.floor(Number(durationHours)));
+                                                const currentDays = durationDays === "" ? 0 : Math.max(0, Math.floor(Number(durationDays)));
+                                                const extraDays = Math.floor(hrs / 24);
+                                                const normalizedHours = hrs % 24;
+                                                const nextDays = currentDays + extraDays;
+
+                                                setDurationDays(String(nextDays));
+                                                setDurationHours(String(normalizedHours));
+
+                                                const total = nextDays * 24 + normalizedHours;
+                                                field.onChange(total === 0 ? undefined : total);
                                              }}
                                           />
                                           <span className="text-xs text-secondary-600 font-medium min-w-fit">

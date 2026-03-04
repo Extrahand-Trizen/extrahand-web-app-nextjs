@@ -151,9 +151,11 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
    }, [filteredTasks, page]);
 
    // Notify parent of total count change (use total tasks, not filtered)
+   // Only call after data has loaded (not during initial loading)
    useEffect(() => {
+      if (isLoading) return; // Don't report count while still loading
       onCountChange?.(allTasks.length);
-   }, [allTasks.length, onCountChange]);
+   }, [allTasks.length, onCountChange, isLoading]);
 
    // Handle delete task
    const handleDeleteTask = async (taskId: string, taskTitle: string) => {

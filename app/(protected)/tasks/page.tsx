@@ -17,33 +17,13 @@ import { useDashboardStore } from "@/lib/state/dashboardStore";
 export default function TasksPage() {
    const router = useRouter();
    const searchParams = useSearchParams();
-   const { stats } = useDashboardStore();
-   const [tasksCount, setTasksCount] = useState<number>(
-      stats?.totalTasks ?? 0
-   );
-   const [applicationsCount, setApplicationsCount] = useState<number>(
-      stats?.totalApplications ?? 0
-   );
+   const [tasksCount, setTasksCount] = useState<number | null>(null);
+   const [applicationsCount, setApplicationsCount] = useState<number | null>(null);
 
    const activeTab = useMemo(() => {
       const tabParam = searchParams.get("tab");
       return tabParam === "myapplications" ? "myapplications" : "mytasks";
    }, [searchParams]);
-
-   // If dashboard stats are already available (from /home or a previous fetch),
-   // use them as fast initial values for the tab counts. This avoids a visible
-   // "pop in" while the dedicated /tasks APIs are still loading.
-   useEffect(() => {
-      if (!stats) return;
-
-      // Update counts from stats if we don't have them yet
-      if (stats.totalTasks !== undefined && tasksCount === 0) {
-         setTasksCount(stats.totalTasks);
-      }
-      if (stats.totalApplications !== undefined && applicationsCount === 0) {
-         setApplicationsCount(stats.totalApplications);
-      }
-   }, [stats, tasksCount, applicationsCount]);
 
 
    const handleTabChange = (value: string) => {
@@ -90,9 +70,11 @@ export default function TasksPage() {
                               className="px-3 py-2 rounded-lg border-b-2 border-transparent data-[state=active]:border-primary-600 data-[state=active]:text-primary-600 text-secondary-600 font-medium text-sm sm:text-base"
                            >
                               My Tasks
-                              <span className="ml-2 text-secondary-400">
-                                 {tasksCount}
-                              </span>
+                              {tasksCount !== null && (
+                                 <span className="ml-2 text-secondary-400">
+                                    {tasksCount}
+                                 </span>
+                              )}
                            </TabsTrigger>
 
                            <TabsTrigger
@@ -100,9 +82,11 @@ export default function TasksPage() {
                               className="px-3 py-2 rounded-lg border-b-2 border-transparent data-[state=active]:border-primary-600 data-[state=active]:text-primary-600 text-secondary-600 font-medium text-sm sm:text-base"
                            >
                               My Applications
-                              <span className="ml-2 text-secondary-400">
-                                 {applicationsCount}
-                              </span>
+                              {applicationsCount !== null && (
+                                 <span className="ml-2 text-secondary-400">
+                                    {applicationsCount}
+                                 </span>
+                              )}
                            </TabsTrigger>
                         </TabsList>
                      </div>

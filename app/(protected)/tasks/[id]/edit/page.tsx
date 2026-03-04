@@ -94,6 +94,11 @@ function taskToFormData(task: Task): Partial<EditTaskFormData> {
             : undefined,
       },
       scheduledDate: task.scheduledDate ? new Date(task.scheduledDate) : null,
+      // AirTasker-style scheduling fields
+      dateOption: "flexible" as const,
+      needsTimeOfDay: false,
+      timeSlot: null,
+      // Legacy fields
       scheduledTimeStart,
       scheduledTimeEnd,
       flexibility: flexibilityMap[task.flexibility] || "flexible",
@@ -144,6 +149,9 @@ export default function EditTaskPage() {
             country: "India",
          },
          scheduledDate: null,
+         dateOption: "flexible",
+         needsTimeOfDay: false,
+         timeSlot: null,
          scheduledTimeStart: undefined,
          scheduledTimeEnd: undefined,
          flexibility: "flexible",

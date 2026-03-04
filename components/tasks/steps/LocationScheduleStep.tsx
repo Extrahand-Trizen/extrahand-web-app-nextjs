@@ -6,7 +6,7 @@
  * Using React Hook Form with Zod validation
  */
 
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { TaskFormData } from "../TaskCreationFlow";
 import { Button } from "@/components/ui/button";
@@ -19,8 +19,8 @@ import {
    FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { startOfDay } from "date-fns";
-import { IndianRupee } from "lucide-react";
+import { startOfDay, format } from "date-fns";
+import { IndianRupee, ChevronLeft, ChevronRight, MapPin, Monitor } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { InteractiveLocationPicker } from "../../shared/InteractiveLocationPicker";
 import { DateTimePicker } from "@/components/shared";
@@ -45,8 +45,48 @@ export function LocationScheduleStep({
    const scheduledTimeStart = form.watch("scheduledTimeStart");
    const scheduledTimeEnd = form.watch("scheduledTimeEnd");
    const location = form.watch("location");
+   const locationMode = form.watch("locationMode");
    const category = form.watch("category");
    const recurringEnabled = form.watch("recurringEnabled");
+   // Watch AirTasker-style fields
+   const dateOption = form.watch("dateOption");
+   const needsTimeOfDay = form.watch("needsTimeOfDay");
+   const timeSlot = form.watch("timeSlot");
+
+   // State for calendar popovers
+   const [datePopoverOpen, setDatePopoverOpen] = useState(false);
+   const [calendarMonth, setCalendarMonth] = useState(new Date());
+
+   // Generate calendar dates for the current month
+   const getCalendarDays = (date: Date) => {
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const daysInMonth = lastDay.getDate();
+      const daysInPrevMonth = firstDay.getDay();
+
+      const days = [];
+      // Previous month days (grayed out)
+      for (let i = daysInPrevMonth - 1; i >= 0; i--) {
+         const d = new Date(year, month, -i);
+         days.push({ date: d, isCurrentMonth: false });
+      }
+      // Current month days
+      for (let i = 1; i <= daysInMonth; i++) {
+         const d = new Date(year, month, i);
+         days.push({ date: d, isCurrentMonth: true });
+      }
+      // Next month days (grayed out)
+      const remainingDays = 42 - days.length; // 6 weeks * 7 days
+      for (let i = 1; i <= remainingDays; i++) {
+         const d = new Date(year, month + 1, i);
+         days.push({ date: d, isCurrentMonth: false });
+      }
+      return days;
+   };
+
+   const calendarDays = getCalendarDays(calendarMonth);
 
    const recurringEligibleCategories = [
       "home-cleaning",
@@ -101,9 +141,12 @@ export function LocationScheduleStep({
       return date;
    };
 
-   // Sync scheduledDate with scheduledTimeStart date portion
+   // Sync start/end day to selected date only for "on-date"
    useEffect(() => {
-      if (scheduledDate) {
+      if (recurringEnabled || dateOption !== "on-date" || !scheduledDate) {
+         return;
+      }
+
          const currentStart = form.getValues("scheduledTimeStart");
          const currentEnd = form.getValues("scheduledTimeEnd");
 
@@ -128,8 +171,7 @@ export function LocationScheduleStep({
                form.setValue("scheduledTimeEnd", newEnd);
             }
          }
-      }
-   }, [scheduledDate, form]);
+   }, [scheduledDate, recurringEnabled, dateOption]);
 
    // Ensure end time is never before or equal to start time (minimum 30 min duration)
    useEffect(() => {
@@ -144,7 +186,68 @@ export function LocationScheduleStep({
          newEnd.setHours(newEnd.getHours() + 1);
          form.setValue("scheduledTimeEnd", newEnd);
       }
-   }, [scheduledTimeStart, scheduledTimeEnd, form]);
+   }, [scheduledTimeStart, scheduledTimeEnd]);
+
+   // Update scheduled times based on AirTasker-style selections
+   useEffect(() => {
+      if (recurringEnabled) return; // Only for one-time tasks
+
+      if (dateOption === "flexible") {
+         // Flexible: start time is today at 9am, end time is 30 days from now
+         const startDate = new Date();
+         startDate.setHours(9, 0, 0, 0);
+         form.setValue("scheduledTimeStart", startDate);
+
+         const endDate = new Date();
+         endDate.setDate(endDate.getDate() + 30);
+         endDate.setHours(18, 0, 0, 0);
+         form.setValue("scheduledTimeEnd", endDate);
+
+         form.setValue("flexibility", "very_flexible");
+      } else if (dateOption === "on-date" && scheduledDate) {
+         // On date: use selected date with time slot
+         const start = new Date(scheduledDate);
+         const end = new Date(scheduledDate);
+
+         if (needsTimeOfDay && timeSlot) {
+            const timeMap: Record<string, [number, number]> = {
+               morning: [6, 0],
+               midday: [10, 0],
+               afternoon: [14, 0],
+               evening: [18, 0],
+            };
+            const endTimeMap: Record<string, [number, number]> = {
+               morning: [12, 0],
+               midday: [14, 0],
+               afternoon: [18, 0],
+               evening: [21, 0],
+            };
+            const [startHours, startMins] = timeMap[timeSlot] || [9, 0];
+            const [endHours, endMins] = endTimeMap[timeSlot] || [11, 0];
+            start.setHours(startHours, startMins, 0, 0);
+            end.setHours(endHours, endMins, 0, 0);
+            form.setValue("flexibility", "exact");
+         } else {
+            start.setHours(9, 0, 0, 0);
+            end.setHours(11, 0, 0, 0);
+            form.setValue("flexibility", "flexible");
+         }
+
+         form.setValue("scheduledTimeStart", start);
+         form.setValue("scheduledTimeEnd", end);
+      } else if (dateOption === "before-date" && scheduledDate) {
+         // Before date: start time is today, end time is the selected date
+         const start = new Date();
+         start.setHours(9, 0, 0, 0);
+
+         const end =new Date(scheduledDate);
+         end.setHours(17, 0, 0, 0);
+
+         form.setValue("scheduledTimeStart", start);
+         form.setValue("scheduledTimeEnd", end);
+         form.setValue("flexibility", "flexible");
+      }
+   }, [dateOption, scheduledDate, needsTimeOfDay, timeSlot, recurringEnabled]);
 
    // Calculate duration for display
    const calculateDuration = () => {
@@ -165,15 +268,7 @@ export function LocationScheduleStep({
          form.setValue("recurringEndDate", null);
          form.setValue("recurringFrequency", "daily");
       }
-   }, [canUseRecurring, recurringEnabled, form]);
-
-   useEffect(() => {
-      if (!recurringEnabled && scheduledTimeStart) {
-         const dateOnly = new Date(scheduledTimeStart);
-         dateOnly.setHours(0, 0, 0, 0);
-         form.setValue("scheduledDate", dateOnly);
-      }
-   }, [recurringEnabled, scheduledTimeStart, form]);
+   }, [canUseRecurring, recurringEnabled]);
 
    return (
       <div className="space-y-6">
@@ -187,50 +282,90 @@ export function LocationScheduleStep({
             </p>
          </div>
 
-         {/* Location Picker */}
          <FormField
             control={form.control}
-            name="location"
+            name="locationMode"
             render={({ field }) => (
                <FormItem>
-                  <FormLabel className="text-xs md:text-sm">Task location</FormLabel>
+                  <FormLabel className="text-xs md:text-sm">Tell us where</FormLabel>
                   <FormControl>
-                     <InteractiveLocationPicker
-                        value={field.value as any}
-                        onChange={(loc) => field.onChange(loc)}
-                        onCoordinatesChange={(coords) => {
-                           form.setValue("location.coordinates", coords as any);
-                        }}
-                     />
+                     <div className="grid grid-cols-2 gap-3">
+                        <button
+                           type="button"
+                           onClick={() => field.onChange("in-person")}
+                           className={cn(
+                              "rounded-2xl border-2 p-4 text-left transition-all",
+                              field.value === "in-person"
+                                 ? "border-primary-700 bg-primary-700 text-white"
+                                 : "border-secondary-200 bg-white text-secondary-700 hover:border-secondary-300"
+                           )}
+                        >
+                           <div className="flex items-center justify-center mb-2">
+                              <MapPin className="w-6 h-6" />
+                           </div>
+                           <div className="text-center font-semibold">In-person</div>
+                           <div className={cn(
+                              "text-center text-xs mt-1",
+                              field.value === "in-person" ? "text-white/80" : "text-secondary-600"
+                           )}>
+                              Select this if you need the Tasker physically there
+                           </div>
+                        </button>
+
+                        <button
+                           type="button"
+                           onClick={() => {
+                              field.onChange("online");
+                              form.clearErrors("location");
+                           }}
+                           className={cn(
+                              "rounded-2xl border-2 p-4 text-left transition-all",
+                              field.value === "online"
+                                 ? "border-primary-700 bg-primary-700 text-white"
+                                 : "border-secondary-200 bg-white text-secondary-700 hover:border-secondary-300"
+                           )}
+                        >
+                           <div className="flex items-center justify-center mb-2">
+                              <Monitor className="w-6 h-6" />
+                           </div>
+                           <div className="text-center font-semibold">Online</div>
+                           <div className={cn(
+                              "text-center text-xs mt-1",
+                              field.value === "online" ? "text-white/80" : "text-secondary-600"
+                           )}>
+                              Select this if the Tasker can do it from home
+                           </div>
+                        </button>
+                     </div>
                   </FormControl>
                   <FormMessage />
                </FormItem>
             )}
          />
 
-         {/* Pin Code (Optional) */}
-         {location.city && (
-            <FormField
-               control={form.control}
-               name="location.pinCode"
-               render={({ field }) => (
-                  <FormItem className="animate-in slide-in-from-top duration-200">
-                     <FormLabel className="text-xs md:text-sm">Pin Code (optional)</FormLabel>
-                     <FormControl>
-                        <Input
-                           placeholder="e.g., 560001"
-                           {...field}
-                           className="h-10 text-sm"
-                           maxLength={6}
-                        />
-                     </FormControl>
-                     <FormDescription className="text-xs">
-                        Helps taskers in your area find this task
-                     </FormDescription>
-                     <FormMessage />
-                  </FormItem>
-               )}
-            />
+         {locationMode === "in-person" && (
+            <>
+               {/* Location Picker */}
+               <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                     <FormItem>
+                        <FormLabel className="text-xs md:text-sm">Task location</FormLabel>
+                        <FormControl>
+                           <InteractiveLocationPicker
+                              value={field.value as any}
+                              onChange={(loc) => field.onChange(loc)}
+                              onCoordinatesChange={(coords) => {
+                                 form.setValue("location.coordinates", coords as any);
+                              }}
+                           />
+                        </FormControl>
+                        <FormMessage />
+                     </FormItem>
+                  )}
+               />
+            </>
          )}
 
          {/* Date */}
@@ -372,61 +507,223 @@ export function LocationScheduleStep({
             </div>
          )}
 
-         {/* Start Date & Time - Only for one-time tasks */}
+         {/* AirTasker-style Scheduling - Only for one-time tasks */}
          {!recurringEnabled && (
-            <>
+            <div className="space-y-4 border border-secondary-100 rounded-lg p-4 bg-secondary-50">
+               {/* When do you need this done? */}
+               <div>
+                  <FormLabel className="text-sm font-semibold text-secondary-900 mb-3 block">
+                     When do you need this done?
+                  </FormLabel>
+                  <FormField
+                     control={form.control}
+                     name="dateOption"
+                     render={({ field }) => (
+                        <FormItem>
+                           <FormControl>
+                              <div className="space-y-3">
+                                 <div className="relative">
+                                    <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                                       <button
+                                          type="button"
+                                          onClick={() => {
+                                             field.onChange("on-date");
+                                             setDatePopoverOpen(true);
+                                             if (scheduledDate) {
+                                                setCalendarMonth(new Date(scheduledDate));
+                                             }
+                                          }}
+                                          className={cn(
+                                             "h-auto py-2 px-3 sm:px-4 rounded-full border-2 text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1",
+                                             field.value === "on-date"
+                                                ? "border-primary-600 bg-white text-primary-600"
+                                                : "border-secondary-200 bg-white text-secondary-700 hover:border-secondary-300"
+                                          )}
+                                       >
+                                          {field.value === "on-date" && scheduledDate
+                                             ? `On ${format(scheduledDate, "MMM d")}`
+                                             : "On date"}
+                                          {field.value === "on-date" && <ChevronRight className="w-3 h-3" />}
+                                       </button>
+
+                                       <button
+                                          type="button"
+                                          onClick={() => {
+                                             field.onChange("before-date");
+                                             setDatePopoverOpen(true);
+                                             if (scheduledDate) {
+                                                setCalendarMonth(new Date(scheduledDate));
+                                             }
+                                          }}
+                                          className={cn(
+                                             "h-auto py-2 px-3 sm:px-4 rounded-full border-2 text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1",
+                                             field.value === "before-date"
+                                                ? "border-primary-600 bg-white text-primary-600"
+                                                : "border-secondary-200 bg-white text-secondary-700 hover:border-secondary-300"
+                                          )}
+                                       >
+                                          {field.value === "before-date" && scheduledDate
+                                             ? `Before ${format(scheduledDate, "MMM d")}`
+                                             : "Before date"}
+                                          {field.value === "before-date" && <ChevronRight className="w-3 h-3" />}
+                                       </button>
+
+                                       <button
+                                          type="button"
+                                          onClick={() => {
+                                             field.onChange("flexible");
+                                             setDatePopoverOpen(false);
+                                          }}
+                                          className={cn(
+                                             "h-auto py-2 px-3 sm:px-4 rounded-full border-2 text-xs sm:text-sm font-semibold transition-all",
+                                             field.value === "flexible"
+                                                ? "border-primary-700 bg-primary-700 text-white"
+                                                : "border-secondary-200 bg-white text-secondary-700 hover:border-secondary-300"
+                                          )}
+                                       >
+                                          I'm flexible
+                                       </button>
+                                    </div>
+
+                                    {(field.value === "on-date" || field.value === "before-date") && datePopoverOpen && (
+                                       <div className="absolute left-0 top-full mt-2 z-20 w-auto rounded-md border border-secondary-200 bg-white shadow-md p-4 space-y-3">
+                                          <div className="flex items-center justify-between mb-3">
+                                             <button
+                                                type="button"
+                                                onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1))}
+                                                className="p-1 hover:bg-secondary-100 rounded"
+                                             >
+                                                <ChevronLeft className="w-4 h-4" />
+                                             </button>
+                                             <h3 className="font-semibold text-sm">
+                                                {format(calendarMonth, "MMMM yyyy")}
+                                             </h3>
+                                             <button
+                                                type="button"
+                                                onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1))}
+                                                className="p-1 hover:bg-secondary-100 rounded"
+                                             >
+                                                <ChevronRight className="w-4 h-4" />
+                                             </button>
+                                          </div>
+
+                                          <div className="grid grid-cols-7 gap-1 text-xs font-semibold text-secondary-600 text-center">
+                                             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+                                                <div key={day} className="h-6 flex items-center justify-center">
+                                                   {day}
+                                                </div>
+                                             ))}
+                                          </div>
+
+                                          <div className="grid grid-cols-7 gap-1">
+                                             {calendarDays.map((day, idx) => {
+                                                const isSelected =
+                                                   scheduledDate &&
+                                                   startOfDay(day.date).getTime() === startOfDay(scheduledDate).getTime();
+                                                const isToday = startOfDay(day.date).getTime() === startOfDay(new Date()).getTime();
+                                                const isPast = day.date < new Date() && !isToday;
+
+                                                return (
+                                                   <button
+                                                      key={idx}
+                                                      type="button"
+                                                      disabled={isPast}
+                                                      onClick={() => {
+                                                         const selectedDate = new Date(day.date);
+                                                         selectedDate.setHours(12, 0, 0, 0);
+                                                         form.setValue("scheduledDate", selectedDate);
+                                                         setDatePopoverOpen(false);
+                                                      }}
+                                                      className={cn(
+                                                         "h-8 rounded text-xs font-medium transition-all flex items-center justify-center",
+                                                         !day.isCurrentMonth && "text-secondary-300",
+                                                         day.isCurrentMonth && !isSelected && !isPast && "text-secondary-900 hover:bg-secondary-200",
+                                                         isSelected && "bg-primary-600 text-white",
+                                                         isToday && !isSelected && "bg-secondary-200 text-secondary-900",
+                                                         isPast && "cursor-not-allowed opacity-50 text-secondary-300"
+                                                      )}
+                                                   >
+                                                      {day.date.getDate()}
+                                                   </button>
+                                                );
+                                             })}
+                                          </div>
+                                       </div>
+                                    )}
+                                 </div>
+                              </div>
+                           </FormControl>
+                           <FormMessage />
+                        </FormItem>
+                     )}
+                  />
+               </div>
+
+               {/* Specific Time of Day Checkbox */}
                <FormField
                   control={form.control}
-                  name="scheduledTimeStart"
+                  name="needsTimeOfDay"
                   render={({ field }) => (
-                     <FormItem>
-                        <FormLabel className="text-xs md:text-sm">Start date & time</FormLabel>
-                        <FormControl>
-                           <DateTimePicker
-                              value={field.value}
-                              onChange={(date) => field.onChange(clampStartDateTime(date))}
-                              placeholder="Select start date & time"
-                              className="h-10"
-                              minDate={minDate}
+                     <FormItem className="flex items-center gap-2">
+                        <div className="flex items-center">
+                           <input
+                              type="checkbox"
+                              id="needsTimeOfDay"
+                              checked={field.value}
+                              onChange={(e) => field.onChange(e.target.checked)}
+                              className="h-4 w-4 border-secondary-300 rounded cursor-pointer"
                            />
-                        </FormControl>
-                        <FormDescription className="text-xs">When should the task begin?</FormDescription>
-                        <FormMessage />
+                        </div>
+                        <FormLabel htmlFor="needsTimeOfDay" className="text-xs sm:text-sm text-secondary-900 cursor-pointer">
+                           I need a certain time of day
+                        </FormLabel>
                      </FormItem>
                   )}
                />
 
-               {/* End Date & Time */}
-               <FormField
-                  control={form.control}
-                  name="scheduledTimeEnd"
-                  render={({ field }) => (
-                     <FormItem>
-                        <FormLabel className="text-xs md:text-sm">End date & time</FormLabel>
-                        <FormControl>
-                           <DateTimePicker
-                              value={field.value}
-                              onChange={field.onChange}
-                              placeholder="Select end date & time"
-                              className="h-10"
-                              minDate={scheduledTimeStart || minDate}
-                           />
-                        </FormControl>
-                        <FormDescription className="text-xs">
-                           When should the task be completed by?
-                           {duration && duration.total > 0 && (
-                              <span className="ml-2 font-medium text-primary-600">
-                                 (Duration: {duration.hours > 0 && `${duration.hours}h `}{duration.minutes > 0 && `${duration.minutes}min`})
-                              </span>
-                           )}
-                        </FormDescription>
-                        <FormMessage />
-                     </FormItem>
-                  )}
-               />
-            </>
+               {/* Time Slot Selection - Show when checkbox is checked */}
+               {form.watch("needsTimeOfDay") && (
+                  <FormField
+                     control={form.control}
+                     name="timeSlot"
+                     render={({ field }) => (
+                        <FormItem>
+                           <FormControl>
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                 {[
+                                    { value: "morning", label: "Morning", time: "Before 10am" },
+                                    { value: "midday", label: "Midday", time: "10am - 2pm" },
+                                    { value: "afternoon", label: "Afternoon", time: "2pm - 6pm" },
+                                    { value: "evening", label: "Evening", time: "After 6pm" },
+                                 ].map(({ value, label, time }) => (
+                                    <button
+                                       key={value}
+                                       type="button"
+                                       onClick={() => field.onChange(value as any)}
+                                       className={cn(
+                                          "py-3 px-2 rounded-lg border-2 transition-all text-center",
+                                          field.value === value
+                                             ? "border-primary-700 bg-primary-700 text-white"
+                                             : "border-secondary-200 bg-white text-secondary-700 hover:border-secondary-300"
+                                       )}
+                                    >
+                                       <div className="text-xs sm:text-sm font-semibold">{label}</div>
+                                       <div className="text-[10px] sm:text-xs text-secondary-600" style={{color: field.value === value ? 'rgba(255,255,255,0.8)' : undefined}}>
+                                          {time}
+                                       </div>
+                                    </button>
+                                 ))}
+                              </div>
+                           </FormControl>
+                           <FormMessage />
+                        </FormItem>
+                     )}
+                  />
+               )}
+            </div>
          )}
 
+         {/* Recurring Tasks - Keep old UI */}
          {recurringEnabled && (
             <>
                <FormField
@@ -479,42 +776,6 @@ export function LocationScheduleStep({
                />
             </>
          )}
-
-         {/* Flexibility */}
-         <FormField
-            control={form.control}
-            name="flexibility"
-            render={({ field }) => (
-               <FormItem>
-                  <FormLabel className="text-xs md:text-sm">Time flexibility</FormLabel>
-                  <FormControl>
-                     <div className="grid grid-cols-3 gap-3">
-                        {["exact", "flexible", "very_flexible"].map((flex) => (
-                           <button
-                              key={flex}
-                              type="button"
-                              onClick={() => field.onChange(flex)}
-                              className={cn(
-                                 "h-10 rounded-lg border-2 text-sm font-medium transition-all",
-                                 field.value === flex
-                                    ? "border-primary-600 bg-primary-50 text-primary-600"
-                                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                              )}
-                           >
-                              {flex === "exact" && "Exact time"}
-                              {flex === "flexible" && "±1 hour"}
-                              {flex === "very_flexible" && "±3 hours"}
-                           </button>
-                        ))}
-                     </div>
-                  </FormControl>
-                  <FormDescription className="text-xs">
-                     More flexibility can get you more offers
-                  </FormDescription>
-                  <FormMessage />
-               </FormItem>
-            )}
-         />
 
          {/* Continue Button */}
          <div className="pt-4">

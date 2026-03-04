@@ -192,9 +192,13 @@ const transformFormDataToTask = (
       title: formData.title
    });
    
+   const isOnline = formData.locationMode === "online";
+
    // Ensure coordinates are a proper tuple
    const coords = formData.location.coordinates;
-   const coordinates: [number, number] = [coords?.[0] ?? 0, coords?.[1] ?? 0];
+   const coordinates: [number, number] = isOnline
+      ? [0, 0]
+      : [coords?.[0] ?? 0, coords?.[1] ?? 0];
 
    const baseBudget =
       formData.budgetType === "negotiable" ? 0 : formData.budget ?? null;
@@ -224,12 +228,13 @@ const transformFormDataToTask = (
       location: {
          type: "Point",
          coordinates,
-         address: formData.location.address,
-         city: formData.location.city,
-         state: formData.location.state,
-         pinCode: formData.location.pinCode,
+         address: isOnline ? "Online" : formData.location.address,
+         city: isOnline ? "Online" : formData.location.city,
+         state: isOnline ? "Online" : formData.location.state,
+         pinCode: isOnline ? "" : formData.location.pinCode,
          country: formData.location.country || "India",
       },
+      remotely: isOnline,
       // Schedule - merge date and time into full datetime
       scheduledDate: formData.scheduledDate && formData.scheduledTimeStart 
          ? (() => {
@@ -313,6 +318,7 @@ const INITIAL_FORM_DATA: TaskFormData = {
    tags: [],
    priority: "normal",
    attachments: [],
+   locationMode: "in-person",
    location: {
       address: "",
       city: "",
@@ -322,6 +328,9 @@ const INITIAL_FORM_DATA: TaskFormData = {
       coordinates: undefined,
    },
    scheduledDate: null,
+   dateOption: "flexible",
+   needsTimeOfDay: false,
+   timeSlot: null,
    scheduledTimeStart: (() => {
       // Default to current time rounded to next 15-minute interval
       return getRoundedCurrentTime();

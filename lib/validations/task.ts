@@ -17,10 +17,10 @@ export const taskBasicsSchema = z
          .max(2000, "Description is too long"),
       category: z.string().min(1, "Please select a category"),
       subcategory: z.string().optional(),
-      requirements: z.array(z.string()).max(10).default([]),
+      requirements: z.array(z.string()).max(10).nullable().default([]).transform(val => val || []),
       estimatedDuration: z.number().min(0.5).max(168).nullable().optional(),
-      tags: z.array(z.string()).max(5).default([]),
-      priority: z.enum(["low", "normal", "high"]).default("normal"),
+      tags: z.array(z.string()).max(5).nullable().default([]).transform(val => val || []),
+      priority: z.enum(["low", "normal", "high"]).nullable().default("normal").transform(val => val || "normal"),
       attachments: z
          .array(
             z.object({
@@ -31,7 +31,9 @@ export const taskBasicsSchema = z
             })
          )
          .max(5)
-         .default([]),
+         .nullable()
+         .default([])
+         .transform(val => val || []),
    })
    .refine(
       (data) => {
@@ -55,15 +57,21 @@ export const taskBasicsSchema = z
 // Step 2: Location & Schedule
 export const locationScheduleSchema = z
    .object({
+      locationMode: z.enum(["in-person", "online"]).default("in-person"),
       location: z.object({
-         address: z.string().min(5, "Please add a location"),
-         city: z.string().min(1, "City is required"),
-         state: z.string().min(1, "State is required"),
+         address: z.string().default(""),
+         city: z.string().default(""),
+         state: z.string().default(""),
          pinCode: z.string().default(""),
          country: z.string().default("India"),
          coordinates: z.tuple([z.number(), z.number()]).optional(),
       }),
+      // AirTasker-style scheduling
+      dateOption: z.enum(["on-date", "before-date", "flexible"]).default("flexible"),
       scheduledDate: z.date().nullable(),
+      needsTimeOfDay: z.boolean().default(false),
+      timeSlot: z.enum(["morning", "midday", "afternoon", "evening"]).nullable().optional(),
+      // Legacy fields (kept for compatibility)
       scheduledTimeStart: z.date(),
       scheduledTimeEnd: z.date(),
       flexibility: z.enum(["exact", "flexible", "very_flexible"]),
@@ -71,6 +79,17 @@ export const locationScheduleSchema = z
       recurringStartDate: z.date().nullable().optional(),
       recurringEndDate: z.date().nullable().optional(),
       recurringFrequency: z.enum(["daily", "weekly"]).default("daily"),
+   })
+   .refine((data) => {
+      if (data.locationMode === "online") return true;
+      return (
+         data.location.address.trim().length >= 5 &&
+         data.location.city.trim().length >= 1 &&
+         data.location.state.trim().length >= 1
+      );
+   }, {
+      message: "Please add a location",
+      path: ["location", "address"],
    })
    .refine((data) => {
       if (data.recurringEnabled) {
@@ -179,10 +198,10 @@ export const editTaskSchema = z
          .optional(),
       category: z.string().min(1, "Please select a category").optional(),
       subcategory: z.string().optional(),
-      requirements: z.array(z.string()).max(10).default([]).optional(),
+      requirements: z.array(z.string()).max(10).nullable().default([]).optional(),
       estimatedDuration: z.number().min(0.5).max(168).nullable().optional(),
-      tags: z.array(z.string()).max(5).default([]).optional(),
-      priority: z.enum(["low", "normal", "high"]).optional(),
+      tags: z.array(z.string()).max(5).nullable().default([]).optional(),
+      priority: z.enum(["low", "normal", "high"]).nullable().optional(),
       attachments: z
          .array(
             z.object({
@@ -193,6 +212,7 @@ export const editTaskSchema = z
             })
          )
          .max(5)
+         .nullable()
          .default([])
          .optional(),
       location: z
@@ -205,7 +225,13 @@ export const editTaskSchema = z
             coordinates: z.tuple([z.number(), z.number()]).optional(),
          })
          .optional(),
+      locationMode: z.enum(["in-person", "online"]).optional(),
       scheduledDate: z.date().nullable().optional(),
+      // AirTasker-style scheduling
+      dateOption: z.enum(["on-date", "before-date", "flexible"]).optional(),
+      needsTimeOfDay: z.boolean().optional(),
+      timeSlot: z.enum(["morning", "midday", "afternoon", "evening"]).nullable().optional(),
+      // Legacy fields
       scheduledTimeStart: z.date().optional(),
       scheduledTimeEnd: z.date().optional(),
       flexibility: z.enum(["exact", "flexible", "very_flexible"]).optional(),

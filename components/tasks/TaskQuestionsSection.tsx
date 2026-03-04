@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ function normalizeQuestionsResponse(response: unknown): TaskQuestion[] {
 interface TaskQuestionsSectionProps {
    taskId: string;
    isOwner?: boolean;
+   openFormTrigger?: number;
 }
 
 const getTimeAgo = (date: Date | string | undefined): string => {
@@ -46,7 +47,7 @@ const getTimeAgo = (date: Date | string | undefined): string => {
    return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
 };
 
-export function TaskQuestionsSection({ taskId, isOwner }: TaskQuestionsSectionProps) {
+export function TaskQuestionsSection({ taskId, isOwner, openFormTrigger }: TaskQuestionsSectionProps) {
    const queryClient = useQueryClient();
    const { data: rawData, isLoading: loading } = useQuery({
       queryKey: taskDetailsQueryKeys.questions(taskId),
@@ -60,6 +61,20 @@ export function TaskQuestionsSection({ taskId, isOwner }: TaskQuestionsSectionPr
    const [showQuestionForm, setShowQuestionForm] = useState(false);
    const [answeringQuestionId, setAnsweringQuestionId] = useState<string | null>(null);
    const [isSubmitting, setIsSubmitting] = useState(false);
+
+   useEffect(() => {
+      if (isOwner) return;
+      if (typeof openFormTrigger === "number" && openFormTrigger > 0) {
+         setShowQuestionForm(true);
+         // Scroll to the questions section smoothly
+         setTimeout(() => {
+            document.querySelector('[data-questions-section]')?.scrollIntoView({ 
+               behavior: 'smooth', 
+               block: 'start' 
+            });
+         }, 100);
+      }
+   }, [openFormTrigger, isOwner]);
 
    const handleAskQuestion = async (data: CreateQuestionFormData) => {
       if (isSubmitting) return;
@@ -117,7 +132,7 @@ export function TaskQuestionsSection({ taskId, isOwner }: TaskQuestionsSectionPr
    }
 
    return (
-      <div className="p-4 md:p-8">
+      <div className="p-4 md:p-8" data-questions-section>
          {/* Header */}
          <div className="flex items-center justify-between mb-4 md:mb-8">
             <h2 className="md:text-lg font-bold text-secondary-900">

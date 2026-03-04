@@ -132,6 +132,7 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
    const [activeTab, setActiveTab] = useState<"offers" | "questions">("offers");
    const [showFixedCTA, setShowFixedCTA] = useState(false);
    const [showMakeOfferModal, setShowMakeOfferModal] = useState(false);
+   const [openQuestionFormTrigger, setOpenQuestionFormTrigger] = useState(0);
    const [shareOpen, setShareOpen] = useState(false);
    const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
 
@@ -312,7 +313,11 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
                               onApplicationsCountChange={() => {}}
                            />
                         ) : (
-                           <TaskQuestionsSection taskId={taskId} isOwner={isOwner} />
+                           <TaskQuestionsSection
+                              taskId={taskId}
+                              isOwner={isOwner}
+                              openFormTrigger={openQuestionFormTrigger}
+                           />
                         )}
                      </div>
                   </div>

@@ -129,7 +129,7 @@ export function DiscoverClient({
     isFetchingNextPage,
   } = useTasksInfinite(
     {
-      status: "open",
+      status: "open,assigned",
       categories: filters.categories,
       search: searchQuery,
       suburb: filters.suburb,
@@ -244,7 +244,7 @@ export function DiscoverClient({
       }
     }
 
-    // Available tasks only (hide assigned tasks)
+    // Available tasks only - hide assigned/started/in-progress tasks when filter is enabled
     if (filters.availableOnly) {
       filtered = filtered.filter((task) => {
         const isAssigned = task.status === "assigned" || task.status === "started" || task.status === "in_progress";
@@ -252,10 +252,10 @@ export function DiscoverClient({
       });
     }
 
-    // Tasks with no offers only (hide tasks with applications)
+    // Tasks with no offers only - show only tasks with no applications
     if (filters.noOffersOnly) {
       filtered = filtered.filter((task) => {
-        return !task.applications || task.applications === 0;
+        return (task.applications ?? 0) === 0;
       });
     }
 
@@ -329,15 +329,15 @@ export function DiscoverClient({
       />
 
       {/* Main content */}
-      <div className="w-full max-w-7xl mx-auto px-4">
-        <div className="flex gap-4">
-          {/* Left column: list (full width on mobile; half on desktop) */}
+      <div className="w-full max-w-6xl mx-auto px-4 lg:px-8">
+        <div className="flex gap-0">
+          {/* Left column: list (full width on mobile; 1/2 on desktop) */}
           <div className="w-full lg:w-1/2">
             <div
               style={{
                 maxHeight: `calc(100vh - ${TOP_OFFSET_PX}px)`,
               }}
-              className="overflow-y-auto py-8 md:px-3"
+              className="overflow-y-auto py-8 pr-4"
             >
               {isError ? (
                 <div className="flex flex-col items-center justify-center py-16 px-4 text-center">

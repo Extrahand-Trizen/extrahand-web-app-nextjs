@@ -31,9 +31,9 @@ const footerLinks = {
     links: [
       { label: "Become a Tasker", href: "/earn-money" },
       { label: "How to Earn", href: "/coming-soon?type=info&label=How%20to%20Earn" },
-      { label: "Tasker Guidelines", href: "/coming-soon?type=info&label=Tasker%20Guidelines" },
-      { label: "Success Stories", href: "#testimonials" },
-      { label: "Resources", href: "/coming-soon?type=info&label=Resources" },
+      { label: "Tasker Guidelines", href: "/tasker-guidelines" },
+      { label: "Success Stories", href: "/success-stories" },
+      { label: "Resources", href: "/resources" },
     ],
   },
   company: {
