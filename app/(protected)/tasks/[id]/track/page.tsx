@@ -595,7 +595,6 @@ export default function TaskTrackingPage() {
                         <StatusUpdateSection
                            task={task}
                            userRole={userRole}
-                           userProfile={userProfile}
                            onStatusUpdate={handleStatusUpdate}
                            onTaskUpdated={(updatedTask) => setTaskInCache(updatedTask)}
                         />
@@ -697,7 +696,6 @@ export default function TaskTrackingPage() {
                      <StatusUpdateSection
                         task={task}
                         userRole={userRole}
-                        userProfile={userProfile}
                         onStatusUpdate={handleStatusUpdate}
                         onTaskUpdated={(updatedTask) => setTaskInCache(updatedTask)}
                      />

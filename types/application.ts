@@ -21,13 +21,6 @@ export interface TaskApplication {
     skills?: {
       list: string[];
     };
-    // Verification fields (may not be in snapshot, fetched separately if needed)
-    isAadhaarVerified?: boolean;
-    isPhoneVerified?: boolean;
-    isEmailVerified?: boolean;
-    isPanVerified?: boolean;
-    isBankVerified?: boolean;
-    userType?: "individual" | "business";
   };
   
   // Application details

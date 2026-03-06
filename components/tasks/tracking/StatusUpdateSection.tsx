@@ -3,11 +3,9 @@
 /**
  * StatusUpdateSection - Role-based status update controls
  * Shows available actions based on user role and current task status
- * Includes STEP 3: Aadhaar verification check before allowing task start
  */
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
    AlertDialog,
@@ -28,19 +26,15 @@ import {
    XCircle,
    RotateCcw,
    AlertTriangle,
-   ShieldAlert,
 } from "lucide-react";
 import type { Task } from "@/types/task";
 import type { UserRole } from "@/types/tracking";
-import type { UserProfile } from "@/types/user";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
 import { toast } from "sonner";
-import { getTaskStartVerificationStatus } from "@/lib/utils/verificationGate";
 
 interface StatusUpdateSectionProps {
    task: Task;
    userRole: UserRole;
-   userProfile?: UserProfile | null;
    onStatusUpdate: (
       newStatus: Task["status"],
       reason?: string
@@ -51,17 +45,11 @@ interface StatusUpdateSectionProps {
 export function StatusUpdateSection({
    task,
    userRole,
-   userProfile,
    onStatusUpdate,
    onTaskUpdated,
 }: StatusUpdateSectionProps) {
-   const router = useRouter();
    const [isUpdating, setIsUpdating] = useState(false);
    const [cancelReason, setCancelReason] = useState("");
-   
-   // STEP 3: Check Aadhaar verification for task start
-   const verificationStatus = getTaskStartVerificationStatus(userProfile || null);
-   const canStartTask = verificationStatus.allowed;
 
    const getAvailableActions = () => {
       const actions: Array<{
@@ -81,17 +69,14 @@ export function StatusUpdateSection({
       if (userRole === "tasker") {
          switch (task.status) {
             case "assigned":
-               // STEP 3: Only show Start Task if Aadhaar verified
-               if (canStartTask) {
-                  actions.push({
-                     status: "started",
-                     label: "Start Task",
-                     description: "Mark that you've begun working on this task",
-                     icon: <CheckCircle2 className="w-4 h-4" />,
-                     variant: "default",
-                     requiresConfirmation: true,
-                  });
-               }
+               actions.push({
+                  status: "started",
+                  label: "Start Task",
+                  description: "Mark that you've begun working on this task",
+                  icon: <CheckCircle2 className="w-4 h-4" />,
+                  variant: "default",
+                  requiresConfirmation: true,
+               });
                break;
             case "started":
                actions.push({
@@ -198,45 +183,16 @@ export function StatusUpdateSection({
    };
 
    const availableActions = getAvailableActions();
-   
-   // Show verification prompt if task is assigned but Aadhaar not verified
-   const showVerificationPrompt = userRole === "tasker" && task.status === "assigned" && !canStartTask;
 
-   if (availableActions.length === 0 && !showVerificationPrompt) {
+   if (availableActions.length === 0) {
       return null;
    }
 
    return (
       <div className="bg-white rounded-xl shadow-sm border border-secondary-200 p-4 md:p-6">
          <h2 className="text-base md:text-lg font-semibold md:font-bold text-secondary-900 mb-3 md:mb-4">
-            {showVerificationPrompt ? "Verification Required" : "Available Actions"}
+            Available Actions
          </h2>
-         
-         {/* STEP 3: Aadhaar Verification Prompt */}
-         {showVerificationPrompt && (
-            <div className="space-y-3">
-               <div className="flex items-start gap-3 p-4 bg-yellow-50 border-2 border-yellow-400 rounded-lg">
-                  <ShieldAlert className="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                     <p className="text-sm font-semibold text-yellow-900 mb-1">
-                        Aadhaar Verification Required
-                     </p>
-                     <p className="text-xs text-yellow-800 mb-3">
-                        {verificationStatus.message || "You need to verify your Aadhaar before starting this task. This ensures safety and trust for all users."}
-                     </p>
-                     <Button
-                        onClick={() => router.push("/profile?section=verifications")}
-                        className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-semibold"
-                     >
-                        Verify Aadhaar Now
-                     </Button>
-                  </div>
-               </div>
-            </div>
-         )}
-         
-         {/* Regular Actions */}
-         {availableActions.length > 0 && (
          <div className="space-y-2 md:space-y-3">
             {availableActions.map((action) => {
                if (action.requiresConfirmation) {
@@ -342,13 +298,12 @@ export function StatusUpdateSection({
                         <>
                            {action.icon}
                            {action.label}
-</>
+                        </>
                      )}
                   </Button>
                );
             })}
          </div>
-         )}
       </div>
    );
 }
