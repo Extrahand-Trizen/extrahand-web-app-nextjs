@@ -1,6 +1,7 @@
 "use client";
 
 import { MapPin, Clock, Calendar, User } from "lucide-react";
+import Image from "next/image";
 import type { Task } from "@/types/task";
 
 interface TaskCardProps {
@@ -113,8 +114,18 @@ export function TaskCard({ task, isSelected = false, onClick, distance }: TaskCa
             </div>
 
             {/* User Profile Avatar */}
-            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary-100 flex items-center justify-center border-2 border-primary-200 shrink-0 shadow-sm">
-               <User className="w-4 h-4 md:w-5 md:h-5 text-primary-600" />
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary-100 flex items-center justify-center border-2 border-primary-200 shrink-0 shadow-sm overflow-hidden">
+               {task.requesterPhotoURL ? (
+                  <Image
+                     src={task.requesterPhotoURL}
+                     alt={task.requesterName || "Poster"}
+                     width={40}
+                     height={40}
+                     className="w-full h-full object-cover"
+                  />
+               ) : (
+                  <User className="w-4 h-4 md:w-5 md:h-5 text-primary-600" />
+               )}
             </div>
          </div>
       </div>

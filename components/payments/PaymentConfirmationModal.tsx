@@ -255,19 +255,7 @@ export function PaymentConfirmationModal({
                       GST ({((fees.metadata?.gstPercentage || 0.18) * 100).toFixed(0)}%)
                     </span>
                     <span className="text-gray-600">
-                      +{formatCurrency(fees.platformFeeGst + fees.processingFeeGst)}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Payment Gateway Fee</span>
-                    <span className="text-gray-600">
-                      +{formatCurrency(fees.processingFeeShare)}
-                    </span>
-                  </div>
-
-                  <div className="border-t pt-2 mt-2"></div>
-
+                      +{formatCurrency(fees.platformFeeGst)}
                   <div className="flex justify-between text-base font-semibold">
                     <span className="text-gray-900">Total Amount</span>
                     <span className="text-primary">{formatCurrency(fees.totalAmount)}</span>

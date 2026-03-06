@@ -29,6 +29,7 @@ export interface Task {
   creatorUid?: string; // Firebase UID of task creator
   requesterUid?: string; // Firebase UID of requester (for badge fetching)
   requesterName: string;
+  requesterPhotoURL?: string | null; // Poster's profile photo URL (enriched by gateway)
   requesterBadge?: 'none' | 'basic' | 'verified' | 'trusted' | 'elite'; // Poster's verification badge
   requesterVerificationTier?: number; // Poster's verification tier (0-3)
   assignedTo?: string;

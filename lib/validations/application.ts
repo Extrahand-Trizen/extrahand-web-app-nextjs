@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { containsPhoneNumber, PHONE_NUMBER_ERROR } from "@/lib/utils/phoneDetection";
 
 /**
  * Application validation schemas
@@ -32,6 +33,7 @@ export const createApplicationSchema = z
       coverLetter: z
          .string()
          .max(1000, "Cover letter must be less than 1000 characters")
+         .refine((val) => !val || !containsPhoneNumber(val), PHONE_NUMBER_ERROR)
          .optional(),
       relevantExperience: z.array(z.string()).max(10).default([]).optional(),
       portfolio: z.array(z.string().url()).max(10).default([]).optional(),

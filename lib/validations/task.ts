@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { containsPhoneNumber, PHONE_NUMBER_ERROR } from "@/lib/utils/phoneDetection";
 
 /**
  * Task creation validation schemas
@@ -10,11 +11,13 @@ export const taskBasicsSchema = z
       title: z
          .string()
          .min(5, "Please add a few more details to your title")
-         .max(200, "Title is too long"),
+         .max(200, "Title is too long")
+         .refine((val) => !containsPhoneNumber(val), PHONE_NUMBER_ERROR),
       description: z
          .string()
          .min(10, "Add more detail so taskers understand what's needed")
-         .max(2000, "Description is too long"),
+         .max(2000, "Description is too long")
+         .refine((val) => !containsPhoneNumber(val), PHONE_NUMBER_ERROR),
       category: z.string().min(1, "Please select a category"),
       subcategory: z.string().optional(),
       requirements: z.array(z.string()).max(10).nullable().default([]).transform(val => val || []),

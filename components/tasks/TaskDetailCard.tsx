@@ -9,6 +9,8 @@ import {
    User,
    ArrowRight,
 } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -197,16 +199,30 @@ export function TaskDetailCard({ task, onClose }: TaskDetailCardProps) {
                <div className="space-y-2 mb-4">
                   <div className="flex items-start justify-between gap-3">
                      <div className="flex items-start gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-full bg-secondary-100 border border-secondary-200 flex items-center justify-center shrink-0">
-                           <User className="w-5 h-5 text-secondary-600" />
+                        <div className="w-10 h-10 rounded-full bg-secondary-100 border border-secondary-200 flex items-center justify-center shrink-0 overflow-hidden">
+                           {displayTask.requesterPhotoURL ? (
+                              <Image
+                                 src={displayTask.requesterPhotoURL}
+                                 alt={displayTask.requesterName || "Poster"}
+                                 width={40}
+                                 height={40}
+                                 className="w-full h-full object-cover"
+                              />
+                           ) : (
+                              <User className="w-5 h-5 text-secondary-600" />
+                           )}
                         </div>
                         <div className="min-w-0">
                            <div className="text-[11px] uppercase tracking-wide text-secondary-500 font-normal">
                               Posted by
                            </div>
-                           <div className="text-base font-normal text-secondary-900 truncate">
+                           <Link
+                              href={`/profile/${displayTask.requesterId}`}
+                              className="text-base font-normal text-secondary-900 truncate hover:text-primary-600 hover:underline transition-colors"
+                              onClick={(e) => e.stopPropagation()}
+                           >
                               {displayTask.requesterName || "Task poster"}
-                           </div>
+                           </Link>
                         </div>
                      </div>
                      <div className="text-xs text-secondary-400 whitespace-nowrap pt-1 font-normal">

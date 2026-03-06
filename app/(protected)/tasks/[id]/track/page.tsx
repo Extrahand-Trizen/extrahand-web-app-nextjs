@@ -42,6 +42,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
 import { reviewsApi } from "@/lib/api/endpoints/reviews";
 import { chatsApi } from "@/lib/api/endpoints/chats";
+import { applicationsApi } from "@/lib/api/endpoints/applications";
 import { taskDetailsQueryKeys } from "@/lib/queryKeys";
 import { toast } from "sonner";
 import { reportsApi } from "@/lib/api/endpoints/reports";
@@ -67,6 +68,18 @@ export default function TaskTrackingPage() {
       staleTime: 30 * 1000,
    });
    const task = taskQuery.data ?? null;
+
+   // Fetch the accepted application to get the tasker's agreed budget
+   const applicationsQuery = useQuery({
+      queryKey: taskDetailsQueryKeys.applications(taskId),
+      queryFn: () => applicationsApi.getTaskApplications(taskId),
+      enabled: !!taskId,
+      staleTime: 60 * 1000,
+   });
+   const acceptedApplication = (applicationsQuery.data?.applications ?? []).find(
+      (app) => app.status === "accepted"
+   );
+   const assignedBudget = acceptedApplication?.proposedBudget?.amount;
    const setTaskInCache = (updatedTask: Task) => {
       queryClient.setQueryData(taskDetailsQueryKeys.task(taskId), updatedTask);
    };
@@ -648,7 +661,7 @@ export default function TaskTrackingPage() {
 
                      <TabsContent value="overview" className="space-y-6">
                         {/* Task Details Card */}
-                        <TaskDetailsCard task={task} />
+                        <TaskDetailsCard task={task} assignedBudget={assignedBudget} />
                      </TabsContent>
 
                      <TabsContent value="proof" className="space-y-6">
@@ -684,7 +697,7 @@ export default function TaskTrackingPage() {
                      </TabsContent>
 
                      <TabsContent value="details" className="space-y-6">
-                        <TaskDetailsCard task={task} />
+                        <TaskDetailsCard task={task} assignedBudget={assignedBudget} />
                      </TabsContent>
                   </Tabs>
                </div>

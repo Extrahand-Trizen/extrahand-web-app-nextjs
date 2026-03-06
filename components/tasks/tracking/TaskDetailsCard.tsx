@@ -20,6 +20,7 @@ import { format } from "date-fns";
 
 interface TaskDetailsCardProps {
    task: Task;
+   assignedBudget?: number; // Tasker's offered/agreed amount (overrides task.budget when provided)
 }
 
 const InfoRow = ({
@@ -44,9 +45,10 @@ const InfoRow = ({
    </div>
 );
 
-export function TaskDetailsCard({ task }: TaskDetailsCardProps) {
-   const budgetAmount =
-      typeof task.budget === "object" ? task.budget.amount : task.budget;
+export function TaskDetailsCard({ task, assignedBudget }: TaskDetailsCardProps) {
+   const budgetAmount = assignedBudget !== undefined
+      ? assignedBudget
+      : typeof task.budget === "object" ? task.budget.amount : task.budget;
    const budgetCurrency =
       typeof task.budget === "object" ? task.budget.currency : "INR";
    const categoryLabel = task.categoryLabel || task.subcategory || task.category;
