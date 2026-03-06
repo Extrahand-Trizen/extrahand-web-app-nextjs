@@ -256,6 +256,8 @@ export function PaymentConfirmationModal({
                     </span>
                     <span className="text-gray-600">
                       +{formatCurrency(fees.platformFeeGst)}
+                    </span>
+                  </div>
                   <div className="flex justify-between text-base font-semibold">
                     <span className="text-gray-900">Total Amount</span>
                     <span className="text-primary">{formatCurrency(fees.totalAmount)}</span>
