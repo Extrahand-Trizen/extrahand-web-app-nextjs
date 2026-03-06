@@ -839,37 +839,58 @@ export function TaskCreationFlow() {
             </DialogContent>
          </Dialog>
 
-         {/* Verification required: Aadhaar */}
+         {/* Verification Required Modal */}
          <Dialog open={showVerificationModal} onOpenChange={setShowVerificationModal}>
             <DialogContent>
                <DialogHeader>
-                  <DialogTitle>Verification required to post a task</DialogTitle>
+                  <DialogTitle>Verification Required to Post Tasks</DialogTitle>
                   <DialogDescription>
-                     To post a task, your Aadhaar must be verified. Please
-                     complete the following in your profile:
+                     {verificationStatus.message || "To post tasks, you need to verify your phone and email address."}
                   </DialogDescription>
                </DialogHeader>
-               <ul className="list-disc list-inside text-sm text-secondary-700 space-y-1">
-                  {verificationStatus.missing.map((item) => (
-                     <li key={item}>{item}</li>
-                  ))}
-               </ul>
+               <div className="space-y-3 py-4">
+                  <p className="text-sm font-medium text-gray-900">
+                     Missing verifications:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                     {verificationStatus.missing.map((item) => (
+                        <div
+                           key={item}
+                           className="inline-flex items-center gap-2 px-3 py-2 bg-yellow-50 border border-yellow-300 rounded-lg"
+                        >
+                           <span className="text-lg">
+                              {item === "Phone" && "📱"}
+                              {item === "Email" && "✉️"}
+                              {item === "Aadhaar" && "🆔"}
+                           </span>
+                           <span className="text-sm font-medium text-gray-800">
+                              {item}
+                           </span>
+                        </div>
+                     ))}
+                  </div>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
+                     <p className="text-xs text-blue-800">
+                        <strong>Why verify?</strong> Verification helps build trust and keeps our community safe.
+                     </p>
+                  </div>
+               </div>
                <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-end">
                   <Button
                      variant="outline"
                      className="w-full sm:w-auto"
                      onClick={() => setShowVerificationModal(false)}
                   >
-                     Close
+                     Cancel
                   </Button>
                   <Button
-                     className="w-full sm:w-auto"
+                     className="w-full sm:w-auto bg-primary-500 hover:bg-primary-600"
                      onClick={() => {
                         setShowVerificationModal(false);
                         router.push("/profile?section=verifications");
                      }}
                   >
-                     Complete verification
+                     Verify Now
                   </Button>
                </DialogFooter>
             </DialogContent>

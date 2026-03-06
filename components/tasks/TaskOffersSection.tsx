@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Star, CheckCircle, MessageSquare, User } from "lucide-react";
@@ -21,6 +21,8 @@ import { applicationsApi } from "@/lib/api/endpoints/applications";
 import { taskDetailsQueryKeys } from "@/lib/queryKeys";
 import { PaymentConfirmationModal } from "@/components/payments/PaymentConfirmationModal";
 import { useAuth } from "@/lib/auth/context";
+import { getUserBadge } from "@/lib/api/badge";
+import { UserBadge, type BadgeType } from "@/components/ui/user-badge";
 
 interface TaskOffersSectionProps {
    taskId: string;
@@ -94,12 +96,21 @@ export function TaskOffersSection({
    const [selectedApplication, setSelectedApplication] =
       useState<TaskApplication | null>(null);
    const [showPaymentModal, setShowPaymentModal] = useState(false);
+   const [applicantBadges, setApplicantBadges] = useState<Record<string, BadgeType>>({});
    const { currentUser } = useAuth();
    const currentUid = currentUser?.uid;
    const router = useRouter();
    const onApplicationsCountChangeRef = useRef(onApplicationsCountChange);
 
-   const matchesCurrentUserApplication = (app: { applicantId?: unknown; applicantUid?: string }) => {
+   const toBadgeType = (value: string): BadgeType => {
+      const normalized = value.toLowerCase();
+      if (normalized === "basic" || normalized === "verified" || normalized === "trusted" || normalized === "elite") {
+         return normalized;
+      }
+      return "none";
+   };
+
+   const matchesCurrentUserApplication = useCallback((app: { applicantId?: unknown; applicantUid?: string }) => {
       const applicantProfileId = String(app.applicantId ?? "");
       const normalizedUserProfileId = String(
          (userProfile as { _id?: string; id?: string; profileId?: string } | null)?._id ||
@@ -114,7 +125,7 @@ export function TaskOffersSection({
          (normalizedUserProfileId !== "" && applicantProfileId === normalizedUserProfileId) ||
          (normalizedCurrentUid !== "" && applicantUid === normalizedCurrentUid)
       );
-   };
+   }, [userProfile, currentUid]);
 
    useEffect(() => {
       onApplicationsCountChangeRef.current = onApplicationsCountChange;
@@ -127,12 +138,56 @@ export function TaskOffersSection({
       return () => clearTimeout(timeoutId);
    }, [applications.length]);
 
+   useEffect(() => {
+      let isCancelled = false;
+
+      async function fetchApplicantBadges() {
+         const applicantLookup = new Map<string, string>();
+
+         applications.forEach((app) => {
+            const applicantId = String(app.applicantId || "");
+            const lookupId = String(app.applicantUid || app.applicantId || "");
+            if (applicantId && lookupId && !applicantLookup.has(applicantId)) {
+               applicantLookup.set(applicantId, lookupId);
+            }
+         });
+
+         if (applicantLookup.size === 0) {
+            return;
+         }
+
+         const resolvedBadges = await Promise.all(
+            Array.from(applicantLookup.entries()).map(async ([applicantId, lookupId]) => {
+               try {
+                  const badgeData = await getUserBadge(lookupId);
+                  return [applicantId, toBadgeType(String(badgeData.currentBadge || "none"))] as const;
+               } catch {
+                  return [applicantId, "none" as BadgeType] as const;
+               }
+            })
+         );
+
+         if (!isCancelled) {
+            setApplicantBadges((prev) => ({
+               ...prev,
+               ...Object.fromEntries(resolvedBadges),
+            }));
+         }
+      }
+
+      fetchApplicantBadges();
+
+      return () => {
+         isCancelled = true;
+      };
+   }, [applications]);
+
    // Notify parent when applications load (for hasApplied) – page also derives from same query; keep for any other consumers
    useEffect(() => {
       if (!onHasAppliedChange || !userProfile || !applicationsQuery.data) return;
       const userApplication = applications.find((app) => matchesCurrentUserApplication(app));
       onHasAppliedChange(!!userApplication);
-   }, [applicationsQuery.data, applications, userProfile, userProfileId, currentUid, onHasAppliedChange]);
+   }, [applicationsQuery.data, applications, userProfile, userProfileId, currentUid, onHasAppliedChange, matchesCurrentUserApplication]);
 
    const handleAcceptOffer = (application: TaskApplication) => {
       setSelectedApplication(application);
@@ -238,7 +293,7 @@ export function TaskOffersSection({
          });
       }
       return found || null;
-   }, [isOwner, userProfile, userProfileId, currentUid, applications]);
+   }, [isOwner, userProfile, userProfileId, currentUid, applications, matchesCurrentUserApplication]);
 
    // Inform parent whether current user has an application
    useEffect(() => {
@@ -458,6 +513,14 @@ export function TaskOffersSection({
                                                 <h3 className="font-bold text-secondary-900 text-sm sm:text-base truncate">
                                                    {acceptedApplication.applicantProfile?.name || "Unknown User"}
                                                 </h3>
+                                                {applicantBadges[String(acceptedApplication.applicantId)] &&
+                                                   applicantBadges[String(acceptedApplication.applicantId)] !== "none" && (
+                                                      <UserBadge
+                                                         badge={applicantBadges[String(acceptedApplication.applicantId)]}
+                                                         size="sm"
+                                                         showLabel
+                                                      />
+                                                   )}
                                                 <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-semibold">
                                                    Assigned
                                                 </span>
@@ -551,13 +614,12 @@ export function TaskOffersSection({
                            <h3 className="font-semibold text-secondary-700 text-sm mb-2">Other Offers</h3>
                         )}
                         {otherApplications.map((application) => {
-                     const applicantProfile = application.applicantProfile || {};
                      const user = {
-                        name: applicantProfile?.name || (application.applicantId ? `User ${String(application.applicantId).slice(-4)}` : "Unknown User"),
-                        photoURL: applicantProfile?.photoURL || null,
-                        rating: applicantProfile?.rating || 0,
-                        totalReviews: applicantProfile?.totalReviews || 0,
-                        skills: applicantProfile?.skills,
+                        name: application.applicantProfile?.name || (application.applicantId ? `User ${String(application.applicantId).slice(-4)}` : "Unknown User"),
+                        photoURL: application.applicantProfile?.photoURL || null,
+                        rating: application.applicantProfile?.rating || 0,
+                        totalReviews: application.applicantProfile?.totalReviews || 0,
+                        skills: application.applicantProfile?.skills,
                      };
 
                      return (
@@ -588,7 +650,14 @@ export function TaskOffersSection({
                                           <h3 className="font-bold text-secondary-900 text-sm sm:text-base truncate">
                                              {user.name}
                                           </h3>
-                                          {/* Verified badge - can add later based on backend flag */}
+                                          {applicantBadges[String(application.applicantId)] &&
+                                             applicantBadges[String(application.applicantId)] !== "none" && (
+                                                <UserBadge
+                                                   badge={applicantBadges[String(application.applicantId)]}
+                                                   size="sm"
+                                                   showLabel
+                                                />
+                                             )}
                                        </div>
 
                                        <div className="flex items-center gap-2 text-xs text-secondary-500 mt-1">

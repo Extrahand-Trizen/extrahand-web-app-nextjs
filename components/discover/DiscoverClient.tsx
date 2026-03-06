@@ -15,15 +15,19 @@ import { useUserStore } from "@/lib/state/userStore";
 import { useTasksInfinite } from "@/hooks/useTasksInfinite";
 import { serviceCategories } from "@/lib/data/categories";
 import { PrefetchTaskWrapper } from "@/hooks/usePrefetchTaskDetails";
+import { getLocationCoordinates } from "@/lib/utils/locationMapping";
 
-const HYDERABAD_CENTER = { lat: 17.385, lng: 78.4867 };
+const DEFAULT_CENTER = { lat: 17.385, lng: 78.4867 }; // Hyderabad
 
 type CompactFilterState = {
   categories: string[];
   suburb: string;
+  address?: string;
+  location?: { lat: number; lng: number };
   remotely: boolean | null;
   minBudget: number;
   maxBudget: number;
+  maxDistance?: number;
   sortBy: "recent" | "nearest" | "price-low" | "price-high" | "date";
   availableOnly: boolean;
   noOffersOnly: boolean;
@@ -46,9 +50,9 @@ const calculateDistance = (
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 };
@@ -108,6 +112,8 @@ export function DiscoverClient({
   const [filters, setFilters] = useState<CompactFilterState>({
     categories: [],
     suburb: initialSuburb,
+    location: DEFAULT_CENTER,
+    address: "Hyderabad",
     remotely: null,
     minBudget: 50,
     maxBudget: 50000,
@@ -260,33 +266,31 @@ export function DiscoverClient({
     }
 
     // Sort by nearest (client-side distance calculation)
-    if (filters.sortBy === "nearest") {
-      filtered.sort((a, b) => {
-        const [lngA, latA] = a.location?.coordinates || [0, 0];
-        const [lngB, latB] = b.location?.coordinates || [0, 0];
-        const distA = calculateDistance(
-          HYDERABAD_CENTER.lat,
-          HYDERABAD_CENTER.lng,
-          latA,
-          lngA
-        );
-        const distB = calculateDistance(
-          HYDERABAD_CENTER.lat,
-          HYDERABAD_CENTER.lng,
-          latB,
-          lngB
-        );
-        return distA - distB;
-      });
-    }
+    const centerLat = filters.location?.lat ?? DEFAULT_CENTER.lat;
+    const centerLng = filters.location?.lng ?? DEFAULT_CENTER.lng;
 
-    if (filters.sortBy === "price-low") {
+    if (filters.sortBy === "nearest" || filters.maxDistance) {
+      // Calculate distances for all tasks
+      const tasksWithDistance = filtered.map((task) => {
+        const [lngA, latA] = task.location?.coordinates || [centerLng, centerLat];
+        const distance = calculateDistance(centerLat, centerLng, latA, lngA);
+        return { task, distance };
+      });
+
+      // Filter by distance if maxDistance is set
+      if (filters.maxDistance) {
+        filtered = tasksWithDistance
+          .filter(({ distance }) => distance <= filters.maxDistance!)
+          .map(({ task }) => task);
+      } else {
+        // Sort by nearest
+        filtered = tasksWithDistance.sort((a, b) => a.distance - b.distance).map(({ task }) => task);
+      }
+    } else if (filters.sortBy === "price-low") {
       filtered.sort(
         (a, b) => getBudgetAmount(a.budget) - getBudgetAmount(b.budget)
       );
-    }
-
-    if (filters.sortBy === "price-high") {
+    } else if (filters.sortBy === "price-high") {
       filtered.sort(
         (a, b) => getBudgetAmount(b.budget) - getBudgetAmount(a.budget)
       );
@@ -318,12 +322,23 @@ export function DiscoverClient({
     setSelectedTaskId(null);
   };
 
+  // Handle filter changes and compute location coordinates
+  const handleFilterChange = (newFilters: CompactFilterState) => {
+    // If suburb or address changed, update location coordinates
+    if (newFilters.suburb || newFilters.address) {
+      const location = newFilters.suburb || newFilters.address || "Hyderabad";
+      const coordinates = getLocationCoordinates(location);
+      newFilters.location = coordinates;
+    }
+    setFilters(newFilters);
+  };
+
   return (
     <div className="flex flex-col bg-secondary-50">
       {/* Filter bar (sticky) */}
       <CompactFilterBar
         filters={filters}
-        onFilterChange={setFilters}
+        onFilterChange={handleFilterChange}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
       />
@@ -364,16 +379,29 @@ export function DiscoverClient({
               ) : filteredTasks.length === 0 ? (
                 <EmptyState searchQuery={searchQuery} />
               ) : (
-                <div className="space-y-5">
-                  {filteredTasks.map((task) => (
-                    <PrefetchTaskWrapper key={task._id} taskId={task._id}>
-                      <TaskCard
-                        task={task}
-                        isSelected={selectedTaskId === task._id}
-                        onClick={() => handleTaskSelect(task._id)}
-                      />
-                    </PrefetchTaskWrapper>
-                  ))}
+                <div className="space-y-3">
+                  {filteredTasks.map((task) => {
+                    let distance: number | undefined;
+                    if (task.location?.coordinates && filters.location) {
+                      const [lng, lat] = task.location.coordinates;
+                      distance = calculateDistance(
+                        filters.location.lat,
+                        filters.location.lng,
+                        lat,
+                        lng
+                      );
+                    }
+                    return (
+                      <PrefetchTaskWrapper key={task._id} taskId={task._id}>
+                        <TaskCard
+                          task={task}
+                          isSelected={selectedTaskId === task._id}
+                          onClick={() => handleTaskSelect(task._id)}
+                          distance={distance}
+                        />
+                      </PrefetchTaskWrapper>
+                    );
+                  })}
                 </div>
               )}
 
@@ -406,7 +434,7 @@ export function DiscoverClient({
                   tasks={filteredTasks}
                   selectedTaskId={selectedTaskId}
                   onTaskSelect={handleTaskSelect}
-                  centerCoordinates={HYDERABAD_CENTER}
+                  centerCoordinates={filters.location || DEFAULT_CENTER}
                 />
                 {/* Desktop Task Detail Card Overlay */}
                 {showTaskDetail && selectedTask && (

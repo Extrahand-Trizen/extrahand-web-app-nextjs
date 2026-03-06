@@ -28,27 +28,17 @@ export function createApiClient(): AxiosInstance {
       'Content-Type': 'application/json',
     },
     timeout: 30000, // 30 seconds
+    withCredentials: true, // Important: Send cookies with requests
   });
 
-  // Add request interceptor to attach auth token
+  // Add request interceptor for logging (cookies are sent automatically)
   apiInstance.interceptors.request.use(
     async (config) => {
-      // Get token from Firebase Auth
+      // Cookies (including JWT session token) are automatically sent with withCredentials: true
+      // No need to manually attach Authorization header
       if (typeof window !== 'undefined') {
-        try {
-          const user = auth.currentUser;
-          if (user) {
-            const token = await user.getIdToken();
-            config.headers.Authorization = `Bearer ${token}`;
-            console.log('🔐 Auth token attached to request');
-          } else {
-            console.warn('⚠️ No authenticated user found');
-          }
-        } catch (error) {
-          console.error('❌ Failed to get auth token:', error);
-        }
+        console.log('🔐 Making authenticated request to:', config.url);
       }
-
       return config;
     },
     (error) => {

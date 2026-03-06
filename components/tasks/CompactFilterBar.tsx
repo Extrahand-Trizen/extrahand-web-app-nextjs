@@ -42,6 +42,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import { getAvailableLocations } from "@/lib/utils/locationMapping";
 
 export const CompactFilterBar = ({
    filters,
@@ -120,7 +121,7 @@ export const CompactFilterBar = ({
    );
 };
 
-export const SearchFilter = ({ value, onChange, className }) => {
+export const SearchFilter = ({ value, onChange, className }: { value: string, onChange: (val: string) => void, className?: string }) => {
    return (
       <div
          className={cn(
@@ -157,7 +158,10 @@ export const CategoryFilter = ({ filters, onFilterChange }) => {
       <>
          <Button
             variant="outline"
-            className="px-4 py-2 text-sm flex items-center gap-2"
+            className={cn(
+               "px-4 py-2 text-sm flex items-center gap-2 transition-colors duration-200",
+               open ? "relative z-50 ring-2 ring-primary border-primary bg-white" : ""
+            )}
             onClick={() => setOpen(true)}
          >
             {filters.categories.length
@@ -207,19 +211,46 @@ export const CategoryFilter = ({ filters, onFilterChange }) => {
 export const LocationFilter = ({ filters, onFilterChange }) => {
    const [open, setOpen] = useState(false);
    const [suburbSearch, setSuburbSearch] = useState(filters.suburb);
+   const [distanceSearch, setDistanceSearch] = useState(filters.maxDistance || 50);
+   const [suggestions, setSuggestions] = useState<string[]>([]);
+   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
 
-   const suggestions = [
-      "Hyderabad Biryani House, Attapur, Hyderabad",
-      "Mehdipatnam, Hyderabad",
-      "Tarnaka, Hyderabad",
-      "Nallagandla, Hyderabad",
-   ].filter((s) =>
-      suburbSearch ? s.toLowerCase().includes(suburbSearch.toLowerCase()) : true
-   );
+   const allLocations = getAvailableLocations();
+
+   const handleSuburbSearch = (value: string) => {
+      setSuburbSearch(value);
+
+      if (!value.trim()) {
+         setSuggestions([]);
+         return;
+      }
+
+      setIsLoadingSuggestions(true);
+
+      // Simulate async search - filter locations
+      const filtered = allLocations.filter((area) =>
+         area.toLowerCase().includes(value.toLowerCase())
+      );
+
+      setSuggestions(filtered.slice(0, 10)); // Limit to 10 suggestions
+      setIsLoadingSuggestions(false);
+   };
 
    const apply = (v: string) => {
-      onFilterChange({ ...filters, suburb: v });
+      onFilterChange({
+         ...filters,
+         suburb: v,
+         address: v,
+         maxDistance: distanceSearch
+      });
       setOpen(false);
+   };
+
+   const applyDistance = () => {
+      onFilterChange({
+         ...filters,
+         maxDistance: distanceSearch
+      });
    };
 
    return (
@@ -228,30 +259,50 @@ export const LocationFilter = ({ filters, onFilterChange }) => {
          onOpenChange={(nextOpen) => {
             setOpen(nextOpen);
             if (nextOpen) {
-               setSuburbSearch(filters.suburb);
+               setSuburbSearch(filters.suburb || "");
+               setDistanceSearch(filters.maxDistance || 50);
+               if (filters.suburb && filters.suburb.trim()) {
+                  const filtered = allLocations.filter((area) =>
+                     area.toLowerCase().includes(filters.suburb.toLowerCase())
+                  );
+                  setSuggestions(filtered.slice(0, 10));
+               } else {
+                  setSuggestions([]);
+               }
             }
          }}
       >
+         {open && (
+            <div
+               className="fixed inset-0 z-40 bg-black/20 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+               aria-hidden="true"
+            />
+         )}
          <PopoverTrigger asChild>
             <Button
                variant="outline"
-               className="min-w-[220px] flex items-center gap-2 text-sm"
+               className={cn(
+                  "min-w-[220px] flex items-center gap-2 text-sm bg-white transition-colors duration-200",
+                  open ? "relative z-50 ring-2 ring-primary border-primary" : ""
+               )}
             >
                <span className="truncate">
-                  {filters.suburb || "50km Hyderabad TG 500081"}
+                  {filters.suburb
+                     ? `${distanceSearch}km ${filters.suburb}`
+                     : `${distanceSearch}km radius`}
                </span>
                <ChevronDown className="h-4 w-4 ml-auto" />
             </Button>
          </PopoverTrigger>
 
          <PopoverContent className="md:w-[420px] p-4 space-y-4">
-            {/* Toggle in-person / remote */}
+            {/* Toggle in-person / remote / all */}
             <div className="flex gap-2">
                <Button
                   size="sm"
                   variant={filters.remotely === false ? "default" : "outline"}
                   onClick={() =>
-                     onFilterChange({ ...filters, remotely: filters.remotely === false ? null : false })
+                     onFilterChange({ ...filters, remotely: false })
                   }
                >
                   In-person
@@ -260,36 +311,104 @@ export const LocationFilter = ({ filters, onFilterChange }) => {
                <Button
                   size="sm"
                   variant={filters.remotely === true ? "default" : "outline"}
-                  onClick={() => onFilterChange({ ...filters, remotely: filters.remotely === true ? null : true })}
+                  onClick={() => onFilterChange({ ...filters, remotely: true })}
                >
                   Remotely
                </Button>
+
+               <Button
+                  size="sm"
+                  variant={filters.remotely === null ? "default" : "outline"}
+                  onClick={() =>
+                     onFilterChange({ ...filters, remotely: null })
+                  }
+               >
+                  All
+               </Button>
             </div>
 
-            {/* Input */}
+            {/* Location Input */}
             <div>
-               <label className="block text-xs mb-1">Suburb</label>
+               <label className="block text-xs font-semibold mb-2 text-secondary-900">LOCATION</label>
                <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3 md:size-4 text-secondary-400" />
                   <Input
                      value={suburbSearch}
-                     onChange={(e) => setSuburbSearch(e.target.value)}
+                     onChange={(e) => handleSuburbSearch(e.target.value)}
+                     placeholder="Search for a location..."
                      className="pl-10 text-xs md:text-sm"
                   />
                </div>
             </div>
 
-            {/* Suggestions */}
-            <div className="max-h-[200px] overflow-y-auto space-y-1">
-               {suggestions.map((s) => (
-                  <button
-                     key={s}
-                     onClick={() => apply(s)}
-                     className="block w-full text-left px-3 py-1 text-xs md:text-sm hover:bg-secondary-50 rounded-md"
-                  >
-                     {s}
-                  </button>
-               ))}
+            {/* Location Suggestions */}
+            {(suburbSearch.trim().length > 0 || isLoadingSuggestions) && (
+               <div className="max-h-[200px] overflow-y-auto space-y-1 border border-secondary-100 rounded-md p-2">
+                  {isLoadingSuggestions ? (
+                     <div className="text-center py-2 text-xs text-secondary-500">
+                        Searching locations...
+                     </div>
+                  ) : suggestions.length > 0 ? (
+                     suggestions.map((s) => (
+                        <button
+                           key={s}
+                           onClick={() => apply(s)}
+                           className="block w-full text-left px-3 py-2 text-xs md:text-sm hover:bg-primary-50 rounded-md transition-colors"
+                        >
+                           {s}
+                        </button>
+                     ))
+                  ) : (
+                     <div className="text-center py-2 text-xs text-secondary-500">
+                        No locations found
+                     </div>
+                  )}
+               </div>
+            )}
+
+            {/* Distance Range Slider */}
+            <div>
+               <label className="block text-xs font-semibold mb-3 text-secondary-900">
+                  DISTANCE: {distanceSearch}km
+               </label>
+               <Slider
+                  value={[distanceSearch]}
+                  onValueChange={(values) => {
+                     setDistanceSearch(values[0]);
+                  }}
+                  min={1}
+                  max={100}
+                  step={1}
+                  className="w-full"
+               />
+               <div className="flex justify-between text-xs text-secondary-500 mt-2">
+                  <span>1km</span>
+                  <span>100km</span>
+               </div>
+            </div>
+
+            {/* Apply Button */}
+            <div className="flex gap-2 pt-2">
+               <Button
+                  variant="outline"
+                  className="flex-1 text-sm"
+                  onClick={() => setOpen(false)}
+               >
+                  Cancel
+               </Button>
+               <Button
+                  className="flex-1 bg-primary-600 hover:bg-primary-700 text-white text-sm rounded-full font-semibold"
+                  onClick={() => {
+                     if (suburbSearch) {
+                        apply(suburbSearch);
+                     } else {
+                        applyDistance();
+                        setOpen(false);
+                     }
+                  }}
+               >
+                  Apply
+               </Button>
             </div>
          </PopoverContent>
       </Popover>
@@ -329,10 +448,19 @@ export const PriceFilter = ({ filters, onFilterChange }) => {
          }
          setOpen(nextOpen);
       }}>
+         {open && (
+            <div
+               className="fixed inset-0 z-40 bg-black/20 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+               aria-hidden="true"
+            />
+         )}
          <PopoverTrigger asChild>
             <Button
                variant="outline"
-               className="px-4 py-2 text-sm"
+               className={cn(
+                  "px-4 py-2 text-sm bg-white transition-colors duration-200",
+                  open ? "relative z-50 ring-2 ring-primary border-primary" : ""
+               )}
             >
                {filters.minBudget === MIN_PRICE && filters.maxBudget === MAX_PRICE
                   ? "Any price"
@@ -391,18 +519,34 @@ export const PriceFilter = ({ filters, onFilterChange }) => {
 
 
 export const SortFilter = ({ value, onChange }) => {
+   const [open, setOpen] = useState(false);
+
    return (
-      <Select value={value} onValueChange={onChange}>
-         <SelectTrigger className="px-4 py-2 text-sm">
-            <SelectValue placeholder="Sort" />
-         </SelectTrigger>
-         <SelectContent>
-            <SelectItem value="recent">Recent</SelectItem>
-            <SelectItem value="price-low">Price: Low to High</SelectItem>
-            <SelectItem value="price-high">Price: High to Low</SelectItem>
-            <SelectItem value="date">Date Posted</SelectItem>
-         </SelectContent>
-      </Select>
+      <>
+         {open && (
+            <div
+               className="fixed inset-0 z-40 bg-black/20 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+               aria-hidden="true"
+            />
+         )}
+         <Select value={value} onValueChange={onChange} onOpenChange={setOpen} open={open}>
+            <SelectTrigger
+               className={cn(
+                  "px-4 py-2 text-sm bg-white transition-colors duration-200",
+                  open ? "relative z-50 ring-2 ring-primary border-primary" : ""
+               )}
+            >
+               <SelectValue placeholder="Sort" />
+            </SelectTrigger>
+            <SelectContent className="z-50">
+               <SelectItem value="recent">Recent</SelectItem>
+               <SelectItem value="nearest">Nearest</SelectItem>
+               <SelectItem value="price-low">Price: Low to High</SelectItem>
+               <SelectItem value="price-high">Price: High to Low</SelectItem>
+               <SelectItem value="date">Date Posted</SelectItem>
+            </SelectContent>
+         </Select>
+      </>
    );
 };
 
@@ -434,11 +578,19 @@ export const OtherFiltersButton = ({ filters, onFilterChange }) => {
 
    return (
       <>
+         {open && (
+            <div
+               className="fixed inset-0 z-40 bg-black/20 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+               aria-hidden="true"
+            />
+         )}
          <Button
             variant={hasActiveOtherFilters ? "default" : "outline"}
-            className={`px-4 py-2 text-sm flex items-center gap-2 ${
-               hasActiveOtherFilters ? "bg-primary-600 hover:bg-primary-700 text-white" : ""
-            }`}
+            className={cn(
+               "px-4 py-2 text-sm flex items-center gap-2 transition-colors duration-200",
+               hasActiveOtherFilters ? "bg-primary-600 hover:bg-primary-700 text-white" : "bg-white",
+               open ? "relative z-50 ring-2 ring-primary border-primary bg-white" : (hasActiveOtherFilters && open ? "bg-primary-600" : "")
+            )}
             onClick={() => {
                setOpen(true);
                setTempFilters({

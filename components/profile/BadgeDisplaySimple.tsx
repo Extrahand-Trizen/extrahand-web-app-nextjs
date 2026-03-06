@@ -3,26 +3,40 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getBadgeProgress } from '@/lib/api/badge';
-import LoadingSpinner from '../LoadingSpinner';
+import { BadgeCheck, Crown, Shield, ShieldCheck } from 'lucide-react';
 
 interface BadgeDisplaySimpleProps {
   className?: string;
 }
 
-const BADGE_EMOJIS: Record<string, string> = {
-  none: '⭐',
-  basic: '🥉',
-  verified: '🥈',
-  trusted: '🥇',
-  elite: '👑',
+const BADGE_VISUALS = {
+  basic: {
+    icon: Shield,
+    accent: 'bg-gradient-to-b from-slate-100 to-slate-200 text-slate-700 ring-1 ring-slate-300',
+    chip: 'bg-slate-100 text-slate-700',
+  },
+  verified: {
+    icon: ShieldCheck,
+    accent: 'bg-gradient-to-b from-blue-50 to-blue-100 text-blue-700 ring-1 ring-blue-200',
+    chip: 'bg-blue-50 text-blue-700',
+  },
+  trusted: {
+    icon: BadgeCheck,
+    accent: 'bg-gradient-to-b from-emerald-50 to-emerald-100 text-emerald-700 ring-1 ring-emerald-200',
+    chip: 'bg-emerald-50 text-emerald-700',
+  },
+  elite: {
+    icon: Crown,
+    accent: 'bg-gradient-to-b from-amber-50 to-amber-100 text-amber-700 ring-1 ring-amber-200',
+    chip: 'bg-amber-50 text-amber-700',
+  },
 };
 
-const BADGE_GRADIENT: Record<string, string> = {
-  none: 'from-slate-400 to-slate-600',
-  basic: 'from-orange-400 to-orange-600',
-  verified: 'from-blue-400 to-blue-600',
-  trusted: 'from-yellow-400 to-yellow-600',
-  elite: 'from-purple-500 to-purple-700',
+const BADGE_NOTES: Record<string, string> = {
+  basic: 'Email + phone verified',
+  verified: 'Aadhaar verified',
+  trusted: 'PAN + bank verified',
+  elite: 'Admin approval required',
 };
 
 export default function BadgeDisplaySimple({ className = '' }: BadgeDisplaySimpleProps) {
@@ -67,162 +81,91 @@ export default function BadgeDisplaySimple({ className = '' }: BadgeDisplaySimpl
     );
   }
 
-  const badges = ['none', 'basic', 'verified', 'trusted', 'elite'];
-  const currentBadgeIndex = badges.indexOf(badgeData.currentBadge?.toLowerCase());
-  const requirements = badgeData.badgeRequirements || {};
+  const badges = ['basic', 'verified', 'trusted', 'elite'];
   const currentBadgeLower = badgeData.currentBadge?.toLowerCase() || 'none';
+  const displayBadge = currentBadgeLower === 'none' ? 'basic' : currentBadgeLower;
+  const currentBadgeIndex = badges.indexOf(displayBadge);
+  const currentBadgeVisual = BADGE_VISUALS[(displayBadge as keyof typeof BADGE_VISUALS)] || BADGE_VISUALS.basic;
+  const CurrentBadgeIcon = currentBadgeVisual.icon;
+  const requirements = badgeData.badgeRequirements || {};
+  const badgeLabel = `${displayBadge.charAt(0).toUpperCase()}${displayBadge.slice(1)}`;
+
+  const getRequiredCriteria = (badge: string, req: { minReputation: number; minTasks: number; minRating: number }) => {
+    const criteria: string[] = [];
+    if (BADGE_NOTES[badge]) criteria.push(BADGE_NOTES[badge]);
+    if (req.minReputation > 0) criteria.push(`Reputation ${req.minReputation}+`);
+    if (req.minTasks > 0) criteria.push(`${req.minTasks} tasks`);
+    if (req.minRating > 0) criteria.push(`${req.minRating}+ rating`);
+    return criteria;
+  };
 
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Current Badge Section */}
       <div className="text-center py-5">
-        <div className="text-6xl mb-3">{BADGE_EMOJIS[currentBadgeLower] || '⭐'}</div>
-        <h2 className="text-2xl font-bold capitalize text-gray-900 mb-1">{badgeData.currentBadge} Badge</h2>
+        <div className={`mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full shadow-sm ${currentBadgeVisual.accent}`}>
+          <CurrentBadgeIcon className="h-8 w-8" strokeWidth={2.1} />
+        </div>
+        <h2 className="text-2xl font-bold capitalize text-gray-900 mb-1">{badgeLabel} Badge</h2>
         <p className="text-gray-600 mb-3 text-sm">Reputation Score</p>
         <div className="inline-block text-3xl font-bold text-gray-900">{Math.round(badgeData.currentReputation)}/100</div>
       </div>
 
-      {/* Badge Journey */}
+      {/* Badge Requirements */}
       <div className="py-5">
-        <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-5">Your Badge Journey</h3>
-        <div className="flex items-center justify-between gap-2">
-          {badges.map((badge, idx) => {
-            const isActive = idx === currentBadgeIndex;
-            const isPassed = idx < currentBadgeIndex;
-            const isNext = idx === currentBadgeIndex + 1;
-
-            return (
-              <div key={badge} className="flex-1">
-                <div className="flex flex-col items-center">
-                  <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl transition-all ${
-                      isActive
-                        ? 'scale-110 shadow-lg'
-                        : isPassed
-                        ? ''
-                        : isNext
-                        ? ''
-                        : 'opacity-50'
-                    }`}
-                  >
-                    {BADGE_EMOJIS[badge]}
-                  </div>
-                  <span className="text-xs font-medium text-gray-600 mt-2 text-center capitalize block">{badge}</span>
-                  {isActive && <span className="text-xs font-bold text-blue-600 mt-1">Current</span>}
-                  {isPassed && <span className="text-xs text-green-600 font-semibold mt-1">✓ Achieved</span>}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* All Badge Requirements Grid */}
-      <div className="py-5">
-        <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-5">Badge Tiers & Requirements</h3>
+        <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-5">Badge Tiers</h3>
         <div className="space-y-4">
           {badges.map((badge) => {
             const req = requirements[badge];
             if (!req) return null;
             
             const isCurrentOrPassed = badges.indexOf(badge) <= currentBadgeIndex;
-            const badgeLower = badge.toLowerCase();
-            
+            const criteria = getRequiredCriteria(badge, req);
+
             return (
               <div
                 key={badge}
-                className={`p-4 transition-all ${
+                className={`rounded-xl border p-4 transition-all ${
                   isCurrentOrPassed
-                    ? 'border-b-2 border-green-600'
-                    : 'border-b border-gray-300'
+                    ? 'border-emerald-500 bg-emerald-50/30'
+                    : 'border-gray-200 bg-white'
                 }`}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="text-3xl">
-                      {BADGE_EMOJIS[badgeLower]}
+                    <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full shadow-sm ${BADGE_VISUALS[badge as keyof typeof BADGE_VISUALS].accent}`}>
+                      {React.createElement(BADGE_VISUALS[badge as keyof typeof BADGE_VISUALS].icon, { className: 'h-5 w-5', strokeWidth: 2.1 })}
                     </div>
                     <div>
                       <p className={`text-base font-bold capitalize ${isCurrentOrPassed ? 'text-gray-900' : 'text-gray-700'}`}>
                         {badge} Badge
                       </p>
-                      <p className={`text-xs ${isCurrentOrPassed ? 'text-gray-700' : 'text-gray-600'}`}>
-                        {badge === 'none' ? 'New user - Browse tasks' : 
-                         badge === 'verified' ? 'Aadhaar verified' :
-                         badge === 'trusted' ? '10 tasks and 4.0 above rating' :
-                         badge === 'elite' ? '25 tasks and 4.5 rating' :
-                         req.description}
-                      </p>
+                      <p className={`text-sm ${isCurrentOrPassed ? 'text-gray-700' : 'text-gray-600'}`}>{req.description}</p>
                     </div>
                   </div>
                   {isCurrentOrPassed && (
-                    <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                    <span className={`shrink-0 text-[11px] font-bold px-3 py-1 rounded-full ${
                       badges.indexOf(badge) === currentBadgeIndex
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-green-500 text-white'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-emerald-600 text-white'
                     }`}>
                       {badges.indexOf(badge) === currentBadgeIndex ? 'CURRENT' : 'ACHIEVED'}
                     </span>
                   )}
                 </div>
-
-                {/* Requirements Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  <div className="p-3 text-center bg-gray-50 rounded-lg">
-                    <p className="text-[10px] font-semibold text-gray-500 mb-1 uppercase">Reputation</p>
-                    <p className="text-lg font-bold text-gray-900">{req.minReputation}<span className="text-xs text-gray-500 font-normal">/100</span></p>
-                  </div>
-                  <div className="p-3 text-center bg-gray-50 rounded-lg">
-                    <p className="text-[10px] font-semibold text-gray-500 mb-1 uppercase">Tasks</p>
-                    <p className="text-lg font-bold text-gray-900">{req.minTasks}</p>
-                  </div>
-                  <div className="p-3 text-center bg-gray-50 rounded-lg">
-                    <p className="text-[10px] font-semibold text-gray-500 mb-1 uppercase">Rating</p>
-                    <p className="text-lg font-bold text-gray-900">⭐{req.minRating}</p>
-                  </div>
-                  <div className="p-3 text-center bg-gray-50 rounded-lg">
-                    <p className="text-[10px] font-semibold text-gray-500 mb-1 uppercase">Reviews</p>
-                    <p className="text-lg font-bold text-gray-900">{req.minReviews}</p>
-                  </div>
+                <div className="flex flex-wrap gap-2">
+                  {criteria.map((item) => (
+                    <span
+                      key={item}
+                      className={`rounded-full px-3 py-1 text-xs font-medium ${BADGE_VISUALS[badge as keyof typeof BADGE_VISUALS].chip}`}
+                    >
+                      {item}
+                    </span>
+                  ))}
                 </div>
               </div>
             );
           })}
-        </div>
-      </div>
-
-      {/* How It Works - compact grid */}
-      <div className="py-5 border-t border-gray-200">
-        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">How Badge Progression Works</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
-            <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary-600 text-white flex items-center justify-center font-bold text-xs">1</div>
-            <div className="min-w-0">
-              <p className="font-semibold text-gray-900 text-sm">Complete Tasks & Build Reputation</p>
-              <p className="text-xs text-gray-600 mt-0.5">Earn reputation points by completing tasks successfully</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
-            <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary-600 text-white flex items-center justify-center font-bold text-xs">2</div>
-            <div className="min-w-0">
-              <p className="font-semibold text-gray-900 text-sm">Maintain High Ratings</p>
-              <p className="text-xs text-gray-600 mt-0.5">Keep your average rating above the required threshold</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
-            <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary-600 text-white flex items-center justify-center font-bold text-xs">3</div>
-            <div className="min-w-0">
-              <p className="font-semibold text-gray-900 text-sm">Automatic Progression</p>
-              <p className="text-xs text-gray-600 mt-0.5">When all requirements are met, you'll be automatically upgraded</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
-            <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary-600 text-white flex items-center justify-center font-bold text-xs">4</div>
-            <div className="min-w-0">
-              <p className="font-semibold text-gray-900 text-sm">Unlock Benefits</p>
-              <p className="text-xs text-gray-600 mt-0.5">Enjoy lower fees, better visibility, and premium features</p>
-            </div>
-          </div>
         </div>
       </div>
     </div>

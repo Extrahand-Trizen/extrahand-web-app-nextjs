@@ -7,21 +7,15 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { MapPin, Locate, Loader2, Navigation, Home, Plus, X } from "lucide-react";
+import { MapPin, Locate, Loader2, Navigation, Home, Plus, X, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { isValidCoordinate, sanitizeString } from "@/lib/utils/sanitization";
 import { GoogleMapPicker } from "@/components/maps/GoogleMapPicker";
 import { addressesApi } from "@/lib/api/endpoints/addresses";
 import type { SavedAddress } from "@/types/profile";
-import {
-   Dialog,
-   DialogContent,
-   DialogHeader,
-   DialogTitle,
-   DialogDescription,
-} from "@/components/ui/dialog";
 
 interface LocationData {
    address: string;
@@ -90,12 +84,12 @@ export function InteractiveLocationPicker({
    const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
    const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
    const [showAddNewAddressForm, setShowAddNewAddressForm] = useState(false);
-   const [showSaveAddressDialog, setShowSaveAddressDialog] = useState(false);
    const [pendingAddressToBeSaved, setPendingAddressToBeSaved] = useState<{
       coordinates: [number, number];
       address: Partial<LocationData>;
    } | null>(null);
    const [selectedAddressType, setSelectedAddressType] = useState<"Home" | "Work" | "Other">("Home");
+   const [selectedSavedAddressId, setSelectedSavedAddressId] = useState<string | null>(null);
    const autoSelectRef = useRef(false); // Prevent duplicate auto-select
 
    // Fetch saved addresses on mount
@@ -111,6 +105,7 @@ export function InteractiveLocationPicker({
                const defaultAddress = addresses?.find(addr => addr.isDefault);
                if (defaultAddress) {
                   autoSelectRef.current = true; // Prevent future auto-selects
+                  setSelectedSavedAddressId(defaultAddress.id);
                   await handleSelectSavedAddress(defaultAddress);
                }
             }
@@ -153,6 +148,9 @@ export function InteractiveLocationPicker({
 
    // Handle saved address selection
    const handleSelectSavedAddress = async (address: SavedAddress) => {
+      setSelectedSavedAddressId(address.id);
+      setPendingAddressToBeSaved(null);
+
       const fullAddress = [
          address.addressLine1,
          address.addressLine2,
@@ -520,7 +518,7 @@ export function InteractiveLocationPicker({
       handleAddressSearch(suggestion);
    };
 
-   // Handle marker drag on map - Show save dialog instead of directly updating
+   // Handle marker drag: update form and input first, then offer inline Use/Save actions
    const handleMarkerDrag = useCallback(async (lat: number, lng: number) => {
       const coords: [number, number] = [lng, lat];
       setMarkerPosition(coords);
@@ -537,7 +535,22 @@ export function InteractiveLocationPicker({
          const locationData = parseLocationFromGeocode(data);
          console.log('Parsed location data:', locationData);
 
-         // Store pending address and show save dialog
+         // Always apply dragged location immediately so the user sees it in the form.
+         const updatedLocation: LocationData = {
+            address: locationData.address || "",
+            city: locationData.city || "",
+            state: locationData.state || "",
+            pinCode: locationData.pinCode || "",
+            country: locationData.country || "India",
+            coordinates: coords,
+         };
+
+         setAddressInput(updatedLocation.address);
+         onChange(updatedLocation);
+         onCoordinatesChange?.(coords);
+         setSelectedSavedAddressId(null);
+
+         // Keep pending data only for optional save action.
          setPendingAddressToBeSaved({
             coordinates: coords,
             address: {
@@ -554,13 +567,17 @@ export function InteractiveLocationPicker({
          if (!locationData.pinCode) {
             console.warn('Warning: No pinCode found for marker position:', { lat, lng, locationData });
          }
-         
-         setShowSaveAddressDialog(true);
+
       } catch (error) {
          console.error('Failed to geocode marker position:', error);
          toast.error("Could not determine address at this location");
       }
-   }, []);
+   }, [onChange, onCoordinatesChange]);
+
+   const handleUseDraggedAddress = () => {
+      setPendingAddressToBeSaved(null);
+      toast.success("Using this location for your task");
+   };
 
    // Handle saving the selected address
    const handleSaveSelectedAddress = async () => {
@@ -588,6 +605,9 @@ export function InteractiveLocationPicker({
          // Refresh addresses list
          const addresses = await addressesApi.getAddresses();
          setSavedAddresses(addresses || []);
+         if (newAddress?.id) {
+            setSelectedSavedAddressId(newAddress.id);
+         }
 
          // Update the location in the form
          onChange({
@@ -600,7 +620,6 @@ export function InteractiveLocationPicker({
          });
          onCoordinatesChange?.(coordinates);
 
-         setShowSaveAddressDialog(false);
          setPendingAddressToBeSaved(null);
          toast.success(`Address saved as ${selectedAddressType}`);
       } catch (error) {
@@ -609,25 +628,17 @@ export function InteractiveLocationPicker({
       }
    };
 
-   // Handle canceling the save dialog
-   const handleCancelSaveDialog = () => {
-      setShowSaveAddressDialog(false);
-      setPendingAddressToBeSaved(null);
-      // But keep the marker position on map
-      if (pendingAddressToBeSaved) {
-         const { coordinates, address } = pendingAddressToBeSaved;
-         onChange({
-            address: address.address,
-            city: address.city,
-            state: address.state,
-            pinCode: address.pinCode,
-            country: address.country,
-            coordinates: coordinates,
-         });
-         onCoordinatesChange?.(coordinates);
-      }
-   };
 
+   const getSavedAddressText = (address: SavedAddress) =>
+      [
+         address.addressLine1,
+         address.addressLine2,
+         address.city,
+         address.state,
+         address.pinCode,
+      ]
+         .filter(Boolean)
+         .join(", ");
 
    return (
       <div className="space-y-4">
@@ -638,41 +649,65 @@ export function InteractiveLocationPicker({
                   Your Saved Addresses
                </label>
                <div className="grid grid-cols-1 gap-2">
-                  {savedAddresses.map((address) => (
+                  {savedAddresses.map((address) => {
+                     const addressText = getSavedAddressText(address);
+                     const isSelected =
+                        selectedSavedAddressId === address.id ||
+                        (value?.address && value.address === addressText);
+
+                     return (
                      <button
                         key={address.id}
                         type="button"
                         onClick={() => handleSelectSavedAddress(address)}
-                        className="w-full px-3 py-2.5 text-left border border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50/50 transition-all group"
+                        aria-pressed={isSelected}
+                        className={cn(
+                           "w-full px-3 py-2.5 text-left border rounded-lg transition-all group",
+                           isSelected
+                              ? "border-primary-600 bg-primary-50 shadow-sm ring-1 ring-primary-200"
+                              : "border-gray-200 hover:border-primary-500 hover:bg-primary-50/50"
+                        )}
                      >
                         <div className="flex items-start gap-2">
-                           <Home className="w-4 h-4 text-gray-400 group-hover:text-primary-600 mt-0.5 shrink-0" />
+                           <Home
+                              className={cn(
+                                 "w-4 h-4 mt-0.5 shrink-0",
+                                 isSelected
+                                    ? "text-primary-700"
+                                    : "text-gray-400 group-hover:text-primary-600"
+                              )}
+                           />
                            <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-0.5">
-                                 <span className="text-sm font-medium text-gray-900">
+                                 <span className={cn(
+                                    "text-sm font-medium",
+                                    isSelected ? "text-primary-900" : "text-gray-900"
+                                 )}>
                                     {address.label}
                                  </span>
+                                 {isSelected && (
+                                    <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 bg-primary-100 text-primary-700 rounded font-medium">
+                                       <CheckCircle2 className="w-3 h-3" />
+                                       Selected
+                                    </span>
+                                 )}
                                  {address.isDefault && (
                                     <span className="text-[10px] px-1.5 py-0.5 bg-primary-100 text-primary-700 rounded font-medium">
                                        Default
                                     </span>
                                  )}
                               </div>
-                              <p className="text-xs text-gray-600 line-clamp-2">
-                                 {[
-                                    address.addressLine1,
-                                    address.addressLine2,
-                                    address.city,
-                                    address.state,
-                                    address.pinCode,
-                                 ]
-                                    .filter(Boolean)
-                                    .join(", ")}
+                              <p className={cn(
+                                 "text-xs line-clamp-2",
+                                 isSelected ? "text-primary-800" : "text-gray-600"
+                              )}>
+                                 {addressText}
                               </p>
                            </div>
                         </div>
                      </button>
-                  ))}
+                     );
+                  })}
                </div>
             </div>
          )}
@@ -798,82 +833,58 @@ export function InteractiveLocationPicker({
                      </div>
                   )}
                </div>
-            </div>
-         )}
 
-         {/* Save Address Dialog */}
-         <Dialog open={showSaveAddressDialog} onOpenChange={setShowSaveAddressDialog}>
-            <DialogContent className="sm:max-w-sm">
-               <DialogHeader>
-                  <DialogTitle>Save This Address?</DialogTitle>
-                  <DialogDescription>
-                     Choose a label for this address to save it
-                  </DialogDescription>
-               </DialogHeader>
-
-               <div className="space-y-4 py-4">
-                  {pendingAddressToBeSaved && (
-                     <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-1">
-                        <p className="text-sm text-gray-900 font-medium line-clamp-2">
+               {pendingAddressToBeSaved && (
+                  <div className="rounded-lg border border-primary-200 bg-primary-50 p-3 space-y-3">
+                     <div className="space-y-1">
+                        <p className="text-sm font-semibold text-primary-900">Use this location?</p>
+                        <p className="text-xs text-primary-800 line-clamp-2">
                            {pendingAddressToBeSaved.address.address}
                         </p>
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                           {pendingAddressToBeSaved.address.city && (
-                              <span>
-                                 {pendingAddressToBeSaved.address.city}, {pendingAddressToBeSaved.address.state}
-                              </span>
-                           )}
-                           {pendingAddressToBeSaved.address.pinCode && (
-                              <span className="px-2 py-0.5 bg-primary-100 text-primary-700 rounded font-medium">
-                                 PIN: {pendingAddressToBeSaved.address.pinCode}
-                              </span>
-                           )}
-                        </div>
-                        {!pendingAddressToBeSaved.address.pinCode && (
-                           <p className="text-xs text-orange-600 mt-1">
-                              ⚠️ PIN code not found for this location
-                           </p>
-                        )}
+                        <p className="text-xs text-primary-700">
+                           {[pendingAddressToBeSaved.address.city, pendingAddressToBeSaved.address.state]
+                              .filter(Boolean)
+                              .join(", ")}
+                           {pendingAddressToBeSaved.address.pinCode
+                              ? `, PIN: ${pendingAddressToBeSaved.address.pinCode}`
+                              : ""}
+                        </p>
                      </div>
-                  )}
 
-                  <div className="grid grid-cols-3 gap-2">
-                     {['Home', 'Work', 'Other'].map((type) => (
-                        <button
-                           key={type}
+                     <div className="grid grid-cols-3 gap-2">
+                        {["Home", "Work", "Other"].map((type) => (
+                           <button
+                              key={type}
+                              type="button"
+                              onClick={() => setSelectedAddressType(type as "Home" | "Work" | "Other")}
+                              className={cn(
+                                 "px-3 py-2 rounded-lg border text-sm font-medium transition-all",
+                                 selectedAddressType === type
+                                    ? "border-primary-600 bg-white text-primary-700"
+                                    : "border-primary-200 bg-primary-50 text-primary-800 hover:border-primary-300"
+                              )}
+                           >
+                              {type}
+                           </button>
+                        ))}
+                     </div>
+
+                     <div className="flex justify-end gap-2">
+                        <Button type="button" variant="outline" onClick={handleUseDraggedAddress}>
+                           Use This
+                        </Button>
+                        <Button
                            type="button"
-                           onClick={() => setSelectedAddressType(type as "Home" | "Work" | "Other")}
-                           className={`px-3 py-2.5 rounded-lg border-2 font-medium text-sm transition-all ${
-                              selectedAddressType === type
-                                 ? 'border-primary-600 bg-primary-50 text-primary-700'
-                                 : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
-                           }`}
+                           onClick={handleSaveSelectedAddress}
+                           className="bg-primary-600 text-white hover:bg-primary-700"
                         >
-                           {type}
-                        </button>
-                     ))}
+                           Save This
+                        </Button>
+                     </div>
                   </div>
-               </div>
-
-               <div className="flex gap-2 justify-end">
-                  <Button
-                     type="button"
-                     variant="outline"
-                     onClick={handleCancelSaveDialog}
-                     className="px-4"
-                  >
-                     Cancel
-                  </Button>
-                  <Button
-                     type="button"
-                     onClick={handleSaveSelectedAddress}
-                     className="px-4 bg-primary-600 text-white hover:bg-primary-700"
-                  >
-                     Save
-                  </Button>
-               </div>
-            </DialogContent>
-         </Dialog>
+               )}
+            </div>
+         )}
       </div>
    );
 }

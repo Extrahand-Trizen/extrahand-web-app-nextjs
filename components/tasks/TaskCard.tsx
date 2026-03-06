@@ -7,6 +7,7 @@ interface TaskCardProps {
    task: Task;
    isSelected?: boolean;
    onClick?: () => void;
+   distance?: number;
 }
 
 /**
@@ -14,7 +15,7 @@ interface TaskCardProps {
  * Click-only interaction (no hover map movement)
  * Shows all relevant task information from schema
  */
-export function TaskCard({ task, isSelected = false, onClick }: TaskCardProps) {
+export function TaskCard({ task, isSelected = false, onClick, distance }: TaskCardProps) {
    const budgetAmount =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
 
@@ -41,11 +42,10 @@ export function TaskCard({ task, isSelected = false, onClick }: TaskCardProps) {
    return (
       <div
          onClick={onClick}
-         className={`group bg-white rounded-lg border-2 transition-all cursor-pointer hover:shadow-lg p-5 md:p-6 flex flex-col gap-3.5 ${
-            isSelected
-               ? "border-primary-500 shadow-lg"
+         className={`group bg-white rounded-lg border-2 transition-all cursor-pointer hover:shadow-md p-3 md:p-4 flex flex-col gap-2 ${isSelected
+               ? "border-primary-500 shadow-md"
                : "border-secondary-200 hover:border-primary-300"
-         }`}
+            }`}
       >
          {/* Top Row - Title and Amount */}
          <div className="flex items-start justify-between gap-4">
@@ -57,12 +57,12 @@ export function TaskCard({ task, isSelected = false, onClick }: TaskCardProps) {
                      </span>
                   )}
                </div>
-               <h3 className="text-lg md:text-xl font-bold text-secondary-900 line-clamp-1 group-hover:text-primary-600 transition-colors">
+               <h3 className="text-base md:text-lg font-bold text-secondary-900 line-clamp-1 group-hover:text-primary-600 transition-colors">
                   {task.title}
                </h3>
             </div>
             <div className="flex flex-col items-center shrink-0">
-               <div className="text-lg md:text-xl font-bold text-secondary-900">
+               <div className="text-base md:text-lg font-bold text-secondary-900">
                   ₹{budgetAmount}
                </div>
                <div className="text-[10px] md:text-xs text-secondary-500 text-center whitespace-nowrap">
@@ -74,27 +74,30 @@ export function TaskCard({ task, isSelected = false, onClick }: TaskCardProps) {
          </div>
 
          {/* Middle Row - Location and Schedule */}
-         <div className="space-y-2">
-            <div className="flex items-center gap-2 text-secondary-600">
-               <MapPin className="size-4 shrink-0" />
-               <span className="text-sm md:text-base font-medium truncate">{task.location.city}</span>
+         <div className="space-y-1">
+            <div className="flex items-center justify-between gap-2 text-secondary-600">
+               <div className="flex items-center gap-2 min-w-0">
+                  <MapPin className="size-3.5 shrink-0" />
+                  <span className="text-xs md:text-sm font-medium truncate">{task.location.city}</span>
+               </div>
+                  {/* Distance hidden as per requirement */}
             </div>
-            <div className="flex items-center gap-2 text-secondary-700 text-sm md:text-base font-medium">
-               <Calendar className="size-4 shrink-0" />
+            <div className="flex items-center gap-2 text-secondary-700 text-xs md:text-sm font-medium">
+               <Calendar className="size-3.5 shrink-0" />
                <span>
                   {task.dateOption === "flexible" || !task.dateOption || !task.scheduledDate
                      ? "Flexible"
                      : task.dateOption === "on-date" && task.scheduledDate
-                     ? `On ${new Date(task.scheduledDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-                     : task.dateOption === "before-date" && task.scheduledDate
-                     ? `Before ${new Date(task.scheduledDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-                     : task.scheduledDate
-                     ? new Date(task.scheduledDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })
-                     : "Flexible"}
+                        ? `On ${new Date(task.scheduledDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                        : task.dateOption === "before-date" && task.scheduledDate
+                           ? `Before ${new Date(task.scheduledDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                           : task.scheduledDate
+                              ? new Date(task.scheduledDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                              : "Flexible"}
                </span>
             </div>
-            <div className="flex items-center gap-2 text-secondary-700 text-sm md:text-base font-medium">
-               <Clock className="size-4 shrink-0" />
+            <div className="flex items-center gap-2 text-secondary-700 text-xs md:text-sm font-medium">
+               <Clock className="size-3.5 shrink-0" />
                <span>
                   {task.timeSlot
                      ? task.timeSlot.charAt(0).toUpperCase() + task.timeSlot.slice(1)
@@ -104,14 +107,14 @@ export function TaskCard({ task, isSelected = false, onClick }: TaskCardProps) {
          </div>
 
          {/* Bottom Row - Status and User Profile */}
-         <div className="flex items-center justify-between pt-3 border-t border-secondary-100">
+         <div className="flex items-center justify-between pt-2 border-t border-secondary-100">
             <div className="flex items-center gap-3">
                {getStatusBadge()}
             </div>
 
             {/* User Profile Avatar */}
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary-100 flex items-center justify-center border-2 border-primary-200 shrink-0 shadow-sm">
-               <User className="w-5 h-5 md:w-6 md:h-6 text-primary-600" />
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary-100 flex items-center justify-center border-2 border-primary-200 shrink-0 shadow-sm">
+               <User className="w-4 h-4 md:w-5 md:h-5 text-primary-600" />
             </div>
          </div>
       </div>

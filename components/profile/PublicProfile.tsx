@@ -11,13 +11,11 @@ import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
    Star,
-   Shield,
    MapPin,
    Calendar,
    CheckCircle2,
    Briefcase,
    ThumbsUp,
-   Award,
    TrendingUp,
    Clock,
    Building2,
@@ -30,9 +28,7 @@ import {
 import { UserProfile } from "@/types/user";
 import { Review, WorkHistoryItem } from "@/types/profile";
 import {
-   generateAchievements,
    getAvailabilityInfo,
-   type Achievement,
 } from "@/lib/utils/profileMetrics";
 import { profilesApi } from "@/lib/api/endpoints/profiles";
 import { getUserBadge } from "@/lib/api/badge";
@@ -66,11 +62,11 @@ export function PublicProfile({
    useEffect(() => {
       async function fetchBadge() {
          try {
-            const uid = user.uid;
-            if (!uid) return;
+            const lookupId = user.uid || user._id;
+            if (!lookupId) return;
 
-            console.log("🎖️ Fetching badge for user:", uid);
-            const badgeData = await getUserBadge(uid);
+            console.log("Fetching badge for user:", lookupId);
+            const badgeData = await getUserBadge(lookupId);
             console.log("✅ Badge fetched:", badgeData);
             setBadge(badgeData);
          } catch (error: any) {
@@ -79,7 +75,7 @@ export function PublicProfile({
       }
 
       fetchBadge();
-   }, [user.uid]);
+   }, [user.uid, user._id]);
 
    useEffect(() => {
       async function fetchStats() {
@@ -128,8 +124,9 @@ export function PublicProfile({
    // On-time rate: only show when backend provides it; avoid dummy 95%
    const onTimeRate = (stats as any)?.onTimeRate ?? null;
 
-   const achievements = generateAchievements(user);
    const availability = getAvailabilityInfo(user);
+
+   const resolvedBadge = String(badge?.currentBadge || user.verificationBadge || "none").toLowerCase();
 
    return (
       <div className="max-w-7xl mx-auto space-y-6">
@@ -158,32 +155,14 @@ export function PublicProfile({
                            {user.name}
                         </h1>
                         {/* Badge Display */}
-                        {badge && (
+                        {resolvedBadge !== "none" && (
                            <UserBadge 
-                              badge={badge.currentBadge as any} 
+                              badge={resolvedBadge as any} 
                               size="md" 
                               showLabel 
                               clickable 
                            />
                         )}
-                        {user.verificationBadge &&
-                           user.verificationBadge !== "none" && (
-                              <Badge
-                                 variant="secondary"
-                                 className={cn(
-                                    "capitalize text-xs",
-                                    user.verificationBadge === "verified" &&
-                                    "bg-green-100 text-green-700",
-                                    user.verificationBadge === "trusted" &&
-                                    "bg-blue-100 text-blue-700",
-                                    user.verificationBadge === "basic" &&
-                                    "bg-gray-100 text-gray-700"
-                                 )}
-                              >
-                                 <Shield className="size-3 mr-1" />
-                                 {user.verificationBadge}
-                              </Badge>
-                           )}
                         {availability.isAvailable && (
                            <Badge variant="outline" className="text-green-600 border-green-200">
                               <div className="w-2 h-2 bg-green-500 rounded-full mr-1.5" />
@@ -405,7 +384,7 @@ export function PublicProfile({
             <Card className="border-none shadow-sm bg-slate-50/50">
                <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                   <div className="p-2 rounded-full bg-white shadow-sm mb-3">
-                     <Award className="size-5 text-slate-700" />
+                     <TrendingUp className="size-5 text-slate-700" />
                   </div>
                   <div className="text-2xl font-semibold text-slate-900">{successRate}%</div>
                   <div className="text-xs font-medium text-slate-500 mt-1 uppercase tracking-wide">Success</div>
@@ -463,28 +442,6 @@ export function PublicProfile({
                   })}
                </div>
             </div>
-         )}
-
-         {/* Achievements Section */}
-         {achievements.length > 0 && (
-            <Card>
-               <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                     <Award className="size-5" />
-                     Achievements & Badges
-                  </CardTitle>
-               </CardHeader>
-               <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                     {achievements.map((achievement) => (
-                        <AchievementBadge
-                           key={achievement.id}
-                           achievement={achievement}
-                        />
-                     ))}
-                  </div>
-               </CardContent>
-            </Card>
          )}
 
          {/* Verification Badges */}
@@ -581,27 +538,6 @@ function StatCard({ icon: Icon, label, value, className }: StatCardProps) {
          </CardContent>
       </Card>
    );
-}
-
-interface AchievementBadgeProps {
-   achievement: Achievement;
-}
-
-function AchievementBadge({ achievement }: AchievementBadgeProps) {
-   return (
-      <div className="bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 rounded-lg p-3 text-center">
-         <div className="text-3xl mb-1">{achievement.icon}</div>
-         <p className="text-xs font-medium text-gray-900">{achievement.title}</p>
-         <p className="text-[10px] text-gray-500 mt-0.5">
-            {achievement.description}
-         </p>
-      </div>
-   );
-}
-
-interface VerificationBadgeProps {
-   label: string;
-   verified: boolean;
 }
 
 function VerificationBadge({ label, verified }: VerificationBadgeProps) {
