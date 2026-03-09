@@ -39,6 +39,7 @@ import {
 import type { Task } from "@/types/task";
 import type { UserRole } from "@/types/tracking";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
+import { getErrorMessage } from "@/lib/utils/errorUtils";
 import { toast } from "sonner";
 
 interface StatusUpdateSectionProps {
@@ -213,8 +214,8 @@ export function StatusUpdateSection({
          setOtpValue("");
          setIsOtpDialogOpen(true);
          toast.success(`OTP sent to ${result.sentTo}. Ask poster and enter OTP to start task.`);
-      } catch (error: any) {
-         toast.error(error?.message || "Failed to send OTP");
+      } catch (error: unknown) {
+         toast.error(getErrorMessage(error) || "Failed to send OTP");
       } finally {
          setIsSendingOtp(false);
       }
@@ -226,8 +227,8 @@ export function StatusUpdateSection({
          const result = await tasksApi.resendStartOtp(task._id);
          setOtpExpiresAt(result.expiresAt);
          toast.success(`OTP resent to ${result.sentTo}`);
-      } catch (error: any) {
-         toast.error(error?.message || "Failed to resend OTP");
+      } catch (error: unknown) {
+         toast.error(getErrorMessage(error) || "Failed to resend OTP");
       } finally {
          setIsResendingOtp(false);
       }
@@ -247,8 +248,13 @@ export function StatusUpdateSection({
          setIsOtpDialogOpen(false);
          setOtpValue("");
          toast.success("OTP verified. Task started successfully.");
-      } catch (error: any) {
-         toast.error(error?.message || "OTP mismatch");
+      } catch (error: unknown) {
+         const message = getErrorMessage(error);
+         if (/invalid|mismatch|incorrect|failed|expired|attempt/i.test(message)) {
+            toast.error(message);
+         } else {
+            toast.error("OTP verification failed");
+         }
       } finally {
          setIsVerifyingOtp(false);
       }

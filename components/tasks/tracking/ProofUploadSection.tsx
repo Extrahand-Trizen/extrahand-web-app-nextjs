@@ -143,13 +143,6 @@ export function ProofUploadSection({
     // Close the modal
     setShowProofModal(false);
 
-    // Check if there are uploaded images (local state) or existing proof
-    const hasProof = uploadedImages.length > 0 || (task.completionProof && task.completionProof.length > 0);
-    if (!hasProof) {
-      toast.error("Please upload at least one proof image");
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       // Pass uploadedImages to the submit handler
@@ -425,7 +418,7 @@ export function ProofUploadSection({
         {/* Submit Button */}
         <Button
           onClick={handleSubmit}
-          disabled={isSubmitting || (uploadedImages.length === 0 && (!task.completionProof || task.completionProof.length === 0))}
+          disabled={isSubmitting}
           className="w-full"
         >
           {isSubmitting ? (
