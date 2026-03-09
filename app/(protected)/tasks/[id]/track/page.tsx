@@ -609,6 +609,7 @@ export default function TaskTrackingPage() {
                            task={task}
                            userRole={userRole}
                            onStatusUpdate={handleStatusUpdate}
+                           onSubmitProof={handleSubmitProof}
                            onTaskUpdated={(updatedTask) => setTaskInCache(updatedTask)}
                         />
                      </div>
@@ -710,6 +711,7 @@ export default function TaskTrackingPage() {
                         task={task}
                         userRole={userRole}
                         onStatusUpdate={handleStatusUpdate}
+                        onSubmitProof={handleSubmitProof}
                         onTaskUpdated={(updatedTask) => setTaskInCache(updatedTask)}
                      />
                   )}
