@@ -232,7 +232,7 @@ export function BudgetStep({ form, onNext }: BudgetStepProps) {
                                  type="text"
                                  inputMode="numeric"
                                  pattern="[0-9]*"
-                                 placeholder="500"
+                                 placeholder="Enter your budget"
                                  className="h-10 pl-12 text-sm"
                                  value={field.value ?? ""}
                                  onChange={(e) => {
@@ -268,7 +268,7 @@ export function BudgetStep({ form, onNext }: BudgetStepProps) {
                            "text-xs",
                            isOutOfRange && "text-red-600 font-medium"
                         )}>
-                          Enter a budget between ₹50 and ₹50,000.
+                           Enter a budget between ₹50 and ₹50,000.
                         </FormDescription>
                         <FormMessage />
                      </FormItem>
@@ -307,22 +307,22 @@ export function BudgetStep({ form, onNext }: BudgetStepProps) {
                                        className={cn(
                                           "size-8 md:size-10 rounded-lg flex items-center justify-center shrink-0",
                                           option.color === "gray" &&
-                                             "bg-gray-100",
+                                          "bg-gray-100",
                                           option.color === "primary" &&
-                                             "bg-primary-100",
+                                          "bg-primary-100",
                                           option.color === "orange" &&
-                                             "bg-orange-100"
+                                          "bg-orange-100"
                                        )}
                                     >
                                        <Icon
                                           className={cn(
                                              "size-4 md:size-5",
                                              option.color === "gray" &&
-                                                "text-gray-600",
+                                             "text-gray-600",
                                              option.color === "primary" &&
-                                                "text-primary-600",
+                                             "text-primary-600",
                                              option.color === "orange" &&
-                                                "text-orange-600"
+                                             "text-orange-600"
                                           )}
                                        />
                                     </div>
@@ -337,9 +337,9 @@ export function BudgetStep({ form, onNext }: BudgetStepProps) {
                                                 className={cn(
                                                    "h-5 px-2 text-[9px] md:text-xs font-medium",
                                                    option.color === "primary" &&
-                                                      "bg-primary-100 text-primary-700",
+                                                   "bg-primary-100 text-primary-700",
                                                    option.color === "orange" &&
-                                                      "bg-orange-100 text-orange-700"
+                                                   "bg-orange-100 text-orange-700"
                                                 )}
                                              >
                                                 {option.badge}

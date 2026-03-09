@@ -147,38 +147,38 @@ export function LocationScheduleStep({
          return;
       }
 
-         const currentStart = form.getValues("scheduledTimeStart");
-         const currentEnd = form.getValues("scheduledTimeEnd");
+      const currentStart = form.getValues("scheduledTimeStart");
+      const currentEnd = form.getValues("scheduledTimeEnd");
 
-         // Update start time to use the selected date but keep the time
-         if (currentStart) {
-            const newStart = new Date(scheduledDate);
-            newStart.setHours(currentStart.getHours(), currentStart.getMinutes(), 0, 0);
-            
-            // Only update if day changed
-            if (startOfDay(currentStart).getTime() !== startOfDay(scheduledDate).getTime()) {
-               form.setValue("scheduledTimeStart", newStart);
-            }
-         }
+      // Update start time to use the selected date but keep the time
+      if (currentStart) {
+         const newStart = new Date(scheduledDate);
+         newStart.setHours(currentStart.getHours(), currentStart.getMinutes(), 0, 0);
 
-         // Update end time similarly
-         if (currentEnd) {
-            const newEnd = new Date(scheduledDate);
-            newEnd.setHours(currentEnd.getHours(), currentEnd.getMinutes(), 0, 0);
-            
-            // Only update if day changed
-            if (startOfDay(currentEnd).getTime() !== startOfDay(scheduledDate).getTime()) {
-               form.setValue("scheduledTimeEnd", newEnd);
-            }
+         // Only update if day changed
+         if (startOfDay(currentStart).getTime() !== startOfDay(scheduledDate).getTime()) {
+            form.setValue("scheduledTimeStart", newStart);
          }
+      }
+
+      // Update end time similarly
+      if (currentEnd) {
+         const newEnd = new Date(scheduledDate);
+         newEnd.setHours(currentEnd.getHours(), currentEnd.getMinutes(), 0, 0);
+
+         // Only update if day changed
+         if (startOfDay(currentEnd).getTime() !== startOfDay(scheduledDate).getTime()) {
+            form.setValue("scheduledTimeEnd", newEnd);
+         }
+      }
    }, [scheduledDate, recurringEnabled, dateOption]);
 
    // Ensure end time is never before or equal to start time (minimum 30 min duration)
    useEffect(() => {
       if (!scheduledTimeStart || !scheduledTimeEnd) return;
-      
+
       const timeDiffMinutes = (scheduledTimeEnd.getTime() - scheduledTimeStart.getTime()) / (1000 * 60);
-      
+
       // If end time is before or equal to start, or less than 30 minutes, auto-correct
       if (timeDiffMinutes < 30) {
          // Auto-correct by setting end time 1 hour after start
@@ -240,7 +240,7 @@ export function LocationScheduleStep({
          const start = new Date();
          start.setHours(9, 0, 0, 0);
 
-         const end =new Date(scheduledDate);
+         const end = new Date(scheduledDate);
          end.setHours(17, 0, 0, 0);
 
          form.setValue("scheduledTimeStart", start);
@@ -398,8 +398,8 @@ export function LocationScheduleStep({
                               !canUseRecurring
                                  ? "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
                                  : field.value
-                                 ? "border-primary-600 bg-primary-50 text-primary-600"
-                                 : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                                    ? "border-primary-600 bg-primary-50 text-primary-600"
+                                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
                            )}
                         >
                            Recurring
@@ -435,7 +435,7 @@ export function LocationScheduleStep({
                               type="text"
                               inputMode="numeric"
                               pattern="[0-9]*"
-                              placeholder="500"
+                              placeholder="Enter your budget"
                               className="h-10 pl-12 text-sm"
                               value={field.value ?? ""}
                               onChange={(e) => {
@@ -708,7 +708,7 @@ export function LocationScheduleStep({
                                        )}
                                     >
                                        <div className="text-xs sm:text-sm font-semibold">{label}</div>
-                                       <div className="text-[10px] sm:text-xs text-secondary-600" style={{color: field.value === value ? 'rgba(255,255,255,0.8)' : undefined}}>
+                                       <div className="text-[10px] sm:text-xs text-secondary-600" style={{ color: field.value === value ? 'rgba(255,255,255,0.8)' : undefined }}>
                                           {time}
                                        </div>
                                     </button>

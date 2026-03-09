@@ -18,8 +18,17 @@ import {
    AlertDialogTitle,
    AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+   Dialog,
+   DialogContent,
+   DialogDescription,
+   DialogFooter,
+   DialogHeader,
+   DialogTitle,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
    Loader2,
    CheckCircle2,
@@ -50,6 +59,12 @@ export function StatusUpdateSection({
 }: StatusUpdateSectionProps) {
    const [isUpdating, setIsUpdating] = useState(false);
    const [cancelReason, setCancelReason] = useState("");
+   const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(false);
+   const [otpValue, setOtpValue] = useState("");
+   const [otpExpiresAt, setOtpExpiresAt] = useState<string | null>(null);
+   const [isSendingOtp, setIsSendingOtp] = useState(false);
+   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+   const [isResendingOtp, setIsResendingOtp] = useState(false);
 
    const getAvailableActions = () => {
       const actions: Array<{
@@ -61,6 +76,7 @@ export function StatusUpdateSection({
          requiresConfirmation: boolean;
          requiresReason?: boolean;
          isSpecialAction?: boolean;
+         requiresOtp?: boolean;
       }> = [];
 
       if (userRole === "viewer") return actions;
@@ -76,6 +92,7 @@ export function StatusUpdateSection({
                   icon: <CheckCircle2 className="w-4 h-4" />,
                   variant: "default",
                   requiresConfirmation: true,
+                  requiresOtp: true,
                });
                break;
             case "started":
@@ -182,6 +199,55 @@ export function StatusUpdateSection({
       }
    };
 
+   const handleStartTaskWithOtp = async () => {
+      setIsSendingOtp(true);
+      try {
+         const result = await tasksApi.sendStartOtp(task._id);
+         setOtpExpiresAt(result.expiresAt);
+         setOtpValue("");
+         setIsOtpDialogOpen(true);
+         toast.success(`OTP sent to ${result.sentTo}. Ask poster and enter OTP to start task.`);
+      } catch (error: any) {
+         toast.error(error?.message || "Failed to send OTP");
+      } finally {
+         setIsSendingOtp(false);
+      }
+   };
+
+   const handleResendOtp = async () => {
+      setIsResendingOtp(true);
+      try {
+         const result = await tasksApi.resendStartOtp(task._id);
+         setOtpExpiresAt(result.expiresAt);
+         toast.success(`OTP resent to ${result.sentTo}`);
+      } catch (error: any) {
+         toast.error(error?.message || "Failed to resend OTP");
+      } finally {
+         setIsResendingOtp(false);
+      }
+   };
+
+   const handleVerifyOtp = async () => {
+      const normalizedOtp = otpValue.trim();
+      if (!/^\d{6}$/.test(normalizedOtp)) {
+         toast.error("Enter a valid 6-digit OTP");
+         return;
+      }
+
+      setIsVerifyingOtp(true);
+      try {
+         const updatedTask = await tasksApi.verifyStartOtp(task._id, normalizedOtp);
+         onTaskUpdated?.(updatedTask);
+         setIsOtpDialogOpen(false);
+         setOtpValue("");
+         toast.success("OTP verified. Task started successfully.");
+      } catch (error: any) {
+         toast.error(error?.message || "OTP mismatch");
+      } finally {
+         setIsVerifyingOtp(false);
+      }
+   };
+
    const availableActions = getAvailableActions();
 
    if (availableActions.length === 0) {
@@ -248,24 +314,30 @@ export function StatusUpdateSection({
                                  Cancel
                               </AlertDialogCancel>
                               <AlertDialogAction
-                                 onClick={() =>
+                                 onClick={() => {
+                                    if (action.requiresOtp) {
+                                       handleStartTaskWithOtp();
+                                       return;
+                                    }
+
                                     handleStatusUpdate(
                                        action.status,
                                        action.requiresReason
                                           ? cancelReason
                                           : undefined,
                                        action.isSpecialAction
-                                    )
-                                 }
+                                    );
+                                 }}
                                  disabled={
-                                    action.requiresReason &&
-                                    !cancelReason.trim()
+                                    isSendingOtp ||
+                                    (action.requiresReason &&
+                                    !cancelReason.trim())
                                  }
                               >
-                                 {isUpdating ? (
+                                 {isUpdating || isSendingOtp ? (
                                     <>
                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                       Updating...
+                                       {action.requiresOtp ? "Sending OTP..." : "Updating..."}
                                     </>
                                  ) : (
                                     "Confirm"
@@ -304,6 +376,67 @@ export function StatusUpdateSection({
                );
             })}
          </div>
+
+         <Dialog open={isOtpDialogOpen} onOpenChange={setIsOtpDialogOpen}>
+            <DialogContent>
+               <DialogHeader>
+                  <DialogTitle>Enter Poster OTP</DialogTitle>
+                  <DialogDescription>
+                     Ask the poster for the OTP sent to them and enter it to start this task.
+                  </DialogDescription>
+               </DialogHeader>
+
+               <div className="space-y-2">
+                  <Label htmlFor="start-task-otp">6-digit OTP</Label>
+                  <Input
+                     id="start-task-otp"
+                     inputMode="numeric"
+                     maxLength={6}
+                     value={otpValue}
+                     onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                     placeholder="Enter OTP"
+                     disabled={isVerifyingOtp}
+                  />
+                  {otpExpiresAt && (
+                     <p className="text-xs text-secondary-600">
+                        Expires at {new Date(otpExpiresAt).toLocaleTimeString()}
+                     </p>
+                  )}
+               </div>
+
+               <DialogFooter className="flex gap-2 sm:justify-between">
+                  <Button
+                     type="button"
+                     variant="outline"
+                     onClick={handleResendOtp}
+                     disabled={isResendingOtp || isVerifyingOtp}
+                  >
+                     {isResendingOtp ? (
+                        <>
+                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                           Resending...
+                        </>
+                     ) : (
+                        "Resend OTP"
+                     )}
+                  </Button>
+                  <Button
+                     type="button"
+                     onClick={handleVerifyOtp}
+                     disabled={isVerifyingOtp || otpValue.length !== 6}
+                  >
+                     {isVerifyingOtp ? (
+                        <>
+                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                           Verifying...
+                        </>
+                     ) : (
+                        "Verify & Start"
+                     )}
+                  </Button>
+               </DialogFooter>
+            </DialogContent>
+         </Dialog>
       </div>
    );
 }
