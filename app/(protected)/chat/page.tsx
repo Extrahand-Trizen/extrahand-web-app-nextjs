@@ -2,12 +2,18 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Search, Send, ArrowLeft, MessageCircle, Loader2 } from "lucide-react";
+import {
+  Search,
+  Send,
+  ArrowLeft,
+  MessageCircle,
+  Loader2,
+  ImagePlus,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { chatsApi, type Chat, type Message } from "@/lib/api/endpoints/chats";
 import { profilesApi } from "@/lib/api/endpoints/profiles";
-import { useSocket } from "@/lib/socket/SocketProvider";
 import { useChatSocket } from "@/lib/socket/hooks/useChatSocket";
 import { useUserStore } from "@/lib/state/userStore";
 import { formatDistanceToNow } from "date-fns";
@@ -17,7 +23,6 @@ export default function ChatPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const user = useUserStore((state) => state.user);
-  const { chatSocket } = useSocket();
 
   // State
   const [chats, setChats] = useState<Chat[]>([]);
@@ -27,14 +32,40 @@ export default function ChatPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [showMobileList, setShowMobileList] = useState(true);
   const chatIdParam = searchParams.get("chatId");
   const otherUserIdParam = searchParams.get("otherUserId");
   const taskIdParam = searchParams.get("taskId");
   const messageInputRef = useRef<HTMLInputElement | null>(null);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
   const profileCacheRef = useRef(
     new Map<string, { name: string; profileImage?: string }>()
   );
+
+  const ACTIVE_CHAT_STATUSES = ["assigned", "started", "in_progress", "review"];
+
+  const isChatOpen = useCallback((chat: Chat | null) => {
+    if (!chat?.isActive) return false;
+    const status = chat.taskDetails?.status;
+    if (!status) return true;
+    return ACTIVE_CHAT_STATUSES.includes(status);
+  }, []);
+
+  const getTaskerName = useCallback((chat: Chat) => {
+    return (
+      chat.taskDetails?.taskerName ||
+      chat.taskDetails?.assigneeName ||
+      chat.otherParticipant?.name ||
+      "Tasker"
+    );
+  }, []);
+
+  const getChatDisplayName = useCallback((chat: Chat) => {
+    const taskTitle = chat.taskDetails?.title || "Task Chat";
+    const taskerName = getTaskerName(chat);
+    return `${taskTitle} • ${taskerName}`;
+  }, [getTaskerName]);
 
   const resolveOtherParticipant = useCallback(
     async (chat: Chat): Promise<Chat> => {
@@ -98,19 +129,13 @@ export default function ChatPage() {
 
   // Handle URL params to open specific chat
   useEffect(() => {
-    // Priority 1: If taskId and otherUserId are provided, create/get chat for that user and task
-    if (taskIdParam && otherUserIdParam) {
-      startNewChat(otherUserIdParam, taskIdParam);
-      return;
-    }
-
-    // Priority 2: If taskId is provided (poster/tasker), start/get chat for that task
+    // Priority 1: If taskId is provided (poster/tasker), start/get chat for that task
     if (taskIdParam) {
       startChatForTask(taskIdParam);
       return;
     }
 
-    // Priority 3: If only otherUserId is provided, start new direct chat
+    // Priority 2: If only otherUserId is provided, start new direct chat
     if (otherUserIdParam && !chatIdParam) {
       startNewChat(otherUserIdParam, undefined);
     }
@@ -135,26 +160,7 @@ export default function ChatPage() {
       setLoading(true);
       const { chats: loadedChats } = await chatsApi.getChats();
       const hydratedChats = await hydrateChats(loadedChats);
-      
-      // Deduplicate chats by user pair (keep most recent one)
-      // This handles legacy data where multiple chats existed per user pair
-      const chatMap = new Map<string, Chat>();
-      hydratedChats.forEach((chat) => {
-        // Create a key from sorted participant IDs
-        const key = [...chat.participants].sort().join('_');
-        const existing = chatMap.get(key);
-        
-        // Keep the chat with the most recent message or newest creation
-        if (!existing || 
-            (chat.lastMessage?.timestamp && existing.lastMessage?.timestamp &&
-             new Date(chat.lastMessage.timestamp) > new Date(existing.lastMessage.timestamp)) ||
-            (!chat.lastMessage && !existing.lastMessage && 
-             new Date(chat.createdAt) > new Date(existing.createdAt))) {
-          chatMap.set(key, chat);
-        }
-      });
-      
-      setChats(Array.from(chatMap.values()));
+      setChats(hydratedChats);
     } catch (error) {
       console.error("Failed to load chats:", error);
     } finally {
@@ -181,7 +187,7 @@ export default function ChatPage() {
         return [hydratedChat, ...prev];
       });
       setSelectedChat(hydratedChat);
-      await loadMessages(hydratedChat.chatId);
+      await loadMessages(hydratedChat);
       setShowMobileList(false);
     } catch (error) {
       console.error("Failed to start chat:", error);
@@ -200,7 +206,7 @@ export default function ChatPage() {
       // Add/update chat in list
       setChats((prev) => {
         const existingIndex = prev.findIndex(
-          (c) => c.chatId === hydratedChat.chatId || c.relatedTask === taskId
+          (c) => c.chatId === hydratedChat.chatId || c._id === hydratedChat._id
         );
         if (existingIndex >= 0) {
           // Update existing chat
@@ -214,7 +220,7 @@ export default function ChatPage() {
       });
 
       setSelectedChat(hydratedChat);
-      await loadMessages(hydratedChat.chatId);
+      await loadMessages(hydratedChat);
       setShowMobileList(false);
     } catch (error) {
       console.error("Failed to start chat for task:", error);
@@ -242,7 +248,7 @@ export default function ChatPage() {
         return [hydratedChat, ...prev];
       });
       setSelectedChat(hydratedChat);
-      await loadMessages(hydratedChat.chatId);
+      await loadMessages(hydratedChat);
       setShowMobileList(false);
     } catch (error) {
       console.error("Failed to load chat details:", error);
@@ -254,9 +260,14 @@ export default function ChatPage() {
 
   const handleSelectChat = async (chat: Chat) => {
     const hydratedChat = await resolveOtherParticipant(chat);
+    if (!isChatOpen(hydratedChat)) {
+      toast.error("This task chat is closed");
+      setChats((prev) => prev.filter((c) => c.chatId !== hydratedChat.chatId));
+      return;
+    }
     setSelectedChat(hydratedChat);
     setShowMobileList(false);
-    await loadMessages(hydratedChat.chatId);
+    await loadMessages(hydratedChat);
     
     // Mark as read
     if (hydratedChat.unreadCount > 0) {
@@ -273,9 +284,15 @@ export default function ChatPage() {
     }
   };
 
-  const loadMessages = async (chatId: string) => {
+  const loadMessages = async (chat: Chat) => {
+    if (!isChatOpen(chat)) {
+      setMessages([]);
+      toast.error("This task chat is closed");
+      return;
+    }
+
     try {
-      const { messages: loadedMessages } = await chatsApi.getChatMessages(chatId);
+      const { messages: loadedMessages } = await chatsApi.getChatMessages(chat.chatId);
       setMessages(loadedMessages);
       if (!selectedChat?.otherParticipant && loadedMessages.length > 0) {
         const otherMessage = loadedMessages.find(
@@ -298,6 +315,14 @@ export default function ChatPage() {
       }
     } catch (error) {
       console.error("Failed to load messages:", error);
+      const description =
+        error instanceof Error ? error.message.toLowerCase() : "";
+      if (description.includes("closed") || description.includes("inactive")) {
+        toast.error("This task chat is closed");
+        setChats((prev) => prev.filter((c) => c.chatId !== chat.chatId));
+        setSelectedChat(null);
+        setMessages([]);
+      }
     }
   };
 
@@ -358,7 +383,12 @@ export default function ChatPage() {
   }, [selectedChat, showMobileList]);
 
   const handleSendMessage = async () => {
-    if (!messageText.trim() || !selectedChat || sending) return;
+    if (!messageText.trim() || !selectedChat || sending || !isChatOpen(selectedChat)) {
+      if (selectedChat && !isChatOpen(selectedChat)) {
+        toast.error("This task chat is closed");
+      }
+      return;
+    }
 
     const tempMessage: Message = {
       _id: `temp-${Date.now()}`,
@@ -408,6 +438,14 @@ export default function ChatPage() {
       );
     } catch (error) {
       console.error("Failed to send message:", error);
+      const description =
+        error instanceof Error ? error.message.toLowerCase() : "";
+      if (description.includes("closed") || description.includes("inactive")) {
+        toast.error("This task chat is closed");
+        setChats((prev) => prev.filter((c) => c.chatId !== selectedChat.chatId));
+        setSelectedChat(null);
+        return;
+      }
       // Mark message as failed
       setMessages((prev) =>
         prev.map((m) =>
@@ -420,9 +458,64 @@ export default function ChatPage() {
     }
   };
 
+  const handleSelectImage = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file || !selectedChat) {
+      return;
+    }
+
+    if (!isChatOpen(selectedChat)) {
+      toast.error("This task chat is closed");
+      event.target.value = "";
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const imageUrl = await chatsApi.uploadChatImage(file, selectedChat.relatedTask);
+      const sentMessage = await chatsApi.sendMessage(
+        selectedChat.chatId,
+        messageText.trim(),
+        "image",
+        undefined,
+        {
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+          fileUrl: imageUrl,
+        }
+      );
+
+      setMessages((prev) => [...prev, sentMessage]);
+      setMessageText("");
+      setChats((prev) =>
+        prev.map((c) =>
+          c.chatId === selectedChat.chatId
+            ? {
+                ...c,
+                lastMessage: {
+                  text: "Photo",
+                  senderId: sentMessage.senderId,
+                  timestamp: new Date(sentMessage.createdAt),
+                },
+              }
+            : c
+        )
+      );
+    } catch (error) {
+      console.error("Failed to send image:", error);
+      toast.error("Unable to send photo");
+    } finally {
+      setUploadingImage(false);
+      event.target.value = "";
+    }
+  };
+
   const filteredChats = chats.filter((chat) => {
-    const name = chat.otherParticipant?.name || "Unknown";
-    return name.toLowerCase().includes(searchQuery.toLowerCase());
+    const title = getChatDisplayName(chat);
+    return title.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
   const formatMessageTime = (date: Date) => {
@@ -489,7 +582,7 @@ export default function ChatPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline justify-between mb-1">
                     <h3 className="font-semibold text-secondary-900 truncate">
-                      {chat.otherParticipant?.name || "Unknown"}
+                      {getChatDisplayName(chat)}
                     </h3>
                     {chat.lastMessage && (
                       <span className="text-xs text-secondary-500 ml-2 shrink-0">
@@ -540,11 +633,9 @@ export default function ChatPage() {
           </div>
           <div className="flex-1">
             <h2 className="font-semibold text-secondary-900">
-              {selectedChat.otherParticipant?.name || "Unknown"}
+              {getChatDisplayName(selectedChat)}
             </h2>
-            {chatSocket?.connected && (
-              <p className="text-xs text-green-600">Online</p>
-            )}
+            <p className="text-xs text-secondary-500">Task conversation</p>
           </div>
         </div>
 
@@ -570,6 +661,13 @@ export default function ChatPage() {
                     }`}
                   >
                     <p className="text-sm whitespace-pre-wrap break-words">
+                      {message.type === "image" && message.metadata?.fileUrl ? (
+                        <img
+                          src={message.metadata.fileUrl}
+                          alt={message.metadata.fileName || "Shared photo"}
+                          className="max-w-full rounded-xl mb-2"
+                        />
+                      ) : null}
                       {message.text}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
@@ -603,12 +701,36 @@ export default function ChatPage() {
             onSubmit={(e) => e.preventDefault()}
             className="flex items-center gap-2"
           >
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleSelectImage}
+              className="hidden"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => imageInputRef.current?.click()}
+              disabled={sending || uploadingImage || !selectedChat || !isChatOpen(selectedChat)}
+            >
+              {uploadingImage ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <ImagePlus className="w-4 h-4" />
+              )}
+            </Button>
             <Input
               ref={messageInputRef}
               type="text"
-              placeholder="Type a message..."
+              placeholder={
+                selectedChat && isChatOpen(selectedChat)
+                  ? "Type a message..."
+                  : "This conversation is closed"
+              }
               value={messageText}
               onChange={(e) => setMessageText(e.target.value)}
+              disabled={!selectedChat || !isChatOpen(selectedChat)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -620,7 +742,13 @@ export default function ChatPage() {
             <Button
               type="button"
               onClick={handleSendMessage}
-              disabled={!messageText.trim() || sending}
+              disabled={
+                !messageText.trim() ||
+                sending ||
+                uploadingImage ||
+                !selectedChat ||
+                !isChatOpen(selectedChat)
+              }
               className="bg-primary-500 hover:bg-primary-600 text-secondary-900"
             >
               {sending ? (
