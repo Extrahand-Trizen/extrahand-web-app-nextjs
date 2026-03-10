@@ -80,7 +80,19 @@ export default function ChatPage() {
     }
     
     const otherPersonName = getOtherParticipantName(chat);
-    return `${displayName} • ${otherPersonName}`;
+    const result = `${displayName} • ${otherPersonName}`;
+    
+    // Debug logging
+    if (displayName === "Chat") {
+      console.log("❌ Missing category for chat:", { 
+        chatId: chat.chatId, 
+        taskDetails: chat.taskDetails,
+        categoryLabel: chat.taskDetails?.categoryLabel,
+        category: chat.taskDetails?.category,
+        title: chat.taskDetails?.title
+      });
+    }
+    return result;
   }, [getOtherParticipantName]);
 
   const resolveOtherParticipant = useCallback(
@@ -320,9 +332,13 @@ export default function ChatPage() {
       }
     } catch (error) {
       console.error("Failed to load messages:", error);
-      toast.error("Unable to load messages", {
-        description: error instanceof Error ? error.message : "Please try again",
-      });
+      // Allow viewing completed chat history - only show toast for real errors
+      const errorMsg = error instanceof Error ? error.message.toLowerCase() : "";
+      if (!errorMsg.includes("completed") && !errorMsg.includes("inactive")) {
+        toast.error("Unable to load messages", {
+          description: error instanceof Error ? error.message : "Please try again",
+        });
+      }
     }
   };
 
