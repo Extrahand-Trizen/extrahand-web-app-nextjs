@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
 import { useAuth } from "@/lib/auth/context";
+import { useUserStore } from "@/lib/state/userStore";
 import type { TaskQueryParams } from "@/types/api";
 
 /**
@@ -15,8 +16,9 @@ export function AutoApprovalRedirect() {
    const pathname = usePathname();
    const searchParams = useSearchParams();
    const { currentUser, userData, loading } = useAuth();
+   const storeUser = useUserStore((state) => state.user);
 
-   const actorUid = userData?.uid || currentUser?.uid;
+   const actorUid = userData?.uid || currentUser?.uid || storeUser?.uid;
 
    useEffect(() => {
       if (loading || !actorUid) return;

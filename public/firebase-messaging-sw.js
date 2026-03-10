@@ -36,7 +36,7 @@ messaging.onBackgroundMessage((payload) => {
     badge: '/logo.png',
     tag: payload.data?.type || 'general',
     data: {
-      url: payload.data?.url || '/',
+      url: payload.data?.actionUrl || payload.data?.url || payload.data?.taskUrl || '/',
       ...payload.data
     },
     requireInteraction: false,
@@ -54,7 +54,11 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   
   // Get the URL from notification data
-  const urlToOpen = event.notification.data?.url || '/';
+  const urlToOpen =
+    event.notification.data?.actionUrl ||
+    event.notification.data?.url ||
+    event.notification.data?.taskUrl ||
+    '/';
   
   // Focus or open the app
   event.waitUntil(
