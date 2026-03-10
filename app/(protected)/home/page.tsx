@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { DynamicActionCard, RecommendedTasks } from "@/components/home";
 import { useUserStore } from "@/lib/state/userStore";
 import { useDashboardStore } from "@/lib/state/dashboardStore";
+import { tasksApi } from "@/lib/api/endpoints/tasks";
 
 type CardState =
    | "first_time"
@@ -88,6 +89,36 @@ export default function HomePage() {
          // Swallow errors here; individual pages can handle messaging if needed
       });
    }, [fetchStats]);
+
+   useEffect(() => {
+      if (!user?.uid) return;
+
+      let cancelled = false;
+
+      const redirectToPendingApproval = async () => {
+         try {
+            const response = await tasksApi.getTasks({
+               posterUid: user.uid,
+               status: "review",
+               limit: 1,
+               sort: "-updatedAt",
+            } as any);
+
+            const pendingTask = response.tasks?.[0];
+            if (!cancelled && pendingTask?._id) {
+               router.replace(`/tasks/${pendingTask._id}/track?pendingApproval=1`);
+            }
+         } catch {
+            // Keep home rendering if lookup fails.
+         }
+      };
+
+      redirectToPendingApproval();
+
+      return () => {
+        cancelled = true;
+      };
+   }, [user?.uid, router]);
 
    const handleRefresh = async () => {
       setIsRefreshing(true);

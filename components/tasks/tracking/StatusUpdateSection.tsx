@@ -104,15 +104,16 @@ export function StatusUpdateSection({
                break;
             case "started":
                actions.push({
-                  status: "in_progress",
-                  label: "Mark In Progress",
-                  description: "Continue working on the task",
-                  icon: <RotateCcw className="w-4 h-4" />,
+                  status: "review",
+                  label: "Submit for Review",
+                  description: "Mark task as complete and request approval",
+                  icon: <CheckCircle2 className="w-4 h-4" />,
                   variant: "default",
-                  requiresConfirmation: false,
+                  requiresConfirmation: true,
                });
                break;
             case "in_progress":
+               // Backward-compatible: older tasks can still move forward to review.
                actions.push({
                   status: "review",
                   label: "Submit for Review",
@@ -123,14 +124,6 @@ export function StatusUpdateSection({
                });
                break;
             case "review":
-               actions.push({
-                  status: "in_progress",
-                  label: "Make Changes",
-                  description: "Continue working based on feedback",
-                  icon: <RotateCcw className="w-4 h-4" />,
-                  variant: "outline",
-                  requiresConfirmation: false,
-               });
                break;
          }
       }
@@ -192,7 +185,7 @@ export function StatusUpdateSection({
             if (response.data && onTaskUpdated) {
                onTaskUpdated(response.data);
             }
-            toast.success("Changes requested! Task reverted to Assigned. Tasker has been notified.");
+            toast.success("Changes requested. Tasker has been notified to revise and resubmit.");
          } else {
             await onStatusUpdate(newStatus, reason);
             toast.success(`Task status updated to ${newStatus?.replace("_", " ") || "unknown"}`);
