@@ -9,6 +9,7 @@ import { useUserStore } from "@/lib/state/userStore";
 /**
  * Global protected-route redirect:
  * If poster has a task waiting for approval, navigate directly to that task track page.
+ * Each task is auto-redirected only once per browser.
  */
 export function AutoApprovalRedirect() {
    const router = useRouter();
@@ -37,13 +38,26 @@ export function AutoApprovalRedirect() {
          return;
       }
 
-      // Avoid checking when already on a track page with explicit pending approval context.
-      const onPendingApprovalView =
-         pathname.startsWith("/tasks/") &&
-         pathname.endsWith("/track") &&
-         (searchParams.get("pendingApproval") === "1" || searchParams.get("action") === "approve");
+      const getHandledTaskIds = (): string[] => {
+         try {
+            const raw = window.localStorage.getItem("approval_redirect_handled_task_ids");
+            const parsed = raw ? JSON.parse(raw) : [];
+            return Array.isArray(parsed) ? parsed : [];
+         } catch {
+            return [];
+         }
+      };
 
-      if (onPendingApprovalView) return;
+      const markTaskAsHandled = (taskId: string): void => {
+         try {
+            const existing = getHandledTaskIds();
+            if (existing.includes(taskId)) return;
+            const next = [...existing, taskId];
+            window.localStorage.setItem("approval_redirect_handled_task_ids", JSON.stringify(next));
+         } catch {
+            // Best-effort only.
+         }
+      };
 
       let cancelled = false;
 
@@ -58,14 +72,25 @@ export function AutoApprovalRedirect() {
             const pendingTask = response.tasks?.[0];
             if (!pendingTask?._id || cancelled) return;
 
+            // Redirect this approval task only once.
+            const handledTaskIds = getHandledTaskIds();
+            if (handledTaskIds.includes(pendingTask._id)) {
+               return;
+            }
+
             const target = `/tasks/${pendingTask._id}/track?pendingApproval=1`;
             const isOnTaskTrack = pathname === `/tasks/${pendingTask._id}/track`;
             const hasPendingParam = searchParams.get("pendingApproval") === "1";
 
-            // Redirect from anywhere immediately; if already on the same track page, enforce pendingApproval context.
-            if (!isOnTaskTrack || !hasPendingParam) {
-               router.replace(target);
+            // If already in approval context, mark handled and stop future redirects.
+            if (isOnTaskTrack && hasPendingParam) {
+               markTaskAsHandled(pendingTask._id);
+               return;
             }
+
+            // Redirect from anywhere else to approval page and mark handled once redirected.
+            markTaskAsHandled(pendingTask._id);
+            router.replace(target);
          } catch {
             // Best-effort UX improvement only; do nothing on error.
          }
