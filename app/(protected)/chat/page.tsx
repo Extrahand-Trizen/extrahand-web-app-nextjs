@@ -9,6 +9,7 @@ import {
   MessageCircle,
   Loader2,
   ImagePlus,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,9 +63,9 @@ export default function ChatPage() {
   }, []);
 
   const getChatDisplayName = useCallback((chat: Chat) => {
-    const taskTitle = chat.taskDetails?.title || "Task Chat";
+    const categoryName = chat.taskDetails?.categoryLabel || chat.taskDetails?.title || "Task Chat";
     const otherPersonName = getOtherParticipantName(chat);
-    return `${taskTitle} • ${otherPersonName}`;
+    return `${categoryName} • ${otherPersonName}`;
   }, [getOtherParticipantName]);
 
   const resolveOtherParticipant = useCallback(
@@ -260,11 +261,6 @@ export default function ChatPage() {
 
   const handleSelectChat = async (chat: Chat) => {
     const hydratedChat = await resolveOtherParticipant(chat);
-    if (!isChatOpen(hydratedChat)) {
-      toast.error("This task chat is closed");
-      setChats((prev) => prev.filter((c) => c.chatId !== hydratedChat.chatId));
-      return;
-    }
     setSelectedChat(hydratedChat);
     setShowMobileList(false);
     await loadMessages(hydratedChat);
@@ -285,12 +281,6 @@ export default function ChatPage() {
   };
 
   const loadMessages = async (chat: Chat) => {
-    if (!isChatOpen(chat)) {
-      setMessages([]);
-      toast.error("This task chat is closed");
-      return;
-    }
-
     try {
       const { messages: loadedMessages } = await chatsApi.getChatMessages(chat.chatId);
       setMessages(loadedMessages);
@@ -315,14 +305,9 @@ export default function ChatPage() {
       }
     } catch (error) {
       console.error("Failed to load messages:", error);
-      const description =
-        error instanceof Error ? error.message.toLowerCase() : "";
-      if (description.includes("closed") || description.includes("inactive")) {
-        toast.error("This task chat is closed");
-        setChats((prev) => prev.filter((c) => c.chatId !== chat.chatId));
-        setSelectedChat(null);
-        setMessages([]);
-      }
+      toast.error("Unable to load messages", {
+        description: error instanceof Error ? error.message : "Please try again",
+      });
     }
   };
 
@@ -400,7 +385,7 @@ export default function ChatPage() {
       sender: {
         uid: user?._id || "",
         name: user?.name || "",
-        profileImage: user?.profileImage,
+        profileImage: (user as any)?.photoURL || (user as any)?.profileImage,
       },
       createdAt: new Date(),
     };
@@ -441,10 +426,9 @@ export default function ChatPage() {
       const description =
         error instanceof Error ? error.message.toLowerCase() : "";
       if (description.includes("closed") || description.includes("inactive")) {
-        toast.error("This task chat is closed");
-        setChats((prev) => prev.filter((c) => c.chatId !== selectedChat.chatId));
-        setSelectedChat(null);
-        return;
+        toast.error("Cannot send message: Task is completed or closed");
+      } else {
+        toast.error("Unable to send message");
       }
       // Mark message as failed
       setMessages((prev) =>
@@ -510,6 +494,29 @@ export default function ChatPage() {
     } finally {
       setUploadingImage(false);
       event.target.value = "";
+    }
+  };
+
+  const handleDeleteChat = async (chatId: string, event?: React.MouseEvent) => {
+    event?.stopPropagation(); // Prevent chat selection when clicking delete
+    
+    if (!confirm("Are you sure you want to delete this chat? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      await chatsApi.deleteChat(chatId);
+      setChats((prev) => prev.filter((c) => c.chatId !== chatId));
+      if (selectedChat?.chatId === chatId) {
+        setSelectedChat(null);
+        setMessages([]);
+      }
+      toast.success("Chat deleted successfully");
+    } catch (error) {
+      console.error("Failed to delete chat:", error);
+      toast.error("Unable to delete chat", {
+        description: error instanceof Error ? error.message : "Please try again",
+      });
     }
   };
 
@@ -584,11 +591,20 @@ export default function ChatPage() {
                     <h3 className="font-semibold text-secondary-900 truncate">
                       {getChatDisplayName(chat)}
                     </h3>
-                    {chat.lastMessage && (
-                      <span className="text-xs text-secondary-500 ml-2 shrink-0">
-                        {formatMessageTime(chat.lastMessage.timestamp)}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2 ml-2 shrink-0">
+                      {chat.lastMessage && (
+                        <span className="text-xs text-secondary-500">
+                          {formatMessageTime(chat.lastMessage.timestamp)}
+                        </span>
+                      )}
+                      <button
+                        onClick={(e) => handleDeleteChat(chat.chatId, e)}
+                        className="p-1 hover:bg-red-100 rounded transition-colors"
+                        title="Delete chat"
+                      >
+                        <Trash2 className="w-4 h-4 text-secondary-400 hover:text-red-600" />
+                      </button>
+                    </div>
                   </div>
                   {chat.lastMessage && (
                     <p className="text-sm text-secondary-600 truncate">
@@ -637,6 +653,15 @@ export default function ChatPage() {
             </h2>
             <p className="text-xs text-secondary-500">Task conversation</p>
           </div>
+          {!isChatOpen(selectedChat) && (
+            <button
+              onClick={() => handleDeleteChat(selectedChat.chatId)}
+              className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+              title="Delete chat"
+            >
+              <Trash2 className="w-5 h-5 text-red-600" />
+            </button>
+          )}
         </div>
 
         {/* Messages */}
@@ -695,70 +720,73 @@ export default function ChatPage() {
           )}
         </div>
 
-        {/* Message input - form prevents accidental submit on mobile (Enter/Send key) */}
-        <div className="p-4 border-t border-secondary-200">
-          <form
-            onSubmit={(e) => e.preventDefault()}
-            className="flex items-center gap-2"
-          >
-            <input
-              ref={imageInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleSelectImage}
-              className="hidden"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => imageInputRef.current?.click()}
-              disabled={sending || uploadingImage || !selectedChat || !isChatOpen(selectedChat)}
+        {/* Message input or closed banner */}
+        {isChatOpen(selectedChat) ? (
+          <div className="p-4 border-t border-secondary-200">
+            <form
+              onSubmit={(e) => e.preventDefault()}
+              className="flex items-center gap-2"
             >
-              {uploadingImage ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <ImagePlus className="w-4 h-4" />
-              )}
-            </Button>
-            <Input
-              ref={messageInputRef}
-              type="text"
-              placeholder={
-                selectedChat && isChatOpen(selectedChat)
-                  ? "Type a message..."
-                  : "This conversation is closed"
-              }
-              value={messageText}
-              onChange={(e) => setMessageText(e.target.value)}
-              disabled={!selectedChat || !isChatOpen(selectedChat)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleSelectImage}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={sending || uploadingImage || !selectedChat || !isChatOpen(selectedChat)}
+              >
+                {uploadingImage ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ImagePlus className="w-4 h-4" />
+                )}
+              </Button>
+              <Input
+                ref={messageInputRef}
+                type="text"
+                placeholder="Type a message..."
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                onClick={handleSendMessage}
+                disabled={
+                  !messageText.trim() ||
+                  sending ||
+                  uploadingImage ||
+                  !selectedChat ||
+                  !isChatOpen(selectedChat)
                 }
-              }}
-              className="flex-1"
-            />
-            <Button
-              type="button"
-              onClick={handleSendMessage}
-              disabled={
-                !messageText.trim() ||
-                sending ||
-                uploadingImage ||
-                !selectedChat ||
-                !isChatOpen(selectedChat)
-              }
-              className="bg-primary-500 hover:bg-primary-600 text-secondary-900"
-            >
-              {sending ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <Send className="w-5 h-5" />
-              )}
-            </Button>
-          </form>
-        </div>
+                className="bg-primary-500 hover:bg-primary-600 text-secondary-900"
+              >
+                {sending ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Send className="w-5 h-5" />
+                )}
+              </Button>
+            </form>
+          </div>
+        ) : (
+          <div className="p-4 border-t border-secondary-200 bg-secondary-50">
+            <p className="text-center text-secondary-600 font-medium">
+              Task completed - Can't send messages
+            </p>
+          </div>
+        )}
       </div>
     );
   })();

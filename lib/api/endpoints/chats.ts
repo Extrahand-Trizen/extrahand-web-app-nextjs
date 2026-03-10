@@ -21,6 +21,7 @@ export interface Chat {
   };
   taskDetails?: {
     title?: string;
+    categoryLabel?: string;
     status?: string;
     requesterId?: string;
     requesterName?: string;
@@ -202,5 +203,14 @@ export const chatsApi = {
 
     return url;
   },
-};
 
+  /**
+   * Delete a chat from user's view
+   * DELETE /api/v1/chats/:chatId
+   */
+  async deleteChat(chatId: string): Promise<{ success: boolean }> {
+    return fetchWithAuth(`chats/${chatId}`, {
+      method: 'DELETE',
+    });
+  },
+};
