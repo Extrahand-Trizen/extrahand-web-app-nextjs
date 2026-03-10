@@ -132,8 +132,6 @@ export function StatusUpdateSection({
       if (userRole === "poster") {
          switch (task.status) {
             case "assigned":
-            case "started":
-            case "in_progress":
                actions.push({
                   status: "cancelled",
                   label: "Cancel Task",

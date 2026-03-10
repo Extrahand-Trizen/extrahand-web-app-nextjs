@@ -9,7 +9,9 @@ import { useUserStore } from "@/lib/state/userStore";
 /**
  * Global protected-route redirect:
  * If poster has a task waiting for approval, navigate directly to that task track page.
- * Each task is auto-redirected only once per browser.
+ * Each review submission is auto-redirected only once.
+ * A resubmission for the same task (after requested changes) gets a new attempt key,
+ * so poster is redirected again for that new approval cycle.
  */
 export function AutoApprovalRedirect() {
    const router = useRouter();
@@ -38,9 +40,11 @@ export function AutoApprovalRedirect() {
          return;
       }
 
-      const getHandledTaskIds = (): string[] => {
+      // Track handled submission attempts: { taskId, attemptKey }
+      // attemptKey is based on updatedAt so each resubmit is treated as a new cycle.
+      const getHandledAttempts = (): { taskId: string; attemptKey: string }[] => {
          try {
-            const raw = window.localStorage.getItem("approval_redirect_handled_task_ids");
+            const raw = window.localStorage.getItem("approval_redirect_handled_attempts");
             const parsed = raw ? JSON.parse(raw) : [];
             return Array.isArray(parsed) ? parsed : [];
          } catch {
@@ -48,12 +52,21 @@ export function AutoApprovalRedirect() {
          }
       };
 
-      const markTaskAsHandled = (taskId: string): void => {
+      const isAttemptHandled = (taskId: string, attemptKey: string): boolean => {
+         const handled = getHandledAttempts();
+         return handled.some((h: any) => h.taskId === taskId && h.attemptKey === attemptKey);
+      };
+
+      const markAttemptAsHandled = (taskId: string, attemptKey: string): void => {
          try {
-            const existing = getHandledTaskIds();
-            if (existing.includes(taskId)) return;
-            const next = [...existing, taskId];
-            window.localStorage.setItem("approval_redirect_handled_task_ids", JSON.stringify(next));
+            const existing = getHandledAttempts();
+            const alreadyExists = existing.some(
+               (h: any) => h.taskId === taskId && h.attemptKey === attemptKey
+            );
+            if (alreadyExists) return;
+
+            const next = [...existing, { taskId, attemptKey }];
+            window.localStorage.setItem("approval_redirect_handled_attempts", JSON.stringify(next));
          } catch {
             // Best-effort only.
          }
@@ -72,9 +85,10 @@ export function AutoApprovalRedirect() {
             const pendingTask = response.tasks?.[0];
             if (!pendingTask?._id || cancelled) return;
 
-            // Redirect this approval task only once.
-            const handledTaskIds = getHandledTaskIds();
-            if (handledTaskIds.includes(pendingTask._id)) {
+            const attemptKey = String((pendingTask as any)?.updatedAt || "unknown_attempt");
+
+            // Check if this submission attempt was already redirected
+            if (isAttemptHandled(pendingTask._id, attemptKey)) {
                return;
             }
 
@@ -84,12 +98,12 @@ export function AutoApprovalRedirect() {
 
             // If already in approval context, mark handled and stop future redirects.
             if (isOnTaskTrack && hasPendingParam) {
-               markTaskAsHandled(pendingTask._id);
+               markAttemptAsHandled(pendingTask._id, attemptKey);
                return;
             }
 
             // Redirect from anywhere else to approval page and mark handled once redirected.
-            markTaskAsHandled(pendingTask._id);
+            markAttemptAsHandled(pendingTask._id, attemptKey);
             router.replace(target);
          } catch {
             // Best-effort UX improvement only; do nothing on error.
