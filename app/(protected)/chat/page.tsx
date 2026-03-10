@@ -52,20 +52,20 @@ export default function ChatPage() {
     return ACTIVE_CHAT_STATUSES.includes(status);
   }, []);
 
-  const getTaskerName = useCallback((chat: Chat) => {
-    return (
-      chat.taskDetails?.taskerName ||
-      chat.taskDetails?.assigneeName ||
-      chat.otherParticipant?.name ||
-      "Tasker"
-    );
+  const getOtherParticipantName = useCallback((chat: Chat) => {
+    // Always show the OTHER person's name (opposite participant)
+    if (chat.otherParticipant?.name) {
+      return chat.otherParticipant.name;
+    }
+    // Fallback to task details if otherParticipant not populated
+    return "User";
   }, []);
 
   const getChatDisplayName = useCallback((chat: Chat) => {
     const taskTitle = chat.taskDetails?.title || "Task Chat";
-    const taskerName = getTaskerName(chat);
-    return `${taskTitle} • ${taskerName}`;
-  }, [getTaskerName]);
+    const otherPersonName = getOtherParticipantName(chat);
+    return `${taskTitle} • ${otherPersonName}`;
+  }, [getOtherParticipantName]);
 
   const resolveOtherParticipant = useCallback(
     async (chat: Chat): Promise<Chat> => {
