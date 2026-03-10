@@ -37,25 +37,27 @@ export function TaskTrackingHeader({
    };
 
    const getDisplayName = () => {
-      // Prefer real participant names and only fall back to role labels.
+      // Show the OTHER participant's name based on current user role
       if (userRole === "poster") {
-         return (
-            (task as any).requesterName ||
-            (task as any).requester?.name ||
-            getRoleLabel()
-         );
-      }
-
-      if (userRole === "tasker") {
+         // If you're the poster, show the tasker's name
          return (
             (task as any).assignedToName ||
             (task as any).assigneeName ||
             (task as any).assignee?.name ||
-            getRoleLabel()
+            "Assigned Tasker"
          );
       }
 
-      return getRoleLabel();
+      if (userRole === "tasker") {
+         // If you're the tasker, show the poster's name
+         return (
+            (task as any).requesterName ||
+            (task as any).requester?.name ||
+            "Task Owner"
+         );
+      }
+
+      return "Viewer";
    };
    const categoryLabel = task.categoryLabel || task.subcategory || task.category;
 
