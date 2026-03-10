@@ -63,10 +63,12 @@ export default function ChatPage() {
   }, []);
 
   const getChatDisplayName = useCallback((chat: Chat) => {
-    // Try category first (formatted), then categoryLabel, then task title
+    // Prefer task subcategory/category label for human-friendly chat naming.
     let displayName = "Chat";
     
-    if (chat.taskDetails?.categoryLabel) {
+    if (chat.taskDetails?.subcategory) {
+      displayName = chat.taskDetails.subcategory;
+    } else if (chat.taskDetails?.categoryLabel) {
       displayName = chat.taskDetails.categoryLabel;
     } else if (chat.taskDetails?.category) {
       // Format category: "ac_repair" -> "AC Repair"
@@ -80,19 +82,7 @@ export default function ChatPage() {
     }
     
     const otherPersonName = getOtherParticipantName(chat);
-    const result = `${displayName} • ${otherPersonName}`;
-    
-    // Debug logging
-    if (displayName === "Chat") {
-      console.log("❌ Missing category for chat:", { 
-        chatId: chat.chatId, 
-        taskDetails: chat.taskDetails,
-        categoryLabel: chat.taskDetails?.categoryLabel,
-        category: chat.taskDetails?.category,
-        title: chat.taskDetails?.title
-      });
-    }
-    return result;
+    return `${displayName} • ${otherPersonName}`;
   }, [getOtherParticipantName]);
 
   const resolveOtherParticipant = useCallback(

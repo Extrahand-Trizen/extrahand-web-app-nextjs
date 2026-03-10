@@ -23,6 +23,7 @@ export interface Chat {
     title?: string;
     category?: string;
     categoryLabel?: string;
+    subcategory?: string;
     status?: string;
     requesterId?: string;
     requesterName?: string;
