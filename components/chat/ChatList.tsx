@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Search, MessageSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -27,6 +27,11 @@ export function ChatList({
    const [searchQuery, setSearchQuery] = useState("");
    const searchInputRef = useRef<HTMLInputElement>(null);
 
+   useEffect(() => {
+      // Auto-focus search input on mount
+      searchInputRef.current?.focus();
+   }, []);
+ 
    const filteredChats = chats.filter((chat) => {
       const query = searchQuery.toLowerCase();
       return (
@@ -130,10 +135,7 @@ export function ChatList({
                   placeholder="Search conversations..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  onBlur={() => {
-                     // Keep focus on the input after typing
-                     setTimeout(() => searchInputRef.current?.focus(), 0);
-                  }}
+                     autoFocus
                   className="pl-10 h-10 text-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                />
             </div>
