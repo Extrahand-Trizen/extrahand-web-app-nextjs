@@ -35,6 +35,28 @@ export function TaskTrackingHeader({
             return "Viewer";
       }
    };
+
+   const getDisplayName = () => {
+      // Prefer real participant names and only fall back to role labels.
+      if (userRole === "poster") {
+         return (
+            (task as any).requesterName ||
+            (task as any).requester?.name ||
+            getRoleLabel()
+         );
+      }
+
+      if (userRole === "tasker") {
+         return (
+            (task as any).assignedToName ||
+            (task as any).assigneeName ||
+            (task as any).assignee?.name ||
+            getRoleLabel()
+         );
+      }
+
+      return getRoleLabel();
+   };
    const categoryLabel = task.categoryLabel || task.subcategory || task.category;
 
    return (
@@ -79,7 +101,7 @@ export function TaskTrackingHeader({
                {/* Role Indicator - Minimal */}
                <div className="flex items-center gap-2 text-xs md:text-sm text-secondary-600 flex-wrap">
                   <User className="w-3.5 h-3.5 md:w-4 md:h-4 text-secondary-400" />
-                  <span className="font-medium">{getRoleLabel()}</span>
+                  <span className="font-medium">{getDisplayName()}</span>
                   {task.category && (
                      <>
                         <span className="text-secondary-300">•</span>
