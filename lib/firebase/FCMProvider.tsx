@@ -59,10 +59,11 @@ export const FCMProvider: React.FC<FCMProviderProps> = ({ children }) => {
     typeof window !== 'undefined' ? getNotificationPermissionStatus() : null
   );
   const [isInitialized, setIsInitialized] = useState(false);
+  const actorUid = userData?.uid || currentUser?.uid;
 
   // Initialize FCM when user is authenticated
   useEffect(() => {
-    if (!currentUser || !userData || !isSupported || isInitialized) {
+    if (!actorUid || !isSupported || isInitialized) {
       return;
     }
 
@@ -71,7 +72,7 @@ export const FCMProvider: React.FC<FCMProviderProps> = ({ children }) => {
         // Log environment variables for debugging
         logEnvironmentVariables();
         
-        console.log('🚀 Initializing FCM for user:', userData.uid);
+        console.log('🚀 Initializing FCM for user:', actorUid);
 
         // Check if permission was previously granted
         const currentPermission = getNotificationPermissionStatus();
@@ -81,7 +82,7 @@ export const FCMProvider: React.FC<FCMProviderProps> = ({ children }) => {
           const token = await requestNotificationPermission();
           
           if (token) {
-            await registerFCMToken(token, userData.uid);
+            await registerFCMToken(token, actorUid);
             setIsInitialized(true);
             setPermissionStatus(currentPermission);
             console.log('✅ FCM initialized successfully');
@@ -99,7 +100,7 @@ export const FCMProvider: React.FC<FCMProviderProps> = ({ children }) => {
     };
 
     initializeFCM();
-  }, [currentUser, userData, isSupported, isInitialized]);
+  }, [actorUid, isSupported, isInitialized]);
 
   // Listen for foreground messages
   useEffect(() => {
@@ -197,7 +198,7 @@ export const FCMProvider: React.FC<FCMProviderProps> = ({ children }) => {
         return false;
       }
 
-      if (!currentUser || !userData) {
+      if (!actorUid) {
         console.error('❌ User not authenticated');
         return false;
       }
@@ -205,7 +206,7 @@ export const FCMProvider: React.FC<FCMProviderProps> = ({ children }) => {
       const token = await requestNotificationPermission();
       
       if (token) {
-        const registered = await registerFCMToken(token, userData.uid);
+        const registered = await registerFCMToken(token, actorUid);
         
         if (registered) {
           setIsInitialized(true);

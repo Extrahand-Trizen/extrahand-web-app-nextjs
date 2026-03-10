@@ -5,7 +5,6 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
 import { useAuth } from "@/lib/auth/context";
 import { useUserStore } from "@/lib/state/userStore";
-import type { TaskQueryParams } from "@/types/api";
 
 /**
  * Global protected-route redirect:
@@ -17,11 +16,15 @@ export function AutoApprovalRedirect() {
    const searchParams = useSearchParams();
    const { currentUser, userData, loading } = useAuth();
    const storeUser = useUserStore((state) => state.user);
+   const isAuthenticated = useUserStore((state) => state.isAuthenticated);
 
    const actorUid = userData?.uid || currentUser?.uid || storeUser?.uid;
 
    useEffect(() => {
-      if (loading || !actorUid) return;
+      if (loading) return;
+
+      // Run only for authenticated users; API uses HttpOnly cookie session.
+      if (!isAuthenticated && !actorUid) return;
 
       // Skip auth/onboarding pages.
       const excludedPrefixes = [
@@ -46,14 +49,11 @@ export function AutoApprovalRedirect() {
 
       const run = async () => {
          try {
-            const query: TaskQueryParams = {
-               posterUid: actorUid,
+            const response = await tasksApi.getMyTasks({
                status: "review",
                limit: 1,
                sort: "-updatedAt",
-            };
-
-            const response = await tasksApi.getTasks(query);
+            });
 
             const pendingTask = response.tasks?.[0];
             if (!pendingTask?._id || cancelled) return;
@@ -75,7 +75,7 @@ export function AutoApprovalRedirect() {
       run();
 
       // Keep checking while user stays on the same page.
-      const intervalId = window.setInterval(run, 5000);
+      const intervalId = window.setInterval(run, 2000);
 
       // Re-check as soon as tab gains focus.
       const handleFocus = () => {
@@ -97,7 +97,7 @@ export function AutoApprovalRedirect() {
          window.removeEventListener("focus", handleFocus);
          document.removeEventListener("visibilitychange", handleVisibility);
       };
-   }, [loading, actorUid, pathname, searchParams, router]);
+   }, [loading, isAuthenticated, actorUid, pathname, searchParams, router]);
 
    return null;
 }
