@@ -57,7 +57,11 @@ export function AutoApprovalRedirect() {
             if (!pendingTask?._id || cancelled) return;
 
             const target = `/tasks/${pendingTask._id}/track?pendingApproval=1`;
-            if (`${pathname}?${searchParams.toString()}` !== target && pathname !== `/tasks/${pendingTask._id}/track`) {
+            const isOnTaskTrack = pathname === `/tasks/${pendingTask._id}/track`;
+            const hasPendingParam = searchParams.get("pendingApproval") === "1";
+
+            // Redirect from anywhere immediately; if already on the same track page, enforce pendingApproval context.
+            if (!isOnTaskTrack || !hasPendingParam) {
                router.replace(target);
             }
          } catch {
@@ -65,10 +69,31 @@ export function AutoApprovalRedirect() {
          }
       };
 
+      // Immediate check on mount/route change.
       run();
+
+      // Keep checking while user stays on the same page.
+      const intervalId = window.setInterval(run, 5000);
+
+      // Re-check as soon as tab gains focus.
+      const handleFocus = () => {
+         run();
+      };
+
+      const handleVisibility = () => {
+         if (document.visibilityState === "visible") {
+            run();
+         }
+      };
+
+      window.addEventListener("focus", handleFocus);
+      document.addEventListener("visibilitychange", handleVisibility);
 
       return () => {
          cancelled = true;
+         window.clearInterval(intervalId);
+         window.removeEventListener("focus", handleFocus);
+         document.removeEventListener("visibilitychange", handleVisibility);
       };
    }, [loading, actorUid, pathname, searchParams, router]);
 
