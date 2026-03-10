@@ -14,10 +14,23 @@ export function AutoApprovalRedirect() {
    const router = useRouter();
    const pathname = usePathname();
    const searchParams = useSearchParams();
-   const { currentUser, loading } = useAuth();
+   const { currentUser, userData, loading } = useAuth();
+
+   const actorUid = userData?.uid || currentUser?.uid;
 
    useEffect(() => {
-      if (loading || !currentUser?.uid) return;
+      if (loading || !actorUid) return;
+
+      // Skip auth/onboarding pages.
+      const excludedPrefixes = [
+         "/login",
+         "/signup",
+         "/otp-verification",
+         "/onboarding",
+      ];
+      if (excludedPrefixes.some((prefix) => pathname.startsWith(prefix))) {
+         return;
+      }
 
       // Avoid checking when already on a track page with explicit pending approval context.
       const onPendingApprovalView =
@@ -32,7 +45,7 @@ export function AutoApprovalRedirect() {
       const run = async () => {
          try {
             const query: TaskQueryParams = {
-               posterUid: currentUser.uid,
+               posterUid: actorUid,
                status: "review",
                limit: 1,
                sort: "-updatedAt",
@@ -57,7 +70,7 @@ export function AutoApprovalRedirect() {
       return () => {
          cancelled = true;
       };
-   }, [loading, currentUser?.uid, pathname, searchParams, router]);
+   }, [loading, actorUid, pathname, searchParams, router]);
 
    return null;
 }
