@@ -21,6 +21,7 @@ export interface Chat {
   };
   taskDetails?: {
     title?: string;
+    category?: string;
     categoryLabel?: string;
     status?: string;
     requesterId?: string;

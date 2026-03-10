@@ -63,9 +63,24 @@ export default function ChatPage() {
   }, []);
 
   const getChatDisplayName = useCallback((chat: Chat) => {
-    const categoryName = chat.taskDetails?.categoryLabel || chat.taskDetails?.title || "Task Chat";
+    // Try category first (formatted), then categoryLabel, then task title
+    let displayName = "Chat";
+    
+    if (chat.taskDetails?.categoryLabel) {
+      displayName = chat.taskDetails.categoryLabel;
+    } else if (chat.taskDetails?.category) {
+      // Format category: "ac_repair" -> "AC Repair"
+      const formatted = chat.taskDetails.category
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+      displayName = formatted;
+    } else if (chat.taskDetails?.title) {
+      displayName = chat.taskDetails.title;
+    }
+    
     const otherPersonName = getOtherParticipantName(chat);
-    return `${categoryName} • ${otherPersonName}`;
+    return `${displayName} • ${otherPersonName}`;
   }, [getOtherParticipantName]);
 
   const resolveOtherParticipant = useCallback(
@@ -504,16 +519,21 @@ export default function ChatPage() {
       return;
     }
 
+    // Optimistically remove from list immediately
+    setChats((prev) => prev.filter((c) => c.chatId !== chatId));
+    if (selectedChat?.chatId === chatId) {
+      setSelectedChat(null);
+      setMessages([]);
+      setShowMobileList(true);
+    }
+
     try {
       await chatsApi.deleteChat(chatId);
-      setChats((prev) => prev.filter((c) => c.chatId !== chatId));
-      if (selectedChat?.chatId === chatId) {
-        setSelectedChat(null);
-        setMessages([]);
-      }
       toast.success("Chat deleted successfully");
     } catch (error) {
       console.error("Failed to delete chat:", error);
+      // Reload chats if deletion failed (to restore the deleted item)
+      await loadChats();
       toast.error("Unable to delete chat", {
         description: error instanceof Error ? error.message : "Please try again",
       });
@@ -597,13 +617,15 @@ export default function ChatPage() {
                           {formatMessageTime(chat.lastMessage.timestamp)}
                         </span>
                       )}
-                      <button
-                        onClick={(e) => handleDeleteChat(chat.chatId, e)}
-                        className="p-1 hover:bg-red-100 rounded transition-colors"
-                        title="Delete chat"
-                      >
-                        <Trash2 className="w-4 h-4 text-secondary-400 hover:text-red-600" />
-                      </button>
+                      {!isChatOpen(chat) && (
+                        <button
+                          onClick={(e) => handleDeleteChat(chat.chatId, e)}
+                          className="p-1 hover:bg-red-100 rounded transition-colors"
+                          title="Delete chat"
+                        >
+                          <Trash2 className="w-4 h-4 text-secondary-400 hover:text-red-600" />
+                        </button>
+                      )}
                     </div>
                   </div>
                   {chat.lastMessage && (
