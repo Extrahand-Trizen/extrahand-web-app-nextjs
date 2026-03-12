@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Bell, ArrowLeft, Check, CheckCheck, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,23 +28,57 @@ function timeAgo(date: Date | string): string {
 
 function getCategoryIcon(category?: string): string {
   switch (category) {
+    case "taskUpdates": return "📋";
+    case "payments": return "💳";
+    case "taskReminders": return "⏰";
+    case "keywordTaskAlerts":
+    case "recommendedTaskAlerts": return "🔍";
+    case "system": return "⚙️";
+    case "transactional": return "📬";
+    default: return "🔔";
+  }
+}
+
+/**
+ * Resolve the navigation URL from a notification's data + category.
+ * Falls back gracefully when data is missing.
+ */
+function resolveNotificationRoute(notif: InAppNotification): string | null {
+  const data = notif.data ?? {};
+
+  // Explicit actionUrl field
+  if (data.actionUrl) return data.actionUrl as string;
+  if (data.route) return data.route as string;
+
+  const taskId = data.taskId || data.entity_id || data.entityId;
+
+  switch (notif.category) {
     case "taskUpdates":
-      return "📋";
-    case "payments":
-      return "💳";
     case "taskReminders":
-      return "⏰";
+      if (taskId) return `/tasks/${taskId}`;
+      return "/tasks";
+
+    case "payments":
+      if (taskId) return `/tasks/${taskId}`;
+      return "/tasks";
+
     case "keywordTaskAlerts":
     case "recommendedTaskAlerts":
-      return "🔍";
+      if (taskId) return `/discover?taskId=${taskId}`;
+      return "/discover";
+
     case "system":
-      return "⚙️";
+    case "transactional":
+      return null; // No navigation for system/transactional
+
     default:
-      return "🔔";
+      if (taskId) return `/tasks/${taskId}`;
+      return null;
   }
 }
 
 export default function NotificationsPage() {
+  const router = useRouter();
   const { currentUser, userData } = useAuth();
   const userId = currentUser?.uid || userData?.uid;
 
@@ -58,6 +93,7 @@ export default function NotificationsPage() {
     deleteNotification,
   } = useNotificationStore();
 
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
 
@@ -71,6 +107,35 @@ export default function NotificationsPage() {
     markAllAsReadOptimistic();
     await markAllAsRead();
   }, [markAllAsRead, markAllAsReadOptimistic]);
+
+  const handleDelete = useCallback(
+    async (e: React.MouseEvent, notifId: string) => {
+      e.stopPropagation(); // prevent row click / navigation
+      setDeletingIds((prev) => new Set(prev).add(notifId));
+      await deleteNotification(notifId);
+      setDeletingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(notifId);
+        return next;
+      });
+    },
+    [deleteNotification]
+  );
+
+  const handleRowClick = useCallback(
+    async (notif: InAppNotification) => {
+      // Mark as read
+      if (!notif.read) {
+        await markAsRead(notif.id);
+      }
+      // Navigate
+      const route = resolveNotificationRoute(notif);
+      if (route) {
+        router.push(route);
+      }
+    },
+    [markAsRead, router]
+  );
 
   const handleLoadMore = useCallback(async () => {
     if (loadingMore || !hasMore) return;
@@ -158,71 +223,95 @@ export default function NotificationsPage() {
           /* Notification list */
           <>
             <div className="bg-white rounded-xl border border-secondary-200 shadow-sm divide-y divide-secondary-100 overflow-hidden">
-              {notifications.map((notif: InAppNotification) => (
-                <div
-                  key={notif.id}
-                  className={`flex gap-4 px-5 py-4 hover:bg-secondary-50 transition-colors group ${
-                    !notif.read ? "bg-primary-50/30" : ""
-                  }`}
-                >
-                  {/* Icon */}
+              {notifications.map((notif: InAppNotification) => {
+                const route = resolveNotificationRoute(notif);
+                const isDeleting = deletingIds.has(notif.id);
+                const isClickable = !!route;
+
+                return (
                   <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 ${
-                      !notif.read
-                        ? "bg-primary-100"
-                        : "bg-secondary-100"
-                    }`}
+                    key={notif.id}
+                    onClick={() => handleRowClick(notif)}
+                    className={`
+                      flex gap-4 px-5 py-4 transition-all duration-200 group relative
+                      ${isDeleting ? "opacity-40 pointer-events-none" : ""}
+                      ${!notif.read ? "bg-primary-50/30" : ""}
+                      ${isClickable ? "cursor-pointer hover:bg-secondary-50 active:bg-secondary-100" : ""}
+                    `}
                   >
-                    {getCategoryIcon(notif.category)}
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <p
-                        className={`text-sm leading-snug ${
-                          !notif.read
-                            ? "font-semibold text-secondary-900"
-                            : "font-medium text-secondary-700"
-                        }`}
-                      >
-                        {notif.title}
-                        {!notif.read && (
-                          <span className="ml-2 inline-block w-1.5 h-1.5 rounded-full bg-primary-500 align-middle" />
-                        )}
-                      </p>
-                      <span className="text-[10px] text-secondary-400 shrink-0 mt-0.5">
-                        {timeAgo(notif.createdAt)}
-                      </span>
-                    </div>
-                    <p className="text-sm text-secondary-500 mt-1 line-clamp-2">
-                      {notif.body}
-                    </p>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {!notif.read && (
-                      <button
-                        onClick={() => markAsRead(notif.id)}
-                        className="p-1.5 text-secondary-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-                        title="Mark as read"
-                        aria-label="Mark as read"
-                      >
-                        <Check className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                    <button
-                      onClick={() => deleteNotification(notif.id)}
-                      className="p-1.5 text-secondary-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Delete"
-                      aria-label="Delete notification"
+                    {/* Icon */}
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 ${
+                        !notif.read ? "bg-primary-100" : "bg-secondary-100"
+                      }`}
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                      {isDeleting ? (
+                        <div className="w-4 h-4 border-2 border-secondary-400 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        getCategoryIcon(notif.category)
+                      )}
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <p
+                          className={`text-sm leading-snug ${
+                            !notif.read
+                              ? "font-semibold text-secondary-900"
+                              : "font-medium text-secondary-700"
+                          }`}
+                        >
+                          {notif.title}
+                          {!notif.read && (
+                            <span className="ml-2 inline-block w-1.5 h-1.5 rounded-full bg-primary-500 align-middle" />
+                          )}
+                        </p>
+                        <span className="text-[10px] text-secondary-400 shrink-0 mt-0.5">
+                          {timeAgo(notif.createdAt)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-secondary-500 mt-1 line-clamp-2">
+                        {notif.body}
+                      </p>
+                      {isClickable && (
+                        <p className="text-xs text-primary-500 mt-1.5 font-medium">
+                          Tap to view →
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Actions — visible on hover */}
+                    <div
+                      className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => e.stopPropagation()} // block row navigation on action area
+                    >
+                      {!notif.read && (
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            await markAsRead(notif.id);
+                          }}
+                          className="p-1.5 text-secondary-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                          title="Mark as read"
+                          aria-label="Mark as read"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      <button
+                        onClick={(e) => handleDelete(e, notif.id)}
+                        disabled={isDeleting}
+                        className="p-1.5 text-secondary-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-30"
+                        title="Delete"
+                        aria-label="Delete notification"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Load more */}

@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { Bell, X, Check, CheckCheck } from "lucide-react";
 import { useNotificationStore } from "@/lib/state/notificationStore";
 import { useAuth } from "@/lib/auth/context";
+import type { InAppNotification } from "@/lib/notifications/pollingService";
 
 function timeAgo(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;
@@ -22,6 +23,25 @@ function timeAgo(date: Date | string): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   return `${days}d ago`;
+}
+
+/** Resolve nav route from notification data + category */
+function resolveNotificationRoute(notif: InAppNotification): string | null {
+  const data = notif.data ?? {};
+  if (data.actionUrl) return data.actionUrl as string;
+  if (data.route) return data.route as string;
+  const taskId = data.taskId || data.entity_id || data.entityId;
+  switch (notif.category) {
+    case "taskUpdates":
+    case "taskReminders":
+    case "payments":
+      return taskId ? `/tasks/${taskId}` : "/tasks";
+    case "keywordTaskAlerts":
+    case "recommendedTaskAlerts":
+      return taskId ? `/discover?taskId=${taskId}` : "/discover";
+    default:
+      return taskId ? `/tasks/${taskId}` : null;
+  }
 }
 
 export function NotificationCenter() {
@@ -77,10 +97,15 @@ export function NotificationCenter() {
   }, [markAllAsRead, markAllAsReadOptimistic]);
 
   const handleNotificationClick = useCallback(
-    async (id: string, read: boolean) => {
-      if (!read) await markAsRead(id);
+    async (notif: InAppNotification) => {
+      if (!notif.read) await markAsRead(notif.id);
+      const route = resolveNotificationRoute(notif);
+      if (route) {
+        router.push(route);
+        setIsOpen(false);
+      }
     },
-    [markAsRead]
+    [markAsRead, router]
   );
 
   // Show only the 3 most recent
@@ -177,7 +202,7 @@ export function NotificationCenter() {
                     <div
                       key={notif.id}
                       onClick={() =>
-                        handleNotificationClick(notif.id, notif.read)
+                        handleNotificationClick(notif)
                       }
                       className={`flex gap-3 px-4 py-3 cursor-pointer hover:bg-secondary-50 transition-colors ${
                         !notif.read ? "bg-primary-50/40" : ""
