@@ -69,6 +69,7 @@
 
 html {
    overflow-x: hidden;
+   overflow-y: auto;
    scroll-behavior: auto;
    /* Allow vertical overscroll so mobile pull-to-refresh works */
    overscroll-behavior-y: auto;
@@ -77,6 +78,8 @@ html {
 html, body {
    margin: 0;
    padding: 0;
+   margin-right: 0 !important;
+   padding-right: 0 !important;
    height: 100%;
    width: 100%;
    position: relative;
@@ -88,7 +91,39 @@ body {
    background: var(--color-neutral-white);
    color: var(--color-secondary-900);
    overflow-x: hidden;
+   overflow-y: auto;
    min-height: 100vh;
+}
+
+/* Keep viewport scrollbar flush with right edge */
+body[data-scroll-locked],
+body[style*="padding-right"] {
+   margin-right: 0 !important;
+   padding-right: 0 !important;
+}
+
+html,
+body {
+   scrollbar-width: auto;
+   scrollbar-color: #808080 transparent;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+   width: 10px;
+   background: transparent;
+}
+
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track {
+   background: transparent;
+   margin: 0;
+}
+
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
+   background: #808080;
+   border-radius: 9999px;
 }
 
 /* Hide scrollbar but keep functionality */
@@ -99,6 +134,26 @@ body {
 
 .scrollbar-hide::-webkit-scrollbar {
    display: none; /* Chrome, Safari and Opera */
+}
+
+/* Custom scrollbar for better visibility */
+.custom-scrollbar::-webkit-scrollbar {
+   width: 8px;
+   height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+   background: var(--color-secondary-50);
+   border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+   background: var(--color-secondary-300);
+   border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+   background: var(--color-secondary-400);
 }
 
 :root {

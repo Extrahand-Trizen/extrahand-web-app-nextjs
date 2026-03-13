@@ -10,9 +10,9 @@
 
 "use client";
 
+import { useState } from "react";
 import { Star, Quote } from "lucide-react";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
 
 const testimonials = [
    {
@@ -20,55 +20,87 @@ const testimonials = [
       name: "Priya Sharma",
       role: "Task Poster",
       location: "Mumbai",
-      avatar: "/assets/images/avatar.png",
+      avatar: "https://source.unsplash.com/300x300/?indian,woman,portrait&sig=11",
+      avatarInitials: "PS",
       rating: 5,
       taskType: "Home Cleaning",
       quote: "I was traveling for work and needed someone to deep clean my apartment before my parents visited. The tasker arrived on time, sent me photos throughout, and my place looked spotless. Saved me so much stress!",
       highlight: "Completed in 4 hours",
+      highlightType: "time",
    },
    {
       id: 2,
       name: "Rahul Verma",
       role: "Tasker",
       location: "Delhi",
-      avatar: "/assets/images/avatar.png",
+      avatar: "https://source.unsplash.com/300x300/?indian,man,portrait&sig=22",
+      avatarInitials: "RV",
       rating: 5,
       taskType: "Handyman",
       quote: "ExtraHand has become my primary source of income. I do 15-20 tasks a month, mostly furniture assembly and minor repairs. The app is easy to use and payments are always on time.",
       highlight: "₹45,000+ earned monthly",
+      highlightType: "earnings",
    },
    {
       id: 3,
       name: "Ananya Patel",
       role: "Task Poster",
       location: "Bangalore",
-      avatar: "/assets/images/avatar.png",
+      avatar: "https://source.unsplash.com/300x300/?indian,girl,portrait&sig=33",
+      avatarInitials: "AP",
       rating: 5,
       taskType: "Moving Help",
       quote: "Needed help moving heavy furniture to my new flat. Found 2 taskers within an hour, they were professional and careful with my stuff. Way cheaper than a moving company.",
       highlight: "Saved ₹3,000+",
+      highlightType: "savings",
    },
    {
       id: 4,
       name: "Vikram Singh",
       role: "Tasker",
       location: "Pune",
-      avatar: "/assets/images/avatar.png",
+      avatar: "https://source.unsplash.com/300x300/?indian,male,portrait&sig=44",
+      avatarInitials: "VS",
       rating: 5,
       taskType: "Delivery",
       quote: "As a college student, this is perfect for my schedule. I pick up delivery tasks between classes. Flexible hours and I meet interesting people. Made ₹12,000 last month part-time!",
       highlight: "Flexible schedule",
+      highlightType: "benefit",
    },
+];
+
+const highlightStyles = {
+   time: "bg-[#FFF7D6] text-[#9A7B0A]",
+   earnings: "bg-[#DFF8E7] text-[#1F7A43]",
+   savings: "bg-[#E8F1FF] text-[#2B5BA9]",
+   benefit: "bg-[#F2EEFF] text-[#5B3FBA]",
+} as const;
+
+const roleStyles = {
+   "Task Poster": "bg-[#E8F1FF] text-[#2B5BA9]",
+   Tasker: "bg-[#DFF8E7] text-[#1F7A43]",
+} as const;
+
+const legendItems: Array<{ label: string; className: string }> = [
+   { label: "Time badge", className: "bg-[#FFF7D6]" },
+   { label: "Earnings badge", className: "bg-[#DFF8E7]" },
+   { label: "Savings badge", className: "bg-[#E8F1FF]" },
+   { label: "Benefit badge", className: "bg-[#F2EEFF]" },
+   { label: "Task Poster", className: "bg-[#E8F1FF]" },
+   { label: "Tasker", className: "bg-[#DFF8E7]" },
 ];
 
 interface TestimonialCardProps {
    testimonial: (typeof testimonials)[0];
 }
 
-const TestimonialCard: React.FC<TestimonialCardProps> = ({ testimonial }) => (
+const TestimonialCard: React.FC<TestimonialCardProps> = ({ testimonial }) => {
+   const [imgError, setImgError] = useState(false);
+
+   return (
    <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-secondary-100 hover:shadow-lg transition-shadow">
       {/* Quote icon */}
-      <Quote className="size-6 md:size-8 text-primary-200 mb-4" />
+      <Quote className="size-6 md:size-8 text-[#E8CB63] mb-4" />
 
       {/* Quote text */}
       <p className="text-secondary-700 leading-relaxed mb-4 md:mb-6 text-sm md:text-base">
@@ -76,21 +108,37 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({ testimonial }) => (
       </p>
 
       {/* Highlight badge */}
-      <div className="inline-flex items-center px-3 py-1.5 bg-primary-50 text-primary-700 text-xs md:text-sm font-semibold rounded-full mb-6">
+      <div
+         className={cn(
+            "inline-flex items-center px-3 py-1.5 text-xs md:text-sm font-semibold rounded-full mb-6",
+            highlightStyles[testimonial.highlightType]
+         )}
+      >
          {testimonial.highlight}
       </div>
 
       {/* Author info */}
       <div className="flex items-center gap-4 pt-4 border-t border-secondary-100">
          {/* Avatar */}
-         <div className="size-8 md:size-12 rounded-full bg-secondary-100 overflow-hidden">
-            <Image
-               src={testimonial.avatar}
-               alt={testimonial.name}
-               width={48}
-               height={48}
-               className="w-full h-full object-cover"
-            />
+         <div className="size-8 md:size-12 rounded-full overflow-hidden border border-secondary-100 bg-white">
+            {imgError ? (
+               <div
+                  className={cn(
+                     "size-full flex items-center justify-center text-xs md:text-sm font-semibold",
+                     roleStyles[testimonial.role]
+                  )}
+               >
+                  {testimonial.avatarInitials}
+               </div>
+            ) : (
+               <img
+                  src={testimonial.avatar}
+                  alt={`${testimonial.name} profile`}
+                  className="size-full object-cover"
+                  loading="lazy"
+                  onError={() => setImgError(true)}
+               />
+            )}
          </div>
 
          {/* Name and details */}
@@ -117,7 +165,8 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({ testimonial }) => (
          </div>
       </div>
    </div>
-);
+   );
+};
 
 export const TestimonialsSection: React.FC = () => {
    return (
@@ -129,8 +178,16 @@ export const TestimonialsSection: React.FC = () => {
                   Loved by Thousands
                </h2>
                <p className="text-sm md:text-lg text-secondary-600 max-w-2xl mx-auto">
-                  Real stories from real people who use ExtraHand every day.
+                  Real stories from our community.
                </p>
+               <div className="mt-5 flex flex-wrap items-center justify-center gap-4 md:gap-5 text-xs text-secondary-500">
+                  {legendItems.map((item) => (
+                     <span key={item.label} className="inline-flex items-center gap-1.5">
+                        <span className={cn("h-2.5 w-2.5 rounded-full", item.className)} />
+                        {item.label}
+                     </span>
+                  ))}
+               </div>
             </div>
 
             {/* Mobile carousel (scroll snap) */}

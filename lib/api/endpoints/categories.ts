@@ -3,10 +3,28 @@
  * Directly hits the content-admin backend (not through API gateway)
  */
 
-import { CategoryDetail, Category, Subcategory } from "@/types/category";
+import { CategoryDetail, Subcategory } from "@/types/category";
 
+const DEFAULT_CONTENT_ADMIN_URL =
+   "https://extrahand-content-admin-backend.apps.extrahand.in";
 const CONTENT_ADMIN_URL =
-   process.env.NEXT_PUBLIC_CONTENT_ADMIN_URL || "https://extrahand-content-admin-backend.apps.extrahand.in";
+   process.env.NEXT_PUBLIC_CONTENT_ADMIN_URL || DEFAULT_CONTENT_ADMIN_URL;
+
+function isAbsoluteUrl(value: string): boolean {
+   return /^https?:\/\//i.test(value);
+}
+
+function getContentAdminBaseUrls(): string[] {
+   const configured = CONTENT_ADMIN_URL.replace(/\/+$/, "");
+   const proxyBaseUrl = "/api/content-admin";
+   const fallbackAbsolute = DEFAULT_CONTENT_ADMIN_URL;
+
+   const baseUrls = isAbsoluteUrl(configured)
+      ? [configured, proxyBaseUrl, fallbackAbsolute]
+      : [configured || proxyBaseUrl, fallbackAbsolute];
+
+   return [...new Set(baseUrls.filter(Boolean))];
+}
 
 /**
  * Fetch wrapper for content-admin API calls
@@ -16,10 +34,7 @@ async function fetchContentAdmin<T>(
    path: string,
    options: RequestInit = {}
 ): Promise<T | null> {
-   const isClient = typeof window !== "undefined";
-   const baseUrls = isClient
-      ? ["/api/content-admin", CONTENT_ADMIN_URL]
-      : [CONTENT_ADMIN_URL];
+   const baseUrls = getContentAdminBaseUrls();
 
    for (const baseUrl of baseUrls) {
       const url = `${baseUrl}${path}`;
@@ -37,27 +52,22 @@ async function fetchContentAdmin<T>(
          });
 
          if (!res.ok) {
-            if (res.status === 404 && baseUrl === "/api/content-admin") {
-               continue;
-            }
             if (res.status === 404) {
-               return null;
+               console.warn(`Content-admin route not found: ${url}`);
+               continue;
             }
             console.error(
                `❌ Content-admin API error: ${res.status} ${res.statusText}`
             );
-            return null;
+            continue;
          }
 
          const data = await res.json();
          console.log(`✅ Content-admin API success: ${path}`);
          return data as T;
       } catch (error) {
-         if (baseUrl === "/api/content-admin") {
-            continue;
-         }
          console.error(`❌ Content-admin fetch error for ${path}:`, error);
-         return null;
+         continue;
       }
    }
 
@@ -73,6 +83,7 @@ export interface CategoriesListItem {
    heroDescription: string;
    isPublished?: boolean;
    categoryType?: string;
+   status?: string;
    subcategories?: Subcategory[];
 }
 
@@ -95,7 +106,10 @@ export const categoriesApi = {
 
       // Only return categories that are published
       return categories.filter(
-         (cat) => cat.isPublished === true || cat.status === "PUBLISHED"
+         (cat) =>
+            cat.isPublished === true ||
+            cat.status === "PUBLISHED" ||
+            cat.status === "APPROVED"
       );
    },
 
@@ -125,7 +139,10 @@ export const categoriesApi = {
 
       // Filter to only published subcategories (if the API returns all)
       return subcategories.filter(
-         (sub: any) => sub.isPublished === true || sub.status === "PUBLISHED"
+         (sub) =>
+            sub.isPublished === true ||
+            sub.status === "PUBLISHED" ||
+            sub.status === "APPROVED"
       );
    },
 
