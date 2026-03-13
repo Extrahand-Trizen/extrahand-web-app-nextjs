@@ -104,8 +104,6 @@ export const CompactFilterBar = ({
                onChange={(v) => onFilterChange({ ...filters, sortBy: v })}
             />
 
-            <OtherFiltersButton filters={filters} onFilterChange={onFilterChange} />
-
             {hasActiveFilters && (
                <Button
                   variant="ghost"
@@ -550,130 +548,6 @@ export const SortFilter = ({ value, onChange }) => {
    );
 };
 
-export const OtherFiltersButton = ({ filters, onFilterChange }) => {
-   const [open, setOpen] = useState(false);
-   const [tempFilters, setTempFilters] = useState({
-      availableOnly: filters.availableOnly,
-      noOffersOnly: filters.noOffersOnly,
-   });
-
-   const hasActiveOtherFilters = filters.availableOnly || filters.noOffersOnly;
-
-   const handleApply = () => {
-      onFilterChange({
-         ...filters,
-         availableOnly: tempFilters.availableOnly,
-         noOffersOnly: tempFilters.noOffersOnly,
-      });
-      setOpen(false);
-   };
-
-   const handleCancel = () => {
-      setTempFilters({
-         availableOnly: filters.availableOnly,
-         noOffersOnly: filters.noOffersOnly,
-      });
-      setOpen(false);
-   };
-
-   return (
-      <>
-         {open && (
-            <div
-               className="fixed inset-0 z-40 bg-black/20 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
-               aria-hidden="true"
-            />
-         )}
-         <Button
-            variant={hasActiveOtherFilters ? "default" : "outline"}
-            className={cn(
-               "px-4 py-2 text-sm flex items-center gap-2 transition-colors duration-200",
-               hasActiveOtherFilters ? "bg-primary-600 hover:bg-primary-700 text-white" : "bg-white",
-               open ? "relative z-50 ring-2 ring-primary border-primary bg-white" : (hasActiveOtherFilters && open ? "bg-primary-600" : "")
-            )}
-            onClick={() => {
-               setOpen(true);
-               setTempFilters({
-                  availableOnly: filters.availableOnly,
-                  noOffersOnly: filters.noOffersOnly,
-               });
-            }}
-         >
-            Other Filters
-            <ChevronDown className="h-4 w-4" />
-         </Button>
-
-         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogContent className="sm:max-w-md">
-               <DialogHeader>
-                  <DialogTitle>Other Filters</DialogTitle>
-               </DialogHeader>
-
-               <div className="space-y-6 py-4">
-                  {/* Available tasks only */}
-                  <div className="flex items-center justify-between p-4 border border-secondary-100 rounded-lg hover:bg-secondary-50">
-                     <div className="flex-1">
-                        <h4 className="font-semibold text-sm text-secondary-900">
-                           Available tasks only
-                        </h4>
-                        <p className="text-xs text-secondary-500 mt-1">
-                           Hide tasks that are already assigned
-                        </p>
-                     </div>
-                     <Switch
-                        checked={tempFilters.availableOnly}
-                        onCheckedChange={(checked) =>
-                           setTempFilters({
-                              ...tempFilters,
-                              availableOnly: checked,
-                           })
-                        }
-                     />
-                  </div>
-
-                  {/* Tasks with no offers only */}
-                  <div className="flex items-center justify-between p-4 border border-secondary-100 rounded-lg hover:bg-secondary-50">
-                     <div className="flex-1">
-                        <h4 className="font-semibold text-sm text-secondary-900">
-                           Tasks with no offers only
-                        </h4>
-                        <p className="text-xs text-secondary-500 mt-1">
-                           Hide tasks that have offers
-                        </p>
-                     </div>
-                     <Switch
-                        checked={tempFilters.noOffersOnly}
-                        onCheckedChange={(checked) =>
-                           setTempFilters({
-                              ...tempFilters,
-                              noOffersOnly: checked,
-                           })
-                        }
-                     />
-                  </div>
-               </div>
-
-               <DialogFooter className="flex gap-3 justify-end">
-                  <Button
-                     variant="ghost"
-                     onClick={handleCancel}
-                     className="text-primary-600 hover:text-primary-700 hover:bg-transparent"
-                  >
-                     Cancel
-                  </Button>
-                  <Button
-                     onClick={handleApply}
-                     className="bg-primary-600 hover:bg-primary-700 text-white rounded-full font-semibold"
-                  >
-                     Apply
-                  </Button>
-               </DialogFooter>
-            </DialogContent>
-         </Dialog>
-      </>
-   );
-};
-
 export const MobileFilterSheet = ({
    filters,
    onFilterChange,
@@ -743,13 +617,6 @@ export const MobileFilterSheet = ({
                            onChange={(v) =>
                               onFilterChange({ ...filters, sortBy: v })
                            }
-                        />
-                     </div>
-
-                     <div className={filterRowClass}>
-                        <OtherFiltersButton
-                           filters={filters}
-                           onFilterChange={onFilterChange}
                         />
                      </div>
                   </div>
