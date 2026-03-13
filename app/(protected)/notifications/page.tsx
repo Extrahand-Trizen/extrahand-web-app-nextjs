@@ -108,7 +108,6 @@ export default function NotificationsPage() {
     await markAllAsRead();
   }, [markAllAsRead, markAllAsReadOptimistic]);
 
-  
   const handleDelete = useCallback(
     async (e: React.MouseEvent, notifId: string) => {
       e.stopPropagation(); // prevent row click / navigation
