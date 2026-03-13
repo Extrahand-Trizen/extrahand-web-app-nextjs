@@ -343,9 +343,10 @@ export const Header: React.FC = () => {
          {showMobileMenu && (
             <div
                ref={mobileMenuRef}
-               className="md:hidden fixed top-0 left-0 right-0 bottom-0 bg-white z-[9999] p-6 overflow-y-auto"
+               className="md:hidden fixed top-0 left-0 right-0 bottom-0 bg-white z-[9999] overflow-y-auto"
             >
-               <div className="flex flex-col gap-4">
+               <div className="p-6">
+                  <div className="flex flex-col gap-4">
                   {menuItems.map((item, index) => (
                      <button
                         key={index}
@@ -361,6 +362,7 @@ export const Header: React.FC = () => {
                         {item.label}
                      </button>
                   ))}
+                  </div>
                </div>
             </div>
          )}

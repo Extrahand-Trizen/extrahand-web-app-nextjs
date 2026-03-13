@@ -57,10 +57,28 @@ export const CategoriesExplorer = () => {
             // Map backend data to frontend format
             const formattedCategories = (data || []).map((cat, index) => {
                console.log(`Category: ${cat.name}, Subcategories:`, cat.subcategories);
+               
+               // Determine appropriate fallback image based on category name
+               const nameLower = cat.name.toLowerCase();
+               let fallbackImage = "/assets/images/default.png";
+               if (nameLower.includes("clean")) fallbackImage = "/assets/mobilescreens/cleaning.png";
+               else if (nameLower.includes("deliver")) fallbackImage = "/assets/mobilescreens/delivery.png";
+               else if (nameLower.includes("electric")) fallbackImage = "/assets/mobilescreens/electrical.png";
+               else if (nameLower.includes("furnitur") || nameLower.includes("assembl")) fallbackImage = "/assets/mobilescreens/furniture.png";
+               else if (nameLower.includes("garden") || nameLower.includes("landscap")) fallbackImage = "/assets/mobilescreens/garden.png";
+               else if (nameLower.includes("handyman") || nameLower.includes("repair")) fallbackImage = "/assets/mobilescreens/handy.png";
+               else if (nameLower.includes("market") || nameLower.includes("business")) fallbackImage = "/assets/mobilescreens/marketing.png";
+               else if (nameLower.includes("mount")) fallbackImage = "/assets/mobilescreens/mounting.png";
+               else if (nameLower.includes("mov")) fallbackImage = "/assets/mobilescreens/moving.png";
+               else if (nameLower.includes("paint")) fallbackImage = "/assets/mobilescreens/painting.png";
+               else if (nameLower.includes("plumb")) fallbackImage = "/assets/mobilescreens/plumbing.png";
+               else if (nameLower.includes("tech") || nameLower.includes("computer") || nameLower.includes("it")) fallbackImage = "/assets/mobilescreens/tech.png";
+               else if (nameLower.includes("work") || nameLower.includes("construct")) fallbackImage = "/assets/mobilescreens/work.png";
+               
                return {
                   title: cat.name,
                   description: cat.heroDescription || "Discover this category",
-                  image: cat.heroImage || "/assets/mobilescreens/default.png",
+                  image: cat.heroImage || fallbackImage,
                   color: colorPalette[index % colorPalette.length],
                   slug: cat.slug,
                   subcategories: cat.subcategories?.filter(

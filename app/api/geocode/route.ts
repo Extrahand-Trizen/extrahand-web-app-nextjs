@@ -16,14 +16,6 @@ export async function GET(request: NextRequest) {
       );
    }
 
-   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-   if (!apiKey) {
-      return NextResponse.json(
-         { error: "Google Maps API key not configured" },
-         { status: 500 }
-      );
-   }
-
    // Check cache first to avoid unnecessary API calls
    const cacheKey = `${lat},${lng}`;
    const cached = geocodeCache.get(cacheKey);
@@ -32,51 +24,38 @@ export async function GET(request: NextRequest) {
    }
 
    try {
-      // Use Google Maps Geocoding API for reliable, fast reverse geocoding
-      const response = await fetch(
-         `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`,
-         {
-            next: { revalidate: 3600 }, // Cache for 1 hour
-         }
-      );
+      // Use Nominatim API for reverse geocoding
+      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`;
+      const response = await fetch(url, {
+         headers: {
+            "User-Agent": "ExtraHandApp/1.0",
+         },
+         next: { revalidate: 3600 }, // Cache for 1 hour
+      });
 
       if (!response.ok) {
-         throw new Error("Google Geocoding API request failed");
+         throw new Error("Nominatim API request failed");
       }
 
       const data = await response.json();
 
-      if (data.status !== "OK" || !data.results || data.results.length === 0) {
-         throw new Error(`Geocoding failed: ${data.status}`);
+      if (data.error) {
+         throw new Error(`Geocoding failed: ${data.error}`);
       }
 
-      const result = data.results[0];
-      const address = result.formatted_address;
-      const components = result.address_components;
+      const address = data.display_name;
+      const components = data.address || {};
 
-      // Extract address components
-      const getComponent = (type: string) => {
-         const component = components.find((c: any) => c.types.includes(type));
-         return component?.long_name || "";
-      };
+      let postcode = components.postcode || "";
 
-      // Try to extract postal code from multiple possible locations
-      let postcode = getComponent("postal_code");
+      // Try extracting from formatted address as last resort (Indian pincodes are 6 digits)
       if (!postcode) {
-         postcode = getComponent("postcode");
-      }
-      if (!postcode) {
-         // Also try postal_code_prefix (sometimes used by Google)
-         postcode = getComponent("postal_code_prefix");
-      }
-      if (!postcode) {
-         // Try extracting from formatted address as last resort (Indian pincodes are 6 digits)
-         const postcodeMatch = address.match(/\b\d{6}\b/);
+         const postcodeMatch = address?.match(/\b\d{6}\b/);
          if (postcodeMatch) {
             postcode = postcodeMatch[0];
          } else {
             // Fallback to 5 digit postal codes for other countries
-            const postcodeMatch5 = address.match(/\b\d{5}\b/);
+            const postcodeMatch5 = address?.match(/\b\d{5}\b/);
             postcode = postcodeMatch5 ? postcodeMatch5[0] : "";
          }
       }
@@ -92,19 +71,15 @@ export async function GET(request: NextRequest) {
          address: address,
          raw: {
             address: {
-               street: getComponent("route"),
-               neighborhood: getComponent("neighborhood"),
-               sublocality:
-                  getComponent("sublocality_level_1") ||
-                  getComponent("sublocality"),
-               city:
-                  getComponent("locality") ||
-                  getComponent("administrative_area_level_2"),
-               state: getComponent("administrative_area_level_1"),
-               country: getComponent("country"),
+               street: components.road || "",
+               neighborhood: components.neighbourhood || components.suburb || "",
+               sublocality: components.suburb || components.residential || "",
+               city: components.city || components.town || components.village || components.county || "",
+               state: components.state || "",
+               country: components.country || "",
                postcode: postcode,
-               postalCode: postcode, // Also provide camelCase version for compatibility
-               postal_code: postcode, // Also provide snake_case version
+               postalCode: postcode,
+               postal_code: postcode,
             },
          },
       };

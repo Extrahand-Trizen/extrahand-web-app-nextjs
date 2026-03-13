@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Search, MapPin, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -33,8 +33,22 @@ export const HeroSection: React.FC = () => {
    >([]);
    const [isSearchingLocation, setIsSearchingLocation] = useState(false);
    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+   const locationContainerRef = useRef<HTMLDivElement>(null);
 
    const isMobile = useIsMobile();
+
+   useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+         if (
+            locationContainerRef.current &&
+            !locationContainerRef.current.contains(event.target as Node)
+         ) {
+            setShowLocationDropdown(false);
+         }
+      };
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+   }, []);
 
    useEffect(() => {
       const interval = setInterval(() => {
@@ -194,7 +208,7 @@ export const HeroSection: React.FC = () => {
                   className="flex items-center gap-1 md:gap-2"
                >
                   {/* Location Input with Dropdown */}
-                  <div className="relative flex-1 md:w-1/3">
+                  <div className="relative flex-1 md:w-1/3" ref={locationContainerRef}>
                      <div className="relative">
                         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 z-10" />
                         <Input
@@ -210,12 +224,7 @@ export const HeroSection: React.FC = () => {
 
                      {/* Location Dropdown */}
                      {showLocationDropdown && (
-                        <>
-                           <div
-                              className="fixed inset-0 z-100"
-                              onClick={() => setShowLocationDropdown(false)}
-                           />
-                           <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-101 overflow-hidden max-h-96 overflow-y-auto">
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-50 overflow-x-hidden overflow-y-auto max-h-72 custom-scrollbar">
                               {/* Detect Current Location */}
                               <button
                                  type="button"
@@ -307,7 +316,6 @@ export const HeroSection: React.FC = () => {
                                     </div>
                                  )}
                            </div>
-                        </>
                      )}
                   </div>
 

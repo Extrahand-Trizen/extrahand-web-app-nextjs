@@ -59,12 +59,13 @@ export const useInAppNotifications = (
 
   const pollingInitializedRef = useRef(false);
 
-  // Polling disabled for now
+  // Initialize polling and trigger first fetch when user is available
   useEffect(() => {
-    if (pollingInitializedRef.current) return;
+    if (!userId || pollingInitializedRef.current) return;
+    pollingInitializedRef.current = true;
 
     NotificationPollingService.initialize({
-      enabled: false,
+      enabled: true,
       interval: options?.pollingInterval ?? 60000,
       onNotification: (notification) => {
         addOrUpdateNotification(notification);
@@ -76,14 +77,12 @@ export const useInAppNotifications = (
       },
     });
 
-    pollingInitializedRef.current = true;
-  }, [addOrUpdateNotification, fetchUnreadCount, options?.enabled, options?.pollingInterval, options?.onNotification, options?.onError]);
+    // Fetch immediately on mount
+    fetchNotifications(20, 0);
 
-  // Polling disabled for now - do not start
-  // useEffect(() => {
-  //   if (!userId || !pollingInitializedRef.current) return;
-  //   NotificationPollingService.startPolling(userId, options?.pollingInterval);
-  // }, [userId, options?.pollingInterval]);
+    // Start polling
+    NotificationPollingService.startPolling(userId, options?.pollingInterval);
+  }, [userId, addOrUpdateNotification, fetchUnreadCount, fetchNotifications, options?.pollingInterval, options?.onNotification, options?.onError]);
 
   // Clear store when user logs out
   useEffect(() => {

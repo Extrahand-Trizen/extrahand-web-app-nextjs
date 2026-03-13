@@ -5,6 +5,8 @@ export interface Subcategory {
    name: string;
    slug: string;
    categorySlug?: string;
+   isPublished?: boolean;
+   status?: string;
 }
 
 export interface Category {

@@ -67,21 +67,21 @@ export default function RootLayout({
                      (function() {
                         window.history.scrollRestoration = 'manual';
                         window.scrollTo(0, 0);
-                        document.documentElement.scrollTop = 0;
-                        document.body.scrollTop = 0;
+                        if (document.documentElement) document.documentElement.scrollTop = 0;
+                        if (document.body) document.body.scrollTop = 0;
                         
                         // Reset on DOMContentLoaded
                         document.addEventListener('DOMContentLoaded', function() {
                            window.scrollTo(0, 0);
-                           document.documentElement.scrollTop = 0;
-                           document.body.scrollTop = 0;
+                           if (document.documentElement) document.documentElement.scrollTop = 0;
+                           if (document.body) document.body.scrollTop = 0;
                         });
                         
                         // Reset on load
                         window.addEventListener('load', function() {
                            window.scrollTo(0, 0);
-                           document.documentElement.scrollTop = 0;
-                           document.body.scrollTop = 0;
+                           if (document.documentElement) document.documentElement.scrollTop = 0;
+                           if (document.body) document.body.scrollTop = 0;
                         });
                      })();
                   `,

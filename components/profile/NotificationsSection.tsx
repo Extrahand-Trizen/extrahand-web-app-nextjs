@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import {
    Bell,
    Smartphone,
-   Check,
+   Mail,
    Loader2,
    Clock,
    ChevronDown,
@@ -62,7 +62,14 @@ interface NotificationsSectionProps {
    onSave: (
       settings: NotificationSettingsState,
       frequency?: FrequencySettings,
-      preferredChannel?: CommunicationChannel
+      preferredChannel?: CommunicationChannel,
+      changed?: {
+         push?: boolean;
+         email?: boolean;
+         sms?: boolean;
+         frequency?: boolean;
+         preferredChannel?: boolean;
+      }
    ) => Promise<void>;
 }
 
@@ -77,6 +84,21 @@ const DEFAULT_FREQUENCY: FrequencySettings = {
    maxPerDay: 0,
 };
 
+const cloneNotificationSettings = (
+   source: NotificationSettingsState
+): NotificationSettingsState => ({
+   push: { ...source.push },
+   email: { ...source.email },
+   sms: { ...source.sms },
+});
+
+const cloneFrequencySettings = (
+   source: FrequencySettings
+): FrequencySettings => ({
+   ...source,
+   quietHours: { ...source.quietHours },
+});
+
 export function NotificationsSection({
    settings = DEFAULT_NOTIFICATION_SETTINGS,
    frequencySettings = DEFAULT_FREQUENCY,
@@ -90,13 +112,70 @@ export function NotificationsSection({
    const [localChannel, setLocalChannel] =
       useState<CommunicationChannel>(preferredChannel);
    const [isSaving, setIsSaving] = useState(false);
-   const [hasChanges, setHasChanges] = useState(false);
+   const [saveMessage, setSaveMessage] = useState<string>("");
    const [expandedSections, setExpandedSections] = useState<string[]>(["push"]);
    const [keywordInput, setKeywordInput] = useState("");
    const [keywordAlerts, setKeywordAlerts] = useState<string[]>([]);
    const [showDropdown, setShowDropdown] = useState(false);
    const [filteredCategories, setFilteredCategories] =
       useState(KEYWORD_CATEGORIES);
+   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+   useEffect(() => {
+      setLocalSettings(cloneNotificationSettings(settings));
+   }, [settings]);
+
+   useEffect(() => {
+      setLocalFrequency(cloneFrequencySettings(frequencySettings));
+   }, [frequencySettings]);
+
+   useEffect(() => {
+      setLocalChannel(preferredChannel);
+   }, [preferredChannel]);
+
+   useEffect(() => {
+      return () => {
+         if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+         }
+      };
+   }, []);
+
+   const scheduleAutoSave = (
+      nextSettings: NotificationSettingsState,
+      nextFrequency: FrequencySettings,
+      nextChannel: CommunicationChannel,
+      changed?: {
+         push?: boolean;
+         email?: boolean;
+         sms?: boolean;
+         frequency?: boolean;
+         preferredChannel?: boolean;
+      }
+   ) => {
+      if (saveTimeoutRef.current) {
+         clearTimeout(saveTimeoutRef.current);
+      }
+
+      saveTimeoutRef.current = setTimeout(async () => {
+         setIsSaving(true);
+         setSaveMessage("Saving...");
+         try {
+            await onSave(
+               cloneNotificationSettings(nextSettings),
+               cloneFrequencySettings(nextFrequency),
+               nextChannel,
+               changed
+            );
+            setSaveMessage("Saved");
+         } catch (error) {
+            console.error("Failed to auto-save notification settings:", error);
+            setSaveMessage("Save failed");
+         } finally {
+            setIsSaving(false);
+         }
+      }, 350);
+   };
 
    const keywordAlertsEnabled =
       (localSettings.push.enabled && localSettings.push.keywordTaskAlerts) ||
@@ -137,13 +216,13 @@ export function NotificationsSection({
 
             const localKeywords = localKeywordStore
                ? (() => {
-                    try {
-                       const parsed = JSON.parse(localKeywordStore);
-                       return Array.isArray(parsed) ? parsed : [];
-                    } catch {
-                       return [];
-                    }
-                 })()
+                  try {
+                     const parsed = JSON.parse(localKeywordStore);
+                     return Array.isArray(parsed) ? parsed : [];
+                  } catch {
+                     return [];
+                  }
+               })()
                : [];
 
             const keywordRes = await profilesApi.getKeywordAlerts();
@@ -195,13 +274,16 @@ export function NotificationsSection({
 
    const persistKeywordAlerts = (next: string[]) => {
       setKeywordAlerts(next);
-      setHasChanges(true);
       if (typeof window !== "undefined") {
          window.localStorage.setItem(
             "notificationKeywordAlerts",
             JSON.stringify(next)
          );
       }
+
+      profilesApi.updateKeywordAlerts(next).catch((error) => {
+         console.error("Failed to sync keyword alerts:", error);
+      });
    };
 
    const addKeywordAlert = (categoryName?: string) => {
@@ -222,54 +304,52 @@ export function NotificationsSection({
       key: keyof NotificationSettingsState[K],
       value: boolean
    ) => {
-      setLocalSettings((prev) => ({
-         ...prev,
-         [channel]: {
-            ...prev[channel],
-            [key]: value,
-         },
-      }));
-      setHasChanges(true);
+      setLocalSettings((prev) => {
+         const nextSettings = {
+            ...cloneNotificationSettings(prev),
+            [channel]: {
+               ...prev[channel],
+               [key]: value,
+            },
+         };
+         scheduleAutoSave(nextSettings, localFrequency, localChannel, {
+            [channel]: true,
+         });
+         return nextSettings;
+      });
    };
 
    const toggleChannelMaster = (channel: keyof NotificationSettingsState) => {
-      const newEnabled = !localSettings[channel].enabled;
-      setLocalSettings((prev) => ({
-         ...prev,
-         [channel]: {
-            ...prev[channel],
-            enabled: newEnabled,
-         },
-      }));
-      setHasChanges(true);
+      setLocalSettings((prev) => {
+         const newEnabled = !prev[channel].enabled;
+         const nextSettings = {
+            ...cloneNotificationSettings(prev),
+            [channel]: {
+               ...prev[channel],
+               enabled: newEnabled,
+            },
+         };
+         scheduleAutoSave(nextSettings, localFrequency, localChannel, {
+            [channel]: true,
+         });
+         return nextSettings;
+      });
    };
 
    const updateFrequency = <K extends keyof FrequencySettings>(
       key: K,
       value: FrequencySettings[K]
    ) => {
-      setLocalFrequency((prev) => ({
-         ...prev,
-         [key]: value,
-      }));
-      setHasChanges(true);
-   };
-
-   const handleSave = async () => {
-      setIsSaving(true);
-      try {
-         await onSave(localSettings, localFrequency, localChannel);
-
-         await Promise.allSettled([
-            profilesApi.updateKeywordAlerts(keywordAlerts),
-         ]);
-
-         setHasChanges(false);
-      } catch (error) {
-         console.error("Failed to save notification settings:", error);
-      } finally {
-         setIsSaving(false);
-      }
+      setLocalFrequency((prev) => {
+         const nextFrequency = {
+            ...cloneFrequencySettings(prev),
+            [key]: value,
+         };
+         scheduleAutoSave(localSettings, nextFrequency, localChannel, {
+            frequency: true,
+         });
+         return nextFrequency;
+      });
    };
 
    return (
@@ -284,13 +364,13 @@ export function NotificationsSection({
             </p>
          </div>
 
-         {/* Preferred Channel */}
+         {/* Channel Selector */}
          <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5">
             <Label className="text-xs sm:text-sm font-medium text-gray-900">
-               Preferred Channel
+               Notification Channels
             </Label>
             <p className="text-[10px] sm:text-xs text-gray-500 mt-1 mb-3">
-               Your primary channel for receiving important notifications
+               Select a channel to configure its notification settings
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                {COMMUNICATION_CHANNELS.map((channel) => {
@@ -301,7 +381,9 @@ export function NotificationsSection({
                         onClick={() => {
                            if (!isComingSoon) {
                               setLocalChannel(channel.value);
-                              setHasChanges(true);
+                              scheduleAutoSave(localSettings, localFrequency, channel.value, {
+                                 preferredChannel: true,
+                              });
                            }
                         }}
                         disabled={isComingSoon}
@@ -328,72 +410,139 @@ export function NotificationsSection({
             </div>
          </div>
 
-         {/* Push Notifications */}
-         <NotificationChannel
-            icon={<Smartphone className="w-4 h-4 sm:w-5 sm:h-5" />}
-            title="Push Notifications"
-            description="Real-time alerts on your device"
-            enabled={localSettings.push.enabled}
-            onToggleMaster={() => toggleChannelMaster("push")}
-            isExpanded={expandedSections.includes("push")}
-            onToggle={() => toggleSection("push")}
-         >
-            <NotificationToggle
-               label="Transactional"
-               description="Important confirmations and account actions"
-               checked={localSettings.push.transactional}
-               onChange={(v) => updateChannelSetting("push", "transactional", v)}
-               disabled={!localSettings.push.enabled}
-               comingSoon={true}
-            />
-            <NotificationToggle
-               label="Task Updates"
-               description="Status changes, new offers, task completions"
-               checked={localSettings.push.taskUpdates}
-               onChange={(v) => updateChannelSetting("push", "taskUpdates", v)}
-               disabled={!localSettings.push.enabled}
-            />
-            <NotificationToggle
-               label="Payment Alerts"
-               description="Payment confirmations and refunds"
-               checked={localSettings.push.payments}
-               onChange={(v) => updateChannelSetting("push", "payments", v)}
-               disabled={!localSettings.push.enabled}
-               comingSoon={true}
-            />
-            <NotificationToggle
-               label="Task Reminders"
-               description="Task-specific reminder alerts"
-               checked={localSettings.push.taskReminders}
-               onChange={(v) => updateChannelSetting("push", "taskReminders", v)}
-               disabled={!localSettings.push.enabled}
-               comingSoon={true}
-            />
-            <NotificationToggle
-               label="Keyword Task Alerts"
-               description="Alerts for tasks matching your keywords"
-               checked={localSettings.push.keywordTaskAlerts}
-               onChange={(v) => updateChannelSetting("push", "keywordTaskAlerts", v)}
-               disabled={!localSettings.push.enabled}
-            />
-            <NotificationToggle
-               label="System Alerts"
-               description="Security and account notifications"
-               checked={localSettings.push.system}
-               onChange={(v) => updateChannelSetting("push", "system", v)}
-               disabled={!localSettings.push.enabled}
-            />
-            <NotificationToggle
-               label="Promotions"
-               description="Deals, offers, and feature announcements"
-               checked={localSettings.push.promotions}
-               onChange={(v) => updateChannelSetting("push", "promotions", v)}
-               disabled={!localSettings.push.enabled}
-               comingSoon={true}
-            />
-         </NotificationChannel>
+         {/* Push Notifications Settings */}
+         {localChannel === "push" && (
+            <NotificationChannel
+               icon={<Smartphone className="w-4 h-4 sm:w-5 sm:h-5" />}
+               title="Push Notifications"
+               description="Real-time alerts on your device"
+               enabled={localSettings.push.enabled}
+               onToggleMaster={() => toggleChannelMaster("push")}
+               isExpanded={true}
+               hideChevron={true}
+            >
+               <NotificationToggle
+                  label="Transactional"
+                  description="Important confirmations and account actions"
+                  checked={localSettings.push.transactional}
+                  onChange={(v) => updateChannelSetting("push", "transactional", v)}
+                  disabled={!localSettings.push.enabled}
+                  comingSoon={true}
+               />
+               <NotificationToggle
+                  label="Task Updates"
+                  description="Status changes, new offers, task completions"
+                  checked={localSettings.push.taskUpdates}
+                  onChange={(v) => updateChannelSetting("push", "taskUpdates", v)}
+                  disabled={!localSettings.push.enabled}
+               />
+               <NotificationToggle
+                  label="Payment Alerts"
+                  description="Payment confirmations and refunds"
+                  checked={localSettings.push.payments}
+                  onChange={(v) => updateChannelSetting("push", "payments", v)}
+                  disabled={!localSettings.push.enabled}
+                  comingSoon={true}
+               />
+               <NotificationToggle
+                  label="Task Reminders"
+                  description="Task-specific reminder alerts"
+                  checked={localSettings.push.taskReminders}
+                  onChange={(v) => updateChannelSetting("push", "taskReminders", v)}
+                  disabled={!localSettings.push.enabled}
+                  comingSoon={true}
+               />
+               <NotificationToggle
+                  label="Keyword Task Alerts"
+                  description="Alerts for tasks matching your keywords"
+                  checked={localSettings.push.keywordTaskAlerts}
+                  onChange={(v) => updateChannelSetting("push", "keywordTaskAlerts", v)}
+                  disabled={!localSettings.push.enabled}
+               />
+               <NotificationToggle
+                  label="System Alerts"
+                  description="Security and account notifications"
+                  checked={localSettings.push.system}
+                  onChange={(v) => updateChannelSetting("push", "system", v)}
+                  disabled={!localSettings.push.enabled}
+               />
+               <NotificationToggle
+                  label="Promotions"
+                  description="Deals, offers, and feature announcements"
+                  checked={localSettings.push.promotions}
+                  onChange={(v) => updateChannelSetting("push", "promotions", v)}
+                  disabled={!localSettings.push.enabled}
+                  comingSoon={true}
+               />
+            </NotificationChannel>
+         )}
 
-         {/* Email and SMS channel sections removed (handled via Preferred Channel) */}
+         {/* Email Notifications Settings */}
+         {localChannel === "email" && (
+            <NotificationChannel
+               icon={<Mail className="w-4 h-4 sm:w-5 sm:h-5" />}
+               title="Email Notifications"
+               description="Updates delivered to your email inbox"
+               enabled={localSettings.email.enabled}
+               onToggleMaster={() => toggleChannelMaster("email")}
+               isExpanded={true}
+               hideChevron={true}
+            >
+               <NotificationToggle
+                  label="Transactional"
+                  description="Important confirmations and account actions"
+                  checked={localSettings.email.transactional}
+                  onChange={(v) => updateChannelSetting("email", "transactional", v)}
+                  disabled={!localSettings.email.enabled}
+                  comingSoon={true}
+               />
+               <NotificationToggle
+                  label="Task Updates"
+                  description="Status changes, new offers, task completions"
+                  checked={localSettings.email.taskUpdates}
+                  onChange={(v) => updateChannelSetting("email", "taskUpdates", v)}
+                  disabled={!localSettings.email.enabled}
+               />
+               <NotificationToggle
+                  label="Payment Alerts"
+                  description="Payment confirmations and refunds"
+                  checked={localSettings.email.payments}
+                  onChange={(v) => updateChannelSetting("email", "payments", v)}
+                  disabled={!localSettings.email.enabled}
+                  comingSoon={true}
+               />
+               <NotificationToggle
+                  label="Task Reminders"
+                  description="Task-specific reminder alerts"
+                  checked={localSettings.email.taskReminders}
+                  onChange={(v) => updateChannelSetting("email", "taskReminders", v)}
+                  disabled={!localSettings.email.enabled}
+                  comingSoon={true}
+               />
+               <NotificationToggle
+                  label="Keyword Task Alerts"
+                  description="Alerts for tasks matching your keywords"
+                  checked={localSettings.email.keywordTaskAlerts}
+                  onChange={(v) => updateChannelSetting("email", "keywordTaskAlerts", v)}
+                  disabled={!localSettings.email.enabled}
+               />
+               <NotificationToggle
+                  label="System Alerts"
+                  description="Security and account notifications"
+                  checked={localSettings.email.system}
+                  onChange={(v) => updateChannelSetting("email", "system", v)}
+                  disabled={!localSettings.email.enabled}
+               />
+               <NotificationToggle
+                  label="Promotions"
+                  description="Deals, offers, and feature announcements"
+                  checked={localSettings.email.promotions}
+                  onChange={(v) => updateChannelSetting("email", "promotions", v)}
+                  disabled={!localSettings.email.enabled}
+                  comingSoon={true}
+               />
+            </NotificationChannel>
+         )}
 
          {/* Keyword Task Alerts */}
          <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5">
@@ -533,117 +682,98 @@ export function NotificationsSection({
 
          {/* Hidden frequency section removed - Coming Soon */}
          {false && (
-               <div className="px-4 pb-4 sm:px-5 sm:pb-5 border-t border-gray-100 pt-4 space-y-4">
-                  {/* Quiet Hours Toggle */}
-                  <div className="flex items-start justify-between gap-4">
-                     <div className="flex-1 min-w-0">
-                        <p className="text-xs sm:text-sm font-medium text-gray-900">
-                           Quiet Hours
-                        </p>
-                        <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">
-                           Pause non-urgent notifications during set hours
-                        </p>
-                     </div>
-                     <Switch
-                        checked={localFrequency.quietHours.enabled}
-                        onCheckedChange={(checked) =>
-                           updateFrequency("quietHours", {
-                              ...localFrequency.quietHours,
-                              enabled: checked,
-                           })
-                        }
-                        className="data-[state=checked]:bg-primary-600"
-                     />
+            <div className="px-4 pb-4 sm:px-5 sm:pb-5 border-t border-gray-100 pt-4 space-y-4">
+               {/* Quiet Hours Toggle */}
+               <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                     <p className="text-xs sm:text-sm font-medium text-gray-900">
+                        Quiet Hours
+                     </p>
+                     <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">
+                        Pause non-urgent notifications during set hours
+                     </p>
                   </div>
-
-                  {/* Quiet Hours Time Inputs */}
-                  {localFrequency.quietHours.enabled && (
-                     <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
-                        <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                           <div>
-                              <Label className="text-[10px] sm:text-xs text-gray-600">
-                                 Start Time
-                              </Label>
-                              <input
-                                 type="time"
-                                 value={localFrequency.quietHours.start}
-                                 onChange={(e) => {
-                                    updateFrequency("quietHours", {
-                                       ...localFrequency.quietHours,
-                                       start: e.target.value,
-                                    });
-                                 }}
-                                 className="mt-1 w-full px-3 py-2 text-xs sm:text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                              />
-                           </div>
-                           <div>
-                              <Label className="text-[10px] sm:text-xs text-gray-600">
-                                 End Time
-                              </Label>
-                              <input
-                                 type="time"
-                                 value={localFrequency.quietHours.end}
-                                 onChange={(e) => {
-                                    updateFrequency("quietHours", {
-                                       ...localFrequency.quietHours,
-                                       end: e.target.value,
-                                    });
-                                 }}
-                                 className="mt-1 w-full px-3 py-2 text-xs sm:text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                              />
-                           </div>
-                        </div>
-                        <p className="text-[10px] sm:text-xs text-gray-500 mt-2 flex items-center gap-1">
-                           <Info className="w-3 h-3" />
-                           Security alerts will still be delivered
-                        </p>
-                     </div>
-                  )}
-
-                  {/* Daily Digest */}
-                  <div className="flex items-start justify-between gap-4 pt-2">
-                     <div className="flex-1 min-w-0">
-                        <p className="text-xs sm:text-sm font-medium text-gray-900">
-                           Daily Digest
-                        </p>
-                        <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">
-                           Receive a summary of your notifications once daily
-                        </p>
-                     </div>
-                     <Switch
-                        checked={localFrequency.dailyDigest}
-                        onCheckedChange={(checked) =>
-                           updateFrequency("dailyDigest", checked)
-                        }
-                        className="data-[state=checked]:bg-primary-600"
-                     />
-                  </div>
+                  <Switch
+                     checked={localFrequency.quietHours.enabled}
+                     onCheckedChange={(checked) =>
+                        updateFrequency("quietHours", {
+                           ...localFrequency.quietHours,
+                           enabled: checked,
+                        })
+                     }
+                     className="data-[state=checked]:bg-primary-600"
+                  />
                </div>
-            )}
 
-         {/* Save Button */}
-         {hasChanges && (
-            <div className="flex items-center justify-end pt-4 border-t border-gray-200">
-               <Button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="w-full sm:w-auto sm:min-w-[140px]"
-                  size="sm"
-               >
-                  {isSaving ? (
-                     <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Saving...
-                     </>
-                  ) : (
-                     <>
-                        <Check className="w-4 h-4 mr-2" />
-                        Save Changes
-                     </>
-                  )}
-               </Button>
+               {/* Quiet Hours Time Inputs */}
+               {localFrequency.quietHours.enabled && (
+                  <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                     <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                        <div>
+                           <Label className="text-[10px] sm:text-xs text-gray-600">
+                              Start Time
+                           </Label>
+                           <input
+                              type="time"
+                              value={localFrequency.quietHours.start}
+                              onChange={(e) => {
+                                 updateFrequency("quietHours", {
+                                    ...localFrequency.quietHours,
+                                    start: e.target.value,
+                                 });
+                              }}
+                              className="mt-1 w-full px-3 py-2 text-xs sm:text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                           />
+                        </div>
+                        <div>
+                           <Label className="text-[10px] sm:text-xs text-gray-600">
+                              End Time
+                           </Label>
+                           <input
+                              type="time"
+                              value={localFrequency.quietHours.end}
+                              onChange={(e) => {
+                                 updateFrequency("quietHours", {
+                                    ...localFrequency.quietHours,
+                                    end: e.target.value,
+                                 });
+                              }}
+                              className="mt-1 w-full px-3 py-2 text-xs sm:text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                           />
+                        </div>
+                     </div>
+                     <p className="text-[10px] sm:text-xs text-gray-500 mt-2 flex items-center gap-1">
+                        <Info className="w-3 h-3" />
+                        Security alerts will still be delivered
+                     </p>
+                  </div>
+               )}
+
+               {/* Daily Digest */}
+               <div className="flex items-start justify-between gap-4 pt-2">
+                  <div className="flex-1 min-w-0">
+                     <p className="text-xs sm:text-sm font-medium text-gray-900">
+                        Daily Digest
+                     </p>
+                     <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">
+                        Receive a summary of your notifications once daily
+                     </p>
+                  </div>
+                  <Switch
+                     checked={localFrequency.dailyDigest}
+                     onCheckedChange={(checked) =>
+                        updateFrequency("dailyDigest", checked)
+                     }
+                     className="data-[state=checked]:bg-primary-600"
+                  />
+               </div>
             </div>
          )}
+
+         <div className="flex items-center justify-end pt-4 border-t border-gray-200 text-xs text-gray-500 gap-2">
+            {isSaving && <Loader2 className="w-3 h-3 animate-spin" />}
+            <span>{saveMessage || "Changes are saved automatically"}</span>
+         </div>
       </div>
    );
 }
@@ -655,7 +785,8 @@ interface NotificationChannelProps {
    enabled: boolean;
    onToggleMaster: () => void;
    isExpanded: boolean;
-   onToggle: () => void;
+   onToggle?: () => void;
+   hideChevron?: boolean;
    children: React.ReactNode;
 }
 
@@ -667,6 +798,7 @@ function NotificationChannel({
    onToggleMaster,
    isExpanded,
    onToggle,
+   hideChevron,
    children,
 }: NotificationChannelProps) {
    return (
@@ -674,7 +806,8 @@ function NotificationChannel({
          <div className="px-4 py-3 sm:px-5 sm:py-4 flex items-center gap-3 sm:gap-4">
             <button
                onClick={onToggle}
-               className="flex-1 flex items-center gap-3 sm:gap-4 text-left"
+               className={cn("flex-1 flex items-center gap-3 sm:gap-4 text-left", !onToggle && "cursor-default")}
+               disabled={!onToggle}
             >
                <span
                   className={cn(
@@ -710,10 +843,12 @@ function NotificationChannel({
                      {description}
                   </p>
                </div>
-               {isExpanded ? (
-                  <ChevronUp className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0" />
-               ) : (
-                  <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0" />
+               {!hideChevron && (
+                  isExpanded ? (
+                     <ChevronUp className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0" />
+                  ) : (
+                     <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0" />
+                  )
                )}
             </button>
             <Switch
