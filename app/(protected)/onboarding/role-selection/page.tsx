@@ -10,6 +10,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { toast } from 'sonner';
+import { referralsApi } from '@/lib/api/endpoints/referrals';
 
 const PRIMARY_YELLOW = '#f9b233';
 const DARK = '#222';
@@ -37,8 +39,26 @@ export default function RoleSelectionPage() {
 
   const canComplete = goal && userType && agreeTerms;
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     if (!canComplete) return;
+
+    // Check for pending referral code
+    const pendingReferralCode = sessionStorage.getItem('pendingReferralCode');
+    if (pendingReferralCode) {
+      try {
+        await referralsApi.applyReferralCode(pendingReferralCode);
+        sessionStorage.removeItem('pendingReferralCode');
+        toast.success('Referral code applied!', {
+          description: 'Complete a task worth ₹500+ to unlock rewards.',
+        });
+      } catch (error: any) {
+        console.error('Failed to apply referral code:', error);
+        // Don't block onboarding if referral fails
+        toast.error('Could not apply referral code', {
+          description: 'You can apply it later from your profile.',
+        });
+      }
+    }
 
     // Navigate based on goal selection
     if (goal === 'earn') {

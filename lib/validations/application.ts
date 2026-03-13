@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { containsPhoneNumber, PHONE_NUMBER_ERROR } from "@/lib/utils/phoneDetection";
 
 /**
  * Application validation schemas
@@ -23,14 +24,16 @@ export const createApplicationSchema = z
             estimatedDuration: z
                .number()
                .min(0.5, "Minimum duration is 0.5 hours")
-               .max(168, "Maximum duration is 168 hours")
+               .max(8760, "Maximum duration is 1 year (8760 hours)")
                .optional(),
             flexible: z.boolean(),
          })
          .optional(),
+      selectedDates: z.array(z.date()).max(366).optional(),
       coverLetter: z
          .string()
          .max(1000, "Cover letter must be less than 1000 characters")
+         .refine((val) => !val || !containsPhoneNumber(val), PHONE_NUMBER_ERROR)
          .optional(),
       relevantExperience: z.array(z.string()).max(10).default([]).optional(),
       portfolio: z.array(z.string().url()).max(10).default([]).optional(),

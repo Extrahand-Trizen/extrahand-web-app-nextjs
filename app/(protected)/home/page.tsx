@@ -5,15 +5,13 @@
  * Seamless full-width design with integrated hero and action card
  */
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import {
-   DynamicActionCard,
-   RecommendedTasks,
-} from "@/components/home";
+import { DynamicActionCard, RecommendedTasks } from "@/components/home";
 import { useUserStore } from "@/lib/state/userStore";
+import { useDashboardStore } from "@/lib/state/dashboardStore";
 
 type CardState =
    | "first_time"
@@ -49,11 +47,47 @@ const CATEGORY_PARAM_MAP: Record<string, string> = {
    Business: "other",
 };
 
+function StatPill({
+   label,
+   value,
+   loading,
+}: {
+   label: string;
+   value: number | undefined;
+   loading: boolean;
+}) {
+   if (loading) {
+      return (
+         <div className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-secondary-100 text-secondary-600 text-xs sm:text-sm font-medium inline-flex items-center gap-2">
+            <span className="h-3 w-3 rounded-full bg-secondary-300 animate-pulse" />
+            <span className="h-3 w-16 sm:w-20 bg-secondary-300 rounded-full animate-pulse" />
+         </div>
+      );
+   }
+
+   return (
+      <div className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary-50 text-primary-800 text-xs sm:text-sm font-medium inline-flex items-center gap-2">
+         <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary-100 text-[10px] sm:text-xs font-semibold">
+            {typeof value === "number" ? value : "–"}
+         </span>
+         <span>{label}</span>
+      </div>
+   );
+}
+
 export default function HomePage() {
    const router = useRouter();
    const { user } = useUserStore();
    const [isRefreshing, setIsRefreshing] = useState(false);
    const [searchQuery, setSearchQuery] = useState("");
+   const { stats, statsLoading, fetchStats } = useDashboardStore();
+
+   useEffect(() => {
+      // Warm dashboard stats cache; no-op if already fresh
+      fetchStats().catch(() => {
+         // Swallow errors here; individual pages can handle messaging if needed
+      });
+   }, [fetchStats]);
 
    const handleRefresh = async () => {
       setIsRefreshing(true);
@@ -99,7 +133,7 @@ export default function HomePage() {
                   {/* Hero Section Inside Card */}
                   <div className="max-w-4xl mx-auto px-6 sm:px-8 md:px-12 py-8 sm:py-12 md:py-16">
                      {/* Greeting - Centered */}
-                     <div className="text-center mb-6 sm:mb-8">
+                     <div className="text-center mb-6 sm:mb-4">
                         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-secondary-900 mb-2">
                            {getGreeting()},{" "}
                            {user?.name?.split(" ")[0] || "there"}
@@ -107,6 +141,29 @@ export default function HomePage() {
                         <p className="text-sm sm:text-base text-secondary-600">
                            How can we help you today?
                         </p>
+                     </div>
+
+                     {/* Quick stats (from dashboard store) */}
+                     <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mb-6">
+                        {(statsLoading || stats) && (
+                           <>
+                              <StatPill
+                                 label="Tasks posted"
+                                 value={stats?.totalTasks}
+                                 loading={statsLoading && !stats}
+                              />
+                              <StatPill
+                                 label="Tasks completed"
+                                 value={stats?.completedTasks}
+                                 loading={statsLoading && !stats}
+                              />
+                              <StatPill
+                                 label="Offers sent"
+                                 value={stats?.totalApplications}
+                                 loading={statsLoading && !stats}
+                              />
+                           </>
+                        )}
                      </div>
 
                      {/* Search Bar - Centered */}
@@ -120,16 +177,16 @@ export default function HomePage() {
                               type="text"
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value)}
-                              placeholder="In a few words, what do you need done?"
-                              className="h-12 sm:h-14 pl-10 sm:pl-12 pr-24 sm:pr-28 text-sm sm:text-base border-secondary-300 focus-visible:ring-2 focus-visible:ring-primary-500"
+                              placeholder="What do you need done?"
+                              className="h-12 sm:h-14 pl-10 sm:pl-12 pr-24 sm:pr-36 text-sm sm:text-base border-secondary-300 focus-visible:ring-2 focus-visible:ring-primary-500"
                               aria-label="Describe what you need done"
                            />
                            <button
                               type="submit"
-                              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 sm:h-10 px-4 sm:px-6 bg-primary-500 hover:bg-primary-600 text-white rounded-md text-sm sm:text-base font-medium transition-colors flex items-center gap-2"
+                              className="absolute right-1.5 top-1/2 -translate-y-1/2 h-7 sm:h-10 px-2.5 sm:px-6 bg-primary-500 hover:bg-primary-600 text-white rounded text-[10px] sm:text-base font-medium transition-colors flex items-center justify-center"
                            >
-                              <Search className="w-4 h-4" />
-                              <span>Get offers</span>
+                              <Search className="hidden sm:block w-4 h-4 sm:mr-2" />
+                              <span className="whitespace-nowrap leading-none">Get offers</span>
                            </button>
                         </div>
                      </form>

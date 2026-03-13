@@ -10,7 +10,7 @@ import { useRouter, useParams } from "next/navigation";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { PublicProfile } from "@/components/profile";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MessageCircle, Flag, Share2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { UserProfile } from "@/types/user";
 import { Review, WorkHistoryItem } from "@/types/profile";
 import Link from "next/link";
@@ -18,6 +18,7 @@ import { profilesApi } from "@/lib/api/endpoints/profiles";
 import { reviewsApi } from "@/lib/api/endpoints/reviews";
 import { useAuth } from "@/lib/auth/context";
 import { toast } from "sonner";
+
 
 export default function UserProfilePage() {
    const router = useRouter();
@@ -31,7 +32,7 @@ export default function UserProfilePage() {
    const [loading, setLoading] = useState(true);
    const [loadingReviews, setLoadingReviews] = useState(false);
    const [error, setError] = useState<string | null>(null);
-   
+
    const isOwnProfile = userData?.uid === userId || userData?._id === userId;
 
    useEffect(() => {
@@ -44,7 +45,7 @@ export default function UserProfilePage() {
             console.log("🔍 Fetching public profile for user:", userId);
             const profileData = await profilesApi.getPublicProfile(userId);
             console.log("✅ Profile fetched:", profileData);
-            
+
             setUser(profileData as UserProfile);
          } catch (err: any) {
             console.error("❌ Failed to load profile:", err);
@@ -67,21 +68,28 @@ export default function UserProfilePage() {
       if (user && (user as any).reviews) {
          console.log('📦 Using reviews from profile response:', (user as any).reviews.length);
          const profileReviews = (user as any).reviews;
-         
-         // Map to Review format if needed
-         const mappedReviews: Review[] = profileReviews.map((review: any) => ({
-            id: review._id,
-            taskId: review.taskId,
-            taskTitle: review.taskTitle || review.title || "Task",
-            reviewerId: review.reviewerId || review.reviewerUid,
-            reviewerName: review.reviewerName || "User",
-            reviewerPhoto: review.reviewerPhoto,
-            rating: review.rating,
-            comment: review.comment || "",
-            createdAt: new Date(review.createdAt),
-            role: "poster" as const,
-         }));
-         
+
+         // Map to Review format - filter out reviews without real data
+         const mappedReviews: Review[] = profileReviews
+            .filter((review: any) => 
+               review.reviewerName && 
+               review.reviewerName.trim() !== "" &&
+               review.rating > 0 &&
+               review.taskTitle
+            )
+            .map((review: any) => ({
+               id: review._id,
+               taskId: review.taskId,
+               taskTitle: review.taskTitle || review.title || "Task",
+               reviewerId: review.reviewerId || review.reviewerUid,
+               reviewerName: review.reviewerName,
+               reviewerPhoto: review.reviewerPhoto,
+               rating: review.rating,
+               comment: review.comment || "",
+               createdAt: new Date(review.createdAt),
+               role: "poster" as const,
+            }));
+
          setReviews(mappedReviews);
          setLoadingReviews(false);
       } else {
@@ -89,21 +97,23 @@ export default function UserProfilePage() {
          setReviews([]);
          setLoadingReviews(false);
       }
-      
-      // Extract work history from profile response
+
+      // Extract work history from profile response - filter out dummy/empty entries
       if (user && (user as any).workHistory) {
          console.log('📦 Using work history from profile response:', (user as any).workHistory.length);
          const profileWorkHistory = (user as any).workHistory;
-         
-         // Map to WorkHistoryItem format
-         const mappedWorkHistory: WorkHistoryItem[] = profileWorkHistory.map((item: any) => ({
-            id: item._id,
-            taskTitle: item.title,
-            category: item.category,
-            completedDate: new Date(item.completedAt),
-            earnings: item.budget,
-         }));
-         
+
+         // Map to WorkHistoryItem format - filter out entries without valid data
+         const mappedWorkHistory: WorkHistoryItem[] = profileWorkHistory
+            .filter((item: any) => item.title && item.title.trim() !== '' && item.completedAt)
+            .map((item: any) => ({
+               id: item._id,
+               taskTitle: item.title,
+               category: item.category,
+               completedDate: new Date(item.completedAt),
+               earnings: item.budget,
+            }));
+
          setWorkHistory(mappedWorkHistory);
       } else {
          console.log('ℹ️ No work history in profile response');
@@ -111,35 +121,38 @@ export default function UserProfilePage() {
       }
    }, [user]);
 
-   const handleShare = async () => {
-      const url = window.location.href;
-      
-      if (navigator.share) {
-         try {
-            await navigator.share({
-               title: `${user?.name}'s Profile on ExtraHand`,
-               text: `Check out ${user?.name}'s profile on ExtraHand`,
-               url: url,
-            });
-         } catch (err) {
-            console.log("Share cancelled");
-         }
-      } else {
-         // Fallback: Copy to clipboard
-         try {
-            await navigator.clipboard.writeText(url);
-            toast.success("Profile link copied to clipboard!");
-         } catch (err) {
-            toast.error("Failed to copy link");
-         }
-      }
-   };
+
 
    if (loading) {
       return (
          <div className="flex flex-col min-h-screen bg-gray-50">
-            <div className="flex-1 flex items-center justify-center">
-               <LoadingSpinner size="lg" />
+            {/* Top bar skeleton */}
+            <div className="bg-white border-b border-gray-200">
+               <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+                  <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-8 w-24 bg-gray-200 rounded-full animate-pulse" />
+               </div>
+            </div>
+
+            {/* Main content skeleton */}
+            <div className="flex-1 py-6">
+               <div className="max-w-7xl mx-auto px-4 space-y-4">
+                  <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 flex gap-4">
+                     <div className="w-16 h-16 rounded-full bg-gray-200 animate-pulse" />
+                     <div className="flex-1 space-y-2">
+                        <div className="h-4 w-40 bg-gray-200 rounded animate-pulse" />
+                        <div className="h-3 w-24 bg-gray-200 rounded animate-pulse" />
+                        <div className="h-3 w-32 bg-gray-200 rounded animate-pulse" />
+                     </div>
+                  </div>
+
+                  <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 space-y-3">
+                     <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+                     <div className="h-3 w-full bg-gray-200 rounded animate-pulse" />
+                     <div className="h-3 w-full bg-gray-200 rounded animate-pulse" />
+                     <div className="h-3 w-2/3 bg-gray-200 rounded animate-pulse" />
+                  </div>
+               </div>
             </div>
          </div>
       );
@@ -165,7 +178,7 @@ export default function UserProfilePage() {
 
    return (
       <div className="flex flex-col min-h-screen bg-gray-50">
-         {/* Top Bar with Actions */}
+         {/* Top Navigation */}
          <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
             <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
                <button
@@ -175,41 +188,6 @@ export default function UserProfilePage() {
                   <ArrowLeft className="w-4 h-4" />
                   Back
                </button>
-               <div className="flex items-center gap-2">
-                  <Button
-                     variant="ghost"
-                     size="sm"
-                     onClick={handleShare}
-                     className="text-gray-600"
-                  >
-                     <Share2 className="w-4 h-4" />
-                     <span className="hidden md:inline ml-2">Share</span>
-                  </Button>
-                  {!isOwnProfile && (
-                     <>
-                        <Link href={`/chat`}>
-                           <Button variant="default" size="sm">
-                              <MessageCircle className="w-4 h-4 mr-2" />
-                              Message
-                           </Button>
-                        </Link>
-                        <Button
-                           variant="ghost"
-                           size="icon"
-                           className="text-gray-400 hover:text-red-600"
-                        >
-                           <Flag className="w-4 h-4" />
-                        </Button>
-                     </>
-                  )}
-                  {isOwnProfile && (
-                     <Link href="/profile?section=edit-profile">
-                        <Button variant="outline" size="sm">
-                           Edit Profile
-                        </Button>
-                     </Link>
-                  )}
-               </div>
             </div>
          </div>
 
@@ -222,7 +200,7 @@ export default function UserProfilePage() {
                   reviews={reviews}
                   workHistory={workHistory}
                />
-               
+
                {loadingReviews && (
                   <div className="mt-4 flex items-center justify-center">
                      <LoadingSpinner size="sm" />
@@ -233,6 +211,7 @@ export default function UserProfilePage() {
                )}
             </div>
          </main>
+
       </div>
    );
 }

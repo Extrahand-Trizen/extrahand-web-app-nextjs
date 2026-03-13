@@ -12,6 +12,7 @@ export interface TaskApplication {
   // Task and applicant relationship
   taskId: string | Task;
   applicantId: string; // MongoDB ObjectId as string
+  applicantUid?: string;
   applicantProfile?: {
     name: string;
     rating?: number;
@@ -35,6 +36,7 @@ export interface TaskApplication {
     estimatedDuration?: number; // in hours
     flexible: boolean;
   };
+  selectedDates?: Date[];
   
   // Application content
   coverLetter: string;
@@ -77,6 +79,7 @@ export interface CreateApplicationRequest {
     estimatedDuration?: number;
     flexible?: boolean;
   };
+  selectedDates?: Date[];
   coverLetter?: string;
   relevantExperience?: string[];
   portfolio?: string[];

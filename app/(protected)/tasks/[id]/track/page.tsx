@@ -19,7 +19,8 @@ import {
    ReviewSection,
    FloatingChatWidget,
    ReportForm,
-   ProofUploadSection
+   ProofUploadSection,
+   RequestedChangesSection,
 } from "@/components/tasks/tracking";
 import {
    Dialog,
@@ -37,9 +38,12 @@ import type {
    ReportReason,
 } from "@/types/tracking";
 import type { Message } from "@/types/chat";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
 import { reviewsApi } from "@/lib/api/endpoints/reviews";
 import { chatsApi } from "@/lib/api/endpoints/chats";
+import { applicationsApi } from "@/lib/api/endpoints/applications";
+import { taskDetailsQueryKeys } from "@/lib/queryKeys";
 import { toast } from "sonner";
 import { reportsApi } from "@/lib/api/endpoints/reports";
 import { completionApi } from "@/lib/api/endpoints/completion";
@@ -53,14 +57,40 @@ export default function TaskTrackingPage() {
    const { currentUser, loading: authLoading } = useAuth();
    const taskId = params.id as string;
 
-   const [task, setTask] = useState<Task | null>(null);
+   const queryClient = useQueryClient();
+   const taskQuery = useQuery({
+      queryKey: taskDetailsQueryKeys.task(taskId),
+      queryFn: async () => {
+         const r = await tasksApi.getTask(taskId);
+         return ((r as { data?: Task })?.data ?? r) as Task;
+      },
+      enabled: !!taskId,
+      staleTime: 30 * 1000,
+   });
+   const task = taskQuery.data ?? null;
+
+   // Fetch the accepted application to get the tasker's agreed budget
+   const applicationsQuery = useQuery({
+      queryKey: taskDetailsQueryKeys.applications(taskId),
+      queryFn: () => applicationsApi.getTaskApplications(taskId),
+      enabled: !!taskId,
+      staleTime: 60 * 1000,
+   });
+   const acceptedApplication = (applicationsQuery.data?.applications ?? []).find(
+      (app) => app.status === "accepted"
+   );
+   const assignedBudget = acceptedApplication?.proposedBudget?.amount;
+   const setTaskInCache = (updatedTask: Task) => {
+      queryClient.setQueryData(taskDetailsQueryKeys.task(taskId), updatedTask);
+   };
    const [reviews, setReviews] = useState<Review[]>([]);
    const [existingReport, setExistingReport] = useState<
       TaskReportSubmission | undefined
    >();
    const [showReportModal, setShowReportModal] = useState(false);
-   const [isLoading, setIsLoading] = useState(true);
+   const isLoading = taskQuery.isLoading && !taskQuery.data;
    const [activeTab, setActiveTab] = useState("overview");
+   const [hasUnseenChanges, setHasUnseenChanges] = useState(false);
    const [chatMessages, setChatMessages] = useState<Message[]>([]);
    const [isLoadingChat, setIsLoadingChat] = useState(false);
    const [chatId, setChatId] = useState<string | null>(null);
@@ -99,36 +129,35 @@ export default function TaskTrackingPage() {
       return "viewer";
    }, [task, userProfile]);
 
-   // Fetch task data from API
+   // For taskers: detect unseen requested changes and auto-navigate to that tab
    useEffect(() => {
-      const fetchTask = async () => {
-         setIsLoading(true);
-         try {
-            // Import the tasks API dynamically to avoid circular dependencies
-            
-            // Fetch real task data
-            const response = await tasksApi.getTask(taskId);
-            
-            console.log("✅ Task details response:", response);
-            
-            // Handle different response structures
-            const taskData = (response as any)?.data || response;
-            
-            if (taskData) {
-               setTask(taskData as Task);
-            }
-         } catch (error) {
-            console.error("❌ Failed to fetch task:", error);
-            // Task not found or error - will show "Task not found" UI
-         } finally {
-            setIsLoading(false);
-         }
-      };
+      if (!task || userRole !== "tasker") return;
+      const hasFeedback = task.feedback && task.feedback.length > 0;
+      if (!hasFeedback) return;
 
-      if (taskId) {
-         fetchTask();
+      // Use last feedback entry timestamp to detect new changes
+      const lastFeedback = task.feedback![task.feedback!.length - 1];
+      const feedbackKey = `seen-changes-${taskId}`;
+      const seenTimestamp = localStorage.getItem(feedbackKey);
+      const lastFeedbackTime = new Date(lastFeedback.createdAt).getTime().toString();
+
+      if (seenTimestamp !== lastFeedbackTime) {
+         // Unseen changes - show red dot and auto-navigate
+         setHasUnseenChanges(true);
+         setActiveTab("requested-changes");
       }
-   }, [taskId]);
+   }, [task, userRole, taskId]);
+
+   const handleTabChange = (tab: string) => {
+      setActiveTab(tab);
+      // Mark requested changes as seen when tasker visits the tab
+      if (tab === "requested-changes" && userRole === "tasker" && task?.feedback?.length) {
+         const lastFeedback = task.feedback[task.feedback.length - 1];
+         const feedbackKey = `seen-changes-${taskId}`;
+         localStorage.setItem(feedbackKey, new Date(lastFeedback.createdAt).getTime().toString());
+         setHasUnseenChanges(false);
+      }
+   };
 
    // Fetch reviews for the task - only when user is involved (poster or tasker)
    useEffect(() => {
@@ -176,12 +205,12 @@ export default function TaskTrackingPage() {
       try {
          
          // Update task status via API
-         const updatedTask = await tasksApi.updateTaskStatus(task._id, newStatus);
+         const updatedTask = await tasksApi.updateTaskStatus(task._id, newStatus, reason);
          
          console.log("✅ Task status updated successfully:", updatedTask);
          
          // Update local state with response from server
-         setTask(updatedTask);
+         setTaskInCache(updatedTask);
       } catch (error) {
          console.error("❌ Failed to update task status:", error);
          // TODO: Show error toast to user
@@ -202,7 +231,7 @@ export default function TaskTrackingPage() {
          
          console.log("✅ Completion proof submitted:", updatedTask);
          console.log("📸 completionProof in response:", updatedTask?.completionProof);
-         setTask(updatedTask);
+         setTaskInCache(updatedTask);
          toast.success("Completion proof submitted for review!");
          
          // Refetch task to ensure we have latest data
@@ -211,7 +240,7 @@ export default function TaskTrackingPage() {
          console.log("🔄 Refreshed task:", taskData);
          console.log("📸 completionProof in refreshed task:", taskData?.completionProof);
          if (taskData) {
-            setTask(taskData as Task);
+            setTaskInCache(taskData as Task);
          }
       } catch (error) {
          console.error("❌ Failed to submit proof:", error);
@@ -229,7 +258,7 @@ export default function TaskTrackingPage() {
          const updatedTask = await completionApi.approveCompletion(task._id);
          
          console.log("✅ Completion approved:", updatedTask);
-         setTask(updatedTask);
+         setTaskInCache(updatedTask);
          toast.success("Work approved! Task completed.");
       } catch (error) {
          console.error("❌ Failed to approve completion:", error);
@@ -247,7 +276,7 @@ export default function TaskTrackingPage() {
          const updatedTask = await completionApi.rejectCompletion(task._id, reason);
          
          console.log("✅ Completion rejected:", updatedTask);
-         setTask(updatedTask);
+         setTaskInCache(updatedTask);
          toast.success("Work sent back for revisions");
       } catch (error) {
          console.error("❌ Failed to reject completion:", error);
@@ -361,26 +390,26 @@ export default function TaskTrackingPage() {
    // Real-time task updates: Listen for task status changes via Socket.IO
    const handleTaskStatusChanged = useCallback((updatedTask: any) => {
       console.log("📨 Real-time task status update:", updatedTask);
-      setTask(updatedTask as Task);
+      setTaskInCache(updatedTask as Task);
       toast.success(`Task status updated to ${updatedTask.status}`);
    }, []);
 
    const handleProofSubmitted = useCallback((updatedTask: any) => {
       console.log("📸 Real-time proof submission:", updatedTask);
-      setTask(updatedTask as Task);
+      setTaskInCache(updatedTask as Task);
       toast.info("Completion proof has been submitted for review");
    }, []);
 
    const handleProofApproved = useCallback((updatedTask: any) => {
       console.log("✅ Real-time proof approval:", updatedTask);
-      setTask(updatedTask as Task);
+      setTaskInCache(updatedTask as Task);
       toast.success("Completion proof has been approved!");
    }, []);
 
    const handleProofRejected = useCallback((data: any) => {
       console.log("❌ Real-time proof rejection:", data);
       if (data.task) {
-         setTask(data.task as Task);
+         setTaskInCache(data.task as Task);
       }
       toast.error(`Proof rejected: ${data.reason || "Please revise and resubmit"}`);
    }, []);
@@ -455,21 +484,15 @@ export default function TaskTrackingPage() {
 
    // Handle helpful vote
    const handleHelpful = async (reviewId: string, helpful: boolean) => {
-      // TODO: Replace with actual API call
-      // await api.voteHelpful(reviewId, helpful);
-
-      // Mock: Update review in local state
-      setReviews(
-         reviews.map((r) =>
-            r._id === reviewId
-               ? {
-                    ...r,
-                    helpful: helpful ? r.helpful + 1 : r.helpful,
-                    notHelpful: !helpful ? r.notHelpful + 1 : r.notHelpful,
-                 }
-               : r
-         )
-      );
+      try {
+         const updated = await reviewsApi.voteHelpful(reviewId, helpful);
+         // Replace the review in state with the server-returned updated review
+         setReviews((prev) =>
+            prev.map((r) => (r._id === reviewId ? (updated as unknown as Review) : r))
+         );
+      } catch (error) {
+         console.error("❌ Failed to vote on review:", error);
+      }
    };
 
    // Handle submit report
@@ -571,13 +594,13 @@ export default function TaskTrackingPage() {
             onReportClick={() => setShowReportModal(true)}
          />
 
-         {/* Main Content */}
-         <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
+         {/* Main Content - extra bottom padding on mobile so FAB doesn't cover content */}
+         <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 pb-24 md:pb-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                {/* Left Column - Main Content */}
-               <div className="lg:col-span-2 space-y-6">
+               <div className="lg:col-span-2 space-y-6 min-w-0">
                   {/* Status Timeline */}
-                  <TaskStatusTimeline task={task} />
+                  <TaskStatusTimeline task={task} userRole={userRole} />
 
                   {/* Quick Actions - Mobile Only (at top) */}
                   {userRole !== "viewer" && (
@@ -586,38 +609,51 @@ export default function TaskTrackingPage() {
                            task={task}
                            userRole={userRole}
                            onStatusUpdate={handleStatusUpdate}
+                           onTaskUpdated={(updatedTask) => setTaskInCache(updatedTask)}
                         />
                      </div>
                   )}
 
-                  {/* Tabs */}
+                  {/* Tabs: scrollable on mobile to prevent overlapping labels */}
                   <Tabs
                      value={activeTab}
-                     onValueChange={setActiveTab}
+                     onValueChange={handleTabChange}
                      className="w-full"
                   >
-                     <TabsList className="grid w-full grid-cols-4 mb-6 overflow-x-auto">
+                     <TabsList className="flex w-full flex-nowrap overflow-x-auto overflow-y-hidden gap-0.5 md:grid md:grid-cols-5 mb-6 py-1 px-1 min-h-0 [&::-webkit-scrollbar]:h-1">
                         <TabsTrigger
                            value="overview"
-                           className="text-xs md:text-sm"
+                           className="text-xs md:text-sm shrink-0 md:shrink"
                         >
                            Overview
                         </TabsTrigger>
                         <TabsTrigger
                            value="proof"
-                           className="text-xs md:text-sm"
+                           className="text-xs md:text-sm shrink-0 md:shrink"
                         >
                            Proof
                         </TabsTrigger>
+                        {task.feedback && task.feedback.length > 0 && (
+                           <TabsTrigger
+                              value="requested-changes"
+                              className="text-xs md:text-sm shrink-0 md:shrink relative"
+                           >
+                              <span className="hidden sm:inline">Requested Changes</span>
+                              <span className="sm:hidden">Changes</span>
+                              {hasUnseenChanges && userRole === "tasker" && (
+                                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+                              )}
+                           </TabsTrigger>
+                        )}
                         <TabsTrigger
                            value="reviews"
-                           className="text-xs md:text-sm"
+                           className="text-xs md:text-sm shrink-0 md:shrink"
                         >
                            Reviews
                         </TabsTrigger>
                         <TabsTrigger
                            value="details"
-                           className="text-xs md:text-sm"
+                           className="text-xs md:text-sm shrink-0 md:shrink"
                         >
                            Details
                         </TabsTrigger>
@@ -625,7 +661,7 @@ export default function TaskTrackingPage() {
 
                      <TabsContent value="overview" className="space-y-6">
                         {/* Task Details Card */}
-                        <TaskDetailsCard task={task} />
+                        <TaskDetailsCard task={task} assignedBudget={assignedBudget} />
                      </TabsContent>
 
                      <TabsContent value="proof" className="space-y-6">
@@ -636,6 +672,15 @@ export default function TaskTrackingPage() {
                            userRole={userRole}
                         />
                      </TabsContent>
+
+                     {task.feedback && task.feedback.length > 0 && (
+                        <TabsContent value="requested-changes" className="space-y-6">
+                           <RequestedChangesSection
+                              task={task}
+                              requesterName={task.requesterName || "Task Owner"}
+                           />
+                        </TabsContent>
+                     )}
 
                      <TabsContent value="reviews" className="space-y-6">
                         <ReviewSection
@@ -652,7 +697,7 @@ export default function TaskTrackingPage() {
                      </TabsContent>
 
                      <TabsContent value="details" className="space-y-6">
-                        <TaskDetailsCard task={task} />
+                        <TaskDetailsCard task={task} assignedBudget={assignedBudget} />
                      </TabsContent>
                   </Tabs>
                </div>
@@ -665,6 +710,7 @@ export default function TaskTrackingPage() {
                         task={task}
                         userRole={userRole}
                         onStatusUpdate={handleStatusUpdate}
+                        onTaskUpdated={(updatedTask) => setTaskInCache(updatedTask)}
                      />
                   )}
 

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth/context";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { ProfileSection, Review, WorkHistoryItem } from "@/types/profile";
+import { ProfileSection, Review, WorkHistoryItem, PaymentMethod, PayoutMethod } from "@/types/profile";
 import { UserProfile } from "@/types/user";
 import {
    ProfileSidebar,
@@ -20,7 +20,14 @@ import {
    PreferencesSection,
    PrivacySection,
 } from "@/components/profile";
-import { DEFAULT_NOTIFICATION_SETTINGS } from "@/types/consent";
+import ReferralDashboardSimple from "@/components/profile/ReferralDashboardSimple";
+import BadgeDisplaySimple from "@/components/profile/BadgeDisplaySimple";
+import {
+   DEFAULT_NOTIFICATION_SETTINGS,
+   FrequencySettings,
+   CommunicationChannel,
+   NotificationSettingsState,
+} from "@/types/consent";
 import {
    Sheet,
    SheetContent,
@@ -28,10 +35,15 @@ import {
    SheetTitle,
 } from "@/components/ui/sheet";
 import { ArrowLeft, Menu } from "lucide-react";
-import { profilesApi } from "@/lib/api/endpoints/profiles";
 import { reviewsApi } from "@/lib/api/endpoints/reviews";
 import { toast } from "sonner";
 import { privacyApi } from "@/lib/api/endpoints/privacy";
+import { notificationPreferencesApi } from "@/lib/api/endpoints/notificationPreferences";
+import { useUserStore } from "@/lib/state/userStore";
+import { useQueryClient } from "@tanstack/react-query";
+import { getBadgeProgress } from "@/lib/api/badge";
+import { referralsApi } from "@/lib/api/endpoints/referrals";
+import { profilesApi } from "@/lib/api/endpoints/profiles";
 
 const VALID_SECTIONS: ProfileSection[] = [
    "overview",
@@ -44,6 +56,8 @@ const VALID_SECTIONS: ProfileSection[] = [
    "notifications",
    "security",
    "privacy",
+   "referrals",
+   "badges",
 ];
 const SECTION_TITLES: Record<ProfileSection, string> = {
    overview: "Account",
@@ -56,33 +70,147 @@ const SECTION_TITLES: Record<ProfileSection, string> = {
    notifications: "Notifications",
    security: "Security",
    privacy: "Privacy",
+   referrals: "Referral Program",
+   badges: "Badges",
 };
+
+   const DEFAULT_FREQUENCY: FrequencySettings = {
+      dailyDigest: false,
+      quietHours: {
+         enabled: false,
+         start: "22:00",
+         end: "08:00",
+         timezone: "Asia/Kolkata",
+      },
+      maxPerDay: 0,
+   };
+
+function ProfilePageSkeleton() {
+   return (
+      <div className="bg-gray-50 max-w-7xl mx-auto">
+         <div className="flex">
+            {/* Sidebar skeleton */}
+            <aside className="hidden lg:block w-64 border-r border-gray-200 bg-white min-h-screen">
+               <div className="p-4 border-b border-gray-200">
+                  <div className="h-5 w-24 bg-gray-200 rounded animate-pulse" />
+               </div>
+               <div className="p-4 space-y-3">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                     <div
+                        key={i}
+                        className="h-8 w-full bg-gray-100 rounded-md animate-pulse"
+                     />
+                  ))}
+               </div>
+            </aside>
+
+            {/* Main content skeleton */}
+            <main className="flex-1 min-h-screen">
+               <div className="max-w-4xl mx-auto py-8 px-4 lg:px-8">
+                  <div className="h-5 w-32 bg-gray-200 rounded animate-pulse mb-6" />
+                  <div className="space-y-4">
+                     <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+                        <div className="flex items-center gap-4">
+                           <div className="w-16 h-16 rounded-full bg-gray-200 animate-pulse" />
+                           <div className="flex-1 space-y-2">
+                              <div className="h-4 w-40 bg-gray-200 rounded animate-pulse" />
+                              <div className="h-3 w-24 bg-gray-200 rounded animate-pulse" />
+                           </div>
+                        </div>
+                     </div>
+                     <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5">
+                        <div className="h-4 w-32 bg-gray-200 rounded animate-pulse mb-3" />
+                        <div className="h-2.5 w-full bg-gray-200 rounded animate-pulse mb-2" />
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+                           {Array.from({ length: 4 }).map((_, i) => (
+                              <div
+                                 key={i}
+                                 className="h-16 bg-gray-100 rounded-lg animate-pulse"
+                              />
+                           ))}
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </main>
+         </div>
+      </div>
+   );
+}
 
 function ProfilePageContent() {
    const router = useRouter();
    const searchParams = useSearchParams();
    const { userData, loading: authLoading, refreshUserData, logout } = useAuth();
-   
+   const refreshProfile = useUserStore((state) => state.refreshProfile);
+   const queryClient = useQueryClient();
+
    const [user, setUser] = useState<UserProfile | null>(userData);
    const [reviews, setReviews] = useState<Review[]>([]);
    const [workHistory, setWorkHistory] = useState<WorkHistoryItem[]>([]);
    const [loadingProfile, setLoadingProfile] = useState(false);
    const [profileError, setProfileError] = useState<string | null>(null);
    const [loadingReviews, setLoadingReviews] = useState(false);
+   const [notificationSettings, setNotificationSettings] =
+      useState<NotificationSettingsState>(DEFAULT_NOTIFICATION_SETTINGS);
+   const [notificationFrequency, setNotificationFrequency] =
+      useState<FrequencySettings>(DEFAULT_FREQUENCY);
+   const [notificationChannel, setNotificationChannel] =
+      useState<CommunicationChannel>("push");
    const [isMobile, setIsMobile] = useState(false);
    const [section, setSection] = useState<ProfileSection>("overview");
    const [navOpen, setNavOpen] = useState(false);
+
+   // Payment methods and payout methods state with localStorage persistence
+   // Start with no payment methods by default; we no longer seed
+   // mock cards here, and we'll ignore any stale localStorage mocks.
+   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+   
+   // Likewise, start with no payout methods by default.
+   const [payoutMethods, setPayoutMethods] = useState<PayoutMethod[]>([]);
+
+   // Optional: clear any old mock data that might be lingering
+   // from previous versions. We don't persist methods for now.
+   useEffect(() => {
+      if (typeof window !== "undefined") {
+         try {
+            localStorage.removeItem("paymentMethods");
+            localStorage.removeItem("payoutMethods");
+         } catch (e) {
+            console.error("Failed to clear stored payment data:", e);
+         }
+      }
+   }, []);
+
+   // Warm up badge & referral (layout also prefetches; badge requested first as it’s slower)
+   useEffect(() => {
+      if (!userData?.uid) return;
+
+      const stale = 5 * 60 * 1000;
+      queryClient.prefetchQuery({
+         queryKey: ["badgeProgress"],
+         queryFn: getBadgeProgress,
+         staleTime: stale,
+      });
+      queryClient.prefetchQuery({
+         queryKey: ["referralSimple"],
+         queryFn: () => referralsApi.getDashboard(),
+         staleTime: stale,
+      });
+   }, [userData?.uid, queryClient]);
 
    // Fetch profile data on mount
    useEffect(() => {
       const fetchProfileData = async () => {
          if (!userData?.uid) return;
-         
+
          setLoadingProfile(true);
          setProfileError(null);
          try {
-            const profileData = await profilesApi.me();
-            setUser(profileData as UserProfile);
+            const profileData = await refreshProfile();
+            if (profileData) {
+               setUser(profileData as UserProfile);
+            }
          } catch (error: any) {
             console.error("Failed to fetch profile:", error);
             setProfileError(error.message || "Failed to load profile data");
@@ -97,38 +225,115 @@ function ProfilePageContent() {
       }
    }, [userData, toast]);
 
+   const normalizeNotificationSettings = (prefs: any): NotificationSettingsState => ({
+      push: {
+         enabled: prefs?.push?.enabled ?? DEFAULT_NOTIFICATION_SETTINGS.push.enabled,
+         taskUpdates: prefs?.push?.taskUpdates ?? DEFAULT_NOTIFICATION_SETTINGS.push.taskUpdates,
+         payments: prefs?.push?.payments ?? DEFAULT_NOTIFICATION_SETTINGS.push.payments,
+         promotions: prefs?.push?.promotions ?? DEFAULT_NOTIFICATION_SETTINGS.push.promotions,
+         system: prefs?.push?.system ?? DEFAULT_NOTIFICATION_SETTINGS.push.system,
+         transactional: prefs?.push?.transactional ?? DEFAULT_NOTIFICATION_SETTINGS.push.transactional,
+         taskReminders: prefs?.push?.taskReminders ?? DEFAULT_NOTIFICATION_SETTINGS.push.taskReminders,
+         keywordTaskAlerts: prefs?.push?.keywordTaskAlerts ?? DEFAULT_NOTIFICATION_SETTINGS.push.keywordTaskAlerts,
+         recommendedTaskAlerts:
+            prefs?.push?.recommendedTaskAlerts ??
+            DEFAULT_NOTIFICATION_SETTINGS.push.recommendedTaskAlerts,
+      },
+      email: {
+         enabled: prefs?.email?.enabled ?? DEFAULT_NOTIFICATION_SETTINGS.email.enabled,
+         taskUpdates: prefs?.email?.taskUpdates ?? DEFAULT_NOTIFICATION_SETTINGS.email.taskUpdates,
+         payments: prefs?.email?.payments ?? DEFAULT_NOTIFICATION_SETTINGS.email.payments,
+         promotions: prefs?.email?.promotions ?? DEFAULT_NOTIFICATION_SETTINGS.email.promotions,
+         system: prefs?.email?.system ?? DEFAULT_NOTIFICATION_SETTINGS.email.system,
+         marketing: prefs?.email?.marketing ?? DEFAULT_NOTIFICATION_SETTINGS.email.marketing,
+         transactional: prefs?.email?.transactional ?? DEFAULT_NOTIFICATION_SETTINGS.email.transactional,
+         taskReminders: prefs?.email?.taskReminders ?? DEFAULT_NOTIFICATION_SETTINGS.email.taskReminders,
+         keywordTaskAlerts: prefs?.email?.keywordTaskAlerts ?? DEFAULT_NOTIFICATION_SETTINGS.email.keywordTaskAlerts,
+         recommendedTaskAlerts:
+            prefs?.email?.recommendedTaskAlerts ??
+            DEFAULT_NOTIFICATION_SETTINGS.email.recommendedTaskAlerts,
+      },
+      sms: {
+         enabled: prefs?.sms?.enabled ?? DEFAULT_NOTIFICATION_SETTINGS.sms.enabled,
+         taskUpdates: prefs?.sms?.taskUpdates ?? DEFAULT_NOTIFICATION_SETTINGS.sms.taskUpdates,
+         payments: prefs?.sms?.payments ?? DEFAULT_NOTIFICATION_SETTINGS.sms.payments,
+      },
+   });
+
+   const normalizeFrequencySettings = (prefs: any): FrequencySettings => ({
+      dailyDigest: prefs?.frequency?.dailyDigest ?? DEFAULT_FREQUENCY.dailyDigest,
+      quietHours: {
+         enabled: prefs?.frequency?.quietHours?.enabled ?? DEFAULT_FREQUENCY.quietHours.enabled,
+         start: prefs?.frequency?.quietHours?.start ?? DEFAULT_FREQUENCY.quietHours.start,
+         end: prefs?.frequency?.quietHours?.end ?? DEFAULT_FREQUENCY.quietHours.end,
+         timezone: prefs?.frequency?.quietHours?.timezone ?? DEFAULT_FREQUENCY.quietHours.timezone,
+      },
+      maxPerDay: prefs?.frequency?.maxPerDay ?? DEFAULT_FREQUENCY.maxPerDay,
+   });
+
+   useEffect(() => {
+      const fetchNotificationPreferences = async () => {
+         if (!userData?.uid) return;
+
+         try {
+            const response = await notificationPreferencesApi.getPreferences();
+            const prefs = response.data ?? response;
+            if (!prefs) return;
+
+            setNotificationSettings(normalizeNotificationSettings(prefs));
+            setNotificationFrequency(normalizeFrequencySettings(prefs));
+            setNotificationChannel(
+               (prefs?.preferredChannel as CommunicationChannel) || "push"
+            );
+         } catch (error: any) {
+            console.error("Failed to fetch notification preferences:", error);
+         }
+      };
+
+      if (userData?.uid) {
+         fetchNotificationPreferences();
+      }
+   }, [userData?.uid]);
+
    // Fetch reviews
    useEffect(() => {
       const fetchReviews = async () => {
          if (!user?.uid) return;
-         
+
          setLoadingReviews(true);
          try {
             console.log("🔍 Fetching reviews for user:", user.uid);
             const response = await reviewsApi.getUserReviews(user.uid, { limit: 10 });
-            
+
             // Check if response has reviews array
             if (!response || !response.data || !Array.isArray(response.data)) {
                console.log("No reviews found or invalid response format");
                setReviews([]);
                return;
             }
-            
-            // Map API reviews to profile review format
-            const mappedReviews: Review[] = response.data.map((review: any) => ({
-               id: review._id,
-               taskId: review.taskId,
-               taskTitle: review.taskTitle || "Task",
-               reviewerId: review.reviewerUid,
-               reviewerName: review.reviewerName || "User",
-               reviewerPhoto: review.reviewerPhoto,
-               rating: review.rating,
-               comment: review.comment || "",
-               createdAt: new Date(review.createdAt),
-               role: "poster" as const, // Assuming reviews are from posters
-            }));
-            
-            console.log("✅ Reviews loaded:", mappedReviews.length);
+
+            // Map API reviews to profile review format - filter out reviews without real data
+            const mappedReviews: Review[] = response.data
+               .filter((review: any) => 
+                  review.reviewerName && 
+                  review.reviewerName.trim() !== "" &&
+                  review.rating > 0 &&
+                  review.taskTitle
+               )
+               .map((review: any) => ({
+                  id: review._id,
+                  taskId: review.taskId,
+                  taskTitle: review.taskTitle || "Task",
+                  reviewerId: review.reviewerUid,
+                  reviewerName: review.reviewerName,
+                  reviewerPhoto: review.reviewerPhoto,
+                  rating: review.rating,
+                  comment: review.comment || "",
+                  createdAt: new Date(review.createdAt),
+                  role: "poster" as const, // Assuming reviews are from posters
+               }));
+
+            console.log("✅ Reviews loaded (with real data only):", mappedReviews.length);
             setReviews(mappedReviews);
          } catch (error: any) {
             console.error("❌ Failed to fetch reviews (non-critical):", error.message || error);
@@ -144,21 +349,23 @@ function ProfilePageContent() {
       }
    }, [user?.uid]);
 
-   // Extract work history from profile data
+   // Extract work history from profile data - filter out dummy/empty entries
    useEffect(() => {
       if (user && (user as any).workHistory) {
          console.log('📦 Using work history from profile response:', (user as any).workHistory.length);
          const profileWorkHistory = (user as any).workHistory;
-         
-         // Map to WorkHistoryItem format
-         const mappedWorkHistory: WorkHistoryItem[] = profileWorkHistory.map((item: any) => ({
-            id: item._id,
-            taskTitle: item.title,
-            category: item.category,
-            completedDate: new Date(item.completedAt),
-            earnings: item.budget,
-         }));
-         
+
+         // Map to WorkHistoryItem format - filter out entries without valid data
+         const mappedWorkHistory: WorkHistoryItem[] = profileWorkHistory
+            .filter((item: any) => item.title && item.title.trim() !== '' && item.completedAt)
+            .map((item: any) => ({
+               id: item._id,
+               taskTitle: item.title,
+               category: item.category,
+               completedDate: new Date(item.completedAt),
+               earnings: item.budget,
+            }));
+
          setWorkHistory(mappedWorkHistory);
       } else {
          console.log('ℹ️ No work history in profile response');
@@ -168,7 +375,9 @@ function ProfilePageContent() {
 
    useEffect(() => {
       const s = searchParams.get("section") as ProfileSection;
-      if (s && VALID_SECTIONS.includes(s)) setSection(s);
+      if (s && VALID_SECTIONS.includes(s)) {
+         setSection(s);
+      }
    }, [searchParams]);
 
    useEffect(() => {
@@ -179,9 +388,13 @@ function ProfilePageContent() {
    }, []);
 
    const goTo = useCallback((s: ProfileSection) => {
-      setSection(s);
       setNavOpen(false);
-      window.history.pushState({}, "", `?section=${s}`);
+      setSection(s);
+      if (typeof window !== 'undefined') {
+         const url = new URL(window.location.href);
+         url.searchParams.set('section', s);
+         window.history.replaceState(null, '', url.toString());
+      }
    }, []);
 
    const handleSaveProfile = async (data: Partial<UserProfile>) => {
@@ -189,7 +402,7 @@ function ProfilePageContent() {
          await profilesApi.upsertProfile(data);
          toast.success("Profile updated successfully");
          await refreshUserData();
-         
+
          // Refresh profile data
          const updatedProfile = await profilesApi.me();
          setUser(updatedProfile as UserProfile);
@@ -209,6 +422,56 @@ function ProfilePageContent() {
       loadingReviews,
       onNavigate: goTo,
       onSaveProfile: handleSaveProfile,
+      notificationSettings,
+      notificationFrequency,
+      notificationChannel,
+      paymentMethods,
+      payoutMethods,
+      onRemovePaymentMethod: (id: string) => {
+         setPaymentMethods(prev => prev.filter(pm => pm.id !== id));
+         toast.success("Payment method removed successfully");
+      },
+      onRemovePayoutMethod: (id: string) => {
+         setPayoutMethods(prev => prev.filter(pm => pm.id !== id));
+         toast.success("Payout method removed successfully");
+      },
+      onSetDefaultPayment: (id: string) => {
+         setPaymentMethods(prev => prev.map(pm => ({
+            ...pm,
+            isDefault: pm.id === id
+         })));
+         toast.success("Default payment method updated");
+      },
+      onSetDefaultPayout: (id: string) => {
+         setPayoutMethods(prev => prev.map(pm => ({
+            ...pm,
+            isDefault: pm.id === id
+         })));
+         toast.success("Default payout method updated");
+      },
+      onSavePaymentMethod: (data: Partial<PaymentMethod>) => {
+         const newMethod: PaymentMethod = {
+            id: `pm${Date.now()}`,
+            type: data.type || 'card',
+            isDefault: paymentMethods.length === 0,
+            createdAt: new Date(),
+            ...data,
+         } as PaymentMethod;
+         setPaymentMethods(prev => [...prev, newMethod]);
+         toast.success("Payment method added successfully");
+      },
+      onSavePayoutMethod: (data: Partial<PayoutMethod>) => {
+         const newMethod: PayoutMethod = {
+            id: `po${Date.now()}`,
+            type: data.type || 'bank',
+            isDefault: payoutMethods.length === 0,
+            isVerified: false,
+            createdAt: new Date(),
+            ...data,
+         } as PayoutMethod;
+         setPayoutMethods(prev => [...prev, newMethod]);
+         toast.success("Payout method added successfully");
+      },
       onVerify: async (t: string) => {
          router.push(
             {
@@ -219,9 +482,35 @@ function ProfilePageContent() {
             }[t] || "/profile/verify"
          );
       },
-      onSaveNotifications: async () => {
-         // TODO: Implement when notification settings API is available
-         toast.info("Notification settings will be saved once backend API is ready");
+      onSaveNotifications: async (
+         settings: NotificationSettingsState,
+         frequency?: FrequencySettings,
+         preferredChannel?: CommunicationChannel
+      ) => {
+         try {
+            const finalFrequency = frequency || DEFAULT_FREQUENCY;
+            const finalChannel = preferredChannel || "push";
+
+            await notificationPreferencesApi.updatePreferences({
+               push: settings.push,
+               email: settings.email,
+               sms: settings.sms,
+               preferredChannel: finalChannel,
+               frequency: finalFrequency,
+            });
+
+            setNotificationSettings(settings);
+            setNotificationFrequency(finalFrequency);
+            setNotificationChannel(finalChannel);
+
+            toast.success("Notification settings updated");
+         } catch (error: any) {
+            console.error("Failed to update notification settings:", error);
+            toast.error("Failed to update notification settings", {
+               description: error.message || "Please try again later.",
+            });
+            throw error;
+         }
       },
       onSavePreferences: async () => {
          // TODO: Implement when preferences API is available
@@ -263,68 +552,52 @@ function ProfilePageContent() {
       },
    };
 
-   if (authLoading || loadingProfile || (!user && !profileError)) {
-      return (
-         <div className="flex items-center justify-center py-20">
-            <LoadingSpinner size="lg" />
-         </div>
-      );
+   // While auth is resolving or we truly have no user data yet, show a
+   // structured skeleton instead of a blocking full-page spinner so the
+   // page feels responsive even during refresh.
+   if (authLoading || (!user && !profileError)) {
+      return <ProfilePageSkeleton />;
    }
 
    if (!user) {
-      return (
-         <div className="flex items-center justify-center py-20">
-            <LoadingSpinner size="lg" />
-         </div>
-      );
+      return <ProfilePageSkeleton />;
    }
 
    if (isMobile) {
       return (
          <div className="bg-gray-50 min-h-screen">
             <Sheet open={navOpen} onOpenChange={setNavOpen}>
-               <SheetContent side="left" className="w-[300px] p-0">
-                  <SheetHeader className="border-b border-gray-200 p-4">
+               <SheetContent side="left" className="w-[300px] p-0 flex flex-col max-h-full">
+                  <SheetHeader className="border-b border-gray-200 p-4 shrink-0">
                      <SheetTitle className="text-left">Account</SheetTitle>
                      <p className="text-sm text-gray-500">
                         Manage your profile
                      </p>
                   </SheetHeader>
-                  <ProfileNavList
-                     onSectionChange={(s) => {
-                        goTo(s);
-                        setNavOpen(false);
-                     }}
-                  />
+                  <div className="flex-1 min-h-0 overflow-y-auto">
+                     <ProfileNavList
+                        onSectionChange={(s) => {
+                           goTo(s);
+                           setNavOpen(false);
+                        }}
+                     />
+                  </div>
                </SheetContent>
             </Sheet>
             <div className="sticky top-0 z-40 bg-white border-b border-gray-200">
                <div className="flex items-center gap-3 px-4 py-3">
                   <button
-                     onClick={() =>
-                        section !== "overview"
-                           ? goTo("overview")
-                           : setNavOpen(true)
-                     }
+                     onClick={() => setNavOpen(true)}
                      className="p-2 -ml-2 hover:bg-gray-100 rounded-lg"
+                     aria-label="Open profile menu"
                   >
-                     {section !== "overview" ? (
-                        <ArrowLeft className="w-5 h-5 text-gray-600" />
-                     ) : (
-                        <Menu className="w-5 h-5 text-gray-600" />
-                     )}
+                     <Menu className="w-5 h-5 text-gray-600" />
                   </button>
-                  <h1 className="text-base font-semibold text-gray-900 flex-1">
+                  <h1 className="text-base font-semibold text-gray-900 flex-1 text-center">
                      {SECTION_TITLES[section]}
                   </h1>
-                  {section !== "overview" && (
-                     <button
-                        onClick={() => setNavOpen(true)}
-                        className="p-2 -mr-2 hover:bg-gray-100 rounded-lg"
-                     >
-                        <Menu className="w-5 h-5 text-gray-600" />
-                     </button>
-                  )}
+                  {/* Spacer so title stays centered when only one icon */}
+                  <div className="w-9 shrink-0" aria-hidden />
                </div>
             </div>
             <div className="px-4 py-6 pb-20">
@@ -363,13 +636,7 @@ function ProfilePageContent() {
 
 export default function ProfilePage() {
    return (
-      <Suspense
-         fallback={
-            <div className="flex items-center justify-center py-20">
-               <LoadingSpinner size="lg" />
-            </div>
-         }
-      >
+      <Suspense fallback={<ProfilePageSkeleton />}>
          <ProfilePageContent />
       </Suspense>
    );
@@ -379,22 +646,44 @@ interface Props {
    user: UserProfile;
    reviews?: Review[];
    workHistory?: WorkHistoryItem[];
+   loadingProfile?: boolean;
    loadingReviews?: boolean;
    onNavigate: (s: ProfileSection) => void;
    onSaveProfile: (data?: Partial<UserProfile>) => Promise<void>;
+   notificationSettings: NotificationSettingsState;
+   notificationFrequency: FrequencySettings;
+   notificationChannel: CommunicationChannel;
    onVerify: (t: string) => Promise<void>;
-   onSaveNotifications: () => Promise<void>;
+   onSaveNotifications: (
+      settings: NotificationSettingsState,
+      frequency?: FrequencySettings,
+      preferredChannel?: CommunicationChannel
+   ) => Promise<void>;
    onSavePreferences: () => Promise<void>;
    onRevokeSession: () => Promise<void>;
    onRevokeAllSessions: () => Promise<void>;
    onUpdatePrivacy: () => Promise<void>;
    onDeleteAccount: () => Promise<void>;
+   paymentMethods: PaymentMethod[];
+   payoutMethods: PayoutMethod[];
+   onRemovePaymentMethod: (id: string) => void;
+   onRemovePayoutMethod: (id: string) => void;
+   onSetDefaultPayment: (id: string) => void;
+   onSetDefaultPayout: (id: string) => void;
+   onSavePaymentMethod: (data: Partial<PaymentMethod>) => void;
+   onSavePayoutMethod: (data: Partial<PayoutMethod>) => void;
 }
 
 function renderSection(s: ProfileSection, p: Props) {
    switch (s) {
       case "overview":
-         return <ProfileOverview user={p.user} onNavigate={p.onNavigate} />;
+         return (
+            <ProfileOverview
+               user={p.user}
+               onNavigate={p.onNavigate}
+               loading={p.loadingProfile}
+            />
+         );
       case "public-profile":
          return (
             <PublicProfile
@@ -431,12 +720,15 @@ function renderSection(s: ProfileSection, p: Props) {
       case "payments":
          return (
             <PaymentsSection
-               onRemovePaymentMethod={console.log}
-               onRemovePayoutMethod={console.log}
-               onSetDefaultPayment={console.log}
-               onSetDefaultPayout={console.log}
-               onSavePaymentMethod={console.log}
-               onSavePayoutMethod={console.log}
+               userId={p.user.uid}
+               paymentMethods={p.paymentMethods}
+               payoutMethods={p.payoutMethods}
+               onRemovePaymentMethod={p.onRemovePaymentMethod}
+               onRemovePayoutMethod={p.onRemovePayoutMethod}
+               onSetDefaultPayment={p.onSetDefaultPayment}
+               onSetDefaultPayout={p.onSetDefaultPayout}
+               onSavePaymentMethod={p.onSavePaymentMethod}
+               onSavePayoutMethod={p.onSavePayoutMethod}
             />
          );
       case "addresses":
@@ -444,18 +736,9 @@ function renderSection(s: ProfileSection, p: Props) {
       case "notifications":
          return (
             <NotificationsSection
-               settings={DEFAULT_NOTIFICATION_SETTINGS}
-               frequencySettings={{
-                  dailyDigest: false,
-                  quietHours: {
-                     enabled: false,
-                     start: "22:00",
-                     end: "08:00",
-                     timezone: "Asia/Kolkata",
-                  },
-                  maxPerDay: 0,
-               }}
-               preferredChannel="push"
+               settings={p.notificationSettings}
+               frequencySettings={p.notificationFrequency}
+               preferredChannel={p.notificationChannel}
                onSave={p.onSaveNotifications}
             />
          );
@@ -489,7 +772,6 @@ function renderSection(s: ProfileSection, p: Props) {
                onRevokeSession={p.onRevokeSession}
                onRevokeAllSessions={p.onRevokeAllSessions}
                onUpdatePrivacy={p.onUpdatePrivacy}
-               onDeleteAccount={p.onDeleteAccount}
             />
          );
       case "privacy":
@@ -506,8 +788,28 @@ function renderSection(s: ProfileSection, p: Props) {
                onSave={p.onUpdatePrivacy}
             />
          );
+      case "referrals":
+         return (
+            <div>
+               <h2 className="text-xl font-semibold text-gray-900 mb-4">Referral Program</h2>
+               <ReferralDashboardSimple className="mb-12" />
+            </div>
+         );
+      case "badges":
+         return (
+            <div>
+               <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Badges</h2>
+               <BadgeDisplaySimple className="mb-6" />
+            </div>
+         );
       // business-verification section removed - now integrated into verifications section
       default:
-         return <ProfileOverview user={p.user} onNavigate={p.onNavigate} />;
+         return (
+            <ProfileOverview
+               user={p.user}
+               onNavigate={p.onNavigate}
+               loading={p.loadingProfile}
+            />
+         );
    }
 }

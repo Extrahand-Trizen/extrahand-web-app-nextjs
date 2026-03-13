@@ -1,20 +1,32 @@
 "use client";
 
-import { MapPin, Calendar, Clock, Tag, User } from "lucide-react";
+import { MapPin, Calendar, Clock, Tag, User, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Task } from "@/types/task";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 interface TaskDetailsHeaderProps {
    task: Task;
    showMobileCTA?: boolean;
+   onMakeOffer?: () => void;
+   hasApplied?: boolean;
+   checkingApplication?: boolean;
+   isSubmittingOffer?: boolean;
+   isOwner?: boolean;
 }
 
 export function TaskDetailsHeader({
    task,
    showMobileCTA = false,
+   onMakeOffer,
+   hasApplied = false,
+   checkingApplication = false,
+   isSubmittingOffer = false,
+   isOwner = false,
 }: TaskDetailsHeaderProps) {
    const budgetAmount =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
+   const categoryLabel = task.categoryLabel || task.subcategory || task.category;
 
    const getStatusBadge = () => {
       if (task.status === "open") {
@@ -27,6 +39,25 @@ export function TaskDetailsHeader({
          return (
             <span className="inline-flex items-center px-1 md:px-2 py-0.5 rounded text-[9px] md:text-xs font-medium bg-blue-100 text-blue-800">
                Assigned
+            </span>
+         );
+      }
+      return null;
+   };
+
+   // Calculate partial assignment status for recurring tasks
+   const getRecurringAssignmentBadge = () => {
+      if (!task.recurring?.enabled || !task.schedule || task.schedule.length === 0) {
+         return null;
+      }
+      
+      const assignedCount = task.schedule.filter(s => s.status === "assigned").length;
+      const totalCount = task.schedule.length;
+      
+      if (assignedCount > 0 && assignedCount < totalCount) {
+         return (
+            <span className="inline-flex items-center px-1 md:px-2 py-0.5 rounded text-[9px] md:text-xs font-medium bg-amber-100 text-amber-800">
+               {assignedCount}/{totalCount} Dates Assigned
             </span>
          );
       }
@@ -60,6 +91,11 @@ export function TaskDetailsHeader({
       });
    };
 
+   const formatRange = (start?: Date | string, end?: Date | string) => {
+      if (!start || !end) return null;
+      return `${formatDate(start)} - ${formatDate(end)}`;
+   };
+
    const getTimeAgo = (date: Date | string | undefined) => {
       if (!date) return "Recently";
       const now = new Date();
@@ -82,10 +118,11 @@ export function TaskDetailsHeader({
          {/* Badges & Category */}
          <div className="flex flex-wrap items-center gap-2 mb-3 lg:mb-4">
             {getStatusBadge()}
+            {getRecurringAssignmentBadge()}
             {getUrgencyBadge()}
             <span className="inline-flex items-center px-1 md:px-2 py-0.5 rounded text-[10px] md:text-xs font-medium bg-secondary-100 text-secondary-700">
                <Tag className="size-2 md:size-3 mr-1" />
-               {task.category}
+               {categoryLabel}
             </span>
          </div>
 
@@ -150,7 +187,9 @@ export function TaskDetailsHeader({
                   <span className="font-medium">When</span>
                </div>
                <p className="text-xs md:text-sm font-semibold text-secondary-900 truncate">
-                  {task.scheduledDate
+                  {task.recurring?.enabled
+                     ? formatRange(task.recurring.startDate, task.recurring.endDate) || "Flexible"
+                     : task.scheduledDate
                      ? formatDate(task.scheduledDate)
                      : "Flexible"}
                </p>
@@ -177,9 +216,31 @@ export function TaskDetailsHeader({
                      )}
                   </div>
                </div>
-               {task.status === "open" && (
-                  <Button className="bg-primary-600 hover:bg-primary-700 text-white h-10 font-semibold rounded-xl shadow-sm" size="lg">
-                     Make an Offer
+               {task.status === "open" && !isOwner && onMakeOffer && (
+                  <Button 
+                     onClick={onMakeOffer}
+                     disabled={hasApplied || checkingApplication || isSubmittingOffer}
+                     className="bg-primary-600 hover:bg-primary-700 text-white h-10 font-semibold rounded-xl shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" 
+                     size="lg"
+                  >
+                     {checkingApplication ? (
+                        <>
+                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                           Checking...
+                        </>
+                     ) : isSubmittingOffer ? (
+                        <>
+                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                           Submitting...
+                        </>
+                     ) : hasApplied ? (
+                        <>
+                           <CheckCircle className="w-4 h-4" />
+                           Already Applied
+                        </>
+                     ) : (
+                        "Make an Offer"
+                     )}
                   </Button>
                )}
             </div>

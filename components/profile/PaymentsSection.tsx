@@ -18,6 +18,12 @@ import {
    PopoverTrigger,
 } from "@/components/ui/popover";
 import {
+   DropdownMenu,
+   DropdownMenuContent,
+   DropdownMenuItem,
+   DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
    CreditCard,
    Building2,
    Smartphone,
@@ -34,18 +40,20 @@ import {
    X,
    CalendarIcon,
    IndianRupee,
+   FileText,
+   FileSpreadsheet,
 } from "lucide-react";
 import { PaymentMethod, PayoutMethod, Transaction } from "@/types/profile";
-import {
-   mockPaymentMethods,
-   mockPayoutMethods,
-   mockTransactions,
-} from "@/lib/data/payments";
+import { mockTransactions } from "@/lib/data/payments";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
-import { paymentApi } from "@/lib/api/endpoints/payment";
 import { useAuth } from "@/lib/auth/context";
 import { toast } from "sonner";
+import { usePaymentsStore } from "@/lib/state/paymentsStore";
+import {
+   exportTransactionsToPdf,
+   exportTransactionsToExcel,
+} from "@/lib/exportTransactions";
 
 interface PaymentsSectionProps {
    paymentMethods?: PaymentMethod[];
@@ -61,8 +69,8 @@ interface PaymentsSectionProps {
 }
 
 export function PaymentsSection({
-   paymentMethods = mockPaymentMethods,
-   payoutMethods = mockPayoutMethods,
+   paymentMethods = [],
+   payoutMethods = [],
    transactions: initialTransactions,
    userId,
    onRemovePaymentMethod,
@@ -77,12 +85,14 @@ export function PaymentsSection({
    const [transactionFilter, setTransactionFilter] = useState<
       "all" | "outgoing" | "earnings"
    >("all");
-   
-   // Real data state - start with empty array, no mock data
-   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions || []);
-   const [loadingTransactions, setLoadingTransactions] = useState(false);
-   const [realEarnings, setRealEarnings] = useState<number | null>(null);
-   const [realSpent, setRealSpent] = useState<number | null>(null);
+
+   const {
+      transactions,
+      totalEarnings,
+      totalSpent,
+      loading,
+      fetchPayments,
+   } = usePaymentsStore();
 
    // Range filter state
    const [showRangeFilters, setShowRangeFilters] = useState(false);
@@ -94,70 +104,15 @@ export function PaymentsSection({
    const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false);
    const [showPayoutMethodModal, setShowPayoutMethodModal] = useState(false);
 
-   // Fetch real transaction data when transactions tab is active
+   // Fetch earnings + transactions as soon as Payments section is shown (use userId
+   // from parent so Total Earnings/Total Spent load without waiting for auth or tab).
+   const effectiveUserId = userId ?? currentUser?.uid;
    useEffect(() => {
-      const fetchTransactions = async () => {
-         if (!currentUser?.uid || activeTab !== 'transactions') return;
-         
-         setLoadingTransactions(true);
-         try {
-            const response = await paymentApi.getUserTransactions(currentUser.uid, { limit: 100 });
-            if (response && Array.isArray(response.transactions)) {
-               // Map payment service transactions to profile format
-               const mapped: Transaction[] = response.transactions.map((tx: any) => {
-                  // Map transaction type: escrow -> payment (outgoing)
-                  let mappedType: Transaction['type'] = 'payment';
-                  if (tx.type === 'escrow') {
-                     mappedType = 'payment'; // Escrow is money going out (payment for task)
-                  } else if (tx.type === 'payout' || tx.type === 'earning') {
-                     mappedType = 'payout'; // Money coming in
-                  }
-                  
-                  return {
-                     id: tx.transactionId || tx.id,
-                     type: mappedType,
-                     amount: parseFloat(tx.amount), // Convert string to number
-                     currency: 'INR', // Default currency
-                     status: tx.status === 'held' || tx.status === 'pending' ? 'pending' : 'completed',
-                     description: tx.description || '',
-                     createdAt: new Date(tx.date || tx.createdAt), // API uses 'date' field
-                     taskId: tx.metadata?.taskId,
-                     taskTitle: tx.metadata?.taskTitle,
-                  };
-               });
-               setTransactions(mapped);
-               
-               // Calculate spent from fetched transactions (including escrow)
-               const spent = mapped
-                  .filter((t) => t.type === "payment")
-                  .reduce((sum, t) => sum + t.amount, 0);
-               setRealSpent(spent);
-            }
-         } catch (error) {
-            console.error('Failed to fetch transactions:', error);
-          } finally {
-            setLoadingTransactions(false);
-         }
-      };
-
-      const fetchEarnings = async () => {
-         if (!currentUser?.uid || activeTab !== 'transactions') return;
-         
-         try {
-            const response = await paymentApi.getUserEarnings(currentUser.uid);
-            if (response.success && response.data) {
-               setRealEarnings(response.data.totalEarnings || 0);
-            }
-         } catch (error) {
-            console.error('Failed to fetch earnings:', error);
-         }
-      };
-
-      if (activeTab === 'transactions') {
-         fetchTransactions();
-         fetchEarnings();
-      }
-   }, [currentUser?.uid, activeTab]);
+      if (!effectiveUserId) return;
+      fetchPayments(effectiveUserId).catch((error) => {
+         console.error("Failed to load payments:", error);
+      });
+   }, [effectiveUserId, fetchPayments]);
 
    // Check if any range filters are active
    const hasActiveRangeFilters = useMemo(() => {
@@ -189,15 +144,6 @@ export function PaymentsSection({
       }
       setShowPayoutMethodModal(false);
    };
-
-   // Calculate totals (use real data if available, otherwise calculate from transactions)
-   const totalEarnings = realEarnings !== null ? realEarnings : transactions
-      .filter((t) => t.type === "payout" && t.status === "completed")
-      .reduce((sum, t) => sum + t.amount, 0);
-
-   const totalOutgoing = realSpent !== null ? realSpent : transactions
-      .filter((t) => t.type === "payment" && t.status === "completed")
-      .reduce((sum, t) => sum + t.amount, 0);
 
    // Filter transactions based on selected filter + range filters
    const filteredTransactions = transactions.filter((t) => {
@@ -268,7 +214,7 @@ export function PaymentsSection({
                   </span>
                </div>
                <p className="text-lg sm:text-xl font-bold text-secondary-700">
-                  ₹{totalOutgoing.toLocaleString()}
+                  ₹{totalSpent.toLocaleString()}
                </p>
             </div>
          </div>
@@ -462,9 +408,52 @@ export function PaymentsSection({
                            </span>
                         )}
                      </Button>
-                     <Button variant="ghost" size="sm" className="h-8 px-2">
-                        <Download className="w-4 h-4" />
-                     </Button>
+                     <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                           <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 px-2"
+                              aria-label="Download transactions"
+                           >
+                              <Download className="w-4 h-4" />
+                           </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                           <DropdownMenuItem
+                              onClick={async () => {
+                                 try {
+                                    await exportTransactionsToPdf(filteredTransactions, {
+                                       totalEarnings,
+                                       totalSpent,
+                                    });
+                                    toast.success("PDF downloaded");
+                                 } catch (e) {
+                                    toast.error("Failed to download PDF");
+                                 }
+                              }}
+                           >
+                              <FileText className="w-4 h-4 mr-2" />
+                              Download as PDF
+                           </DropdownMenuItem>
+                           <DropdownMenuItem
+                              onClick={async () => {
+                                 try {
+                                    await exportTransactionsToExcel(filteredTransactions, {
+                                       totalEarnings,
+                                       totalSpent,
+                                    });
+                                    toast.success("Excel downloaded");
+                                 } catch (e) {
+                                    toast.error("Failed to download Excel");
+                                 }
+                              }}
+                           >
+                              <FileSpreadsheet className="w-4 h-4 mr-2" />
+                              Download as Excel
+                           </DropdownMenuItem>
+                        </DropdownMenuContent>
+                     </DropdownMenu>
                   </div>
                </div>
 
@@ -643,7 +632,7 @@ export function PaymentsSection({
 
                {/* Transactions List */}
                <div className="bg-white rounded-lg border border-gray-200">
-                  {loadingTransactions ? (
+                  {loading ? (
                      <div className="px-4 py-12 sm:px-5 sm:py-16 text-center">
                         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600 mx-auto mb-4"></div>
                         <p className="text-xs sm:text-sm text-gray-500">
@@ -968,7 +957,7 @@ function TransactionStatusBadge({ status }: { status: Transaction["status"] }) {
          label: "Completed",
          className: "bg-green-100 text-green-700",
       },
-      pending: { label: "Pending", className: "bg-amber-100 text-amber-700" },
+      pending: { label: "In Progress", className: "bg-amber-100 text-amber-700" },
       failed: { label: "Failed", className: "bg-red-100 text-red-700" },
       cancelled: { label: "Cancelled", className: "bg-gray-100 text-gray-600" },
    };

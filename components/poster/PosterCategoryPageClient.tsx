@@ -40,8 +40,8 @@ function textToSlug(text: string): string {
 export default function PosterCategoryPageClient({ category }: PosterCategoryPageClientProps) {
    const router = useRouter();
 
-   const categoryName = category?.name || "Service";
-   const serviceLabel = (categoryName || "").replace(/\s+Services?$/i, "") || "service";
+  const categoryName = category?.name || "Service";
+  const serviceLabel = (categoryName || "").replace(/\s*Services?\s*$/i, "").trim() || "service";
 
    const topTaskers: PosterTopTasker[] =
       category?.topTaskers && category.topTaskers.filter((t) => t?.name).length > 0 ? category.topTaskers : DEFAULT_TOP_TASKERS;

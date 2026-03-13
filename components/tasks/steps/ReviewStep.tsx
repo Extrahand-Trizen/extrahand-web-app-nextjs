@@ -19,7 +19,7 @@ import {
    FormLabel,
    FormMessage,
 } from "@/components/ui/form";
-import { format } from "date-fns";
+import { format, differenceInCalendarDays } from "date-fns";
 import {
    MapPin,
    Calendar,
@@ -36,14 +36,34 @@ interface ReviewStepProps {
    isSubmitting: boolean;
 }
 
-const CATEGORIES: Record<string, { label: string; icon: string }> = {
-   cleaning: { label: "Cleaning", icon: "🧹" },
-   repair: { label: "Repairs", icon: "🔧" },
-   delivery: { label: "Delivery", icon: "📦" },
-   assembly: { label: "Assembly", icon: "🔨" },
-   gardening: { label: "Gardening", icon: "🌱" },
-   petcare: { label: "Pet Care", icon: "🐕" },
-   other: { label: "Other", icon: "✨" },
+const CATEGORIES: Record<string, { label: string }> = {
+   "home-cleaning": { label: "Home Cleaning" },
+   "deep-cleaning": { label: "Deep Cleaning" },
+   plumbing: { label: "Plumbing" },
+   "water-tanker-services": { label: "Water & Tanker Services" },
+   electrical: { label: "Electrical" },
+   carpenter: { label: "Carpenter" },
+   painting: { label: "Painting" },
+   "ac-repair": { label: "AC Repair & Service" },
+   "appliance-repair": { label: "Appliance Repair" },
+   "pest-control": { label: "Pest Control" },
+   "car-washing": { label: "Car Washing / Car Cleaning" },
+   gardening: { label: "Gardening" },
+   handyperson: { label: "Handyperson / General Repairs" },
+   "furniture-assembly": { label: "Furniture Assembly" },
+   "security-patrol": { label: "Security Patrol / Watchman" },
+   "beauty-services": { label: "Beauty Services" },
+   "massage-spa": { label: "Massage / Spa" },
+   "fitness-trainers": { label: "Fitness Trainers" },
+   tutors: { label: "Tutors" },
+   "it-support": { label: "IT Support / Laptop Repair" },
+   "photographer-videographer": { label: "Photographer / Videographer" },
+   "event-services": { label: "Event Services" },
+   "pet-services": { label: "Pet Services" },
+   "driver-chauffeur": { label: "Driver / Chauffeur" },
+   "cooking-home-chef": { label: "Cooking / Home Chef" },
+   "laundry-ironing": { label: "Laundry / Ironing" },
+   other: { label: "Other" },
 };
 
 const URGENCY_OPTIONS: Record<string, { label: string; surcharge: number }> = {
@@ -73,7 +93,7 @@ export function ReviewStep({
       );
    }
 
-   const category = CATEGORIES[data.category] || { label: "Other", icon: "✨" };
+   const category = CATEGORIES[data.category] || { label: "Other" };
    const urgency = URGENCY_OPTIONS[data.urgency] || {
       label: "Standard",
       surcharge: 0,
@@ -81,6 +101,11 @@ export function ReviewStep({
    const totalBudget =
       data.budgetType === "fixed" && data.budget
          ? data.budget + urgency.surcharge
+         : null;
+
+   const recurringDays =
+      data.recurringEnabled && data.recurringStartDate && data.recurringEndDate
+         ? differenceInCalendarDays(data.recurringEndDate, data.recurringStartDate) + 1
          : null;
 
    return (
@@ -126,7 +151,6 @@ export function ReviewStep({
             <div className="space-y-3">
                <div>
                   <div className="flex items-center gap-2 mb-1">
-                     <span className="text-xl md:text-2xl">{category.icon}</span>
                      <span className="text-sm md:text-base font-medium text-gray-900">
                         {category.label}
                      </span>
@@ -150,29 +174,13 @@ export function ReviewStep({
                   </p>
                </div>
 
-               {data.requirements.length > 0 && (
-                  <div>
-                     <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 block">
-                        Requirements
-                     </span>
-                     <div className="flex flex-wrap gap-2">
-                        {data.requirements.map((req, index) => (
-                           <Badge
-                              key={index}
-                              variant="secondary"
-                              className="h-4 md:h-6 px-1 md:px-3 text-[9px] md:text-xs bg-gray-100 text-gray-700"
-                           >
-                              {req}
-                           </Badge>
-                        ))}
-                     </div>
-                  </div>
-               )}
-
                {data.estimatedDuration && (
                   <div className="flex items-center gap-2 text-xs md:text-sm text-gray-600">
                      <Clock className="w-4 h-4" />
-                     <span>Estimated {data.estimatedDuration} hours</span>
+                     <span>
+                        Estimated {Math.floor(data.estimatedDuration / 24)} days{" "}
+                        {(data.estimatedDuration % 24).toFixed(1)} hours
+                     </span>
                   </div>
                )}
             </div>
@@ -213,29 +221,32 @@ export function ReviewStep({
                <div className="flex items-center gap-3">
                   <Calendar className="size-4 md:size-5 text-gray-400" />
                   <span className="text-xs md:text-sm text-gray-900">
-                     {data.scheduledDate
-                        ? format(data.scheduledDate, "EEEE, MMMM d, yyyy")
-                        : "Date not set"}
+                     {data.recurringEnabled
+                        ? data.recurringStartDate && data.recurringEndDate
+                           ? `${format(data.recurringStartDate, "MMM d, yyyy")} - ${format(
+                                data.recurringEndDate,
+                                "MMM d, yyyy"
+                             )} (${recurringDays} days)`
+                           : "Date range not set"
+                        : data.dateOption === "flexible" || !data.dateOption
+                        ? "Flexible"
+                        : data.dateOption === "on-date" && data.scheduledDate
+                        ? `On ${format(data.scheduledDate, "MMM d")}`
+                        : data.dateOption === "before-date" && data.scheduledDate
+                        ? `Before ${format(data.scheduledDate, "MMM d")}`
+                        : data.scheduledDate
+                        ? format(data.scheduledDate, "MMM d")
+                        : "Flexible"}
                   </span>
                </div>
 
                <div className="flex items-center gap-3">
                   <Clock className="size-4 md:size-5 text-gray-400" />
-                  <div className="flex items-center gap-2">
-                     <span className="text-xs md:text-sm text-gray-900">
-                        {format(data.scheduledTimeStart, "MMM d, h:mm aa")} -{" "}
-                        {format(data.scheduledTimeEnd, "MMM d, h:mm aa")}
-                     </span>
-                     {data.flexibility !== "exact" && (
-                        <Badge
-                           variant="secondary"
-                           className="h-5 px-2 text-[10px] md:text-xs bg-primary-50 text-primary-700"
-                        >
-                           {data.flexibility === "flexible" && "±1 hour"}
-                           {data.flexibility === "very_flexible" && "±3 hours"}
-                        </Badge>
-                     )}
-                  </div>
+                  <span className="text-xs md:text-sm text-gray-900">
+                     {data.needsTimeOfDay && data.timeSlot
+                        ? data.timeSlot.charAt(0).toUpperCase() + data.timeSlot.slice(1)
+                        : "Anytime"}
+                  </span>
                </div>
             </div>
          </div>
@@ -246,7 +257,7 @@ export function ReviewStep({
                <h3 className="md:text-base font-semibold text-gray-900">Budget</h3>
                <button
                   type="button"
-                  onClick={() => onEdit(3)}
+                  onClick={() => onEdit(2)}
                   className="flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-700"
                >
                   <Edit2 className="w-4 h-4" />
@@ -338,14 +349,18 @@ export function ReviewStep({
                      <FormLabel className="inline text-xs md:text-sm font-normal text-gray-700 leading-relaxed cursor-pointer">
                         I agree to ExtraHand&apos;s{" "}
                         <a
-                           href="/terms"
+                           href="/terms-and-conditions"
+                           target="_blank"
+                           rel="noopener noreferrer"
                            className="inline text-primary-600 hover:underline"
                         >
-                           Terms of Service
+                           Terms and Services
                         </a>{" "}
                         and{" "}
                         <a
-                           href="/guidelines"
+                           href="/community-guidelines"
+                           target="_blank"
+                           rel="noopener noreferrer"
                            className="inline text-primary-600 hover:underline"
                         >
                            Community Guidelines

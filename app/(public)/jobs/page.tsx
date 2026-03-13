@@ -11,28 +11,31 @@ export default async function JobsPage() {
    let categories: Category[] = [];
 
    try {
-      // Fetch all categories so the list shows names even when unpublished
+      // Fetch published categories only to display to all users (both taskers and guests)
       const allCategories = await categoriesApi.getCategories({
-         includeUnpublished: true,
+         includeUnpublished: false,
       });
 
-      // Fetch subcategories for each category
-      categories = await Promise.all(
-         allCategories.map(async (cat) => {
-            const subcategories = await categoriesApi.getSubcategories(cat.slug);
-            return {
-               _id: cat._id,
-               name: cat.name,
-               slug: cat.slug,
-               heroImage: cat.heroImage,
-               heroTitle: cat.heroTitle,
-               heroDescription: cat.heroDescription,
-               subcategories: subcategories as Subcategory[],
-            };
-         })
-      );
+      // Filter and map categories for tasker view
+      if (Array.isArray(allCategories)) {
+         categories = allCategories
+            .filter((cat: any) => {
+               const type = (cat.categoryType || "").toLowerCase();
+               // Show categories that are for "tasker" or "both"
+               return type.includes("tasker") || type.includes("both") || !type;
+            })
+            .map((cat: any) => ({
+               _id: cat._id || "",
+               name: cat.name || "",
+               slug: cat.slug || "",
+               heroImage: cat.heroImage || "",
+               heroTitle: cat.heroTitle || "",
+               heroDescription: cat.heroDescription || "",
+               subcategories: Array.isArray(cat.subcategories) ? cat.subcategories : [],
+            }));
+      }
    } catch (error) {
-      console.error("Error fetching categories from content-admin:", error);
+      console.error("Error fetching categories from content-admin");
    }
 
    return <CategoriesClient categories={categories} viewType="jobs" />;

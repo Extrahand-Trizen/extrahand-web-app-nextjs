@@ -1,21 +1,56 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Shield, CheckCircle, Star } from "lucide-react";
 import type { Task } from "@/types/task";
-import { MakeOfferModal } from "./offers/MakeOfferModal";
 import Link from "next/link";
+import { getUserBadge } from "@/lib/api/badge";
+import { UserBadge } from "@/components/ui/user-badge";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 interface TaskDetailsSidebarProps {
    task: Task;
    isOwner?: boolean;
+   onMakeOffer?: () => void;
+   hasApplied?: boolean;
+   checkingApplication?: boolean;
+   isSubmittingOffer?: boolean;
 }
 
-export function TaskDetailsSidebar({ task, isOwner = false }: TaskDetailsSidebarProps) {
-   const [showMakeOfferModal, setShowMakeOfferModal] = useState(false);
+export function TaskDetailsSidebar({ 
+   task, 
+   isOwner = false, 
+   onMakeOffer,
+   hasApplied = false,
+   checkingApplication = false,
+   isSubmittingOffer = false,
+}: TaskDetailsSidebarProps) {
+   
+   // Fetch requester badge
+   const [requesterBadge, setRequesterBadge] = useState<{ currentBadge: string } | null>(null);
+
+   useEffect(() => {
+      async function fetchBadge() {
+         try {
+            const requesterId = (task as any).requesterId;
+            if (!requesterId) return;
+
+            console.log("🎖️ Fetching badge for requester:", requesterId);
+            const badgeData = await getUserBadge(requesterId);
+            console.log("✅ Requester badge fetched:", badgeData);
+            setRequesterBadge(badgeData);
+         } catch (error: any) {
+            console.warn("⚠️ Failed to fetch requester badge:", error.message);
+         }
+      }
+
+      fetchBadge();
+   }, [(task as any).requesterId]);
+
    const budgetAmount =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
+   const categoryLabel = task.categoryLabel || task.subcategory || task.category;
 
    // Extract requester data from task (already populated by backend)
    // Note: task.requesterId is a MongoDB ObjectId, not a UID
@@ -44,20 +79,30 @@ export function TaskDetailsSidebar({ task, isOwner = false }: TaskDetailsSidebar
             </div>
 
             {task.status === "open" && !isOwner && (
-               <div className="space-y-2">
-                  <Button
-                     onClick={() => setShowMakeOfferModal(true)}
-                     className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold h-12 rounded-xl shadow-sm hover:shadow-md transition-all"
-                  >
-                     Make an Offer
-                  </Button>
-                  <Button
-                     variant="outline"
-                     className="w-full border-secondary-300 text-secondary-700 hover:bg-secondary-50 h-11 font-medium rounded-xl"
-                  >
-                     Ask a Question
-                  </Button>
-               </div>
+               <Button
+                  onClick={onMakeOffer}
+                  disabled={hasApplied || checkingApplication || isSubmittingOffer}
+                  className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold h-12 rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+               >
+                  {checkingApplication ? (
+                     <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Checking...
+                     </>
+                  ) : isSubmittingOffer ? (
+                     <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Submitting...
+                     </>
+                  ) : hasApplied ? (
+                     <>
+                        <CheckCircle className="w-4 h-4" />
+                        Already Applied
+                     </>
+                  ) : (
+                     "Make an Offer"
+                  )}
+               </Button>
             )}
 
             {/* Quick Details */}
@@ -65,14 +110,14 @@ export function TaskDetailsSidebar({ task, isOwner = false }: TaskDetailsSidebar
                <div className="flex justify-between items-center">
                   <span className="text-secondary-600">Category</span>
                   <span className="font-semibold text-secondary-900">
-                     {task.category}
+                     {categoryLabel}
                   </span>
                </div>
                <div className="flex justify-between items-center">
                   <span className="text-secondary-600">Duration</span>
                   <span className="font-semibold text-secondary-900">
                      {task.estimatedDuration
-                        ? `${task.estimatedDuration}h`
+                        ? `${Math.floor(task.estimatedDuration / 24)}d ${(task.estimatedDuration % 24).toFixed(0)}h`
                         : "Flexible"}
                   </span>
                </div>
@@ -97,8 +142,18 @@ export function TaskDetailsSidebar({ task, isOwner = false }: TaskDetailsSidebar
                   {(task.requesterName || "U")[0].toUpperCase()}
                </div>
                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-secondary-900 mb-1.5 text-base">
-                     {task.requesterName || "Task Poster"}
+                  <div className="flex items-center gap-2 mb-1.5">
+                     <div className="font-semibold text-secondary-900 text-base">
+                        {task.requesterName || "Task Poster"}
+                     </div>
+                     {/* Badge Display */}
+                     {requesterBadge && (
+                        <UserBadge 
+                           badge={requesterBadge.currentBadge as any} 
+                           size="sm" 
+                           showLabel={false}
+                        />
+                     )}
                   </div>
                   <div className="flex items-center gap-2 text-xs text-secondary-600 mb-2">
                      <div className="flex items-center gap-1">
@@ -156,13 +211,6 @@ export function TaskDetailsSidebar({ task, isOwner = false }: TaskDetailsSidebar
                </div>
             </div>
          </div>
-
-         {/* Make Offer Modal */}
-         <MakeOfferModal
-            task={task}
-            open={showMakeOfferModal}
-            onOpenChange={setShowMakeOfferModal}
-         />
       </div>
    );
 }

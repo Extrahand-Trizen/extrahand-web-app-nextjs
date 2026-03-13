@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, Smartphone } from "lucide-react";
+import { Loader2, Smartphone } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,8 @@ interface LoginFormProps {
 
 export function LoginForm({ onSuccess }: LoginFormProps) {
    const router = useRouter();
+   const searchParams = useSearchParams();
+   const redirectTo = searchParams.get("next") || "/home";
    const [isSubmitting, setIsSubmitting] = useState(false);
 
    const form = useForm<PhoneLoginFormData>({
@@ -52,26 +54,21 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       setIsSubmitting(true);
 
       try {
-         // Simulate API call to send OTP
-         await new Promise((resolve) => setTimeout(resolve, 1000));
-
+         // Format phone number
          const formattedPhone = formatPhoneNumber(data.phone);
 
-         toast.success("OTP sent!", {
-            description: `Verification code sent to ${formattedPhone}`,
-         });
-
+         // Redirect to OTP verification page without showing success message
+         // The OTP will be sent on the verification page after checking if user exists
          if (onSuccess) {
             onSuccess(formattedPhone);
          } else {
-            router.push(
-               `/otp-verification?phone=${encodeURIComponent(
-                  formattedPhone
-               )}&type=login`
-            );
+            const otpUrl = `/otp-verification?phone=${encodeURIComponent(
+               formattedPhone
+            )}&type=login&next=${encodeURIComponent(redirectTo)}`;
+            router.push(otpUrl);
          }
       } catch {
-         toast.error("Failed to send OTP", {
+         toast.error("Failed to proceed", {
             description: "Please check your phone number and try again.",
          });
       } finally {
@@ -102,14 +99,8 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
          <div className="flex-1 flex flex-col items-center justify-center px-0 py-8 lg:px-4">
             <Card className="w-full lg:max-w-md shadow-none border-0 md:border md:shadow-sm bg-transparent">
                <CardHeader className="space-y-4 px-4 lg:px-6">
-                  {/* Back button and Logo */}
-                  <div className="relative flex items-center justify-center mb-2">
-                     <Link
-                        href="/"
-                        className="absolute left-0 inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-                     >
-                        <ArrowLeft className="h-4 w-4" />
-                     </Link>
+                  {/* Logo */}
+                  <div className="flex items-center justify-center mb-2">
                      <Image
                         src="/assets/images/logo.png"
                         alt="Extrahand"

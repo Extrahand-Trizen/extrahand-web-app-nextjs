@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { containsPhoneNumber, PHONE_NUMBER_ERROR } from "@/lib/utils/phoneDetection";
 
 /**
  * Task creation validation schemas
@@ -10,17 +11,19 @@ export const taskBasicsSchema = z
       title: z
          .string()
          .min(5, "Please add a few more details to your title")
-         .max(200, "Title is too long"),
+         .max(200, "Title is too long")
+         .refine((val) => !containsPhoneNumber(val), PHONE_NUMBER_ERROR),
       description: z
          .string()
          .min(10, "Add more detail so taskers understand what's needed")
-         .max(2000, "Description is too long"),
+         .max(2000, "Description is too long")
+         .refine((val) => !containsPhoneNumber(val), PHONE_NUMBER_ERROR),
       category: z.string().min(1, "Please select a category"),
       subcategory: z.string().optional(),
-      requirements: z.array(z.string()).max(10).default([]),
+      requirements: z.array(z.string()).max(10).nullable().default([]).transform(val => val || []),
       estimatedDuration: z.number().min(0.5).max(168).nullable().optional(),
-      tags: z.array(z.string()).max(5).default([]),
-      priority: z.enum(["low", "normal", "high"]).default("normal"),
+      tags: z.array(z.string()).max(5).nullable().default([]).transform(val => val || []),
+      priority: z.enum(["low", "normal", "high"]).nullable().default("normal").transform(val => val || "normal"),
       attachments: z
          .array(
             z.object({
@@ -31,7 +34,9 @@ export const taskBasicsSchema = z
             })
          )
          .max(5)
-         .default([]),
+         .nullable()
+         .default([])
+         .transform(val => val || []),
    })
    .refine(
       (data) => {
@@ -55,32 +60,67 @@ export const taskBasicsSchema = z
 // Step 2: Location & Schedule
 export const locationScheduleSchema = z
    .object({
+      locationMode: z.enum(["in-person", "online"]).default("in-person"),
       location: z.object({
-         address: z.string().min(5, "Please add a location"),
-         city: z.string().min(1, "City is required"),
-         state: z.string().min(1, "State is required"),
+         address: z.string().default(""),
+         city: z.string().default(""),
+         state: z.string().default(""),
          pinCode: z.string().default(""),
          country: z.string().default("India"),
          coordinates: z.tuple([z.number(), z.number()]).optional(),
       }),
+      // AirTasker-style scheduling
+      dateOption: z.enum(["on-date", "before-date", "flexible"]).default("flexible"),
       scheduledDate: z.date().nullable(),
+      needsTimeOfDay: z.boolean().default(false),
+      timeSlot: z.enum(["morning", "midday", "afternoon", "evening"]).nullable().optional(),
+      // Legacy fields (kept for compatibility)
       scheduledTimeStart: z.date(),
       scheduledTimeEnd: z.date(),
       flexibility: z.enum(["exact", "flexible", "very_flexible"]),
+      recurringEnabled: z.boolean().default(false),
+      recurringStartDate: z.date().nullable().optional(),
+      recurringEndDate: z.date().nullable().optional(),
+      recurringFrequency: z.enum(["daily", "weekly"]).default("daily"),
    })
-   .refine((data) => data.scheduledDate !== null, {
+   .refine((data) => {
+      if (data.locationMode === "online") return true;
+      return (
+         data.location.address.trim().length >= 5 &&
+         data.location.city.trim().length >= 1 &&
+         data.location.state.trim().length >= 1
+      );
+   }, {
+      message: "Please add a location",
+      path: ["location", "address"],
+   })
+   .refine((data) => {
+      if (data.recurringEnabled) {
+        return data.recurringStartDate !== null && data.recurringEndDate !== null;
+      }
+      return data.scheduledDate !== null;
+   }, {
       message: "Please choose a date",
       path: ["scheduledDate"],
+   })
+   .refine((data) => {
+      if (!data.recurringEnabled) return true;
+      if (!data.recurringStartDate || !data.recurringEndDate) return false;
+      return data.recurringEndDate >= data.recurringStartDate;
+   }, {
+      message: "End date must be after start date",
+      path: ["recurringEndDate"],
    })
    .refine(
       (data) => {
          if (data.flexibility === "very_flexible") return true;
 
-         // Ensure end date/time is after start date/time
-         return data.scheduledTimeEnd > data.scheduledTimeStart;
+         // Ensure end date/time is after start date/time with minimum 30 minutes duration
+         const timeDiffMinutes = (data.scheduledTimeEnd.getTime() - data.scheduledTimeStart.getTime()) / (1000 * 60);
+         return timeDiffMinutes >= 30;
       },
       {
-         message: "End date & time must be after start date & time",
+         message: "End time must be at least 30 minutes after start time. Note: 12:30 AM is just after midnight (00:30).",
          path: ["scheduledTimeEnd"],
       }
    );
@@ -161,10 +201,10 @@ export const editTaskSchema = z
          .optional(),
       category: z.string().min(1, "Please select a category").optional(),
       subcategory: z.string().optional(),
-      requirements: z.array(z.string()).max(10).default([]).optional(),
+      requirements: z.array(z.string()).max(10).nullable().default([]).optional(),
       estimatedDuration: z.number().min(0.5).max(168).nullable().optional(),
-      tags: z.array(z.string()).max(5).default([]).optional(),
-      priority: z.enum(["low", "normal", "high"]).optional(),
+      tags: z.array(z.string()).max(5).nullable().default([]).optional(),
+      priority: z.enum(["low", "normal", "high"]).nullable().optional(),
       attachments: z
          .array(
             z.object({
@@ -175,6 +215,7 @@ export const editTaskSchema = z
             })
          )
          .max(5)
+         .nullable()
          .default([])
          .optional(),
       location: z
@@ -187,7 +228,13 @@ export const editTaskSchema = z
             coordinates: z.tuple([z.number(), z.number()]).optional(),
          })
          .optional(),
+      locationMode: z.enum(["in-person", "online"]).optional(),
       scheduledDate: z.date().nullable().optional(),
+      // AirTasker-style scheduling
+      dateOption: z.enum(["on-date", "before-date", "flexible"]).optional(),
+      needsTimeOfDay: z.boolean().optional(),
+      timeSlot: z.enum(["morning", "midday", "afternoon", "evening"]).nullable().optional(),
+      // Legacy fields
       scheduledTimeStart: z.date().optional(),
       scheduledTimeEnd: z.date().optional(),
       flexibility: z.enum(["exact", "flexible", "very_flexible"]).optional(),
@@ -287,11 +334,12 @@ export const editTaskSchema = z
          )
             return true;
 
-         // Ensure end date/time is after start date/time
-         return data.scheduledTimeEnd > data.scheduledTimeStart;
+         // Ensure end date/time is after start date/time with minimum 30 minutes duration
+         const timeDiffMinutes = (data.scheduledTimeEnd.getTime() - data.scheduledTimeStart.getTime()) / (1000 * 60);
+         return timeDiffMinutes >= 30;
       },
       {
-         message: "End date & time must be after start date & time",
+         message: "End time must be at least 30 minutes after start time. Note: 12:30 AM is just after midnight (00:30).",
          path: ["scheduledTimeEnd"],
       }
    );

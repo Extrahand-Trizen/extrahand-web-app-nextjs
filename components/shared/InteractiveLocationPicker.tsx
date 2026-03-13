@@ -7,12 +7,15 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { MapPin, Locate, Loader2, Navigation } from "lucide-react";
+import { MapPin, Locate, Loader2, Navigation, Home, Plus, X, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { isValidCoordinate, sanitizeString } from "@/lib/utils/sanitization";
 import { GoogleMapPicker } from "@/components/maps/GoogleMapPicker";
+import { addressesApi } from "@/lib/api/endpoints/addresses";
+import type { SavedAddress } from "@/types/profile";
 
 interface LocationData {
    address: string;
@@ -38,12 +41,25 @@ interface InteractiveLocationPickerProps {
 
 // Parse location data from geocoding API response
 const parseLocationFromGeocode = (data: any): Partial<LocationData> => {
+   // Try multiple fields for pinCode to ensure we get it
+   const pinCode = data.raw?.address?.postcode || 
+                   data.raw?.address?.postalCode || 
+                   data.raw?.address?.postal_code || 
+                   data.pinCode || 
+                   data.postalCode || 
+                   "";
+   
+   // Log if pinCode is missing for debugging
+   if (!pinCode) {
+      console.warn("No pinCode found in geocoding data:", data);
+   }
+   
    return {
       address: data.address || data.description || "",
-      city: data.raw.address.city || "",
-      state: data.raw.address.state || "",
-      pinCode: data.raw.address.postcode || data.raw.address.postalCode || "",
-      country: data.raw.address.country || "India",
+      city: data.raw?.address?.city || "",
+      state: data.raw?.address?.state || "",
+      pinCode: pinCode,
+      country: data.raw?.address?.country || "India",
    };
 };
 
@@ -65,14 +81,213 @@ export function InteractiveLocationPicker({
    const [isSearching, setIsSearching] = useState(false);
    const sessionTokenRef = useRef<string>(Math.random().toString(36).substring(7));
    const [mapsApiKey, setMapsApiKey] = useState<string | null>(null);
+   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
+   const [showAddNewAddressForm, setShowAddNewAddressForm] = useState(false);
+   const [pendingAddressToBeSaved, setPendingAddressToBeSaved] = useState<{
+      coordinates: [number, number];
+      address: Partial<LocationData>;
+   } | null>(null);
+   const [selectedAddressType, setSelectedAddressType] = useState<"Home" | "Work" | "Other">("Home");
+   const [selectedSavedAddressId, setSelectedSavedAddressId] = useState<string | null>(null);
+   const autoSelectRef = useRef(false); // Prevent duplicate auto-select
 
-   // Fetch Google Maps API key on mount
+   // Fetch saved addresses on mount
    useEffect(() => {
-      fetch('/api/maps/key')
-         .then(res => res.json())
-         .then(data => setMapsApiKey(data.apiKey))
-         .catch(err => console.error('Failed to load Maps API key:', err));
+      const fetchAddresses = async () => {
+         try {
+            setIsLoadingAddresses(true);
+            const addresses = await addressesApi.getAddresses();
+            setSavedAddresses(addresses || []);
+            
+            // Auto-select default address only once, if no address is set yet
+            if (!autoSelectRef.current && (!value.address || value.address === "") && !value.coordinates) {
+               const defaultAddress = addresses?.find(addr => addr.isDefault);
+               if (defaultAddress) {
+                  autoSelectRef.current = true; // Prevent future auto-selects
+                  setSelectedSavedAddressId(defaultAddress.id);
+                  await handleSelectSavedAddress(defaultAddress);
+               }
+            }
+         } catch (err) {
+            console.error("Failed to load saved addresses:", err);
+         } finally {
+            setIsLoadingAddresses(false);
+         }
+      };
+      fetchAddresses();
    }, []);
+
+   // Initialize location picker with value when editing task
+   useEffect(() => {
+      if (value && value.address && addressInput !== value.address) {
+         setAddressInput(value.address);
+      }
+      if (value && value.coordinates) {
+         setMapCenter(value.coordinates);
+         setMarkerPosition(value.coordinates);
+      }
+   }, [value?.address, value?.coordinates]);
+
+   // Fetch Google Maps API key only when user clicks "Add New Address"
+   const handleAddNewAddressClick = useCallback(async () => {
+      setShowAddNewAddressForm(true);
+      
+      if (!mapsApiKey) {
+         try {
+            const response = await fetch('/api/maps/key');
+            const data = await response.json();
+            if (data.apiKey) {
+               setMapsApiKey(data.apiKey);
+            }
+         } catch (error) {
+            console.error('Failed to fetch maps API key:', error);
+         }
+      }
+   }, [mapsApiKey]);
+
+   // Handle saved address selection
+   const handleSelectSavedAddress = async (address: SavedAddress) => {
+      setSelectedSavedAddressId(address.id);
+      setPendingAddressToBeSaved(null);
+
+      const fullAddress = [
+         address.addressLine1,
+         address.addressLine2,
+         address.city,
+         address.state,
+         address.pinCode,
+      ]
+         .filter(Boolean)
+         .join(", ");
+
+      setAddressInput(fullAddress);
+
+      // If coordinates exist, use them
+      if (address.coordinates && address.coordinates.lat && address.coordinates.lng) {
+         const coords: [number, number] = [
+            address.coordinates.lng,
+            address.coordinates.lat,
+         ];
+
+         const updatedLocation: LocationData = {
+            address: fullAddress,
+            city: address.city,
+            state: address.state,
+            pinCode: address.pinCode,
+            country: address.country || "India",
+            coordinates: coords,
+         };
+
+         onChange(updatedLocation);
+         setMapCenter(coords);
+         setMarkerPosition(coords);
+         onCoordinatesChange?.(coords);
+      } else {
+         // No coordinates - geocode the address
+         setIsLoadingLocation(true);
+         
+         try {
+            // Step 1: Get place suggestions from search endpoint
+            const searchResponse = await fetch(
+               `/api/geocode/search?input=${encodeURIComponent(fullAddress)}`
+            );
+            const searchData = await searchResponse.json();
+
+            // Step 2: If we have suggestions, get coordinates from details endpoint
+            if (searchData.suggestions && searchData.suggestions.length > 0) {
+               const firstSuggestion = searchData.suggestions[0];
+               const detailsResponse = await fetch(
+                  `/api/geocode/details?placeId=${firstSuggestion.place_id}`
+               );
+               const detailsData = await detailsResponse.json();
+               
+               if (detailsData.coordinates || (detailsData.lat && detailsData.lng)) {
+                  const lat = detailsData.coordinates?.[1] || detailsData.lat;
+                  const lng = detailsData.coordinates?.[0] || detailsData.lng;
+                  const coords: [number, number] = [lng, lat];
+
+                  setMapCenter(coords);
+                  setMarkerPosition(coords);
+
+                  const updatedLocation: LocationData = {
+                     address: fullAddress,
+                     city: address.city,
+                     state: address.state,
+                     pinCode: address.pinCode,
+                     country: address.country || "India",
+                     coordinates: coords,
+                  };
+
+                  onChange(updatedLocation);
+                  onCoordinatesChange?.(coords);
+                  setIsLoadingLocation(false);
+                  return;
+               }
+            }
+
+            // Step 3: Try with just city, state, country as fallback
+            const simplifiedAddress = `${address.city}, ${address.state}, India`;
+            const fallbackSearchResponse = await fetch(
+               `/api/geocode/search?input=${encodeURIComponent(simplifiedAddress)}`
+            );
+            const fallbackSearchData = await fallbackSearchResponse.json();
+            
+            if (fallbackSearchData.suggestions && fallbackSearchData.suggestions.length > 0) {
+               const firstSuggestion = fallbackSearchData.suggestions[0];
+               const detailsResponse = await fetch(
+                  `/api/geocode/details?placeId=${firstSuggestion.place_id}`
+               );
+               const detailsData = await detailsResponse.json();
+               
+               if (detailsData.coordinates || (detailsData.lat && detailsData.lng)) {
+                  const lat = detailsData.coordinates?.[1] || detailsData.lat;
+                  const lng = detailsData.coordinates?.[0] || detailsData.lng;
+                  const coords: [number, number] = [lng, lat];
+
+                  setMapCenter(coords);
+                  setMarkerPosition(coords);
+
+                  const updatedLocation: LocationData = {
+                     address: fullAddress,
+                     city: address.city,
+                     state: address.state,
+                     pinCode: address.pinCode,
+                     country: address.country || "India",
+                     coordinates: coords,
+                  };
+
+                  onChange(updatedLocation);
+                  onCoordinatesChange?.(coords);
+                  setIsLoadingLocation(false);
+                  return;
+               }
+            }
+
+            // Fallback - still update location but without map update
+            const updatedLocation: LocationData = {
+               address: fullAddress,
+               city: address.city,
+               state: address.state,
+               pinCode: address.pinCode,
+               country: address.country || "India",
+            };
+            onChange(updatedLocation);
+         } catch (error) {
+            console.error("Geocoding failed:", error);
+            const updatedLocation: LocationData = {
+               address: fullAddress,
+               city: address.city,
+               state: address.state,
+               pinCode: address.pinCode,
+               country: address.country || "India",
+            };
+            onChange(updatedLocation);
+         } finally {
+            setIsLoadingLocation(false);
+         }
+      }
+   };
 
    // Debounce location search - Increased to 500ms to reduce API calls
    useEffect(() => {
@@ -156,11 +371,19 @@ export function InteractiveLocationPicker({
                setAddressInput(locationData.address || "");
                onCoordinatesChange?.(coords);
 
+               // Show success with pinCode if available
+               const description = locationData.pinCode 
+                  ? `${locationData.city || ""}, ${locationData.state || ""} - ${locationData.pinCode}`
+                  : `${locationData.city || ""}, ${locationData.state || ""}`;
+
                toast.success("Location detected successfully!", {
-                  description: `${locationData.city || ""}, ${
-                     locationData.state || ""
-                  }`,
+                  description: description,
                });
+               
+               // Log if pinCode is missing
+               if (!locationData.pinCode) {
+                  console.warn('Warning: No pinCode found for current location:', { latitude, longitude, locationData });
+               }
             } catch (error) {
                toast.error("Could not get address details");
             } finally {
@@ -203,35 +426,73 @@ export function InteractiveLocationPicker({
 
          setIsLoadingLocation(true);
          try {
-            // If we have a place_id from a suggestion, we can use it for more accurate results
-            const url = selectedSuggestion?.place_id
-               ? `/api/geocode/details?placeId=${selectedSuggestion.place_id}`
-               : `/api/geocode/search?input=${encodeURIComponent(
-                    searchAddress
-                 )}`;
+            // If we have a place_id from a suggestion, use details endpoint directly
+            if (selectedSuggestion?.place_id) {
+               const response = await fetch(
+                  `/api/geocode/details?placeId=${selectedSuggestion.place_id}`
+               );
+               const data = await response.json();
 
-            const response = await fetch(url);
-            const data = await response.json();
+               if (data.coordinates || (data.lat && data.lng)) {
+                  const lat = data.coordinates?.[1] || data.lat;
+                  const lng = data.coordinates?.[0] || data.lng;
+                  const newCoords: [number, number] = [lng, lat];
 
-            if (data.coordinates || (data.lat && data.lng)) {
-               const lat = data.coordinates?.[1] || data.lat;
-               const lng = data.coordinates?.[0] || data.lng;
-               const newCoords: [number, number] = [lng, lat];
+                  setMapCenter(newCoords);
+                  setMarkerPosition(newCoords);
 
-               setMapCenter(newCoords);
-               setMarkerPosition(newCoords);
+                  const locationData = parseLocationFromGeocode(data);
+                  const updatedLocation: LocationData = {
+                     ...value,
+                     address: searchAddress,
+                     ...locationData,
+                     coordinates: newCoords,
+                  };
+                  onChange(updatedLocation);
+                  onCoordinatesChange?.(newCoords);
 
-               const locationData = parseLocationFromGeocode(data);
-               const updatedLocation: LocationData = {
-                  ...value,
-                  address: searchAddress,
-                  ...locationData,
-                  coordinates: newCoords,
-               };
-               onChange(updatedLocation);
-               onCoordinatesChange?.(newCoords);
+                  toast.success("Location found");
+               }
+            } else {
+               // No suggestion selected - search first, then get details
+               const searchResponse = await fetch(
+                  `/api/geocode/search?input=${encodeURIComponent(searchAddress)}`
+               );
+               const searchData = await searchResponse.json();
 
-               toast.success("Location found");
+               if (searchData.suggestions && searchData.suggestions.length > 0) {
+                  // Get details for the first suggestion
+                  const firstSuggestion = searchData.suggestions[0];
+                  const detailsResponse = await fetch(
+                     `/api/geocode/details?placeId=${firstSuggestion.place_id}`
+                  );
+                  const detailsData = await detailsResponse.json();
+
+                  if (detailsData.coordinates || (detailsData.lat && detailsData.lng)) {
+                     const lat = detailsData.coordinates?.[1] || detailsData.lat;
+                     const lng = detailsData.coordinates?.[0] || detailsData.lng;
+                     const newCoords: [number, number] = [lng, lat];
+
+                     setMapCenter(newCoords);
+                     setMarkerPosition(newCoords);
+
+                     const locationData = parseLocationFromGeocode(detailsData);
+                     const updatedLocation: LocationData = {
+                        ...value,
+                        address: searchAddress,
+                        ...locationData,
+                        coordinates: newCoords,
+                     };
+                     onChange(updatedLocation);
+                     onCoordinatesChange?.(newCoords);
+
+                     toast.success("Location found");
+                  } else {
+                     toast.error("Could not get location coordinates");
+                  }
+               } else {
+                  toast.error("Location not found");
+               }
             }
          } catch (error) {
             toast.error("Could not find location");
@@ -257,7 +518,7 @@ export function InteractiveLocationPicker({
       handleAddressSearch(suggestion);
    };
 
-   // Handle marker drag on map
+   // Handle marker drag: update form and input first, then offer inline Use/Save actions
    const handleMarkerDrag = useCallback(async (lat: number, lng: number) => {
       const coords: [number, number] = [lng, lat];
       setMarkerPosition(coords);
@@ -269,165 +530,361 @@ export function InteractiveLocationPicker({
          if (!response.ok) throw new Error('Geocoding failed');
          
          const data = await response.json();
+         console.log('Geocoding API response:', data);
+         
          const locationData = parseLocationFromGeocode(data);
+         console.log('Parsed location data:', locationData);
 
+         // Always apply dragged location immediately so the user sees it in the form.
          const updatedLocation: LocationData = {
-            ...value,
-            ...locationData,
+            address: locationData.address || "",
+            city: locationData.city || "",
+            state: locationData.state || "",
+            pinCode: locationData.pinCode || "",
+            country: locationData.country || "India",
             coordinates: coords,
          };
+
+         setAddressInput(updatedLocation.address);
          onChange(updatedLocation);
-         setAddressInput(locationData.address || "");
          onCoordinatesChange?.(coords);
+         setSelectedSavedAddressId(null);
+
+         // Keep pending data only for optional save action.
+         setPendingAddressToBeSaved({
+            coordinates: coords,
+            address: {
+               address: locationData.address || "",
+               city: locationData.city || "",
+               state: locationData.state || "",
+               pinCode: locationData.pinCode || "",
+               country: locationData.country || "India",
+               coordinates: coords,
+            },
+         });
+         
+         // Log if pinCode is missing
+         if (!locationData.pinCode) {
+            console.warn('Warning: No pinCode found for marker position:', { lat, lng, locationData });
+         }
+
       } catch (error) {
          console.error('Failed to geocode marker position:', error);
+         toast.error("Could not determine address at this location");
       }
-   }, [value, onChange, onCoordinatesChange]);
+   }, [onChange, onCoordinatesChange]);
+
+   const handleUseDraggedAddress = () => {
+      setPendingAddressToBeSaved(null);
+      toast.success("Using this location for your task");
+   };
+
+   // Handle saving the selected address
+   const handleSaveSelectedAddress = async () => {
+      if (!pendingAddressToBeSaved) return;
+
+      try {
+         const { coordinates, address } = pendingAddressToBeSaved;
+         
+         console.log('Saving address with pinCode:', address.pinCode);
+         
+         // Save to backend
+         const newAddress = await addressesApi.addAddress({
+            label: selectedAddressType,
+            addressLine1: address.address,
+            city: address.city,
+            state: address.state,
+            pinCode: address.pinCode || "",
+            country: address.country || "India",
+            coordinates: coordinates,
+            isDefault: false,
+         });
+
+         console.log('Address saved successfully:', newAddress);
+
+         // Refresh addresses list
+         const addresses = await addressesApi.getAddresses();
+         setSavedAddresses(addresses || []);
+         if (newAddress?.id) {
+            setSelectedSavedAddressId(newAddress.id);
+         }
+
+         // Update the location in the form
+         onChange({
+            address: address.address,
+            city: address.city,
+            state: address.state,
+            pinCode: address.pinCode,
+            country: address.country,
+            coordinates: coordinates,
+         });
+         onCoordinatesChange?.(coordinates);
+
+         setPendingAddressToBeSaved(null);
+         toast.success(`Address saved as ${selectedAddressType}`);
+      } catch (error) {
+         console.error('Failed to save address:', error);
+         toast.error("Could not save address");
+      }
+   };
+
+
+   const getSavedAddressText = (address: SavedAddress) =>
+      [
+         address.addressLine1,
+         address.addressLine2,
+         address.city,
+         address.state,
+         address.pinCode,
+      ]
+         .filter(Boolean)
+         .join(", ");
 
    return (
       <div className="space-y-4">
-         {/* Address Input with Suggestions */}
-         <div className="relative">
-            <div className="relative">
-               <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-               <Input
-                  value={addressInput}
-                  onChange={(e) => handleAddressInputChange(e.target.value)}
-                  onFocus={() =>
-                     suggestions.length > 0 && setShowSuggestions(true)
-                  }
-                  onBlur={() =>
-                     setTimeout(() => setShowSuggestions(false), 300)
-                  }
-                  onKeyDown={(e) => {
-                     if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleAddressSearch();
-                     }
-                  }}
-                  placeholder="Enter your address"
-                  className="h-10 text-sm pl-12 pr-4"
-               />
-            </div>
+         {/* Saved Addresses Section - Always Visible */}
+         {savedAddresses.length > 0 && (
+            <div className="space-y-2">
+               <label className="block text-xs font-medium text-gray-700 uppercase tracking-wide">
+                  Your Saved Addresses
+               </label>
+               <div className="grid grid-cols-1 gap-2">
+                  {savedAddresses.map((address) => {
+                     const addressText = getSavedAddressText(address);
+                     const isSelected =
+                        selectedSavedAddressId === address.id ||
+                        (value?.address && value.address === addressText);
 
-            {/* Address Suggestions Dropdown */}
-            {showSuggestions && suggestions.length > 0 && (
-               <div className="absolute z-20 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
-                  {isSearching && (
-                     <div className="px-4 py-3 text-center text-sm text-gray-500">
-                        <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
-                        Searching...
-                     </div>
-                  )}
-                  {!isSearching &&
-                     suggestions.map((suggestion, index) => (
-                        <button
-                           key={suggestion.place_id || index}
-                           type="button"
-                           className="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 transition-colors flex items-start gap-3"
-                           onClick={() => handleSuggestionClick(suggestion)}
-                        >
-                           <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                     return (
+                     <button
+                        key={address.id}
+                        type="button"
+                        onClick={() => handleSelectSavedAddress(address)}
+                        aria-pressed={isSelected}
+                        className={cn(
+                           "w-full px-3 py-2.5 text-left border rounded-lg transition-all group",
+                           isSelected
+                              ? "border-primary-600 bg-primary-50 shadow-sm ring-1 ring-primary-200"
+                              : "border-gray-200 hover:border-primary-500 hover:bg-primary-50/50"
+                        )}
+                     >
+                        <div className="flex items-start gap-2">
+                           <Home
+                              className={cn(
+                                 "w-4 h-4 mt-0.5 shrink-0",
+                                 isSelected
+                                    ? "text-primary-700"
+                                    : "text-gray-400 group-hover:text-primary-600"
+                              )}
+                           />
                            <div className="flex-1 min-w-0">
-                              <div className="text-gray-900 text-sm font-medium">
-                                 {suggestion.main_text}
+                              <div className="flex items-center gap-2 mb-0.5">
+                                 <span className={cn(
+                                    "text-sm font-medium",
+                                    isSelected ? "text-primary-900" : "text-gray-900"
+                                 )}>
+                                    {address.label}
+                                 </span>
+                                 {isSelected && (
+                                    <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 bg-primary-100 text-primary-700 rounded font-medium">
+                                       <CheckCircle2 className="w-3 h-3" />
+                                       Selected
+                                    </span>
+                                 )}
+                                 {address.isDefault && (
+                                    <span className="text-[10px] px-1.5 py-0.5 bg-primary-100 text-primary-700 rounded font-medium">
+                                       Default
+                                    </span>
+                                 )}
                               </div>
-                              <div className="text-xs text-gray-500">
-                                 {suggestion.secondary_text}
-                              </div>
+                              <p className={cn(
+                                 "text-xs line-clamp-2",
+                                 isSelected ? "text-primary-800" : "text-gray-600"
+                              )}>
+                                 {addressText}
+                              </p>
                            </div>
-                        </button>
-                     ))}
-               </div>
-            )}
-         </div>
-
-         {/* Locate Me Button */}
-         <Button
-            type="button"
-            variant="outline"
-            className="w-full h-10 text-sm font-medium gap-2"
-            onClick={handleLocateMe}
-            disabled={isLoadingLocation}
-         >
-            {isLoadingLocation ? (
-               <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Detecting location...
-               </>
-            ) : (
-               <>
-                  <Navigation className="w-5 h-5" />
-                  Use my current location
-               </>
-            )}
-         </Button>
-
-         {/* Google Maps - Interactive */}
-         <div className="relative w-full h-64 bg-gray-100 rounded-lg border-2 border-gray-200 overflow-hidden">
-            {mapsApiKey ? (
-               <GoogleMapPicker
-                  center={mapCenter}
-                  markerPosition={markerPosition}
-                  onMarkerDragEnd={handleMarkerDrag}
-                  apiKey={mapsApiKey}
-               />
-            ) : (
-               <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center text-gray-500">
-                     <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-                     <p className="text-sm font-medium">Loading map...</p>
-                  </div>
-               </div>
-            )}
-         </div>
-
-         {/* Location Details Grid */}
-         {value.coordinates && (
-            <div className="grid grid-cols-2 md:gap-3 p-2 md:p-4 bg-blue-50 border border-blue-200 rounded-lg">
-               <div>
-                  <label className="text-[10px] md:text-xs font-medium text-gray-600">
-                     City
-                  </label>
-                  <p className="text-xs md:text-sm font-semibold text-gray-900 mt-0.5">
-                     {value.city || "—"}
-                  </p>
-               </div>
-               <div>
-                  <label className="text-[10px] md:text-xs font-medium text-gray-600">
-                     State
-                  </label>
-                  <p className="text-xs md:text-sm font-semibold text-gray-900 mt-0.5">
-                     {value.state || "—"}
-                  </p>
-               </div>
-               {value.pinCode && (
-                  <div>
-                     <label className="text-[10px] md:text-xs font-medium text-gray-600">
-                        Pin Code
-                     </label>
-                     <p className="text-xs md:text-sm font-semibold text-gray-900 mt-0.5">
-                        {value.pinCode}
-                     </p>
-                  </div>
-               )}
-               <div>
-                  <label className="text-[10px] md:text-xs font-medium text-gray-600">
-                     Coordinates
-                  </label>
-                  <p className="text-xs md:text-sm font-mono text-gray-700 mt-0.5">
-                     {value.coordinates[1].toFixed(4)},{" "}
-                     {value.coordinates[0].toFixed(4)}
-                  </p>
+                        </div>
+                     </button>
+                     );
+                  })}
                </div>
             </div>
          )}
 
-         {/* Help Text */}
-         <p className="text-xs text-gray-500">
-            💡 Tip: Use "Locate Me" for accurate GPS coordinates, or type your
-            address for manual entry
-         </p>
+         {/* Add New Address Button */}
+         <Button
+            type="button"
+            onClick={handleAddNewAddressClick}
+            className="w-full h-10 gap-2 bg-primary-600 text-white hover:bg-primary-700"
+         >
+            <Plus className="w-4 h-4" />
+            {showAddNewAddressForm ? "Address Form Below" : "Add New Address"}
+         </Button>
+
+         {/* Conditional Form - Only shown when "Add New Address" is clicked */}
+         {showAddNewAddressForm && (
+            <div className="space-y-4 pt-4 border-t border-gray-200">
+               <button
+                  type="button"
+                  onClick={() => {
+                     setShowAddNewAddressForm(false);
+                     setSuggestions([]);
+                     setShowSuggestions(false);
+                  }}
+                  className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 -mt-2 mb-2"
+               >
+                  <X className="w-4 h-4" />
+                  Hide Address Form
+               </button>
+
+               {/* Address Input with Suggestions */}
+               <div className="relative">
+                  <div className="relative">
+                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                     <Input
+                        value={addressInput}
+                        onChange={(e) => handleAddressInputChange(e.target.value)}
+                        onFocus={() =>
+                           suggestions.length > 0 && setShowSuggestions(true)
+                        }
+                        onBlur={() =>
+                           setTimeout(() => setShowSuggestions(false), 300)
+                        }
+                        onKeyDown={(e) => {
+                           if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleAddressSearch();
+                           }
+                        }}
+                        placeholder="Search for an address..."
+                        className="h-10 text-sm pl-12 pr-4"
+                     />
+                  </div>
+
+                  {/* Address Suggestions Dropdown */}
+                  {showSuggestions && suggestions.length > 0 && (
+                     <div className="absolute z-20 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+                        {isSearching && (
+                           <div className="px-4 py-3 text-center text-sm text-gray-500">
+                              <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
+                              Searching...
+                           </div>
+                        )}
+                        {!isSearching &&
+                           suggestions.map((suggestion, index) => (
+                              <button
+                                 key={suggestion.place_id || index}
+                                 type="button"
+                                 className="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 transition-colors flex items-start gap-3"
+                                 onClick={() => handleSuggestionClick(suggestion)}
+                              >
+                                 <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                                 <div className="flex-1 min-w-0">
+                                    <div className="text-gray-900 text-sm font-medium">
+                                       {suggestion.main_text}
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                       {suggestion.secondary_text}
+                                    </div>
+                                 </div>
+                              </button>
+                           ))}
+                     </div>
+                  )}
+               </div>
+
+               {/* Locate Me Button */}
+               <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-10 text-sm font-medium gap-2"
+                  onClick={handleLocateMe}
+                  disabled={isLoadingLocation}
+               >
+                  {isLoadingLocation ? (
+                     <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Detecting location...
+                     </>
+                  ) : (
+                     <>
+                        <Navigation className="w-5 h-5" />
+                        Use my current location
+                     </>
+                  )}
+               </Button>
+
+               {/* Google Maps - Interactive */}
+               <div className="relative w-full h-64 bg-gray-100 rounded-lg border-2 border-gray-200 overflow-hidden">
+                  {mapsApiKey ? (
+                     <GoogleMapPicker
+                        center={mapCenter}
+                        markerPosition={markerPosition}
+                        onMarkerDragEnd={handleMarkerDrag}
+                        apiKey={mapsApiKey}
+                     />
+                  ) : (
+                     <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-center text-gray-500">
+                           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+                           <p className="text-sm font-medium">Loading map...</p>
+                        </div>
+                     </div>
+                  )}
+               </div>
+
+               {pendingAddressToBeSaved && (
+                  <div className="rounded-lg border border-primary-200 bg-primary-50 p-3 space-y-3">
+                     <div className="space-y-1">
+                        <p className="text-sm font-semibold text-primary-900">Use this location?</p>
+                        <p className="text-xs text-primary-800 line-clamp-2">
+                           {pendingAddressToBeSaved.address.address}
+                        </p>
+                        <p className="text-xs text-primary-700">
+                           {[pendingAddressToBeSaved.address.city, pendingAddressToBeSaved.address.state]
+                              .filter(Boolean)
+                              .join(", ")}
+                           {pendingAddressToBeSaved.address.pinCode
+                              ? `, PIN: ${pendingAddressToBeSaved.address.pinCode}`
+                              : ""}
+                        </p>
+                     </div>
+
+                     <div className="grid grid-cols-3 gap-2">
+                        {["Home", "Work", "Other"].map((type) => (
+                           <button
+                              key={type}
+                              type="button"
+                              onClick={() => setSelectedAddressType(type as "Home" | "Work" | "Other")}
+                              className={cn(
+                                 "px-3 py-2 rounded-lg border text-sm font-medium transition-all",
+                                 selectedAddressType === type
+                                    ? "border-primary-600 bg-white text-primary-700"
+                                    : "border-primary-200 bg-primary-50 text-primary-800 hover:border-primary-300"
+                              )}
+                           >
+                              {type}
+                           </button>
+                        ))}
+                     </div>
+
+                     <div className="flex justify-end gap-2">
+                        <Button type="button" variant="outline" onClick={handleUseDraggedAddress}>
+                           Use This
+                        </Button>
+                        <Button
+                           type="button"
+                           onClick={handleSaveSelectedAddress}
+                           className="bg-primary-600 text-white hover:bg-primary-700"
+                        >
+                           Save This
+                        </Button>
+                     </div>
+                  </div>
+               )}
+            </div>
+         )}
       </div>
    );
 }

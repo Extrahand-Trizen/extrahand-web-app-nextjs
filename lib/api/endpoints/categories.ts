@@ -72,6 +72,7 @@ export interface CategoriesListItem {
    heroTitle: string;
    heroDescription: string;
    isPublished?: boolean;
+   categoryType?: string;
    subcategories?: Subcategory[];
 }
 
@@ -92,8 +93,10 @@ export const categoriesApi = {
 
       if (options.includeUnpublished) return categories;
 
-      // Only return categories that are published (treat missing flag as published)
-      return categories.filter((cat) => cat.isPublished !== false);
+      // Only return categories that are published
+      return categories.filter(
+         (cat) => cat.isPublished === true || cat.status === "PUBLISHED"
+      );
    },
 
    /**
@@ -121,7 +124,9 @@ export const categoriesApi = {
       if (!subcategories) return [];
 
       // Filter to only published subcategories (if the API returns all)
-      return subcategories.filter((sub: any) => sub.isPublished !== false);
+      return subcategories.filter(
+         (sub: any) => sub.isPublished === true || sub.status === "PUBLISHED"
+      );
    },
 
    /**

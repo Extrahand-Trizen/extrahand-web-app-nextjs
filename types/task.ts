@@ -8,6 +8,8 @@ export interface Task {
   title: string;
   description: string;
   category: string;
+  categorySlug?: string;
+  categoryLabel?: string;
   subcategory?: string;
   budget: number | { amount: number; currency: string; negotiable: boolean };
   budgetType: 'fixed' | 'hourly' | 'negotiable';
@@ -25,7 +27,11 @@ export interface Task {
   priority: 'low' | 'normal' | 'high';
   requesterId: string;
   creatorUid?: string; // Firebase UID of task creator
+  requesterUid?: string; // Firebase UID of requester (for badge fetching)
   requesterName: string;
+  requesterPhotoURL?: string | null; // Poster's profile photo URL (enriched by gateway)
+  requesterBadge?: 'none' | 'basic' | 'verified' | 'trusted' | 'elite'; // Poster's verification badge
+  requesterVerificationTier?: number; // Poster's verification tier (0-3)
   assignedTo?: string;
   assigneeUid?: string;
   assignedToName?: string;
@@ -35,7 +41,22 @@ export interface Task {
   scheduledDate?: Date;
   scheduledTime?: string;
   flexibility: 'strict' | 'flexible' | 'anytime';
+  recurring?: {
+    enabled: boolean;
+    frequency: 'daily' | 'weekly' | 'custom';
+    startDate?: Date;
+    endDate?: Date;
+    requireApproval?: boolean;
+    minCommitment?: number;
+  };
+  schedule?: Array<{
+    date: Date;
+    status: 'open' | 'reserved' | 'assigned' | 'completed' | 'cancelled';
+    assigneeId?: string | null;
+    assigneeUid?: string | null;
+  }>;
   requirements?: string[];
+  images?: string[];
   attachments?: Array<{
     type: string;
     url: string;
@@ -63,6 +84,12 @@ export interface Task {
   completionRejectedReason?: string;
   completionApprovedAt?: Date;
   completionRejectedAt?: Date;
+  feedback?: Array<{
+    _id?: string;
+    message: string;
+    createdById: string;
+    createdAt: Date;
+  }>;
   createdAt: Date;
   updatedAt: Date;
 }

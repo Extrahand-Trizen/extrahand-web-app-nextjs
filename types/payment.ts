@@ -88,10 +88,10 @@ export interface FeeBreakdown {
   platformFee: number;
   platformFeeGst: number;
   platformFeeTotal: number;
-  processingFeeShare: number;
-  processingFeeGst: number;
-  processingFeeTotal: number;
-  totalAmount: number; // Amount poster pays (task + all fees)
+  processingFeeShare?: number;
+  processingFeeGst?: number;
+  processingFeeTotal?: number;
+  totalAmount: number; // Amount poster pays (task + fees)
   metadata?: {
     platformFeePercentage?: number;
     processingFeeSplitRatio?: number;

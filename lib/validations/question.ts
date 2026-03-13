@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { containsPhoneNumber, PHONE_NUMBER_ERROR } from "@/lib/utils/phoneDetection";
 
 /**
  * Question validation schemas
@@ -11,7 +12,8 @@ export const createQuestionSchema = z.object({
       .string()
       .min(10, "Question must be at least 10 characters")
       .max(1000, "Question must be less than 1000 characters")
-      .trim(),
+      .trim()
+      .refine((val) => !containsPhoneNumber(val), PHONE_NUMBER_ERROR),
    isPublic: z.boolean(),
 });
 
@@ -20,7 +22,8 @@ export const answerQuestionSchema = z.object({
       .string()
       .min(10, "Answer must be at least 10 characters")
       .max(1000, "Answer must be less than 1000 characters")
-      .trim(),
+      .trim()
+      .refine((val) => !containsPhoneNumber(val), PHONE_NUMBER_ERROR),
 });
 
 export type CreateQuestionFormData = z.output<typeof createQuestionSchema>;

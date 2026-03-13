@@ -35,3 +35,6 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   );
 };
 
+// Default export for backward compatibility
+export default LoadingSpinner;
+

@@ -104,6 +104,8 @@ export interface Review {
    isVerified: boolean;
    helpful: number;
    notHelpful: number;
+   helpfulVoters?: string[];    // profile ObjectId strings
+   notHelpfulVoters?: string[]; // profile ObjectId strings
    response?: {
       comment: string;
       timestamp: Date;

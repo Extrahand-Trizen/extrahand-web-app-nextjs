@@ -83,6 +83,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             setUserData(userData);
             storeLogin({ user: userData });
 
+            // Ensure the lightweight auth cookie is present so middleware
+            // immediately treats the user as authenticated on all routes.
+            try {
+               if (typeof document !== "undefined") {
+                  const hasCookie = document.cookie
+                     .split("; ")
+                     .some((c) => c.startsWith("extrahand_auth=1"));
+                  if (!hasCookie) {
+                     const maxAge = 30 * 24 * 60 * 60; // 30 days
+                     document.cookie = `extrahand_auth=1; Path=/; Max-Age=${maxAge}; SameSite=Lax`;
+                  }
+               }
+            } catch {
+               // Best-effort only; don't block login on cookie issues
+            }
+
             // Save session data
             sessionManager.saveSession({
                isAuthenticated: true,
@@ -108,6 +124,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
          // Clear session data
          sessionManager.clearSession();
          storeLogout();
+         
+         // Clear client-side auth cookie
+         document.cookie = "extrahand_auth=; path=/; max-age=0; SameSite=Lax";
 
          // Clear user state
          setCurrentUser(null);
@@ -125,6 +144,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
          // Even if Firebase signOut fails, clear local session
          sessionManager.clearSession();
          storeLogout();
+         // Clear client-side auth cookie
+         document.cookie = "extrahand_auth=; path=/; max-age=0; SameSite=Lax";
          setCurrentUser(null);
          setUserData(null);
       }

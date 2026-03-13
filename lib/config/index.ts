@@ -15,29 +15,26 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || PRODUCTION_A
 export const getApiBaseUrl = (): string => {
   // If environment variable is set, use it (allows override for local development)
   if (process.env.NEXT_PUBLIC_API_BASE_URL) {
-    console.log('🔧 Using API URL from environment variable:', process.env.NEXT_PUBLIC_API_BASE_URL);
     return process.env.NEXT_PUBLIC_API_BASE_URL;
   }
   
   // Always default to production backend
-  console.log('🔧 Using production backend:', PRODUCTION_API_URL);
   return PRODUCTION_API_URL;
 };
 
-// Environment detection - development by default for local development
-export const isDevelopment = (() => {
+// Simple helper to detect client-side development environment
+export const isDevClient = (): boolean => {
+  if (typeof window === 'undefined') {
+    // On the server, rely on NODE_ENV / NEXT_PUBLIC_ENV only
+    return process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_ENV === 'development';
+  }
   const envCheck = process.env.NEXT_PUBLIC_ENV === 'development';
-  const hostnameCheck = typeof window !== 'undefined' && window.location.hostname === 'localhost';
-  const result = envCheck || hostnameCheck;
-  console.log('🔧 isDevelopment check:', {
-    NEXT_PUBLIC_ENV: process.env.NEXT_PUBLIC_ENV,
-    hostname: typeof window !== 'undefined' ? window.location.hostname : 'server',
-    envCheck,
-    hostnameCheck,
-    result
-  });
-  return result;
-})();
+  const hostnameCheck = window.location.hostname === 'localhost';
+  return envCheck || hostnameCheck;
+};
+
+// Environment detection - development by default for local development
+export const isDevelopment = isDevClient();
 
 // CORS configuration for different environments
 export const CORS_CONFIG = {

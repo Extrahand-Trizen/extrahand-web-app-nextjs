@@ -5,7 +5,7 @@
  * Summary view of account status, stats, and quick actions
  */
 
-import React from "react";
+import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -21,21 +21,59 @@ import {
    Shield,
    Briefcase,
    MapPin,
+   Award,
+   Share2,
 } from "lucide-react";
 import { UserProfile } from "@/types/user";
 import { ProfileSection } from "@/types/profile";
+import { ShareModal } from "@/components/shared/ShareModal";
+import { toast } from "sonner";
 
 interface ProfileOverviewProps {
    user: UserProfile;
    onNavigate: (section: ProfileSection) => void;
+   loading?: boolean;
 }
 
-export function ProfileOverview({ user, onNavigate }: ProfileOverviewProps) {
+export function ProfileOverview({ user, onNavigate, loading }: ProfileOverviewProps) {
+   const [shareOpen, setShareOpen] = useState(false);
+
+   // Generate the public profile URL
+   const getProfileUrl = () => {
+      if (typeof window !== "undefined") {
+         const userId = user.uid || user._id;
+         return `${window.location.origin}/profile/${userId}`;
+      }
+      return "";
+   };
+
+   const handleShare = async () => {
+      const url = getProfileUrl();
+
+      if (navigator.share) {
+         try {
+            await navigator.share({
+               title: `${user.name}'s Profile on ExtraHand`,
+               text: `Check out ${user.name}'s profile on ExtraHand`,
+               url: url,
+            });
+         } catch (err) {
+            console.log("Share cancelled");
+         }
+      } else {
+         setShareOpen(true);
+      }
+   };
+
    const completionPercentage = calculateCompletionPercentage(user);
    const verificationItems = getVerificationStatus(user);
    const verifiedCount = verificationItems.filter(
       (v) => v.status === "verified"
    ).length;
+
+   if (loading) {
+      return <ProfileOverviewSkeleton />;
+   }
 
    return (
       <div className="space-y-4 sm:space-y-6">
@@ -105,12 +143,21 @@ export function ProfileOverview({ user, onNavigate }: ProfileOverviewProps) {
                         View Profile
                      </Button>
                      <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         onClick={() => onNavigate("edit-profile")}
                         className="text-xs h-8 px-3"
                      >
                         Edit
+                     </Button>
+                     <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleShare}
+                        className="text-xs h-8 px-3"
+                     >
+                        <Share2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1.5" />
+                        <span className="hidden sm:inline">Share</span>
                      </Button>
                   </div>
                </div>
@@ -203,6 +250,12 @@ export function ProfileOverview({ user, onNavigate }: ProfileOverviewProps) {
                   onClick={() => onNavigate("verifications")}
                />
                <QuickActionItem
+                  icon={<Award className="w-4 h-4 sm:w-5 sm:h-5" />}
+                  title="View Badges"
+                  description="Check your reputation and badges"
+                  onClick={() => onNavigate("badges")}
+               />
+               <QuickActionItem
                   icon={<CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />}
                   title="Update Preferences"
                   description="Set your task categories and availability"
@@ -225,8 +278,8 @@ export function ProfileOverview({ user, onNavigate }: ProfileOverviewProps) {
             <div className="space-y-3">
                <StatusRow
                   label="Account Status"
-                  value={user.isActive ? "Active" : "Inactive"}
-                  status={user.isActive ? "success" : "warning"}
+                  value="Active"
+                  status="success"
                />
                <StatusRow
                   label="Member Since"
@@ -239,6 +292,65 @@ export function ProfileOverview({ user, onNavigate }: ProfileOverviewProps) {
                   status="neutral"
                />
             </div>
+         </div>
+
+         {/* Share Modal */}
+         <ShareModal
+            isOpen={shareOpen}
+            onClose={() => setShareOpen(false)}
+            title="Profile"
+            description={`Share ${user.name}'s profile`}
+            url={getProfileUrl()}
+            shareText={`Check out ${user.name}'s profile on ExtraHand!`}
+         />
+      </div>
+   );
+}
+
+// Lightweight skeleton for initial profile load
+function ProfileOverviewSkeleton() {
+   return (
+      <div className="space-y-4 sm:space-y-6">
+         {/* Header skeleton */}
+         <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+               <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gray-200 animate-pulse" />
+               <div className="flex-1 min-w-0 space-y-2">
+                  <div className="h-4 sm:h-5 w-40 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-3 w-32 bg-gray-200 rounded animate-pulse" />
+                  <div className="flex gap-2 mt-3">
+                     <div className="h-7 w-20 bg-gray-200 rounded animate-pulse" />
+                     <div className="h-7 w-16 bg-gray-200 rounded animate-pulse" />
+                     <div className="h-7 w-16 bg-gray-200 rounded animate-pulse" />
+                  </div>
+               </div>
+            </div>
+         </div>
+
+         {/* Profile completion skeleton */}
+         <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-3">
+               <div className="space-y-1">
+                  <div className="h-3 w-32 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-2 w-40 bg-gray-100 rounded animate-pulse" />
+               </div>
+               <div className="h-4 w-10 bg-gray-200 rounded animate-pulse" />
+            </div>
+            <div className="h-2 w-full bg-gray-100 rounded animate-pulse" />
+         </div>
+
+         {/* Stats grid skeleton */}
+         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            {Array.from({ length: 4 }).map((_, idx) => (
+               <div
+                  key={idx}
+                  className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 space-y-2"
+               >
+                  <div className="h-3 w-16 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-5 w-10 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-2 w-20 bg-gray-100 rounded animate-pulse" />
+               </div>
+            ))}
          </div>
       </div>
    );

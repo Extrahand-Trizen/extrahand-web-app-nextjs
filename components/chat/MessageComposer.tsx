@@ -89,7 +89,10 @@ export function MessageComposer({
 
    return (
       <div className="p-4">
-         <div className="flex items-end gap-3">
+         <form
+            onSubmit={(e) => e.preventDefault()}
+            className="flex items-end gap-3"
+         >
             {/* Attachment */}
             <Button
                type="button"
@@ -128,7 +131,7 @@ export function MessageComposer({
                   <Send className="w-5 h-5" />
                )}
             </Button>
-         </div>
+         </form>
       </div>
    );
 }

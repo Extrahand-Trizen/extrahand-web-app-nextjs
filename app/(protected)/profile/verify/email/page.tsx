@@ -8,6 +8,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
    InputOTP,
@@ -18,7 +19,6 @@ import {
    Mail,
    Lock,
    AlertCircle,
-   ArrowLeft,
    CheckCircle2,
    Shield,
    Clock,
@@ -124,12 +124,21 @@ export default function EmailVerificationPage() {
                verificationId: response.data.verificationId,
             }));
             setOtpTimer(response.data.expiresInMinutes * 60);
+            toast.success("Verification code sent", {
+               description: `Code sent to ${state.email}. It will expire in ${response.data.expiresInMinutes} minutes.`,
+            });
          } else {
             setState((p) => ({ ...p, error: response.message || "Failed to send verification code" }));
+            toast.error("Failed to send code", {
+               description: response.message || "Please try again",
+            });
          }
       } catch (err: unknown) {
          const errorMessage = err instanceof Error ? err.message : "Failed to send verification code";
          setState((p) => ({ ...p, error: errorMessage }));
+         toast.error("Failed to send code", {
+            description: errorMessage,
+         });
       } finally {
          setIsLoading(false);
       }
@@ -199,12 +208,21 @@ export default function EmailVerificationPage() {
                verificationId: response.data.verificationId,
                error: undefined,
             }));
+            toast.success("Verification code resent", {
+               description: `New code sent to ${state.email}. It will expire in ${response.data.expiresInMinutes} minutes.`,
+            });
          } else {
             setState((p) => ({ ...p, error: response.message || "Failed to resend code" }));
+            toast.error("Failed to resend code", {
+               description: response.message || "Please try again",
+            });
          }
       } catch (err: unknown) {
          const errorMessage = err instanceof Error ? err.message : "Failed to resend code";
          setState((p) => ({ ...p, error: errorMessage }));
+         toast.error("Failed to resend code", {
+            description: errorMessage,
+         });
       } finally {
          setIsLoading(false);
       }
@@ -222,18 +240,9 @@ export default function EmailVerificationPage() {
          <header className="sticky top-0 z-10 bg-white/90 backdrop-blur-lg border-b border-slate-100">
             <div className="max-w-5xl mx-auto px-4 sm:px-6">
                <div className="flex items-center h-14 sm:h-16">
-                  {showBack && (
-                     <button
-                        onClick={handleBack}
-                        className="p-2 -ml-2 rounded-full hover:bg-slate-100 transition-colors"
-                     >
-                        <ArrowLeft className="w-5 h-5 text-slate-600" />
-                     </button>
-                  )}
                   <h1 className="flex-1 text-center text-sm sm:text-base font-semibold text-slate-900">
                      Email Verification
                   </h1>
-                  {showBack && <div className="w-9" />}
                </div>
                {!["success", "error"].includes(state.step) && (
                   <div className="pb-3">
@@ -428,7 +437,7 @@ export default function EmailVerificationPage() {
                            </button>
                         )}
                      </div>
-                     {state.attemptsRemaining < 3 && (
+                     {state.attemptsRemaining < 5 && (
                         <p className="text-xs text-center text-amber-600 mt-2">
                            {state.attemptsRemaining} attempt
                            {state.attemptsRemaining > 1 ? "s" : ""} left

@@ -20,6 +20,8 @@ import {
    ChevronRight,
    MapPin,
    BriefcaseBusiness,
+   TrendingUp,
+   Award,
 } from "lucide-react";
 import { ProfileSection } from "@/types/profile";
 
@@ -79,6 +81,24 @@ const navItems: ProfileNavItem[] = [
       icon: <Bell className="w-5 h-5" />,
       description: "Communication",
    },
+   {
+      id: "security",
+      label: "Security",
+      icon: <Lock className="w-5 h-5" />,
+      description: "Sessions & safety",
+   },
+   {
+      id: "referrals",
+      label: "Referral Program",
+      icon: <TrendingUp className="w-5 h-5" />,
+      description: "Earn & share",
+   },
+   {
+      id: "badges",
+      label: "Badges",
+      icon: <Award className="w-5 h-5" />,
+      description: "Your reputation",
+   },
 ];
 
 interface ProfileSidebarProps {
@@ -93,8 +113,8 @@ export function ProfileSidebar({
    className,
 }: ProfileSidebarProps) {
    return (
-      <nav className={cn("w-64 bg-white border-r border-gray-200", className)}>
-         <div className="p-4">
+      <nav className={cn("w-64 min-h-screen bg-white border-r border-gray-200 flex flex-col", className)}>
+         <div className="p-4 shrink-0">
             <h2 className="text-lg font-semibold text-gray-900 mb-1">
                Account
             </h2>
@@ -103,7 +123,7 @@ export function ProfileSidebar({
             </p>
          </div>
 
-         <div className="px-2 pb-4">
+         <div className="px-2 pb-4 flex-1">
             {navItems.map((item) => (
                <button
                   key={item.id}

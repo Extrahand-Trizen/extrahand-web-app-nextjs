@@ -54,6 +54,16 @@ export default function AadhaarVerificationPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showMismatchModal, setShowMismatchModal] = useState(false);
 
+  // Pre-fill mobile number from user data when moving to input step
+  React.useEffect(() => {
+    if (step === "input" && userData?.phone && !mobileNumber) {
+      const normalized = normalizeProfilePhone(userData.phone);
+      if (normalized) {
+        setMobileNumber(normalized);
+      }
+    }
+  }, [step, userData?.phone, mobileNumber]);
+
   const handleBack = () => {
     if (step === "consent") {
       router.push("/profile?section=verifications");
@@ -283,21 +293,22 @@ export default function AadhaarVerificationPage() {
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 sm:p-6 space-y-4">
               <label className="block">
                 <span className="text-sm font-medium text-slate-700">Mobile Number</span>
-                <input
-                  type="tel"
-                  value={mobileNumber}
-                  onChange={(e) => {
-                    setMobileNumber(formatMobile(e.target.value));
-                    setError(undefined);
-                  }}
-                  placeholder="10-digit mobile number"
-                  maxLength={10}
-                  inputMode="numeric"
-                  className={cn(
-                    "mt-2 w-full px-4 py-3.5 text-lg font-mono border rounded-xl focus:outline-none focus:ring-2 transition-all",
-                    error ? "border-red-300 focus:ring-red-500" : "border-slate-200 focus:ring-slate-900"
-                  )}
-                />
+                <div className="relative">
+                  <input
+                    type="tel"
+                    value={mobileNumber}
+                    readOnly
+                    className={cn(
+                      "mt-2 w-full px-4 py-3.5 text-lg font-mono border rounded-xl transition-all bg-slate-50 cursor-not-allowed",
+                      error ? "border-red-300" : "border-slate-200"
+                    )}
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs text-slate-500">
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    <span>Registered</span>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500 mt-1.5">This is your registered mobile number</p>
               </label>
               {error && (
                 <div className="flex items-center gap-2 text-sm text-red-600">
@@ -321,7 +332,7 @@ export default function AadhaarVerificationPage() {
 
             <Button
               onClick={handleInitiate}
-              disabled={isLoading || mobileNumber.replace(/\D/g, "").length !== 10}
+              disabled={isLoading || !mobileNumber}
               className="w-full h-12 text-sm font-medium bg-slate-900 hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-500 rounded-xl"
             >
               {isLoading ? (

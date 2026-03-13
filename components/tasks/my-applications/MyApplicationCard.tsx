@@ -58,6 +58,26 @@ export function MyApplicationCard({
 
    // Status badge styling
    const getStatusBadge = () => {
+      // Show completed status if task is completed, regardless of application status
+      if (task?.status === "completed" && application.status === "accepted") {
+         return (
+            <span className="inline-flex items-center px-2 md:px-2.5 py-0.5 rounded-full text-[9px] md:text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+               <CheckCircle className="w-3 h-3 mr-1" />
+               Completed
+            </span>
+         );
+      }
+
+      // Show cancelled status if task is cancelled, regardless of application status
+      if (task?.status === "cancelled") {
+         return (
+            <span className="inline-flex items-center px-2 md:px-2.5 py-0.5 rounded-full text-[9px] md:text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
+               <XCircle className="w-3 h-3 mr-1" />
+               Cancelled
+            </span>
+         );
+      }
+
       switch (application.status) {
          case "pending":
             return (
@@ -94,6 +114,20 @@ export function MyApplicationCard({
       typeof application.taskId === "string"
          ? application.taskId
          : application.taskId._id;
+
+   const isTaskInNonWithdrawableState =
+      !!task &&
+      [
+         "assigned",
+         "started",
+         "in_progress",
+         "review",
+         "completed",
+         "cancelled",
+      ].includes(task.status);
+
+   const canWithdraw =
+      application.status === "pending" && !isTaskInNonWithdrawableState;
 
    return (
       <div className="group bg-white rounded-lg border-2 transition-all hover:shadow-md p-3 md:p-4 border-secondary-200 hover:border-primary-300">
@@ -220,7 +254,7 @@ export function MyApplicationCard({
                <span className="hidden sm:inline">View Task</span>
                <span className="sm:hidden">View</span>
             </Button>
-            {application.status === "pending" && onWithdraw && (
+            {canWithdraw && onWithdraw && (
                <Button
                   variant="outline"
                   size="sm"

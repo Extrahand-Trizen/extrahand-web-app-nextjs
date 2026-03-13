@@ -14,8 +14,6 @@ import {
    Monitor,
    Globe,
    LogOut,
-   Trash2,
-   AlertTriangle,
    Shield,
 } from "lucide-react";
 import {
@@ -31,7 +29,6 @@ interface SecuritySectionProps {
    onRevokeSession: (sessionId: string) => Promise<void>;
    onRevokeAllSessions: () => Promise<void>;
    onUpdatePrivacy: (settings: PrivacySettings) => Promise<void>;
-   onDeleteAccount: () => Promise<void>;
 }
 
 const defaultSecurity: SecuritySettings = {
@@ -56,7 +53,6 @@ export function SecuritySection({
    onRevokeSession,
    onRevokeAllSessions,
    onUpdatePrivacy,
-   onDeleteAccount,
 }: SecuritySectionProps) {
    return (
       <div className="max-w-4xl space-y-4 sm:space-y-6">
@@ -68,6 +64,19 @@ export function SecuritySection({
             <p className="text-xs sm:text-sm text-gray-500 mt-1">
                Manage your sessions and privacy settings
             </p>
+         </div>
+
+         {/* Coming Soon Banner */}
+         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
+            <Shield className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+               <h3 className="text-sm font-semibold text-amber-900">
+                  🚧 Security Features In Development
+               </h3>
+               <p className="text-xs text-amber-700 mt-1">
+                  Some security features like Two-Factor Authentication are currently being developed. Core privacy settings are fully functional.
+               </p>
+            </div>
          </div>
 
          {/* Two-Factor Auth */}
@@ -116,9 +125,6 @@ export function SecuritySection({
 
          {/* Privacy Settings */}
          <PrivacySection privacy={privacy} onUpdate={onUpdatePrivacy} />
-
-         {/* Danger Zone */}
-         <DangerZone onDeleteAccount={onDeleteAccount} />
       </div>
    );
 }
@@ -332,78 +338,6 @@ function PrivacyToggle({
             onCheckedChange={onChange}
             className="data-[state=checked]:bg-primary-600"
          />
-      </div>
-   );
-}
-
-interface DangerZoneProps {
-   onDeleteAccount: () => Promise<void>;
-}
-
-function DangerZone({ onDeleteAccount }: DangerZoneProps) {
-   const [showConfirm, setShowConfirm] = useState(false);
-
-   return (
-      <div className="bg-white rounded-lg border border-red-200">
-         <div className="px-4 py-3 sm:px-5 sm:py-4 border-b border-red-100">
-            <div className="flex items-center gap-2 sm:gap-3">
-               <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 shrink-0" />
-               <div>
-                  <h3 className="text-xs sm:text-sm font-medium text-gray-900">
-                     Danger Zone
-                  </h3>
-                  <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">
-                     Irreversible actions for your account
-                  </p>
-               </div>
-            </div>
-         </div>
-
-         <div className="px-4 py-3 sm:px-5 sm:py-4">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-               <div className="min-w-0 flex-1">
-                  <p className="text-xs sm:text-sm font-medium text-gray-900">
-                     Delete Account
-                  </p>
-                  <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">
-                     Permanently delete your account and all associated data
-                  </p>
-               </div>
-               {showConfirm ? (
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                     <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={async () => {
-                           await onDeleteAccount();
-                           setShowConfirm(false);
-                        }}
-                        className="flex-1 sm:flex-initial text-xs h-8"
-                     >
-                        <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                        Confirm Delete
-                     </Button>
-                     <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowConfirm(false)}
-                        className="flex-1 sm:flex-initial text-xs h-8"
-                     >
-                        Cancel
-                     </Button>
-                  </div>
-               ) : (
-                  <Button
-                     variant="outline"
-                     size="sm"
-                     className="text-red-600 border-red-200 hover:bg-red-50 text-xs h-8 px-3 w-full sm:w-auto"
-                     onClick={() => setShowConfirm(true)}
-                  >
-                     Delete Account
-                  </Button>
-               )}
-            </div>
-         </div>
       </div>
    );
 }

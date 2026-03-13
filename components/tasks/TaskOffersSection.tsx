@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Star, CheckCircle, MessageSquare } from "lucide-react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { Star, CheckCircle, MessageSquare, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import Image from "next/image";
 import {
    Select,
    SelectContent,
@@ -15,16 +18,22 @@ import { toast } from "sonner";
 
 import type { TaskApplication } from "@/types/application";
 import { applicationsApi } from "@/lib/api/endpoints/applications";
+import { taskDetailsQueryKeys } from "@/lib/queryKeys";
 import { PaymentConfirmationModal } from "@/components/payments/PaymentConfirmationModal";
 import { useAuth } from "@/lib/auth/context";
+import { getUserBadge } from "@/lib/api/badge";
+import { UserBadge, type BadgeType } from "@/components/ui/user-badge";
 
 interface TaskOffersSectionProps {
    taskId: string;
    isOwner?: boolean;
    onApplicationsCountChange?: (count: number) => void;
-   userProfile?: any | null;
+   userProfile?: Record<string, unknown> | null;
    onMakeOffer?: () => void;
    taskCategory?: string;
+   hasApplied?: boolean;
+   checkingApplication?: boolean;
+   onHasAppliedChange?: (hasApplied: boolean) => void;
 }
 
 
@@ -45,6 +54,16 @@ const getTimeAgo = (date: Date | string | undefined): string => {
    return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
 };
 
+const formatSelectedDates = (dates?: Array<Date | string>) => {
+   if (!dates || dates.length === 0) return null;
+   const formatted = dates
+      .map((value) => new Date(value))
+      .filter((d) => !Number.isNaN(d.getTime()))
+      .map((d) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" }));
+   if (formatted.length <= 3) return formatted.join(", ");
+   return `${formatted.slice(0, 3).join(", ")} +${formatted.length - 3}`;
+};
+
 export function TaskOffersSection({
    taskId,
    isOwner = false,
@@ -52,94 +71,175 @@ export function TaskOffersSection({
    userProfile = null,
    onMakeOffer,
    taskCategory,
+   hasApplied = false,
+   checkingApplication = false,
+   onHasAppliedChange,
 }: TaskOffersSectionProps) {
-   const [applications, setApplications] = useState<TaskApplication[]>([]);
-   const [loading, setLoading] = useState(true);
+   const applicationsQuery = useQuery({
+      queryKey: taskDetailsQueryKeys.applications(taskId),
+      queryFn: () => applicationsApi.getTaskApplications(taskId),
+      enabled: !!taskId,
+      staleTime: 30 * 1000, // 30 seconds - refresh more frequently
+      refetchOnMount: true, // Always refetch when component mounts
+   });
+
+   const applications = useMemo(
+      () => applicationsQuery.data?.applications ?? [],
+      [applicationsQuery.data?.applications]
+   );
+   const loading = applicationsQuery.isLoading;
+   const userProfileId = (userProfile as { _id?: string } | null)?._id;
+
    const [sortBy, setSortBy] = useState<"newest" | "price-low" | "rating">(
       "newest"
    );
    const [selectedApplication, setSelectedApplication] =
       useState<TaskApplication | null>(null);
    const [showPaymentModal, setShowPaymentModal] = useState(false);
+   const [applicantBadges, setApplicantBadges] = useState<Record<string, BadgeType>>({});
    const { currentUser } = useAuth();
+   const currentUid = currentUser?.uid;
+   const router = useRouter();
    const onApplicationsCountChangeRef = useRef(onApplicationsCountChange);
 
-   // Keep ref updated with latest callback
+   const toBadgeType = (value: string): BadgeType => {
+      const normalized = value.toLowerCase();
+      if (normalized === "basic" || normalized === "verified" || normalized === "trusted" || normalized === "elite") {
+         return normalized;
+      }
+      return "none";
+   };
+
+   const matchesCurrentUserApplication = useCallback((app: { applicantId?: unknown; applicantUid?: string }) => {
+      const applicantProfileId = String(app.applicantId ?? "");
+      const normalizedUserProfileId = String(
+         (userProfile as { _id?: string; id?: string; profileId?: string } | null)?._id ||
+            (userProfile as { _id?: string; id?: string; profileId?: string } | null)?.id ||
+            (userProfile as { _id?: string; id?: string; profileId?: string } | null)?.profileId ||
+            ""
+      );
+      const applicantUid = String(app.applicantUid ?? "");
+      const normalizedCurrentUid = String(currentUid ?? "");
+
+      return (
+         (normalizedUserProfileId !== "" && applicantProfileId === normalizedUserProfileId) ||
+         (normalizedCurrentUid !== "" && applicantUid === normalizedCurrentUid)
+      );
+   }, [userProfile, currentUid]);
+
    useEffect(() => {
       onApplicationsCountChangeRef.current = onApplicationsCountChange;
    }, [onApplicationsCountChange]);
 
    useEffect(() => {
-      const loadApplications = async () => {
-         try {
-            setLoading(true);
-            
-            // Fetch applications for this task
-            // Backend handles authorization: owners get all, taskers get only their own
-            const response = await applicationsApi.getTaskApplications(taskId);
-            
-            // Standardized response format: { applications: [...], pagination: {...} }
-            const apps = response.applications || [];
-            
-            // Show applications
-            setApplications(apps);
-         } catch (error: any) {
-            console.error("Error loading applications:", error);
-            setApplications([]);
-         } finally {
-            setLoading(false);
-         }
-      };
-
-      if (taskId) {
-         loadApplications();
-      }
-   }, [taskId]);
-
-   // Notify parent of count changes in a separate effect to avoid render issues
-   useEffect(() => {
-      // Defer the callback to avoid setState during render
       const timeoutId = setTimeout(() => {
          onApplicationsCountChangeRef.current?.(applications.length);
       }, 0);
       return () => clearTimeout(timeoutId);
    }, [applications.length]);
 
+   useEffect(() => {
+      let isCancelled = false;
+
+      async function fetchApplicantBadges() {
+         const applicantLookup = new Map<string, string>();
+
+         applications.forEach((app) => {
+            const applicantId = String(app.applicantId || "");
+            const lookupId = String(app.applicantUid || app.applicantId || "");
+            if (applicantId && lookupId && !applicantLookup.has(applicantId)) {
+               applicantLookup.set(applicantId, lookupId);
+            }
+         });
+
+         if (applicantLookup.size === 0) {
+            return;
+         }
+
+         const resolvedBadges = await Promise.all(
+            Array.from(applicantLookup.entries()).map(async ([applicantId, lookupId]) => {
+               try {
+                  const badgeData = await getUserBadge(lookupId);
+                  return [applicantId, toBadgeType(String(badgeData.currentBadge || "none"))] as const;
+               } catch {
+                  return [applicantId, "none" as BadgeType] as const;
+               }
+            })
+         );
+
+         if (!isCancelled) {
+            setApplicantBadges((prev) => ({
+               ...prev,
+               ...Object.fromEntries(resolvedBadges),
+            }));
+         }
+      }
+
+      fetchApplicantBadges();
+
+      return () => {
+         isCancelled = true;
+      };
+   }, [applications]);
+
+   // Notify parent when applications load (for hasApplied) – page also derives from same query; keep for any other consumers
+   useEffect(() => {
+      if (!onHasAppliedChange || !userProfile || !applicationsQuery.data) return;
+      const userApplication = applications.find((app) => matchesCurrentUserApplication(app));
+      onHasAppliedChange(!!userApplication);
+   }, [applicationsQuery.data, applications, userProfile, userProfileId, currentUid, onHasAppliedChange, matchesCurrentUserApplication]);
+
    const handleAcceptOffer = (application: TaskApplication) => {
       setSelectedApplication(application);
       setShowPaymentModal(true);
    };
 
-   const handlePaymentSuccess = async (escrowId: string, paymentId: string) => {
+   const handleRejectOffer = async (application: TaskApplication) => {
+      if (!window.confirm("Are you sure you want to reject this offer?")) {
+         return;
+      }
+
       try {
-         if (!selectedApplication) return;
-
-         // Update application status to accepted after payment
-         await applicationsApi.updateApplicationStatus(selectedApplication._id, {
-            status: "accepted" as any,
+         await applicationsApi.updateApplicationStatus(application._id, {
+            status: "rejected",
          });
 
-         toast.success("Payment successful!", {
-            description: "Task assigned to tasker. Money held in escrow.",
+         toast.success("Offer rejected", {
+            description: "The applicant has been notified.",
          });
 
-         // Update local state
-         setApplications((prev) =>
-            prev.map((app) =>
-               app._id === selectedApplication._id
-                  ? { ...app, status: "accepted" as const }
-                  : app.status === "pending"
-                  ? { ...app, status: "rejected" as const }
-                  : app
-            )
-         );
-
-         setSelectedApplication(null);
+         // Refetch applications to update the UI
+         await applicationsQuery.refetch();
       } catch (error) {
-         console.error("Error updating application:", error);
-         toast.error("Payment successful but failed to update task", {
-            description: "Please contact support if task doesn't update.",
+         console.error("Error rejecting application:", error);
+         toast.error("Failed to reject offer", {
+            description: "Please try again.",
          });
+      }
+   };
+
+   const handlePaymentSuccess = async () => {
+      const application = selectedApplication;
+      setSelectedApplication(null);
+      setShowPaymentModal(false);
+
+      toast.success("Payment successful!", {
+         description: "Task assigned to tasker. Money held in escrow.",
+      });
+
+      try {
+         if (application) {
+            // Update application status to accepted after payment
+            await applicationsApi.updateApplicationStatus(application._id, {
+               status: "accepted",
+            });
+         }
+      } catch (error) {
+         // Payment succeeded even if status update fails – silently log
+         console.error("Error updating application status after payment:", error);
+      } finally {
+         // Always redirect to the task tracking page after payment
+         router.push(`/tasks/${taskId}/track`);
       }
    };
 
@@ -161,15 +261,45 @@ export function TaskOffersSection({
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
    });
 
-   // Find accepted application to show prominently for task owners
-   const acceptedApplication = isOwner 
-      ? applications.find(app => app.status === "accepted")
-      : null;
+   // Find accepted applications to show prominently for task owners
+   const acceptedApplications = isOwner
+      ? applications.filter((app) => app.status === "accepted")
+      : [];
 
-   // Filter out the accepted application from sorted list if it exists (shown separately)
-   const otherApplications = acceptedApplication 
-      ? sortedApplications.filter(app => app._id !== acceptedApplication._id)
+   // Filter out accepted applications from sorted list if they exist (shown separately)
+   const otherApplications = isOwner
+      ? sortedApplications.filter((app) => app.status !== "accepted")
       : sortedApplications;
+
+   // Find user's own application by comparing applicantId with userProfile._id
+   const myApplication = useMemo(() => {
+      if (isOwner || !userProfile) return null;
+      const found = applications.find((app) => matchesCurrentUserApplication(app));
+      if (found) {
+         console.log("✅ Found user's application:", { 
+            applicantId: found.applicantId, 
+            userProfileId,
+            applicantUid: found.applicantUid,
+            currentUid,
+            status: found.status 
+         });
+      } else if ((userProfileId || currentUid) && applications.length > 0) {
+         console.log("❌ No application found for user:", {
+            userProfileId,
+            currentUid,
+            totalApplications: applications.length,
+            applicantIds: applications.map(app => app.applicantId),
+            applicantUids: applications.map((app) => app.applicantUid),
+         });
+      }
+      return found || null;
+   }, [isOwner, userProfile, userProfileId, currentUid, applications, matchesCurrentUserApplication]);
+
+   // Inform parent whether current user has an application
+   useEffect(() => {
+      if (!onHasAppliedChange) return;
+      onHasAppliedChange(!!myApplication);
+   }, [myApplication, onHasAppliedChange]);
 
    if (loading) {
       return (
@@ -182,78 +312,11 @@ export function TaskOffersSection({
       );
    }
 
-   // Find user's own application by comparing applicantId with userProfile._id
-   const myApplication = !isOwner && userProfile 
-      ? applications.find(app => app.applicantId === userProfile._id)
-      : null;
-
-   // If not owner and has application, show their own application
-   if (!isOwner && myApplication) {
-      return (
-         <div className="p-6">
-            <div className="bg-primary-50 border border-primary-200 rounded-xl p-5">
-               <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-secondary-900">Your Offer</h3>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                     myApplication.status === "pending" 
-                        ? "bg-yellow-100 text-yellow-800" 
-                        : myApplication.status === "accepted"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                  }`}>
-                     {myApplication.status.toUpperCase()}
-                  </span>
-               </div>
-               <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                     <span className="text-secondary-600">Proposed Budget:</span>
-                     <span className="font-semibold text-secondary-900">
-                        ₹{myApplication.proposedBudget?.amount?.toLocaleString() || 0}
-                     </span>
-                  </div>
-                  {myApplication.proposedTime?.estimatedDuration && (
-                     <div className="flex justify-between text-sm">
-                        <span className="text-secondary-600">Estimated Time:</span>
-                        <span className="font-semibold text-secondary-900">
-                           {myApplication.proposedTime.estimatedDuration} hours
-                        </span>
-                     </div>
-                  )}
-                  {myApplication.coverLetter && (
-                     <div className="mt-3 pt-3 border-t border-primary-200">
-                        <p className="text-xs text-secondary-600 mb-1">Your Message:</p>
-                        <p className="text-sm text-secondary-700">{myApplication.coverLetter}</p>
-                     </div>
-                  )}
-                  <div className="flex justify-between text-xs text-secondary-500 pt-2">
-                     <span>Submitted: {new Date(myApplication.createdAt).toLocaleDateString()}</span>
-                  </div>
-               </div>
-            </div>
-         </div>
-      );
-   }
-
-   // If not owner and no application, show make offer button
-   if (!isOwner && !myApplication) {
-      return (
-         <div className="p-8 text-center">
-            <p className="text-secondary-600 mb-4">
-               Interested in this task? Submit your offer!
-            </p>
-            <Button
-               onClick={onMakeOffer}
-               className="bg-primary-600 hover:bg-primary-700"
-            >
-               Make an Offer
-            </Button>
-         </div>
-      );
-   }
+   // Show offers list for everyone, but with different views
 
    return (
       <>
-         <div className="p-4 md:p-8">
+         <div className="p-4 md:p-8" data-offers-section>
             {/* Header */}
             <div className="flex items-center justify-between mb-5 md:mb-8">
                <h2 className="md:text-lg font-bold text-secondary-900">
@@ -282,6 +345,117 @@ export function TaskOffersSection({
                )}
             </div>
 
+            {/* User's Application Highlight (if exists and not owner) */}
+            {!isOwner && myApplication && (
+               <div className="mb-6">
+                  <div className="flex items-center gap-2 mb-3">
+                     <User className="w-5 h-5 text-primary-600" />
+                     <h3 className="font-bold text-primary-700">Your Offer</h3>
+                  </div>
+                  <div className="bg-primary-50 border-2 border-primary-300 rounded-xl p-5 shadow-sm">
+                     <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                           <div className="w-12 h-12 rounded-full bg-primary-600 flex items-center justify-center text-white text-lg font-bold shrink-0 shadow-md">
+                              {((userProfile as { name?: string })?.name || "You").charAt(0).toUpperCase()}
+                           </div>
+                           <div>
+                              <h4 className="font-bold text-secondary-900 text-base">
+                                 {(userProfile as { name?: string })?.name || "You"}
+                              </h4>
+                              <p className="text-xs text-secondary-600">Your application</p>
+                           </div>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold shrink-0 ${
+                           myApplication.status === "pending" 
+                              ? "bg-yellow-100 text-yellow-800 border border-yellow-200" 
+                              : myApplication.status === "accepted"
+                              ? "bg-green-100 text-green-800 border border-green-200"
+                              : "bg-red-100 text-red-800 border border-red-200"
+                        }`}>
+                           {myApplication.status.toUpperCase()}
+                        </span>
+                     </div>
+                     <div className="space-y-3">
+                        <div className="flex justify-between text-sm">
+                           <span className="text-secondary-600">Proposed Budget:</span>
+                           <span className="font-semibold text-secondary-900">
+                              ₹{(
+                                 (myApplication.proposedBudget?.amount || 0) *
+                                 (myApplication.selectedDates?.length || 1)
+                              ).toLocaleString()}
+                           </span>
+                        </div>
+                        {myApplication.selectedDates && myApplication.selectedDates.length > 0 && (
+                           <div className="flex justify-between text-xs text-secondary-500">
+                              <span>Calculation:</span>
+                              <span>
+                                 ₹{myApplication.proposedBudget?.amount || 0} × {myApplication.selectedDates.length} days
+                              </span>
+                           </div>
+                        )}
+                        {myApplication.proposedTime?.estimatedDuration && (
+                           <div className="flex justify-between text-sm">
+                              <span className="text-secondary-600">Estimated Time:</span>
+                              <span className="font-semibold text-secondary-900">
+                                 {Math.floor(myApplication.proposedTime.estimatedDuration / 24)}d{" "}
+                                 {(myApplication.proposedTime.estimatedDuration % 24).toFixed(0)}h
+                              </span>
+                           </div>
+                        )}
+                        {myApplication.selectedDates && myApplication.selectedDates.length > 0 && (
+                           <div className="flex justify-between text-sm">
+                              <span className="text-secondary-600">Selected Dates:</span>
+                              <span className="font-semibold text-secondary-900">
+                                 {formatSelectedDates(myApplication.selectedDates)}
+                              </span>
+                           </div>
+                        )}
+                        {myApplication.coverLetter && (
+                           <div className="mt-3 pt-3 border-t border-primary-200">
+                              <p className="text-xs text-secondary-600 mb-1">Your Message:</p>
+                              <p className="text-sm text-secondary-700">{myApplication.coverLetter}</p>
+                           </div>
+                        )}
+                        <div className="flex justify-between text-xs text-secondary-500 pt-2">
+                           <span>Submitted: {new Date(myApplication.createdAt).toLocaleDateString()}</span>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            )}
+
+            {/* Call to action for non-applied users */}
+            {!isOwner && !myApplication && (
+               <div className="p-6 text-center bg-primary-50 rounded-xl mb-6">
+                  <p className="text-secondary-700 mb-4">
+                     {checkingApplication ? (
+                        <span className="flex items-center justify-center gap-2">
+                           <div className="w-4 h-4 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
+                           Checking your application status...
+                        </span>
+                     ) : (
+                        "Interested in this task? Submit your offer!"
+                     )}
+                  </p>
+                  <Button
+                     onClick={onMakeOffer}
+                     disabled={checkingApplication || hasApplied || myApplication !== null}
+                     className="bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                     {checkingApplication ? (
+                        <span className="flex items-center gap-2">
+                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                           Checking...
+                        </span>
+                     ) : hasApplied || myApplication ? (
+                        "Already Applied"
+                     ) : (
+                        "Make an Offer"
+                     )}
+                  </Button>
+               </div>
+            )}
+
             {/* Applications List */}
             {applications.length === 0 ? (
                <div className="text-center py-16">
@@ -309,92 +483,126 @@ export function TaskOffersSection({
                      No offers yet
                   </h3>
                   <p className="text-sm text-secondary-500 max-w-xs mx-auto">
-                     Make the first offer and get ahead of the competition!
+                     {isOwner ? "No offers received yet. Share your task to get more offers!" : "Be the first to make an offer!"}
                   </p>
                </div>
             ) : (
                <div className="space-y-3">
                   {/* Accepted Offer Section - Show prominently at the top */}
-                  {acceptedApplication && (
+                  {acceptedApplications.length > 0 && (
                      <div className="mb-6">
                         <div className="flex items-center gap-2 mb-3">
                            <CheckCircle className="w-5 h-5 text-green-600" />
-                           <h3 className="font-bold text-green-800">Accepted Offer</h3>
+                           <h3 className="font-bold text-green-800">Accepted Offers</h3>
                         </div>
-                        <div className="p-4 md:p-6 rounded-xl bg-green-50 border-2 border-green-200">
-                           <div className="flex flex-col gap-4">
-                              {/* Header: Avatar + Name + Budget */}
-                              <div className="flex items-center justify-between gap-3">
-                                 <div className="flex gap-3">
-                                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-green-600 flex items-center justify-center text-white text-lg md:text-xl font-bold shrink-0 shadow-md">
-                                       {(acceptedApplication.applicantProfile?.name || "U").charAt(0)}
-                                    </div>
-                                    <div className="min-w-0">
-                                       <div className="flex items-center gap-2">
-                                          <h3 className="font-bold text-secondary-900 text-sm sm:text-base truncate">
-                                             {acceptedApplication.applicantProfile?.name || "Unknown User"}
-                                          </h3>
-                                          <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-semibold">
-                                             Assigned
-                                          </span>
-                                       </div>
-                                       <div className="flex items-center gap-2 text-xs text-secondary-500 mt-1">
-                                          <div className="flex items-center gap-1">
-                                             <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                                             <span className="font-semibold text-secondary-900">
-                                                {acceptedApplication.applicantProfile?.rating > 0 
-                                                   ? acceptedApplication.applicantProfile.rating.toFixed(1) 
-                                                   : "New"}
-                                             </span>
+                        <div className="space-y-3">
+                           {acceptedApplications.map((acceptedApplication) => (
+                              <div
+                                 key={acceptedApplication._id}
+                                 className="p-4 md:p-6 rounded-xl bg-green-50 border-2 border-green-200"
+                              >
+                                 <div className="flex flex-col gap-4">
+                                    {/* Header: Avatar + Name + Budget */}
+                                    <div className="flex items-center justify-between gap-3">
+                                       <div className="flex gap-3">
+                                          <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-green-600 flex items-center justify-center text-white text-lg md:text-xl font-bold shrink-0 shadow-md">
+                                             {((acceptedApplication.applicantProfile?.name) || "U").charAt(0)}
                                           </div>
-                                          <span className="text-secondary-300">•</span>
-                                          <span>
-                                             {acceptedApplication.applicantProfile?.totalReviews || 0} reviews
-                                          </span>
+                                          <div className="min-w-0">
+                                             <div className="flex items-center gap-2">
+                                                <h3 className="font-bold text-secondary-900 text-sm sm:text-base truncate">
+                                                   {acceptedApplication.applicantProfile?.name || "Unknown User"}
+                                                </h3>
+                                                {applicantBadges[String(acceptedApplication.applicantId)] &&
+                                                   applicantBadges[String(acceptedApplication.applicantId)] !== "none" && (
+                                                      <UserBadge
+                                                         badge={applicantBadges[String(acceptedApplication.applicantId)]}
+                                                         size="sm"
+                                                         showLabel
+                                                      />
+                                                   )}
+                                                <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-semibold">
+                                                   Assigned
+                                                </span>
+                                             </div>
+                                             <div className="flex items-center gap-2 text-xs text-secondary-500 mt-1">
+                                                <div className="flex items-center gap-1">
+                                                   <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                                                   <span className="font-semibold text-secondary-900">
+                                                      {acceptedApplication.applicantProfile?.rating > 0
+                                                         ? acceptedApplication.applicantProfile.rating.toFixed(1)
+                                                         : "New"}
+                                                   </span>
+                                                </div>
+                                                <span className="text-secondary-300">•</span>
+                                                <span>
+                                                   {acceptedApplication.applicantProfile?.totalReviews || 0} reviews
+                                                </span>
+                                             </div>
+                                          </div>
+                                       </div>
+                                       <div className="text-right">
+                                          {/* Only show budget to task owner */}
+                                          {isOwner && (
+                                             <>
+                                                <div className="text-xl font-bold text-green-700 mb-1">
+                                                   ₹{(acceptedApplication.proposedBudget.amount * (acceptedApplication.selectedDates?.length || 1)).toLocaleString()}
+                                                </div>
+                                                {acceptedApplication.selectedDates && acceptedApplication.selectedDates.length > 0 && (
+                                                   <div className="text-xs text-secondary-500">
+                                                      ₹{acceptedApplication.proposedBudget.amount} × {acceptedApplication.selectedDates.length} days
+                                                   </div>
+                                                )}
+                                                {acceptedApplication.proposedTime?.estimatedDuration && !acceptedApplication.selectedDates?.length && (
+                                                   <div className="text-xs text-secondary-500">
+                                                      Est. {acceptedApplication.proposedTime.estimatedDuration}h
+                                                   </div>
+                                                )}
+                                             </>
+                                          )}
                                        </div>
                                     </div>
-                                 </div>
-                                 <div className="text-right">
-                                    <div className="text-xl font-bold text-green-700 mb-1">
-                                       ₹{acceptedApplication.proposedBudget.amount.toLocaleString()}
-                                    </div>
-                                    {acceptedApplication.proposedTime?.estimatedDuration && (
-                                       <div className="text-xs text-secondary-500">
-                                          Est. {acceptedApplication.proposedTime.estimatedDuration}h
-                                       </div>
+
+                                    {/* Selected Dates */}
+                                    {acceptedApplication.selectedDates && acceptedApplication.selectedDates.length > 0 && (
+                                       <p className="text-xs text-green-900">
+                                          Dates: {formatSelectedDates(acceptedApplication.selectedDates)}
+                                       </p>
                                     )}
+
+                                    {/* Cover Letter */}
+                                    {acceptedApplication.coverLetter && (
+                                       <p className="text-sm text-secondary-700 leading-relaxed">
+                                          {acceptedApplication.coverLetter}
+                                       </p>
+                                    )}
+
+                                    {/* Actions */}
+                                    <div className="flex gap-2 flex-wrap">
+                                       <Link href={`/profile/${acceptedApplication.applicantId}`}>
+                                          <Button
+                                             size="sm"
+                                             variant="outline"
+                                             className="border-green-300 text-green-700 hover:bg-green-50 rounded-lg text-xs font-medium"
+                                          >
+                                             View Profile
+                                          </Button>
+                                       </Link>
+                                       <Link
+                                          href={`/chat?taskId=${taskId}&otherUserId=${acceptedApplication.applicantId}`}
+                                       >
+                                          <Button
+                                             size="sm"
+                                             className="bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-semibold"
+                                          >
+                                             <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
+                                             Message Tasker
+                                          </Button>
+                                       </Link>
+                                    </div>
                                  </div>
                               </div>
-
-                              {/* Cover Letter */}
-                              {acceptedApplication.coverLetter && (
-                                 <p className="text-sm text-secondary-700 leading-relaxed">
-                                    {acceptedApplication.coverLetter}
-                                 </p>
-                              )}
-
-                              {/* Actions */}
-                              <div className="flex gap-2 flex-wrap">
-                                 <Link href={`/profile/${acceptedApplication.applicantId}`}>
-                                    <Button
-                                       size="sm"
-                                       variant="outline"
-                                       className="border-green-300 text-green-700 hover:bg-green-50 rounded-lg text-xs font-medium"
-                                    >
-                                       View Profile
-                                    </Button>
-                                 </Link>
-                                 <Link href={`/chat?chatId=chat_${taskId}`}>
-                                    <Button
-                                       size="sm"
-                                       className="bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-semibold"
-                                    >
-                                       <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
-                                       Message Tasker
-                                    </Button>
-                                 </Link>
-                              </div>
-                           </div>
+                           ))}
                         </div>
                      </div>
                   )}
@@ -402,17 +610,16 @@ export function TaskOffersSection({
                   {/* Other Applications - Show below the accepted one */}
                   {otherApplications.length > 0 && (
                      <>
-                        {acceptedApplication && (
+                        {acceptedApplications.length > 0 && (
                            <h3 className="font-semibold text-secondary-700 text-sm mb-2">Other Offers</h3>
                         )}
                         {otherApplications.map((application) => {
-                     const user = application.applicantProfile || { 
-                        name: application.applicantId
-                           ? `User ${application.applicantId.slice(-4)}`
-                           : "Unknown User", 
-                        rating: 0, 
-                        totalReviews: 0,
-                        photoURL: null,
+                     const user = {
+                        name: application.applicantProfile?.name || (application.applicantId ? `User ${String(application.applicantId).slice(-4)}` : "Unknown User"),
+                        photoURL: application.applicantProfile?.photoURL || null,
+                        rating: application.applicantProfile?.rating || 0,
+                        totalReviews: application.applicantProfile?.totalReviews || 0,
+                        skills: application.applicantProfile?.skills,
                      };
 
                      return (
@@ -426,13 +633,15 @@ export function TaskOffersSection({
                                  <div className="flex gap-3">
                                     <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-full bg-primary-500 flex items-center justify-center text-white text-lg md:text-xl font-bold shrink-0 shadow-md overflow-hidden">
                                        {user.photoURL ? (
-                                          <img
+                                          <Image
                                              src={user.photoURL}
-                                             alt={user.name}
+                                             alt={user.name || "User"}
+                                             width={64}
+                                             height={64}
                                              className="w-full h-full object-cover"
                                           />
                                        ) : (
-                                          <span>{user.name.charAt(0)}</span>
+                                          <span>{(user.name || "U").charAt(0)}</span>
                                        )}
                                     </div>
 
@@ -441,7 +650,14 @@ export function TaskOffersSection({
                                           <h3 className="font-bold text-secondary-900 text-sm sm:text-base truncate">
                                              {user.name}
                                           </h3>
-                                          {/* Verified badge - can add later based on backend flag */}
+                                          {applicantBadges[String(application.applicantId)] &&
+                                             applicantBadges[String(application.applicantId)] !== "none" && (
+                                                <UserBadge
+                                                   badge={applicantBadges[String(application.applicantId)]}
+                                                   size="sm"
+                                                   showLabel
+                                                />
+                                             )}
                                        </div>
 
                                        <div className="flex items-center gap-2 text-xs text-secondary-500 mt-1">
@@ -462,10 +678,20 @@ export function TaskOffersSection({
                                  </div>
 
                                  <div className="text-right">
-                                    <div className="text-lg font-bold text-primary-600 mb-1">
-                                       ₹
-                                       {application.proposedBudget.amount.toLocaleString()}
-                                    </div>
+                                    {/* Only show budget to task owner */}
+                                    {isOwner && (
+                                       <>
+                                          <div className="text-lg font-bold text-primary-600 mb-1">
+                                             ₹
+                                             {(application.proposedBudget.amount * (application.selectedDates?.length || 1)).toLocaleString()}
+                                          </div>
+                                          {application.selectedDates && application.selectedDates.length > 0 && (
+                                             <div className="text-xs text-secondary-400 font-medium mb-1">
+                                                ₹{application.proposedBudget.amount} × {application.selectedDates.length} days
+                                             </div>
+                                          )}
+                                       </>
+                                    )}
                                     <div className="flex items-center gap-2 justify-end">
                                        <span className="text-xs text-secondary-400 font-medium">
                                           {getTimeAgo(application.createdAt)}
@@ -503,7 +729,13 @@ export function TaskOffersSection({
                                        h
                                     </span>
                                  )}
-                                 {application.proposedBudget.isNegotiable && (
+                                 {application.selectedDates && application.selectedDates.length > 0 && (
+                                    <span>
+                                       Dates: {formatSelectedDates(application.selectedDates)}
+                                    </span>
+                                 )}
+                                 {/* Only show negotiable status to task owner */}
+                                 {isOwner && application.proposedBudget.isNegotiable && (
                                     <span className="text-primary-600">
                                        Negotiable
                                     </span>
@@ -527,40 +759,44 @@ export function TaskOffersSection({
                                     </div>
                                  )}
 
-                              {/* Actions */}
-                              <div className="flex gap-2 w-full flex-wrap">
-                                 <Link href={`/profile/${application.applicantId}`}>
-                                    <Button
-                                       size="sm"
-                                       variant="ghost"
-                                       className="text-secondary-600 hover:bg-secondary-50 rounded-lg text-[10px] md:text-xs font-medium"
-                                    >
-                                       View Profile
-                                    </Button>
-                                 </Link>
+                              {/* Actions - Only show for owner */}
+                              {isOwner && (
+                                 <div className="flex gap-2 w-full flex-wrap">
+                                    <Link href={`/profile/${application.applicantId}`}>
+                                       <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="text-secondary-600 hover:bg-secondary-50 rounded-lg text-[10px] md:text-xs font-medium"
+                                       >
+                                          View Profile
+                                       </Button>
+                                    </Link>
 
-                                 <Link href={`/chat?chatId=chat_${taskId}`}>
-                                    <Button
-                                       size="sm"
-                                       variant="outline"
-                                       className="border-secondary-200 text-secondary-700 hover:bg-secondary-50 rounded-lg text-[10px] md:text-xs font-medium"
-                                    >
-                                       Message
-                                    </Button>
-                                 </Link>
-
-                                 {application.status === "pending" && (
-                                    <Button
-                                       size="sm"
-                                       onClick={() =>
-                                          handleAcceptOffer(application)
-                                       }
-                                       className="bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-[10px] md:text-xs font-semibold px-5"
-                                    >
-                                       Accept Offer
-                                    </Button>
-                                 )}
-                              </div>
+                                    {application.status === "pending" && (
+                                       <>
+                                          <Button
+                                             size="sm"
+                                             onClick={() =>
+                                                handleAcceptOffer(application)
+                                             }
+                                             className="bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-[10px] md:text-xs font-semibold px-5"
+                                          >
+                                             Accept Offer
+                                          </Button>
+                                          <Button
+                                             size="sm"
+                                             onClick={() =>
+                                                handleRejectOffer(application)
+                                             }
+                                             variant="outline"
+                                             className="text-secondary-600 hover:text-red-600 hover:bg-red-50 border-secondary-300 rounded-lg text-[10px] md:text-xs font-semibold px-5"
+                                          >
+                                             Reject
+                                          </Button>
+                                       </>
+                                    )}
+                                 </div>
+                              )}
                            </div>
                         </div>
                      );
@@ -581,13 +817,19 @@ export function TaskOffersSection({
                }}
                task={{
                   id: taskId,
-                  title: (selectedApplication.taskId as any)?.title || "Task",
+                  title:
+                     typeof selectedApplication.taskId === "object" &&
+                     selectedApplication.taskId !== null &&
+                     "title" in selectedApplication.taskId
+                        ? String((selectedApplication.taskId as { title?: string }).title || "Task")
+                        : "Task",
                   category: taskCategory,
                }}
                application={{
                   id: selectedApplication._id,
                   applicantId: selectedApplication.applicantId as string,
                   proposedBudget: selectedApplication.proposedBudget,
+                  selectedDates: selectedApplication.selectedDates,
                }}
                posterUid={currentUser?.uid ?? ""}
                onSuccess={handlePaymentSuccess}

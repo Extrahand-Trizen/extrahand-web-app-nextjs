@@ -20,6 +20,7 @@ import { format } from "date-fns";
 
 interface TaskDetailsCardProps {
    task: Task;
+   assignedBudget?: number; // Tasker's offered/agreed amount (overrides task.budget when provided)
 }
 
 const InfoRow = ({
@@ -44,11 +45,13 @@ const InfoRow = ({
    </div>
 );
 
-export function TaskDetailsCard({ task }: TaskDetailsCardProps) {
-   const budgetAmount =
-      typeof task.budget === "object" ? task.budget.amount : task.budget;
+export function TaskDetailsCard({ task, assignedBudget }: TaskDetailsCardProps) {
+   const budgetAmount = assignedBudget !== undefined
+      ? assignedBudget
+      : typeof task.budget === "object" ? task.budget.amount : task.budget;
    const budgetCurrency =
       typeof task.budget === "object" ? task.budget.currency : "INR";
+   const categoryLabel = task.categoryLabel || task.subcategory || task.category;
 
    const formatDate = (date: Date | string | undefined) => {
       if (!date) return "Not scheduled";
@@ -71,8 +74,8 @@ export function TaskDetailsCard({ task }: TaskDetailsCardProps) {
                label="Category"
                value={
                   <div className="flex items-center gap-2">
-                     <span>{task.category}</span>
-                     {task.subcategory && (
+                     <span>{categoryLabel}</span>
+                     {task.subcategory && task.subcategory !== categoryLabel && (
                         <span className="text-secondary-500">
                            • {task.subcategory}
                         </span>
@@ -97,11 +100,11 @@ export function TaskDetailsCard({ task }: TaskDetailsCardProps) {
                icon={MapPin}
                label="Location"
                value={
-                  <div>
-                     <p className="font-medium md:font-semibold">
+                  <div className="break-words min-w-0">
+                     <p className="font-medium md:font-semibold break-words">
                         {task.location?.address || "No address provided"}
                      </p>
-                     <p className="text-xs text-secondary-500 mt-0.5">
+                     <p className="text-xs text-secondary-500 mt-0.5 break-words">
                         {task.location?.city || "N/A"}, {task.location?.state || "N/A"}
                         {task.location?.pinCode && ` - ${task.location.pinCode}`}
                      </p>

@@ -5,24 +5,26 @@
  * Displays tasks with two tabs: My Tasks and My Applications
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { MyTasksContent } from "@/components/tasks/MyTasksContent";
 import { MyApplicationsContent } from "@/components/tasks/MyApplicationsContent";
+import { useDashboardStore } from "@/lib/state/dashboardStore";
 
 export default function TasksPage() {
    const router = useRouter();
    const searchParams = useSearchParams();
-   const [tasksCount, setTasksCount] = useState<number>(0);
-   const [applicationsCount, setApplicationsCount] = useState<number>(0);
+   const [tasksCount, setTasksCount] = useState<number | null>(null);
+   const [applicationsCount, setApplicationsCount] = useState<number | null>(null);
 
    const activeTab = useMemo(() => {
       const tabParam = searchParams.get("tab");
       return tabParam === "myapplications" ? "myapplications" : "mytasks";
    }, [searchParams]);
+
 
    const handleTabChange = (value: string) => {
       router.push(`/tasks?tab=${value}`);
@@ -54,15 +56,13 @@ export default function TasksPage() {
                               </div>
                            </div>
 
-                           {activeTab === "mytasks" && (
-                              <Button
-                                 onClick={() => router.push("/tasks/new")}
-                                 className="bg-primary-600 hover:bg-primary-700 shrink-0"
-                              >
-                                 <Plus className="w-4 h-4 mr-2" />
-                                 Post task
-                              </Button>
-                           )}
+                           <Button
+                              onClick={() => router.push("/tasks/new")}
+                              className="bg-primary-600 hover:bg-primary-700 shrink-0"
+                           >
+                              <Plus className="w-4 h-4 mr-2" />
+                              Post task
+                           </Button>
                         </div>
                         <TabsList className="bg-transparent p-0 h-auto gap-4 sm:gap-6">
                            <TabsTrigger
@@ -70,9 +70,11 @@ export default function TasksPage() {
                               className="px-3 py-2 rounded-lg border-b-2 border-transparent data-[state=active]:border-primary-600 data-[state=active]:text-primary-600 text-secondary-600 font-medium text-sm sm:text-base"
                            >
                               My Tasks
-                              <span className="ml-2 text-secondary-400">
-                                 {tasksCount}
-                              </span>
+                              {tasksCount !== null && (
+                                 <span className="ml-2 text-secondary-400">
+                                    {tasksCount}
+                                 </span>
+                              )}
                            </TabsTrigger>
 
                            <TabsTrigger
@@ -80,9 +82,11 @@ export default function TasksPage() {
                               className="px-3 py-2 rounded-lg border-b-2 border-transparent data-[state=active]:border-primary-600 data-[state=active]:text-primary-600 text-secondary-600 font-medium text-sm sm:text-base"
                            >
                               My Applications
-                              <span className="ml-2 text-secondary-400">
-                                 {applicationsCount}
-                              </span>
+                              {applicationsCount !== null && (
+                                 <span className="ml-2 text-secondary-400">
+                                    {applicationsCount}
+                                 </span>
+                              )}
                            </TabsTrigger>
                         </TabsList>
                      </div>
@@ -92,13 +96,14 @@ export default function TasksPage() {
 
             {/* Content */}
             <main className="w-full">
-               <TabsContent value="mytasks" className="mt-0">
+               {/* Always render both components to fetch counts, but only show the active one */}
+               <div className={activeTab === "mytasks" ? "" : "hidden"}>
                   <MyTasksContent onCountChange={setTasksCount} />
-               </TabsContent>
+               </div>
 
-               <TabsContent value="myapplications" className="mt-0">
+               <div className={activeTab === "myapplications" ? "" : "hidden"}>
                   <MyApplicationsContent onCountChange={setApplicationsCount} />
-               </TabsContent>
+               </div>
             </main>
          </Tabs>
       </div>

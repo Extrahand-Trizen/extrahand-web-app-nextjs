@@ -175,6 +175,19 @@ export function PrivacySection({
             </p>
          </div>
 
+         {/* Coming Soon Banner */}
+         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
+            <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+               <h3 className="text-sm font-semibold text-amber-900">
+                  🚧 Features In Development
+               </h3>
+               <p className="text-xs text-amber-700 mt-1">
+                  We're actively working on implementing all privacy features. Some options may be limited or unavailable. Thank you for your patience!
+               </p>
+            </div>
+         </div>
+
          {/* Profile Visibility */}
          <CollapsibleSection
             title="Profile Visibility"
@@ -192,17 +205,26 @@ export function PrivacySection({
                {VISIBILITY_OPTIONS.map((option) => {
                   const isSelected =
                      localSettings.profileVisibility === option.value;
+                  const isComingSoon = option.value === "registered_users";
+                  
                   return (
                      <button
                         key={option.value}
-                        onClick={() =>
-                           updateSetting("profileVisibility", option.value)
-                        }
+                        onClick={() => {
+                           if (isComingSoon) {
+                              toast.info("Coming Soon", {
+                                 description: "This visibility option will be available soon. Stay tuned!"
+                              });
+                              return;
+                           }
+                           updateSetting("profileVisibility", option.value);
+                        }}
                         className={cn(
-                           "w-full flex items-start gap-3 p-3 rounded-lg border text-left transition-colors",
+                           "w-full flex items-start gap-3 p-3 rounded-lg border text-left transition-colors relative",
                            isSelected
                               ? "border-gray-900 bg-gray-50"
-                              : "border-gray-200 hover:border-gray-300"
+                              : "border-gray-200 hover:border-gray-300",
+                           isComingSoon && "opacity-75"
                         )}
                      >
                         <div
@@ -216,19 +238,26 @@ export function PrivacySection({
                            {option.icon}
                         </div>
                         <div className="flex-1 min-w-0">
-                           <p
-                              className={cn(
-                                 "text-sm font-medium",
-                                 isSelected ? "text-gray-900" : "text-gray-700"
+                           <div className="flex items-center gap-2">
+                              <p
+                                 className={cn(
+                                    "text-sm font-medium",
+                                    isSelected ? "text-gray-900" : "text-gray-700"
+                                 )}
+                              >
+                                 {option.label}
+                              </p>
+                              {isComingSoon && (
+                                 <span className="text-xs px-2 py-0.5 rounded-full bg-primary-100 text-primary-700 font-medium">
+                                    Coming Soon
+                                 </span>
                               )}
-                           >
-                              {option.label}
-                           </p>
+                           </div>
                            <p className="text-xs text-gray-500 mt-0.5">
                               {option.description}
                            </p>
                         </div>
-                        {isSelected && (
+                        {isSelected && !isComingSoon && (
                            <Check className="w-4 h-4 text-gray-900 shrink-0 mt-1" />
                         )}
                      </button>
@@ -440,7 +469,7 @@ export function PrivacySection({
                <p className="mt-1">
                   Learn more about how we collect, use, and protect your data in
                   our{" "}
-                  <a href="/privacy" className="underline hover:no-underline">
+                  <a href="/privacy-policy" className="underline hover:no-underline">
                      Privacy Policy
                   </a>
                   .

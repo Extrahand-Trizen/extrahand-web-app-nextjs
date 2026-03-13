@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +29,7 @@ import { SavedAddress, AddressType } from "@/types/profile";
 import { addressesApi } from "@/lib/api/endpoints/addresses";
 import { toast } from "sonner";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { PROFILE_ADDRESSES_QUERY_KEY } from "@/components/profile/ProfileDataPrefetcher";
 
 interface AddressesSectionProps {
    addresses?: SavedAddress[];
@@ -39,6 +41,8 @@ interface AddressesSectionProps {
 
 
 
+const ADDRESSES_STALE_MS = 5 * 60 * 1000;
+
 export function AddressesSection({
    addresses: propAddresses,
    onEditAddress,
@@ -46,8 +50,27 @@ export function AddressesSection({
    onSetDefault,
    onSaveAddress,
 }: AddressesSectionProps) {
-   const [addresses, setAddresses] = useState<SavedAddress[]>(propAddresses || []);
-   const [loading, setLoading] = useState(false);
+   const queryClient = useQueryClient();
+   const useQueryForAddresses = propAddresses == null;
+
+   const { data: addressesFromQuery, isLoading, isError, error } = useQuery({
+      queryKey: PROFILE_ADDRESSES_QUERY_KEY,
+      queryFn: () => addressesApi.getAddresses(),
+      staleTime: ADDRESSES_STALE_MS,
+      enabled: useQueryForAddresses,
+   });
+
+   useEffect(() => {
+      if (useQueryForAddresses && isError && error) {
+         toast.error("Failed to load addresses", {
+            description: error instanceof Error ? error.message : "Please try again later",
+         });
+      }
+   }, [useQueryForAddresses, isError, error]);
+
+   const addresses = propAddresses ?? addressesFromQuery ?? [];
+   const loading = useQueryForAddresses && isLoading;
+
    const [expandedId, setExpandedId] = useState<string | null>(null);
 
    // Internal modal state
@@ -56,27 +79,9 @@ export function AddressesSection({
       SavedAddress | undefined
    >(undefined);
 
-   // Fetch addresses on mount
-   useEffect(() => {
-      const fetchAddresses = async () => {
-         setLoading(true);
-         try {
-            const data = await addressesApi.getAddresses();
-            setAddresses(data);
-         } catch (error: any) {
-            console.error('Failed to fetch addresses:', error);
-            toast.error('Failed to load addresses', {
-               description: error.message || 'Please try again later'
-            });
-         } finally {
-            setLoading(false);
-         }
-      };
-      
-      if (!propAddresses) {
-         fetchAddresses();
-      }
-   }, [propAddresses]);
+   const invalidateAddresses = () => {
+      queryClient.invalidateQueries({ queryKey: PROFILE_ADDRESSES_QUERY_KEY });
+   };
 
    // Internal handlers
    const handleAddAddress = () => {
@@ -100,20 +105,15 @@ export function AddressesSection({
 
       try {
          if (editingAddress) {
-            // Update existing address
-            const updated = await addressesApi.updateAddress(editingAddress.id, data);
-            setAddresses(prev => prev.map(addr => 
-               addr.id === editingAddress.id ? updated : addr
-            ));
+            await addressesApi.updateAddress(editingAddress.id, data);
             toast.success('Address updated successfully');
          } else {
-            // Add new address
-            const newAddress = await addressesApi.addAddress(data);
-            setAddresses(prev => [...prev, newAddress]);
+            await addressesApi.addAddress(data);
             toast.success('Address added successfully');
          }
          setShowAddressModal(false);
          setEditingAddress(undefined);
+         invalidateAddresses();
       } catch (error: any) {
          console.error('Failed to save address:', error);
          toast.error('Failed to save address', {
@@ -130,7 +130,7 @@ export function AddressesSection({
 
       try {
          await addressesApi.deleteAddress(id);
-         setAddresses(prev => prev.filter(addr => addr.id !== id));
+         invalidateAddresses();
          toast.success('Address deleted successfully');
       } catch (error: any) {
          console.error('Failed to delete address:', error);
@@ -147,11 +147,8 @@ export function AddressesSection({
       }
 
       try {
-         const updated = await addressesApi.setDefaultAddress(id);
-         setAddresses(prev => prev.map(addr => ({
-            ...addr,
-            isDefault: addr.id === id
-         })));
+         await addressesApi.setDefaultAddress(id);
+         invalidateAddresses();
          toast.success('Default address updated');
       } catch (error: any) {
          console.error('Failed to set default address:', error);
@@ -503,46 +500,83 @@ export function AddressForm({
    onClose,
    onSave,
 }: AddressFormProps) {
-   const [formData, setFormData] = useState<Partial<SavedAddress>>(
-      address || {
-         type: "home",
-         label: "",
-         name: "",
-         addressLine1: "",
-         addressLine2: "",
-         landmark: "",
-         city: "",
-         state: "",
-         pinCode: "",
-         country: "India",
-         phone: "",
-      }
-   );
+   const [formData, setFormData] = useState<Partial<SavedAddress>>({
+      type: "home",
+      label: "",
+      name: "",
+      addressLine1: "",
+      addressLine2: "",
+      landmark: "",
+      city: "",
+      state: "",
+      pinCode: "",
+      country: "India",
+      phone: "",
+   });
 
    const [errors, setErrors] = useState<Record<string, string>>({});
+
+   // Update form when address prop changes
+   useEffect(() => {
+      if (address) {
+         setFormData(address);
+      } else {
+         setFormData({
+            type: "home",
+            label: "",
+            name: "",
+            addressLine1: "",
+            addressLine2: "",
+            landmark: "",
+            city: "",
+            state: "",
+            pinCode: "",
+            country: "India",
+            phone: "",
+         });
+      }
+      setErrors({});
+   }, [address, isOpen]);
 
    if (!isOpen) return null;
 
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
 
-      // Basic validation
+      // Enhanced validation
       const newErrors: Record<string, string> = {};
-      if (!formData.label) newErrors.label = "Label is required";
-      if (!formData.name) newErrors.name = "Name is required";
-      if (!formData.addressLine1)
+      
+      // Auto-generate label from type if not provided
+      if (!formData.label) {
+         const typeLabels = { home: "Home", work: "Work", billing: "Billing", other: "Other" };
+         formData.label = typeLabels[formData.type || "home"];
+      }
+      
+      if (!formData.name?.trim()) newErrors.name = "Name is required";
+      if (!formData.addressLine1?.trim())
          newErrors.addressLine1 = "Address is required";
-      if (!formData.city) newErrors.city = "City is required";
-      if (!formData.state) newErrors.state = "State is required";
-      if (!formData.pinCode) newErrors.pinCode = "PIN code is required";
+      if (!formData.city?.trim()) newErrors.city = "City is required";
+      if (!formData.state?.trim()) newErrors.state = "State is required";
+      
+      // PIN code validation (6 digits)
+      if (!formData.pinCode?.trim()) {
+         newErrors.pinCode = "PIN code is required";
+      } else if (!/^\d{6}$/.test(formData.pinCode.trim())) {
+         newErrors.pinCode = "PIN code must be 6 digits";
+      }
+      
+      // Phone number validation (10 digits, optional)
+      if (formData.phone?.trim() && !/^[6-9]\d{9}$/.test(formData.phone.replace(/\D/g, ""))) {
+         newErrors.phone = "Enter valid 10-digit mobile number";
+      }
 
       if (Object.keys(newErrors).length > 0) {
          setErrors(newErrors);
+         toast.error("Please fix the errors");
          return;
       }
 
       onSave(formData);
-      onClose();
    };
 
    const addressTypes: { value: AddressType; label: string }[] = [
@@ -596,27 +630,7 @@ export function AddressForm({
                   </div>
                </div>
 
-               {/* Label */}
-               <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                     Label *
-                  </label>
-                  <input
-                     type="text"
-                     value={formData.label || ""}
-                     onChange={(e) =>
-                        setFormData({ ...formData, label: e.target.value })
-                     }
-                     placeholder="e.g., Home, Office, Mom's Place"
-                     className={cn(
-                        "w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500",
-                        errors.label ? "border-red-300" : "border-gray-300"
-                     )}
-                  />
-                  {errors.label && (
-                     <p className="text-xs text-red-500 mt-1">{errors.label}</p>
-                  )}
-               </div>
+
 
                {/* Recipient Name */}
                <div>
@@ -760,10 +774,15 @@ export function AddressForm({
                      </label>
                      <input
                         type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         value={formData.pinCode || ""}
-                        onChange={(e) =>
-                           setFormData({ ...formData, pinCode: e.target.value })
-                        }
+                        onChange={(e) => {
+                           const value = e.target.value.replace(/\D/g, "");
+                           if (value.length <= 6) {
+                              setFormData({ ...formData, pinCode: value });
+                           }
+                        }}
                         placeholder="6-digit PIN"
                         maxLength={6}
                         className={cn(
@@ -799,13 +818,25 @@ export function AddressForm({
                   </label>
                   <input
                      type="tel"
+                     inputMode="numeric"
+                     pattern="[0-9]*"
                      value={formData.phone || ""}
-                     onChange={(e) =>
-                        setFormData({ ...formData, phone: e.target.value })
-                     }
-                     placeholder="+91 XXXXX XXXXX"
-                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                     onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, "");
+                        if (value.length <= 10) {
+                           setFormData({ ...formData, phone: value });
+                        }
+                     }}
+                     placeholder="10-digit mobile number"
+                     maxLength={10}
+                     className={cn(
+                        "w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500",
+                        errors.phone ? "border-red-300" : "border-gray-300"
+                     )}
                   />
+                  {errors.phone && (
+                     <p className="text-xs text-red-500 mt-1">{errors.phone}</p>
+                  )}
                </div>
 
                {/* Submit */}

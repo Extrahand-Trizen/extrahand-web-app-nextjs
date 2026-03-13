@@ -1,6 +1,5 @@
 /**
- * Next.js Proxy (formerly Middleware) for route protection
- * Next.js 16+: file convention `proxy.ts` and exported `proxy()`
+ * Next.js Middleware for route protection
  */
 
 import { NextResponse } from "next/server";
@@ -24,6 +23,7 @@ const protectedRoutes = [
    "/chat",
    "/applications",
    "/payments",
+   "/dashboard",
 ];
 
 function isPublicPath(pathname: string) {
@@ -53,6 +53,11 @@ function isPublicPath(pathname: string) {
 function isProtectedPath(pathname: string) {
    // /profile without ID or with query params is protected
    if (pathname === "/profile" || (pathname.startsWith("/profile?") || pathname.startsWith("/profile#"))) {
+      return true;
+   }
+
+   // /tasks/new (post a task) is protected - requires authentication
+   if (pathname === "/tasks/new" || pathname.startsWith("/tasks/new?") || pathname.startsWith("/tasks/new#")) {
       return true;
    }
 
@@ -91,7 +96,7 @@ function checkAuthenticated(req: NextRequest): boolean {
    );
 }
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
    const { pathname } = request.nextUrl;
 
    const authenticated = checkAuthenticated(request);
@@ -104,7 +109,23 @@ export function proxy(request: NextRequest) {
    // If already authenticated, avoid auth pages
    if (authenticated && isAuthPath(pathname)) {
       const url = request.nextUrl.clone();
-      url.pathname = "/home";
+      // Check if there's a redirect destination (may include query params like ?action=offer)
+      const next = request.nextUrl.searchParams.get("next");
+      if (next) {
+         // next may be a full path+search string (e.g. /tasks/123?action=offer)
+         // We must parse it to set both pathname and search properly
+         try {
+            const nextUrl = new URL(next, request.nextUrl.origin);
+            url.pathname = nextUrl.pathname;
+            url.search = nextUrl.search;
+         } catch {
+            url.pathname = next;
+            url.search = "";
+         }
+      } else {
+         url.pathname = "/home";
+         url.search = "";
+      }
       return NextResponse.redirect(url);
    }
 
@@ -112,8 +133,9 @@ export function proxy(request: NextRequest) {
    if (!authenticated && isProtectedPath(pathname)) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
-      // Preserve intended destination
-      url.searchParams.set("next", pathname);
+      // Preserve intended destination including any query params (e.g. ?category=...)
+      const fullPath = request.nextUrl.pathname + request.nextUrl.search;
+      url.searchParams.set("next", fullPath);
       return NextResponse.redirect(url);
    }
 

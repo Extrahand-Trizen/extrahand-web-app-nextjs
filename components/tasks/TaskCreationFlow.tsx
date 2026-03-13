@@ -18,7 +18,6 @@ import { Form } from "@/components/ui/form";
 import {
    TaskBasicsStep,
    LocationScheduleStep,
-   BudgetStep,
    ReviewStep,
 } from "@/components/tasks";
 
@@ -46,10 +45,46 @@ export type TaskFormData = CompleteTaskFormData;
 // Constants
 // ============================================================================
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 3;
 const MAX_RETRY_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 1000;
 const DRAFT_KEY = "taskDraft";
+
+const URGENCY_SURCHARGES: Record<string, number> = {
+   standard: 0,
+   soon: 20,
+   urgent: 50,
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+   "home-cleaning": "Home Cleaning",
+   "deep-cleaning": "Deep Cleaning",
+   plumbing: "Plumbing",
+   "water-tanker-services": "Water & Tanker Services",
+   electrical: "Electrical",
+   carpenter: "Carpenter",
+   painting: "Painting",
+   "ac-repair": "AC Repair & Service",
+   "appliance-repair": "Appliance Repair",
+   "pest-control": "Pest Control",
+   "car-washing": "Car Washing / Car Cleaning",
+   gardening: "Gardening",
+   handyperson: "Handyperson / General Repairs",
+   "furniture-assembly": "Furniture Assembly",
+   "security-patrol": "Security Patrol / Watchman",
+   "beauty-services": "Beauty Services",
+   "massage-spa": "Massage / Spa",
+   "fitness-trainers": "Fitness Trainers",
+   tutors: "Tutors",
+   "it-support": "IT Support / Laptop Repair",
+   "photographer-videographer": "Photographer / Videographer",
+   "event-services": "Event Services",
+   "pet-services": "Pet Services",
+   "driver-chauffeur": "Driver / Chauffeur",
+   "cooking-home-chef": "Cooking / Home Chef",
+   "laundry-ironing": "Laundry / Ironing",
+   other: "Other",
+};
 
 // ============================================================================
 // Utility Functions
@@ -84,6 +119,8 @@ const normalizeDraft = (raw: any): TaskFormData => {
       reviveDate(draft.scheduledTimeStart) || INITIAL_FORM_DATA.scheduledTimeStart;
    draft.scheduledTimeEnd =
       reviveDate(draft.scheduledTimeEnd) || INITIAL_FORM_DATA.scheduledTimeEnd;
+   draft.recurringStartDate = reviveDate(draft.recurringStartDate);
+   draft.recurringEndDate = reviveDate(draft.recurringEndDate);
 
    // Normalize attachments uploadedAt fields
    if (Array.isArray(draft.attachments)) {
@@ -109,6 +146,9 @@ const mapUrgencyToBackend = (
    };
    return urgencyMap[urgency] || "medium";
 };
+
+const getUrgencySurcharge = (urgency: string): number =>
+   URGENCY_SURCHARGES[urgency] ?? 0;
 
 /**
  * Map frontend flexibility to backend values
@@ -144,22 +184,41 @@ const formatTimeToString = (date: Date | null | undefined): string | undefined =
 const transformFormDataToTask = (
    formData: TaskFormData
 ): Record<string, unknown> => {
+   // DEBUG: Log attachments before transform
+   console.log('[TRANSFORM DEBUG] Form data attachments:', {
+      hasAttachments: !!formData.attachments,
+      attachmentsCount: formData.attachments?.length || 0,
+      attachments: formData.attachments,
+      title: formData.title
+   });
+   
+   const isOnline = formData.locationMode === "online";
+
    // Ensure coordinates are a proper tuple
    const coords = formData.location.coordinates;
-   const coordinates: [number, number] = [coords?.[0] ?? 0, coords?.[1] ?? 0];
+   const coordinates: [number, number] = isOnline
+      ? [0, 0]
+      : [coords?.[0] ?? 0, coords?.[1] ?? 0];
 
-   // Budget is required in backend schema - default to 0 for negotiable
+   const baseBudget =
+      formData.budgetType === "negotiable" ? 0 : formData.budget ?? null;
+   const urgencySurcharge = getUrgencySurcharge(formData.urgency);
    const budget =
-      formData.budgetType === "negotiable"
+      formData.budgetType === "negotiable" || baseBudget === null
          ? 0
-         : formData.budget ?? 0;
+         : baseBudget + urgencySurcharge;
 
    return {
       title: formData.title,
       description: formData.description,
       category: formData.category,
+      categorySlug: formData.category,
+      categoryLabel:
+         formData.category === "other"
+         ? formData.subcategory || CATEGORY_LABELS.other
+         : CATEGORY_LABELS[formData.category] || undefined,
       subcategory: formData.subcategory || undefined,
-      requirements: formData.requirements,
+      requirements: (formData.requirements || []).filter((req: string) => Boolean(req && req.trim())),
       estimatedDuration: formData.estimatedDuration || undefined,
       tags: formData.tags,
       priority: formData.priority,
@@ -169,22 +228,55 @@ const transformFormDataToTask = (
       location: {
          type: "Point",
          coordinates,
-         address: formData.location.address,
-         city: formData.location.city,
-         state: formData.location.state,
-         pinCode: formData.location.pinCode,
+         address: isOnline ? "Online" : formData.location.address,
+         city: isOnline ? "Online" : formData.location.city,
+         state: isOnline ? "Online" : formData.location.state,
+         pinCode: isOnline ? "" : formData.location.pinCode,
          country: formData.location.country || "India",
       },
-      // Schedule - convert Date objects to time strings for backend
-      scheduledDate: formData.scheduledDate || undefined,
+      remotely: isOnline,
+      // Schedule - merge date and time into full datetime
+      scheduledDate: formData.scheduledDate && formData.scheduledTimeStart 
+         ? (() => {
+             const merged = new Date(formData.scheduledDate);
+             merged.setHours(
+               formData.scheduledTimeStart.getHours(),
+               formData.scheduledTimeStart.getMinutes(),
+               0,
+               0
+             );
+             return merged;
+           })()
+         : formData.scheduledDate || undefined,
+      scheduledTime: formatTimeToString(formData.scheduledTimeStart),
+      dateOption: formData.dateOption,
+      timeSlot: formData.timeSlot,
       scheduledTimeStart: formatTimeToString(formData.scheduledTimeStart),
       scheduledTimeEnd: formatTimeToString(formData.scheduledTimeEnd),
       flexibility: mapFlexibilityToBackend(formData.flexibility),
+      recurring: formData.recurringEnabled
+         ? {
+              enabled: true,
+              frequency: formData.recurringFrequency,
+              startDate: formData.recurringStartDate || undefined,
+              endDate: formData.recurringEndDate || undefined,
+           }
+         : undefined,
       // Budget - required field, must be a number
       budgetType: formData.budgetType,
       budget,
       urgency: mapUrgencyToBackend(formData.urgency),
    };
+};
+
+const logTransformedTask = (task: Record<string, unknown>) => {
+   console.log('[TRANSFORM DEBUG] Transformed payload:', {
+      hasImages: !!task.images,
+      imagesCount: Array.isArray(task.images) ? task.images.length : 0,
+      images: task.images,
+      title: task.title
+   });
+   return task;
 };
 
 /**
@@ -193,6 +285,27 @@ const transformFormDataToTask = (
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Note: getErrorMessage and isNetworkError are imported from @/lib/utils/errorUtils
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Round up current time to next 15-minute interval
+ * If current time is in the past (shouldn't happen), rounds to next available slot
+ */
+const getRoundedCurrentTime = (): Date => {
+   const now = new Date();
+   const minutes = now.getMinutes();
+   const remainder = 15 - (minutes % 15);
+   
+   // Round up to next 15-minute mark
+   now.setMinutes(minutes + remainder);
+   now.setSeconds(0);
+   now.setMilliseconds(0);
+   
+   return now;
+};
 
 // ============================================================================
 // Initial Form Data
@@ -208,6 +321,7 @@ const INITIAL_FORM_DATA: TaskFormData = {
    tags: [],
    priority: "normal",
    attachments: [],
+   locationMode: "in-person",
    location: {
       address: "",
       city: "",
@@ -217,17 +331,24 @@ const INITIAL_FORM_DATA: TaskFormData = {
       coordinates: undefined,
    },
    scheduledDate: null,
+   dateOption: "flexible",
+   needsTimeOfDay: false,
+   timeSlot: null,
    scheduledTimeStart: (() => {
-      const date = new Date();
-      date.setHours(9, 0, 0, 0);
-      return date;
+      // Default to current time rounded to next 15-minute interval
+      return getRoundedCurrentTime();
    })(),
    scheduledTimeEnd: (() => {
-      const date = new Date();
-      date.setHours(10, 0, 0, 0);
-      return date;
+      // Default to 1 hour after rounded current time
+      const startTime = getRoundedCurrentTime();
+      startTime.setHours(startTime.getHours() + 1);
+      return startTime;
    })(),
    flexibility: "flexible",
+   recurringEnabled: false,
+   recurringStartDate: null,
+   recurringEndDate: null,
+   recurringFrequency: "daily",
    budgetType: "fixed",
    budget: null,
    urgency: "standard",
@@ -264,19 +385,47 @@ export function TaskCreationFlow() {
       },
    }) as UseFormReturn<TaskFormData>;
 
+   const scrollToTop = useCallback(() => {
+      requestAnimationFrame(() => {
+         window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+         document.documentElement.scrollTop = 0;
+         document.body.scrollTop = 0;
+      });
+   }, []);
+
    // Memoized progress calculation
    const progress = useMemo(
       () => (currentStep / TOTAL_STEPS) * 100,
       [currentStep]
    );
 
-   // Track unsaved changes
+   useEffect(() => {
+      scrollToTop();
+   }, [currentStep, scrollToTop]);
+
+   // Track unsaved changes and auto-save periodically
    useEffect(() => {
       const subscription = form.watch(() => {
          setHasUnsavedChanges(true);
       });
       return () => subscription.unsubscribe();
    }, [form]);
+
+   // Auto-save draft every 30 seconds if there are unsaved changes
+   useEffect(() => {
+      if (!hasUnsavedChanges) return;
+
+      const autoSaveInterval = setInterval(() => {
+         if (hasUnsavedChanges && !isSubmitting) {
+            const values = form.getValues();
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(values));
+            console.log("Auto-saved draft");
+            // Don't show toast for auto-save to avoid interrupting user
+         }
+      }, 30000); // Auto-save every 30 seconds
+
+      return () => clearInterval(autoSaveInterval);
+   }, [hasUnsavedChanges, isSubmitting, form]);
 
    // Warn before leaving page with unsaved changes
    useEffect(() => {
@@ -337,8 +486,8 @@ export function TaskCreationFlow() {
             "scheduledTimeStart",
             "scheduledTimeEnd",
             "flexibility",
+            "budget",
          ] as const,
-         3: ["budgetType", "budget", "urgency"] as const,
       }),
       []
    );
@@ -347,6 +496,25 @@ export function TaskCreationFlow() {
    const handleNext = useCallback(async () => {
       const fieldsToValidate =
          stepValidationFields[currentStep as keyof typeof stepValidationFields];
+
+      if (currentStep === 2) {
+         const budgetValue = form.getValues("budget");
+         const isBudgetValid =
+            typeof budgetValue === "number" &&
+            budgetValue >= 50 &&
+            budgetValue <= 50000;
+
+         if (!isBudgetValid) {
+            form.setError("budget", {
+               type: "manual",
+               message: "Enter a budget between ₹50 and ₹50,000.",
+            });
+            toast.error("Enter a valid budget", {
+               description: "Budget must be between ₹50 and ₹50,000.",
+            });
+            return;
+         }
+      }
 
       if (fieldsToValidate) {
          const isValid = await form.trigger(fieldsToValidate as any);
@@ -381,16 +549,33 @@ export function TaskCreationFlow() {
 
       if (currentStep < TOTAL_STEPS) {
          setCurrentStep((prev) => prev + 1);
-         window.scrollTo({ top: 0, behavior: "smooth" });
+         scrollToTop();
+         
+         // Auto-save draft when moving to next step
+         if (hasUnsavedChanges) {
+            const values = form.getValues();
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(values));
+            setHasUnsavedChanges(false);
+         }
       }
-   }, [currentStep, form, stepValidationFields]);
+   }, [currentStep, form, stepValidationFields, hasUnsavedChanges, scrollToTop]);
 
    const handleBack = useCallback(() => {
       if (currentStep > 1) {
          setCurrentStep((prev) => prev - 1);
-         window.scrollTo({ top: 0, behavior: "smooth" });
+         scrollToTop();
+         
+         // Auto-save draft when going back
+         if (hasUnsavedChanges) {
+            const values = form.getValues();
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(values));
+            setHasUnsavedChanges(false);
+         }
+      } else if (currentStep === 1) {
+         // Go back to previous page on step 1
+         router.back();
       }
-   }, [currentStep]);
+   }, [currentStep, hasUnsavedChanges, form, scrollToTop]);
 
    // API call with retry logic
    const createTaskWithRetry = useCallback(
@@ -427,7 +612,7 @@ export function TaskCreationFlow() {
             return;
          }
 
-         // Background check: Aadhaar, PAN, and bank must be verified to post a task
+         // Background check: Aadhaar must be verified to post a task
          if (!verificationStatus.allowed) {
             setShowVerificationModal(true);
             return;
@@ -442,8 +627,21 @@ export function TaskCreationFlow() {
          setRetryCount(0);
 
          try {
+            if (data.budgetType === "negotiable") {
+               // Negotiable tasks don't require a specific budget
+            } else {
+               // Fixed and hourly budgets require a valid amount
+               const budgetValue = data.budget ?? null;
+               if (budgetValue === null || budgetValue < 50 || budgetValue > 50000) {
+                  toast.error(`Please enter a ${data.budgetType} budget between ₹50 and ₹50,000`);
+                  setIsSubmitting(false);
+                  return;
+               }
+            }
+
             // Transform form data to match backend Task schema
             const taskPayload = transformFormDataToTask(data);
+            logTransformedTask(taskPayload);
 
             // Use toast.promise for loading state
             const response = await toast.promise(
@@ -496,6 +694,15 @@ export function TaskCreationFlow() {
    // Save draft handler
    const handleSaveDraft = useCallback(() => {
       const values = form.getValues();
+      
+      // DEBUG: Log attachments in draft
+      console.log('[DRAFT DEBUG] Saving draft:', {
+         hasAttachments: !!values.attachments,
+         attachmentsCount: values.attachments?.length || 0,
+         attachments: values.attachments,
+         title: values.title
+      });
+      
       localStorage.setItem(DRAFT_KEY, JSON.stringify(values));
       setHasUnsavedChanges(false);
       toast.success("Draft saved", {
@@ -503,22 +710,26 @@ export function TaskCreationFlow() {
       });
    }, [form]);
 
-   // Handle navigation action
-   const handleNavigateBack = useCallback(() => {
+   // Handle edit action from review step
+   const handleEdit = useCallback((step: number) => {
+      // Auto-save draft before navigating to edit step
       if (hasUnsavedChanges) {
-         handleSaveDraft();
+         const values = form.getValues();
+         localStorage.setItem(DRAFT_KEY, JSON.stringify(values));
+         setHasUnsavedChanges(false);
       }
-      router.back();
-   }, [hasUnsavedChanges, handleSaveDraft, router]);
+      setCurrentStep(step);
+      scrollToTop();
+   }, [hasUnsavedChanges, form, scrollToTop]);
 
    const handleAuthLogin = () => {
       setShowAuthModal(false);
-      router.push("/login?next=/tasks/new");
+      window.location.href = "/login?next=/tasks/new";
    };
 
    const handleAuthSignup = () => {
       setShowAuthModal(false);
-      router.push("/signup?next=/tasks/new");
+      window.location.href = "/signup?next=/tasks/new";
    };
 
    return (
@@ -529,14 +740,10 @@ export function TaskCreationFlow() {
                <div className="h-16 flex items-center justify-between">
                   <div className="flex items-center gap-4">
                      <button
-                        onClick={
-                           currentStep === 1 ? handleNavigateBack : handleBack
-                        }
+                        onClick={handleBack}
                         className="text-gray-700 hover:text-gray-900 transition-colors disabled:opacity-50"
                         disabled={isSubmitting}
-                        aria-label={
-                           currentStep === 1 ? "Go back" : "Previous step"
-                        }
+                        aria-label="Previous step"
                      >
                         <ArrowLeft className="w-6 h-6" />
                      </button>
@@ -595,13 +802,9 @@ export function TaskCreationFlow() {
                   )}
 
                   {currentStep === 3 && (
-                     <BudgetStep form={form} onNext={handleNext} />
-                  )}
-
-                  {currentStep === 4 && (
                      <ReviewStep
                         form={form}
-                        onEdit={(step) => setCurrentStep(step)}
+                        onEdit={handleEdit}
                         isSubmitting={isSubmitting}
                      />
                   )}
@@ -636,14 +839,14 @@ export function TaskCreationFlow() {
             </DialogContent>
          </Dialog>
 
-         {/* Verification required: Aadhaar, PAN, Bank */}
+         {/* Verification required: Aadhaar */}
          <Dialog open={showVerificationModal} onOpenChange={setShowVerificationModal}>
             <DialogContent>
                <DialogHeader>
                   <DialogTitle>Verification required to post a task</DialogTitle>
                   <DialogDescription>
-                     To post a task, your Aadhaar, PAN, and bank account must be
-                     verified. Please complete the following in your profile:
+                     To post a task, your Aadhaar must be verified. Please
+                     complete the following in your profile:
                   </DialogDescription>
                </DialogHeader>
                <ul className="list-disc list-inside text-sm text-secondary-700 space-y-1">

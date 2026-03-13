@@ -75,15 +75,28 @@ export const tasksApi = {
   async getMyTasks(params?: TaskQueryParams): Promise<TaskListResponse> {
     const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
     const response = await fetchWithAuth(`tasks/my-tasks${queryString}`);
+    if (response.data && response.meta?.pagination) {
+      return {
+        tasks: response.data,
+        pagination: {
+          page: response.meta.pagination.page,
+          limit: response.meta.pagination.limit,
+          total: response.meta.pagination.total,
+          pages: response.meta.pagination.totalPages ?? response.meta.pagination.pages,
+        },
+      };
+    }
+
     return response.data || response;
   },
 
   /**
    * Get a single task by ID
    * GET /api/v1/tasks/:id
+   * Public endpoint - works without authentication
    */
   async getTask(taskId: string): Promise<Task> {
-    const response = await fetchWithAuth(`tasks/${taskId}`);
+    const response = await fetchPublic(`tasks/${taskId}`);
     return response.data || response;
   },
 
@@ -92,6 +105,14 @@ export const tasksApi = {
    * POST /api/v1/tasks
    */
   async createTask(taskData: Partial<Task>): Promise<Task> {
+    // DEBUG: Log images field before sending
+    console.log('[API DEBUG] createTask payload:', {
+      hasImages: !!taskData.images,
+      imagesCount: taskData.images?.length || 0,
+      images: taskData.images,
+      title: taskData.title
+    });
+    
     const response = await fetchWithAuth('tasks', {
       method: 'POST',
       body: JSON.stringify(taskData),
@@ -125,13 +146,37 @@ export const tasksApi = {
    * Update task status
    * PATCH /api/v1/tasks/:id/status
    */
-  async updateTaskStatus(taskId: string, status: Task['status']): Promise<Task> {
+  async updateTaskStatus(
+    taskId: string,
+    status: Task['status'],
+    cancellationReason?: string
+  ): Promise<Task> {
+    const body: any = { status };
+    if (cancellationReason) {
+      body.cancellationReason = cancellationReason;
+    }
     const response = await fetchWithAuth(`tasks/${taskId}/status`, {
       method: 'PATCH',
-      body: JSON.stringify({ status }),
+      body: JSON.stringify(body),
     });
     // Backend returns { success: true, data: task, message: "..." }
     return response.data || response;
+  },
+
+  /**
+   * Request changes on a task (poster sends feedback to tasker)
+   * This doesn't change the task status, just creates a comment/notification
+   * POST /api/v1/tasks/:id/request-changes
+   */
+  async requestChanges(
+    taskId: string,
+    message: string
+  ): Promise<{ success: boolean; message?: string; data?: Task }> {
+    const response = await fetchWithAuth(`tasks/${taskId}/request-changes`, {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    });
+    return response;
   },
 
   /**

@@ -6,7 +6,8 @@
  * Used within the Tasks page tabs
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -32,10 +33,8 @@ export function MyApplicationsContent({
    const router = useRouter();
 
    // State
-   const [applications, setApplications] = useState<TaskApplication[]>([]);
+   const [allApplications, setAllApplications] = useState<TaskApplication[]>([]);
    const [tasks, setTasks] = useState<Map<string, Task>>(new Map());
-   const [loading, setLoading] = useState(true);
-   const [error, setError] = useState<string | null>(null);
    const [searchQuery, setSearchQuery] = useState("");
    const [statusFilter, setStatusFilter] = useState<ApplicationStatus | "all">(
       "all"
@@ -46,108 +45,127 @@ export function MyApplicationsContent({
       string | null
    >(null);
 
-   // Fetch applications
-   const fetchApplications = useCallback(async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-         // Fetch from real API
-         const response = await applicationsApi.getMyApplications(
-            statusFilter !== "all" ? statusFilter : undefined
-         );
-         
+   // Fetch applications via React Query (cached across navigations)
+   const {
+      data,
+      isLoading,
+      error,
+      refetch,
+   } = useQuery<any>({
+      queryKey: ["my-applications"],
+      queryFn: async () => {
+         const response = await applicationsApi.getMyApplications();
          console.log("✅ My applications response:", response);
-         
-         // Handle response structure: { success, data: [...], meta: {...} }
-         const responseData = response as any;
-         let apps: any[] = [];
-         
-         if (Array.isArray(responseData?.data)) {
-            apps = responseData.data;
-         } else if (responseData?.data?.applications) {
-            apps = responseData.data.applications;
-         } else if (responseData?.applications) {
-            apps = responseData.applications;
-         }
-         
-         console.log("✅ Parsed applications:", apps.length);
+         return response;
+      },
+      staleTime: Infinity, // Never mark as stale - keep cached data indefinitely
+      refetchOnMount: false, // Never refetch on mount - show cached data immediately
+      refetchOnWindowFocus: false, // Don't refetch on window focus
+   });
 
-         // Build tasks map from populated taskId
-         const taskMap = new Map<string, Task>();
-         apps.forEach((app: any) => {
-            if (typeof app.taskId === "object" && app.taskId) {
-               const task = app.taskId as Task;
-               taskMap.set(task._id, task);
-            }
-         });
-         setTasks(taskMap);
-
-         // Apply client-side filters since API already filtered by status
-         let filtered = [...apps];
-
-         // Search filter (client-side)
-         if (searchQuery.trim()) {
-            const query = searchQuery.toLowerCase();
-            filtered = filtered.filter((app: any) => {
-               const task = typeof app.taskId === "object" ? app.taskId : null;
-               return (
-                  (app.coverLetter && app.coverLetter.toLowerCase().includes(query)) ||
-                  (app.relevantExperience && app.relevantExperience.some((exp: string) =>
-                     exp.toLowerCase().includes(query)
-                  )) ||
-                  (task &&
-                     ((task.title && task.title.toLowerCase().includes(query)) ||
-                        (task.description && task.description.toLowerCase().includes(query)) ||
-                        (task.category && task.category.toLowerCase().includes(query))))
-               );
-            });
-         }
-
-         // Sort (client-side)
-         filtered.sort((a: any, b: any) => {
-            switch (sortBy) {
-               case "recent":
-                  return (
-                     new Date(b.createdAt).getTime() -
-                     new Date(a.createdAt).getTime()
-                  );
-               case "oldest":
-                  return (
-                     new Date(a.createdAt).getTime() -
-                     new Date(b.createdAt).getTime()
-                  );
-               case "budget-high":
-                  return (b.proposedBudget?.amount || 0) - (a.proposedBudget?.amount || 0);
-               case "budget-low":
-                  return (a.proposedBudget?.amount || 0) - (b.proposedBudget?.amount || 0);
-               case "status":
-                  const statusOrder: Record<ApplicationStatus, number> = {
-                     pending: 1,
-                     accepted: 2,
-                     rejected: 3,
-                     withdrawn: 4,
-                  };
-                  return statusOrder[a.status as ApplicationStatus] - statusOrder[b.status as ApplicationStatus];
-               default:
-                  return 0;
-            }
-         });
-
-         setApplications(filtered);
-         // Notify parent of count change
-         onCountChange?.(filtered.length);
-      } catch (err) {
-         console.error("Error fetching applications:", err);
-         setError(getErrorMessage(err));
-      } finally {
-         setLoading(false);
-      }
-   }, [searchQuery, statusFilter, sortBy, page, onCountChange]);
-
+   // Normalize applications + tasks from API response
    useEffect(() => {
-      fetchApplications();
-   }, [fetchApplications]);
+      const responseData = data as any;
+      if (!responseData) return;
+
+      let apps: TaskApplication[] = [];
+
+      if (Array.isArray(responseData?.data)) {
+         apps = responseData.data as TaskApplication[];
+      } else if (Array.isArray(responseData?.data?.applications)) {
+         apps = responseData.data.applications as TaskApplication[];
+      } else if (Array.isArray(responseData?.applications)) {
+         apps = responseData.applications as TaskApplication[];
+      }
+
+      console.log("✅ Parsed applications from query:", apps.length);
+
+      // Build tasks map from populated taskId
+      const taskMap = new Map<string, Task>();
+      apps.forEach((app: any) => {
+         if (typeof app.taskId === "object" && app.taskId) {
+            const task = app.taskId as Task;
+            taskMap.set(task._id, task);
+         }
+      });
+
+      setTasks(taskMap);
+      setAllApplications(apps);
+      
+      // Report count to parent component immediately after loading
+      const validApps = apps.filter((app) => app.taskId !== null && app.taskId !== undefined);
+      onCountChange?.(validApps.length);
+   }, [data, onCountChange]);
+
+   // Client-side filtering and sorting
+   const filteredApplications = useMemo(() => {
+      let result = [...allApplications];
+
+      // Status filter
+      if (statusFilter !== "all") {
+         result = result.filter((app) => app.status === statusFilter);
+      }
+
+      // Search filter
+      if (searchQuery.trim()) {
+         const query = searchQuery.toLowerCase();
+         result = result.filter((app: any) => {
+            const task = typeof app.taskId === "object" ? app.taskId : null;
+            return (
+               (app.coverLetter && app.coverLetter.toLowerCase().includes(query)) ||
+               (app.relevantExperience && app.relevantExperience.some((exp: string) =>
+                  exp.toLowerCase().includes(query)
+               )) ||
+               (task &&
+                  ((task.title && task.title.toLowerCase().includes(query)) ||
+                     (task.description && task.description.toLowerCase().includes(query)) ||
+                     (task.category && task.category.toLowerCase().includes(query))))
+            );
+         });
+      }
+
+      // Sort
+      result.sort((a: any, b: any) => {
+         switch (sortBy) {
+            case "recent":
+               return (
+                  new Date(b.createdAt).getTime() -
+                  new Date(a.createdAt).getTime()
+               );
+            case "oldest":
+               return (
+                  new Date(a.createdAt).getTime() -
+                  new Date(b.createdAt).getTime()
+               );
+            case "budget-high":
+               return (b.proposedBudget?.amount || 0) - (a.proposedBudget?.amount || 0);
+            case "budget-low":
+               return (a.proposedBudget?.amount || 0) - (b.proposedBudget?.amount || 0);
+            case "status":
+               const statusOrder: Record<ApplicationStatus, number> = {
+                  pending: 1,
+                  accepted: 2,
+                  rejected: 3,
+                  withdrawn: 4,
+               };
+               return statusOrder[a.status as ApplicationStatus] - statusOrder[b.status as ApplicationStatus];
+            default:
+               return 0;
+         }
+      });
+
+      return result;
+   }, [allApplications, searchQuery, statusFilter, sortBy]);
+
+   // Calculate displayable applications (excluding those with null taskId)
+   const displayableApplications = useMemo(() => {
+      return filteredApplications.filter((app) => app.taskId !== null && app.taskId !== undefined);
+   }, [filteredApplications]);
+
+   // Calculate total count for tab badge (all applications with valid taskId, regardless of filters)
+   const totalApplicationsCount = useMemo(() => {
+      return allApplications.filter((app) => app.taskId !== null && app.taskId !== undefined).length;
+   }, [allApplications]);
 
    // Handlers
    const handleViewTask = (taskId: string) => {
@@ -157,24 +175,25 @@ export function MyApplicationsContent({
    const handleWithdraw = async (applicationId: string) => {
       if (withdrawingApplicationId) return;
 
+      const application = allApplications.find((app) => app._id === applicationId);
+      if (!application || application.status !== "pending") {
+         toast.error("This application can no longer be withdrawn");
+         return;
+      }
+
       setWithdrawingApplicationId(applicationId);
 
       try {
-         // Call real API to withdraw
-         await applicationsApi.updateApplicationStatus(applicationId, {
-            status: "withdrawn" as any,
-         });
+         await applicationsApi.withdrawApplication(applicationId);
 
          // Update local state
-         setApplications((prev) => {
-            const updated = prev.map((app) =>
+         setAllApplications((prev) =>
+            prev.map((app) =>
                app._id === applicationId
                   ? { ...app, status: "withdrawn" as const }
                   : app
-            );
-            onCountChange?.(updated.length);
-            return updated;
-         });
+            )
+         );
 
          toast.success("Application withdrawn successfully");
       } catch (err) {
@@ -203,25 +222,27 @@ export function MyApplicationsContent({
 
          {/* Applications List */}
          <div className="flex-1">
-            {loading ? (
+           {isLoading ? (
                <div className="flex items-center justify-center py-16">
                   <LoadingSpinner size="lg" />
                </div>
             ) : error ? (
                <div className="flex items-center justify-center py-16">
                   <div className="text-center">
-                     <p className="text-red-600 mb-4">{error}</p>
-                     <Button onClick={fetchApplications} variant="outline">
+                     <p className="text-red-600 mb-4">
+                        {getErrorMessage(error)}
+                     </p>
+                     <Button onClick={() => refetch()} variant="outline">
                         Try Again
                      </Button>
                   </div>
                </div>
-            ) : applications.length === 0 ? (
+            ) : filteredApplications.length === 0 ? (
                <MyApplicationsEmptyState hasFilters={hasFilters} />
             ) : (
                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
                   <div className="space-y-4 sm:space-y-6">
-                     {applications.map((application) => {
+                     {filteredApplications.map((application) => {
                         // Handle case where taskId might be null or not populated
                         if (!application.taskId) {
                            console.warn("Application missing taskId:", application._id);
@@ -250,10 +271,10 @@ export function MyApplicationsContent({
                   </div>
 
                   {/* Pagination (for future use) */}
-                  {applications.length > 10 && (
+                  {displayableApplications.length > 10 && (
                      <div className="flex flex-col sm:flex-row items-center justify-between mt-6 sm:mt-8 pt-6 border-t border-secondary-200 gap-4">
                         <p className="text-sm text-secondary-600">
-                           Showing {applications.length} applications
+                           Showing {displayableApplications.length} applications
                         </p>
                         <div className="flex gap-2">
                            <Button
@@ -268,7 +289,7 @@ export function MyApplicationsContent({
                            <Button
                               variant="outline"
                               size="sm"
-                              disabled={applications.length < 10}
+                              disabled={displayableApplications.length < 10}
                               onClick={() => setPage((p) => p + 1)}
                            >
                               Next

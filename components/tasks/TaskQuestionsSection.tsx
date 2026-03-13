@@ -1,20 +1,33 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 import type { TaskQuestion } from "@/types/question";
 import { questionsApi } from "@/lib/api/endpoints/questions";
+import { taskDetailsQueryKeys } from "@/lib/queryKeys";
 import { getErrorMessage } from "@/lib/utils/errorUtils";
 import { AskQuestionForm } from "./questions/AskQuestionForm";
 import { AnswerQuestionForm } from "./questions/AnswerQuestionForm";
 import type { CreateQuestionFormData } from "@/lib/validations/question";
 
+function normalizeQuestionsResponse(response: unknown): TaskQuestion[] {
+   const data = response as any;
+   let list: TaskQuestion[] = [];
+   if (Array.isArray(data?.data)) list = data.data;
+   else if (data?.data?.questions) list = data.data.questions;
+   else if (data?.questions) list = data.questions;
+   else if (Array.isArray(data)) list = data;
+   return list.filter((q: any) => q.isPublic !== false);
+}
+
 interface TaskQuestionsSectionProps {
    taskId: string;
    isOwner?: boolean;
+   openFormTrigger?: number;
 }
 
 const getTimeAgo = (date: Date | string | undefined): string => {
@@ -34,75 +47,46 @@ const getTimeAgo = (date: Date | string | undefined): string => {
    return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
 };
 
-export function TaskQuestionsSection({ taskId, isOwner }: TaskQuestionsSectionProps) {
-   const [questions, setQuestions] = useState<TaskQuestion[]>([]);
-   const [loading, setLoading] = useState(true);
+export function TaskQuestionsSection({ taskId, isOwner, openFormTrigger }: TaskQuestionsSectionProps) {
+   const queryClient = useQueryClient();
+   const { data: rawData, isLoading: loading } = useQuery({
+      queryKey: taskDetailsQueryKeys.questions(taskId),
+      queryFn: () => questionsApi.getTaskQuestions(taskId),
+      enabled: !!taskId,
+      staleTime: 60 * 1000,
+   });
+
+   const questions = useMemo(() => normalizeQuestionsResponse(rawData), [rawData]);
+
    const [showQuestionForm, setShowQuestionForm] = useState(false);
-   const [answeringQuestionId, setAnsweringQuestionId] = useState<
-      string | null
-   >(null);
+   const [answeringQuestionId, setAnsweringQuestionId] = useState<string | null>(null);
    const [isSubmitting, setIsSubmitting] = useState(false);
 
    useEffect(() => {
-      const loadQuestions = async () => {
-         try {
-            setLoading(true);
-            
-            // Fetch questions from real API
-            const response = await questionsApi.getTaskQuestions(taskId);
-            
-            console.log("✅ Questions response:", response);
-            
-            // Handle response structure
-            const responseData = response as any;
-            let questionsData: TaskQuestion[] = [];
-            
-            if (Array.isArray(responseData?.data)) {
-               questionsData = responseData.data;
-            } else if (responseData?.data?.questions) {
-               questionsData = responseData.data.questions;
-            } else if (responseData?.questions) {
-               questionsData = responseData.questions;
-            } else if (Array.isArray(responseData)) {
-               questionsData = responseData;
-            }
-            
-            // Filter to only show public questions
-            const publicQuestions = questionsData.filter((q: any) => q.isPublic !== false);
-            setQuestions(publicQuestions);
-         } catch (error) {
-            console.error("Error loading questions:", error);
-            // Don't show error toast for empty results or 404
-         } finally {
-            setLoading(false);
-         }
-      };
-
-      if (taskId) {
-         loadQuestions();
+      if (isOwner) return;
+      if (typeof openFormTrigger === "number" && openFormTrigger > 0) {
+         setShowQuestionForm(true);
+         // Scroll to the questions section smoothly
+         setTimeout(() => {
+            document.querySelector('[data-questions-section]')?.scrollIntoView({ 
+               behavior: 'smooth', 
+               block: 'start' 
+            });
+         }, 100);
       }
-   }, [taskId]);
+   }, [openFormTrigger, isOwner]);
 
    const handleAskQuestion = async (data: CreateQuestionFormData) => {
       if (isSubmitting) return;
-
       setIsSubmitting(true);
-
       try {
-         // Call real API to ask question
-         const response = await questionsApi.askQuestion(taskId, {
+         await questionsApi.askQuestion(taskId, {
             question: data.question,
             isPublic: data.isPublic,
          });
-         
-         console.log("✅ Question asked:", response);
-         
-         // Add new question to list
-         const newQuestion = (response as any)?.data || response;
-         setQuestions([newQuestion, ...questions]);
          setShowQuestionForm(false);
-         
          toast.success("Question submitted!");
+         await queryClient.invalidateQueries({ queryKey: taskDetailsQueryKeys.questions(taskId) });
       } catch (error) {
          console.error("Error asking question:", error);
          toast.error("Failed to submit question", {
@@ -118,27 +102,12 @@ export function TaskQuestionsSection({ taskId, isOwner }: TaskQuestionsSectionPr
       data: { answer: string }
    ) => {
       if (isSubmitting) return;
-
       setIsSubmitting(true);
-
       try {
-         // Call real API to answer question
-         const response = await questionsApi.answerQuestion(taskId, questionId, {
-            answer: data.answer,
-         });
-         
-         console.log("✅ Question answered:", response);
-         
-         // Update question in list
-         const updatedQuestion = (response as any)?.data || response;
-         setQuestions((prev) =>
-            prev.map((q) =>
-               q._id === questionId ? { ...q, ...updatedQuestion } : q
-            )
-         );
+         await questionsApi.answerQuestion(taskId, questionId, { answer: data.answer });
          setAnsweringQuestionId(null);
-         
          toast.success("Answer submitted!");
+         await queryClient.invalidateQueries({ queryKey: taskDetailsQueryKeys.questions(taskId) });
       } catch (error) {
          console.error("Error answering question:", error);
          toast.error("Failed to submit answer", {
@@ -163,7 +132,7 @@ export function TaskQuestionsSection({ taskId, isOwner }: TaskQuestionsSectionPr
    }
 
    return (
-      <div className="p-4 md:p-8">
+      <div className="p-4 md:p-8" data-questions-section>
          {/* Header */}
          <div className="flex items-center justify-between mb-4 md:mb-8">
             <h2 className="md:text-lg font-bold text-secondary-900">
@@ -222,7 +191,7 @@ export function TaskQuestionsSection({ taskId, isOwner }: TaskQuestionsSectionPr
                         {/* Question */}
                         <div className="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
                            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-primary-500 flex items-center justify-center text-white text-sm sm:text-base font-bold shrink-0 shadow-sm">
-                              {asker.name.charAt(0)}
+                              {(asker.name || "U").charAt(0)}
                            </div>
 
                            <div className="flex-1 min-w-0">

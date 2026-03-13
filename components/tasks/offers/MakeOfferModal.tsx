@@ -34,6 +34,7 @@ import {
    FormLabel,
    FormMessage,
    FormControl,
+   FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -55,6 +56,7 @@ interface MakeOfferModalProps {
    open: boolean;
    onOpenChange: (open: boolean) => void;
    onSuccess?: () => void;
+   onSubmittingChange?: (isSubmitting: boolean) => void;
 }
 
 export function MakeOfferModal({
@@ -62,6 +64,7 @@ export function MakeOfferModal({
    open,
    onOpenChange,
    onSuccess,
+   onSubmittingChange,
 }: MakeOfferModalProps) {
    const router = useRouter();
    const { userData } = useAuth();
@@ -69,10 +72,29 @@ export function MakeOfferModal({
    const [showVerificationModal, setShowVerificationModal] = useState(false);
    const [experienceInput, setExperienceInput] = useState("");
    const [portfolioInput, setPortfolioInput] = useState("");
+   const [rangeStart, setRangeStart] = useState("");
+   const [rangeEnd, setRangeEnd] = useState("");
+
+   // Independent local state for days/hours so each can be freely edited
+   const initialDuration = task.estimatedDuration ?? 0;
+   const [durationDays, setDurationDays] = useState<string>(
+      String(Math.floor(initialDuration / 24))
+   );
+   const [durationHours, setDurationHours] = useState<string>(
+      String(initialDuration % 24)
+   );
+
    const verificationStatus = getOfferSubmissionVerificationStatus(userData ?? null);
 
    const taskBudget =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
+
+   const isRecurring = Boolean(
+      task.recurring?.enabled && Array.isArray(task.schedule) && task.schedule.length > 0
+   );
+   const openSchedule = Array.isArray(task.schedule)
+      ? task.schedule.filter((entry) => entry.status === "open")
+      : [];
 
    const form = useForm<CreateApplicationFormData>({
       resolver: zodResolver(createApplicationSchema),
@@ -87,6 +109,7 @@ export function MakeOfferModal({
             flexible: true,
             estimatedDuration: task.estimatedDuration ?? undefined,
          },
+         selectedDates: [],
          coverLetter: "",
          relevantExperience: [],
          portfolio: [],
@@ -95,6 +118,48 @@ export function MakeOfferModal({
 
    const relevantExperience = form.watch("relevantExperience") || [];
    const portfolio = form.watch("portfolio") || [];
+   const selectedDates = form.watch("selectedDates") || [];
+   const openDates = openSchedule.map((entry) => new Date(entry.date));
+   const openDatesSorted = [...openDates].sort((a, b) => a.getTime() - b.getTime());
+   const minOpenDate = openDatesSorted[0];
+   const maxOpenDate = openDatesSorted[openDatesSorted.length - 1];
+
+   const toDateInputValue = (date?: Date) => {
+      if (!date) return "";
+      return date.toISOString().slice(0, 10);
+   };
+
+   const normalizeDate = (date: Date) =>
+      new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+   const applyRangeSelection = (startValue: string, endValue: string) => {
+      if (!startValue || !endValue) return;
+      const start = new Date(`${startValue}T00:00:00`);
+      const end = new Date(`${endValue}T00:00:00`);
+      const startDay = normalizeDate(start);
+      const endDay = normalizeDate(end);
+      const rangeStartDate = startDay <= endDay ? startDay : endDay;
+      const rangeEndDate = startDay <= endDay ? endDay : startDay;
+
+      const next = openDates.filter((date) => {
+         const day = normalizeDate(date);
+         return day >= rangeStartDate && day <= rangeEndDate;
+      });
+
+      setSelectedDates(next);
+   };
+
+   const setSelectedDates = (dates: Date[]) => {
+      form.setValue("selectedDates", dates, { shouldValidate: true });
+   };
+
+   const selectWeekdays = () => {
+      setSelectedDates(openDates.filter((date) => ![0, 6].includes(date.getDay())));
+   };
+
+   const selectWeekends = () => {
+      setSelectedDates(openDates.filter((date) => [0, 6].includes(date.getDay())));
+   };
 
    const addExperience = () => {
       const trimmed = experienceInput.trim();
@@ -134,6 +199,11 @@ export function MakeOfferModal({
    const onSubmit = async (data: CreateApplicationFormData) => {
       if (isSubmitting) return;
 
+      if (isRecurring && (!data.selectedDates || data.selectedDates.length === 0)) {
+         toast.error("Please select at least one date");
+         return;
+      }
+
       // Background check: Aadhaar, PAN, and bank must be verified to apply
       if (!verificationStatus.allowed) {
          setShowVerificationModal(true);
@@ -141,6 +211,7 @@ export function MakeOfferModal({
       }
 
       setIsSubmitting(true);
+      onSubmittingChange?.(true);
 
       try {
          // Build the application payload
@@ -155,6 +226,7 @@ export function MakeOfferModal({
                flexible: data.proposedTime.flexible,
                estimatedDuration: data.proposedTime.estimatedDuration,
             },
+            selectedDates: data.selectedDates?.length ? data.selectedDates : undefined,
             coverLetter: data.coverLetter,
             relevantExperience: data.relevantExperience,
             portfolio: data.portfolio,
@@ -168,23 +240,38 @@ export function MakeOfferModal({
          });
 
          form.reset();
+         setDurationDays("0");
+         setDurationHours("0");
          onOpenChange(false);
          onSuccess?.();
       } catch (error: any) {
          console.error("Error submitting offer:", error);
+         const errorMessage = getErrorMessage(error);
          const isUnauthorized = error?.status === 401 || error?.status === 403;
+         const isDuplicate = errorMessage.toLowerCase().includes("already applied") || 
+                           errorMessage.toLowerCase().includes("duplicate");
+         
          if (isUnauthorized) {
             toast.error("Session expired", {
                description:
                   "Please log in again to submit an offer. Your session may have expired.",
             });
+         } else if (isDuplicate) {
+            toast.info("Already applied", {
+               description: "You have already submitted an offer for this task. Check the Offers section below.",
+            });
+            // Close modal and wait for UI to update
+            form.reset();
+            onOpenChange(false);
+            onSuccess?.();
          } else {
             toast.error("Failed to submit offer", {
-               description: getErrorMessage(error),
+               description: errorMessage,
             });
          }
       } finally {
          setIsSubmitting(false);
+         onSubmittingChange?.(false);
       }
    };
 
@@ -207,6 +294,147 @@ export function MakeOfferModal({
                   className="space-y-6"
                >
                   {/* Proposed Budget */}
+                     {isRecurring && (
+                        <FormField
+                           control={form.control}
+                           name="selectedDates"
+                           render={() => (
+                              <FormItem>
+                                 <FormLabel className="flex items-center gap-2 text-sm font-semibold text-secondary-900">
+                                    <Calendar className="w-4 h-4" />
+                                    Select dates you can take
+                                 </FormLabel>
+                                 <FormControl>
+                                    <div className="space-y-2">
+                                       {openSchedule.length > 0 && (
+                                          <div className="space-y-2">
+                                             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                                <div>
+                                                   <FormLabel className="text-xs text-secondary-600">
+                                                      Start date
+                                                   </FormLabel>
+                                                   <Input
+                                                      type="date"
+                                                      value={rangeStart}
+                                                      min={toDateInputValue(minOpenDate)}
+                                                      max={toDateInputValue(maxOpenDate)}
+                                                      onChange={(event) => {
+                                                         const value = event.target.value;
+                                                         setRangeStart(value);
+                                                         applyRangeSelection(value, rangeEnd);
+                                                      }}
+                                                      className="h-9 text-sm"
+                                                   />
+                                                </div>
+                                                <div>
+                                                   <FormLabel className="text-xs text-secondary-600">
+                                                      End date
+                                                   </FormLabel>
+                                                   <Input
+                                                      type="date"
+                                                      value={rangeEnd}
+                                                      min={toDateInputValue(minOpenDate)}
+                                                      max={toDateInputValue(maxOpenDate)}
+                                                      onChange={(event) => {
+                                                         const value = event.target.value;
+                                                         setRangeEnd(value);
+                                                         applyRangeSelection(rangeStart, value);
+                                                      }}
+                                                      className="h-9 text-sm"
+                                                   />
+                                                </div>
+                                             </div>
+                                             <div className="flex flex-wrap gap-2">
+                                                <Button
+                                                   type="button"
+                                                   variant="outline"
+                                                   size="sm"
+                                                   onClick={() => setSelectedDates(openDates)}
+                                                >
+                                                   Select all
+                                                </Button>
+                                                <Button
+                                                   type="button"
+                                                   variant="outline"
+                                                   size="sm"
+                                                   onClick={() => setSelectedDates([])}
+                                                >
+                                                   Clear
+                                                </Button>
+                                                <Button
+                                                   type="button"
+                                                   variant="outline"
+                                                   size="sm"
+                                                   onClick={selectWeekdays}
+                                                >
+                                                   Weekdays
+                                                </Button>
+                                                <Button
+                                                   type="button"
+                                                   variant="outline"
+                                                   size="sm"
+                                                   onClick={selectWeekends}
+                                                >
+                                                   Weekends
+                                                </Button>
+                                             </div>
+                                          </div>
+                                       )}
+                                       <div className="max-h-48 overflow-y-auto rounded-lg border border-secondary-200 p-3">
+                                       {openSchedule.length === 0 && (
+                                          <p className="text-xs text-secondary-500">
+                                             No open dates available right now.
+                                          </p>
+                                       )}
+                                       {openSchedule.map((entry) => {
+                                          const entryDate = new Date(entry.date);
+                                          const key = entryDate.toISOString();
+                                          const isChecked = selectedDates.some(
+                                             (d: Date) => new Date(d).toDateString() === entryDate.toDateString()
+                                          );
+
+                                          return (
+                                             <label
+                                                key={key}
+                                                className="flex items-center gap-3 text-xs text-secondary-700"
+                                             >
+                                                <Checkbox
+                                                   checked={isChecked}
+                                                   onCheckedChange={(checked) => {
+                                                      const next = checked
+                                                         ? [...selectedDates, entryDate]
+                                                         : selectedDates.filter(
+                                                              (d: Date) =>
+                                                                 new Date(d).toDateString() !==
+                                                                 entryDate.toDateString()
+                                                           );
+                                                      form.setValue("selectedDates", next, {
+                                                         shouldValidate: true,
+                                                      });
+                                                   }}
+                                                />
+                                                <span>
+                                                   {entryDate.toLocaleDateString("en-US", {
+                                                      weekday: "short",
+                                                      month: "short",
+                                                      day: "numeric",
+                                                   })}
+                                                </span>
+                                             </label>
+                                          );
+                                       })}
+                                       </div>
+                                    </div>
+                                 </FormControl>
+                                 <FormDescription className="text-xs text-secondary-600">
+                                    Choose one or more dates from the poster&apos;s range.
+                                 </FormDescription>
+                                 <FormMessage />
+                              </FormItem>
+                           )}
+                        />
+                     )}
+
                   <FormField
                      control={form.control}
                      name="proposedBudget.amount"
@@ -220,18 +448,22 @@ export function MakeOfferModal({
                               <Input
                                  type="number"
                                  placeholder="Enter your proposed budget"
-                                 value={field.value ?? ""}
-                                 onChange={(e) =>
-                                    field.onChange(
-                                       e.target.value === ""
-                                          ? 0
-                                          : Number(e.target.value)
-                                    )
-                                 }
+                                 min="50"
+                                 max="50000"
+                                 value={field.value || ""}
+                                 onChange={(e) => {
+                                    const val = e.target.value === ""
+                                       ? 0
+                                       : Number(e.target.value);
+                                    field.onChange(val);
+                                 }}
                                  onBlur={field.onBlur}
                                  className="h-11"
                               />
                            </FormControl>
+                           <FormDescription className="text-xs text-secondary-600">
+                              Minimum ₹50, maximum ₹50,000
+                           </FormDescription>
                            <FormMessage />
                         </FormItem>
                      )}
@@ -270,26 +502,93 @@ export function MakeOfferModal({
                         render={({ field }) => (
                            <FormItem>
                               <FormLabel className="text-xs text-secondary-600">
-                                 Estimated Duration (hours)
+                                 Estimated Duration
                               </FormLabel>
                               <FormControl>
-                                 <Input
-                                    type="number"
-                                    step="0.5"
-                                    min="0.5"
-                                    max="168"
-                                    placeholder="e.g., 4"
-                                    value={field.value ?? ""}
-                                    onChange={(e) =>
-                                       field.onChange(
-                                          e.target.value === ""
-                                             ? undefined
-                                             : Number(e.target.value)
-                                       )
-                                    }
-                                    onBlur={field.onBlur}
-                                    className="h-10"
-                                 />
+                                 <div className="flex items-center gap-3">
+                                    {/* Days */}
+                                    <div className="flex-1">
+                                       <div className="flex items-center gap-2">
+                                          <Input
+                                             type="number"
+                                             placeholder="0"
+                                             min="0"
+                                             max="365"
+                                             step="1"
+                                             inputMode="numeric"
+                                             className="h-10 text-sm flex-1"
+                                             value={durationDays}
+                                             onChange={(e) => {
+                                                const raw = e.target.value;
+                                                setDurationDays(raw);
+                                                const days = raw === "" ? 0 : Math.max(0, Math.floor(Number(raw)));
+                                                const hrs = durationHours === "" ? 0 : Math.min(23, Math.max(0, Math.floor(Number(durationHours))));
+                                                const total = days * 24 + hrs;
+                                                field.onChange(total === 0 ? undefined : total);
+                                             }}
+                                             onBlur={() => {
+                                                const days = durationDays === "" ? 0 : Math.max(0, Math.floor(Number(durationDays)));
+                                                setDurationDays(String(days));
+                                             }}
+                                          />
+                                          <span className="text-xs text-secondary-600 font-medium min-w-fit">
+                                             days
+                                          </span>
+                                       </div>
+                                    </div>
+                                    {/* Hours */}
+                                    <div className="flex-1">
+                                       <div className="flex items-center gap-2">
+                                          <Input
+                                             type="number"
+                                             placeholder="0"
+                                             min="0"
+                                             step="1"
+                                             inputMode="numeric"
+                                             className="h-10 text-sm flex-1"
+                                             value={durationHours}
+                                             onChange={(e) => {
+                                                const raw = e.target.value;
+                                                if (raw === "") {
+                                                   setDurationHours(raw);
+                                                   const days = durationDays === "" ? 0 : Math.max(0, Math.floor(Number(durationDays)));
+                                                   const total = days * 24;
+                                                   field.onChange(total === 0 ? undefined : total);
+                                                   return;
+                                                }
+
+                                                const inputHours = Math.max(0, Math.floor(Number(raw)));
+                                                const currentDays = durationDays === "" ? 0 : Math.max(0, Math.floor(Number(durationDays)));
+                                                const extraDays = Math.floor(inputHours / 24);
+                                                const normalizedHours = inputHours % 24;
+                                                const nextDays = currentDays + extraDays;
+
+                                                setDurationDays(String(nextDays));
+                                                setDurationHours(String(normalizedHours));
+
+                                                const total = nextDays * 24 + normalizedHours;
+                                                field.onChange(total === 0 ? undefined : total);
+                                             }}
+                                             onBlur={() => {
+                                                const hrs = durationHours === "" ? 0 : Math.max(0, Math.floor(Number(durationHours)));
+                                                const currentDays = durationDays === "" ? 0 : Math.max(0, Math.floor(Number(durationDays)));
+                                                const extraDays = Math.floor(hrs / 24);
+                                                const normalizedHours = hrs % 24;
+                                                const nextDays = currentDays + extraDays;
+
+                                                setDurationDays(String(nextDays));
+                                                setDurationHours(String(normalizedHours));
+
+                                                const total = nextDays * 24 + normalizedHours;
+                                                field.onChange(total === 0 ? undefined : total);
+                                             }}
+                                          />
+                                          <span className="text-xs text-secondary-600 font-medium min-w-fit">
+                                             hours
+                                          </span>
+                                       </div>
+                                    </div>
+                                 </div>
                               </FormControl>
                               <FormMessage />
                            </FormItem>

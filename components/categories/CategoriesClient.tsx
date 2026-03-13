@@ -10,23 +10,8 @@ interface CategoriesClientProps {
    viewType?: "jobs" | "services" | "task";
 }
 
-// Tasker-facing label cleanup
-const cleanTaskerCategoryName = (name: string): string =>
-   name
-      .trim()
-      // remove trailing "Tasks", "Task", "Services", "Service" (with optional space before/after)
-      .replace(/\s+(Tasks?|Services?)\s*$/i, "");
-
-// Poster-facing label: plain category name without trailing suffixes
-const cleanPosterCategoryName = (name: string): string => {
-   const base = name
-      .trim()
-      // strip any trailing "Tasks"/"Task"
-      .replace(/\s+Tasks?\s*$/i, "")
-      // strip any existing trailing "Services"/"Service"
-      .replace(/\s+Services?\s*$/i, "");
-   return base;
-};
+// Display category name as-is from database (no modification)
+const getCategoryDisplayName = (name: string): string => name;
 
 const CategoriesClient: React.FC<CategoriesClientProps> = ({
    categories = [],
@@ -51,35 +36,58 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
    };
 
    return (
-      <main className="min-h-[calc(100vh-56px)] w-full pb-8 sm:pt-12 sm:pb-12 md:py-16 lg:py-20 px-4 sm:px-6 md:px-8 lg:px-20 grid grid-cols-1 gap-4 sm:gap-6 md:gap-[30px] ml-0 sm:ml-6 md:grid-cols-[260px_1fr] md:ml-20 lg:ml-[180px]">
-         {/* Left Sidebar - Categories List */}
-         <section className="hidden md:flex self-start -mt-2 sm:-mt-5 flex-col gap-px text-sm sm:text-base font-medium text-[#0a1f44] ml-2 sm:ml-4 md:ml-6 lg:ml-8">
+      <main className="min-h-[calc(100vh-56px)] w-full pb-8 sm:pt-12 sm:pb-12 md:py-16 lg:py-20 px-4 sm:px-6 md:px-8 lg:px-20 grid grid-cols-1 gap-4 sm:gap-6 md:gap-[30px] ml-0 sm:ml-6 md:grid-cols-[280px_1fr] md:ml-20 lg:ml-[180px]">
+         {/* Left Sidebar - Categories List with Images */}
+         <section className="hidden md:flex self-start -mt-2 sm:-mt-5 flex-col gap-3 text-sm sm:text-base font-medium text-[#0a1f44] ml-2 sm:ml-4 md:ml-6 lg:ml-8">
             {categories.map((category) => {
-               // Sidebar display label
-               let displayName: string;
-               if (viewType === "jobs") {
-                  // Tasker view: remove trailing "Tasks/Task/Services/Service"
-                  displayName = cleanTaskerCategoryName(category.name);
-               } else if (viewType === "services") {
-                  // Poster view: normalize to a single "Services" suffix
-                  displayName = cleanPosterCategoryName(category.name);
-               } else {
-                  // Generic task view
-                  displayName = category.name.toLowerCase().endsWith("tasks")
-                     ? category.name
-                     : `${category.name} Task`;
-               }
+               // Display category name directly from database
+               const displayName = getCategoryDisplayName(category.name);
 
                return (
                   <button
                      key={category._id || category.slug}
                      onClick={() => scrollToCategory(category.slug)}
-                     className="py-2 sm:py-2.5 px-4 sm:px-6 pl-3 sm:pl-[18px] rounded-full border border-transparent flex items-center justify-between transition-all duration-200 hover:border-yellow-500 hover:bg-yellow-500 hover:text-white hover:cursor-pointer hover:shadow-[0_10px_20px_rgba(234,179,8,0.2)] group text-sm sm:text-base text-left w-full"
+                     className="py-2 sm:py-3 px-3 sm:px-4 rounded-lg border border-transparent flex items-center gap-3 transition-all duration-200 hover:border-yellow-500 hover:bg-yellow-50 group text-sm sm:text-base text-left w-full"
                   >
-                     <span className="whitespace-nowrap flex-1">
-                        {displayName}
-                     </span>
-                     <span className="text-sm ml-2 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-200">
+                     {/* Category Image Thumbnail */}
+                     {category.heroImage && (
+                        <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                           {category.heroImage.startsWith("data:") ||
+                           category.heroImage.startsWith("http") ? (
+                              <img
+                                 src={category.heroImage}
+                                 alt={displayName}
+                                 className="w-full h-full object-cover"
+                              />
+                           ) : (
+                              <Image
+                                 src={category.heroImage}
+                                 alt={displayName}
+                                 width={48}
+                                 height={48}
+                                 className="w-full h-full object-cover"
+                              />
+                           )}
+                        </div>
+                     )}
+
+                     <div className="flex-1 min-w-0">
+                        <span className="whitespace-nowrap flex-1 truncate block">
+                           {displayName}
+                        </span>
+                        {/* Show subcategory count */}
+                        {category.subcategories &&
+                           category.subcategories.length > 0 && (
+                              <span className="text-xs text-gray-500 block">
+                                 {category.subcategories.length}{" "}
+                                 {category.subcategories.length === 1
+                                    ? "option"
+                                    : "options"}
+                              </span>
+                           )}
+                     </div>
+
+                     <span className="text-sm ml-2 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-200 flex-shrink-0">
                         →
                      </span>
                   </button>
@@ -107,14 +115,7 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
 
             {/* All Categories List */}
             {categories.map((category) => {
-               const categoryDisplayName =
-                  viewType === "jobs"
-                     ? cleanTaskerCategoryName(category.name)
-                     : viewType === "services"
-                     ? cleanPosterCategoryName(category.name)
-                     : category.name.toLowerCase().endsWith("tasks")
-                     ? category.name
-                     : `${category.name} Task`;
+               const categoryDisplayName = getCategoryDisplayName(category.name);
 
                return (
                   <div
@@ -163,36 +164,43 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                      {/* Subcategories List - Below Image */}
                      {category.subcategories &&
                         category.subcategories.length > 0 && (
-                           <div className="flex flex-col gap-x-12 sm:gap-x-14 md:gap-x-16 gap-y-3 sm:gap-y-4">
-                              {category.subcategories.map((subcategory) => {
-                                 let subcategorySlug = subcategory.slug || "";
+                           <div className="mt-6 sm:mt-8">
+                              <h3 className="text-lg sm:text-xl font-semibold text-[#0a1f44] mb-3 sm:mb-4">
+                                 Available Options
+                              </h3>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                                 {category.subcategories.map((subcategory) => {
+                                    let subcategorySlug = subcategory.slug || "";
 
-                                 // If API returns slugs like "category/subcategory",
-                                 // strip the duplicated category prefix once so
-                                 // URLs don't contain "category/category/subcategory".
-                                 const prefix = `${category.slug}/`;
-                                 if (subcategorySlug.startsWith(prefix)) {
-                                    subcategorySlug = subcategorySlug.slice(
-                                       prefix.length
+                                    // If API returns slugs like "category/subcategory",
+                                    // strip the duplicated category prefix once so
+                                    // URLs don't contain "category/category/subcategory".
+                                    const prefix = `${category.slug}/`;
+                                    if (subcategorySlug.startsWith(prefix)) {
+                                       subcategorySlug = subcategorySlug.slice(
+                                          prefix.length
+                                       );
+                                    }
+
+                                    return (
+                                       <Link
+                                          key={subcategory._id || subcategory.slug}
+                                          href={
+                                             viewType === "jobs"
+                                                ? `/task/${category.slug}/${subcategorySlug}`
+                                                : viewType === "services"
+                                                ? `/services/${category.slug}/${subcategorySlug}`
+                                                : `/categories/${category.slug}/${subcategorySlug}`
+                                          }
+                                          className="p-3 sm:p-4 bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 hover:border-yellow-400 rounded-lg transition-all duration-200 text-center"
+                                       >
+                                          <span className="text-yellow-700 hover:text-yellow-900 transition-colors duration-200 text-sm sm:text-base font-semibold block">
+                                             {subcategory.name}
+                                          </span>
+                                       </Link>
                                     );
-                                 }
-
-                                 return (
-                                    <Link
-                                       key={subcategory._id || subcategory.slug}
-                                       href={
-                                          viewType === "jobs"
-                                             ? `/task/${category.slug}/${subcategorySlug}`
-                                             : viewType === "services"
-                                             ? `/services/${category.slug}/${subcategorySlug}`
-                                             : `/categories/${category.slug}/${subcategorySlug}`
-                                       }
-                                       className="text-yellow-500 hover:text-yellow-600 hover:underline transition-colors duration-200 text-sm sm:text-base font-bold"
-                                    >
-                                       {subcategory.name}
-                                    </Link>
-                                 );
-                              })}
+                                 })}
+                              </div>
                            </div>
                         )}
                   </div>

@@ -18,7 +18,6 @@ import {
    Phone,
    Lock,
    AlertCircle,
-   ArrowLeft,
    CheckCircle2,
    Shield,
    Clock,
@@ -28,6 +27,7 @@ import {
    Sparkles,
    Bell,
 } from "lucide-react";
+import { toast } from "sonner";
 
 interface PhoneVerificationState {
    step: "input" | "otp" | "success" | "error";
@@ -45,7 +45,7 @@ export default function PhoneVerificationPage() {
       step: "input",
       phone: "",
       otp: "",
-      attemptsRemaining: 3,
+      attemptsRemaining: 5,
    });
 
    const [isLoading, setIsLoading] = useState(false);
@@ -57,13 +57,22 @@ export default function PhoneVerificationPage() {
       }
    }, [state.step]);
 
+   // Timer countdown effect
    useEffect(() => {
-      let interval: NodeJS.Timeout;
-      if (otpTimer > 0) {
-         interval = setInterval(() => setOtpTimer((p) => p - 1), 1000);
-      }
+      if (otpTimer <= 0) return;
+
+      const interval = setInterval(() => {
+         setOtpTimer((prev) => {
+            if (prev <= 1) {
+               clearInterval(interval);
+               return 0;
+            }
+            return prev - 1;
+         });
+      }, 1000);
+
       return () => clearInterval(interval);
-   }, [otpTimer]);
+   }, [otpTimer > 0]); // Only re-run when timer starts (goes from 0 to positive)
 
    const handleBack = () => {
       switch (state.step) {
@@ -104,12 +113,18 @@ export default function PhoneVerificationPage() {
          // TODO: Replace with actual API call
          await new Promise((r) => setTimeout(r, 1500));
          setState((p) => ({ ...p, step: "otp" }));
-         setOtpTimer(120); // 2 minutes for SMS OTP
+         setOtpTimer(30); // 30 seconds for SMS OTP
+         toast.success("OTP sent successfully!", {
+            description: `Verification code sent to +91 ${state.phone}`,
+         });
       } catch {
          setState((p) => ({
             ...p,
             error: "Failed to send OTP. Please try again.",
          }));
+         toast.error("Failed to send OTP", {
+            description: "Please try again",
+         });
       } finally {
          setIsLoading(false);
       }
@@ -153,10 +168,16 @@ export default function PhoneVerificationPage() {
       setIsLoading(true);
       try {
          await new Promise((r) => setTimeout(r, 1500));
-         setOtpTimer(120);
+         setOtpTimer(30);
          setState((p) => ({ ...p, otp: "", error: undefined }));
+         toast.success("OTP resent successfully!", {
+            description: `New verification code sent to +91 ${state.phone}`,
+         });
       } catch {
          setState((p) => ({ ...p, error: "Failed to resend OTP." }));
+         toast.error("Failed to resend OTP", {
+            description: "Please try again",
+         });
       } finally {
          setIsLoading(false);
       }
@@ -347,7 +368,7 @@ export default function PhoneVerificationPage() {
          </div>
 
          {/* Attempts Warning */}
-         {state.attemptsRemaining < 3 && (
+         {state.attemptsRemaining < 5 && (
             <div className="flex items-center justify-center gap-2 text-sm text-amber-600 bg-amber-50 rounded-lg p-3">
                <Clock className="w-4 h-4" />
                {state.attemptsRemaining} attempts remaining
@@ -455,7 +476,7 @@ export default function PhoneVerificationPage() {
          </div>
 
          <div className="bg-red-50 rounded-xl p-4 text-sm text-red-700">
-            For security reasons, please wait 30 minutes before trying again.
+            For security reasons, please wait 10 minutes before trying again.
          </div>
 
          <Button
@@ -477,12 +498,6 @@ export default function PhoneVerificationPage() {
          {/* Header */}
          <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-lg border-b border-gray-100">
             <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-3">
-               <button
-                  onClick={handleBack}
-                  className="p-2 -ml-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
-               >
-                  <ArrowLeft className="w-5 h-5" />
-               </button>
                <h1 className="text-base font-semibold text-gray-900">
                   Phone Verification
                </h1>

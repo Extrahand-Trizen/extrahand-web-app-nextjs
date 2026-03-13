@@ -9,6 +9,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -20,28 +21,29 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 import { TaskBasicsStep } from "@/components/tasks/steps/TaskBasicsStep";
 import { LocationScheduleStep } from "@/components/tasks/steps/LocationScheduleStep";
-import { BudgetStep } from "@/components/tasks/steps/BudgetStep";
 
 import { editTaskSchema, type EditTaskFormData } from "@/lib/validations/task";
 import type { Task } from "@/types/task";
 import type { TaskFormData } from "@/components/tasks/TaskCreationFlow";
+import { tasksApi } from "@/lib/api/endpoints/tasks";
+import { taskDetailsQueryKeys } from "@/lib/queryKeys";
 
 // Transform Task to EditTaskFormData
 function taskToFormData(task: Task): Partial<EditTaskFormData> {
    const budgetAmount =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
 
-   // Convert scheduledTime string to Date objects if needed
+   // Convert scheduledDate to Date objects, preserving time if available
    let scheduledTimeStart: Date | undefined;
    let scheduledTimeEnd: Date | undefined;
 
    if (task.scheduledDate) {
-      const baseDate = new Date(task.scheduledDate);
-      scheduledTimeStart = new Date(baseDate);
-      scheduledTimeStart.setHours(9, 0, 0, 0);
+      // Preserve the actual time from scheduledDate instead of hardcoding 9 AM
+      scheduledTimeStart = new Date(task.scheduledDate);
 
-      scheduledTimeEnd = new Date(baseDate);
-      scheduledTimeEnd.setHours(10, 0, 0, 0);
+      // Default end time to 1 hour after start
+      scheduledTimeEnd = new Date(task.scheduledDate);
+      scheduledTimeEnd.setHours(scheduledTimeEnd.getHours() + 1);
    }
 
    // Map flexibility values
@@ -79,12 +81,12 @@ function taskToFormData(task: Task): Partial<EditTaskFormData> {
             uploadedAt: att.uploadedAt || new Date(),
          })) || [],
       location: {
-         address: task.location.address,
-         city: task.location.city,
-         state: task.location.state,
-         pinCode: task.location.pinCode || "",
-         country: task.location.country || "India",
-         coordinates: task.location.coordinates
+         address: task.location?.address || "",
+         city: task.location?.city || "",
+         state: task.location?.state || "",
+         pinCode: task.location?.pinCode || "",
+         country: task.location?.country || "India",
+         coordinates: task.location?.coordinates
             ? ([task.location.coordinates[0], task.location.coordinates[1]] as [
                  number,
                  number
@@ -92,6 +94,11 @@ function taskToFormData(task: Task): Partial<EditTaskFormData> {
             : undefined,
       },
       scheduledDate: task.scheduledDate ? new Date(task.scheduledDate) : null,
+      // AirTasker-style scheduling fields - set based on what we can infer
+      dateOption: task.scheduledDate ? ("on-date" as const) : ("flexible" as const),
+      needsTimeOfDay: !!task.scheduledTime && task.scheduledTime.trim().length > 0,
+      timeSlot: task.scheduledTime ? (task.scheduledTime.toLowerCase() as any) : null,
+      // Legacy fields
       scheduledTimeStart,
       scheduledTimeEnd,
       flexibility: flexibilityMap[task.flexibility] || "flexible",
@@ -106,55 +113,74 @@ export default function EditTaskPage() {
    const params = useParams();
    const taskId = params.id as string;
 
-   const [task, setTask] = useState<Task | null>(null);
-   const [loading, setLoading] = useState(true);
+   const taskQuery = useQuery({
+      queryKey: taskDetailsQueryKeys.task(taskId),
+      queryFn: async () => {
+         const r = await tasksApi.getTask(taskId);
+         return ((r as { data?: Task })?.data ?? r) as Task;
+      },
+      enabled: !!taskId,
+      staleTime: 30 * 1000,
+   });
+   const task = taskQuery.data ?? null;
+   const loading = taskQuery.isLoading && !taskQuery.data;
+
    const [isSubmitting, setIsSubmitting] = useState(false);
    const [currentStep, setCurrentStep] = useState(1);
 
    const form = useForm({
       resolver: zodResolver(editTaskSchema),
       mode: "onChange" as const,
-      defaultValues: {} as Partial<EditTaskFormData>,
+      defaultValues: {
+         title: "",
+         description: "",
+         category: "",
+         subcategory: "",
+         requirements: [],
+         estimatedDuration: null,
+         tags: [],
+         priority: "normal",
+         attachments: [],
+         location: {
+            address: "",
+            city: "",
+            state: "",
+            pinCode: "",
+            country: "India",
+         },
+         scheduledDate: null,
+         dateOption: "flexible",
+         needsTimeOfDay: false,
+         timeSlot: null,
+         scheduledTimeStart: undefined,
+         scheduledTimeEnd: undefined,
+         flexibility: "flexible",
+         budgetType: "fixed",
+         budget: null,
+         urgency: "standard",
+      } as Partial<EditTaskFormData>,
    }) as UseFormReturn<Partial<EditTaskFormData>>;
 
-   // Load task data from API
    useEffect(() => {
-      const loadTask = async () => {
-         try {
-            setLoading(true);
-            // Fetch real task data
-            const { tasksApi } = await import("@/lib/api/endpoints/tasks");
-            const response = await tasksApi.getTask(taskId);
-            
-            // Handle different response structures
-            const taskData = ((response as any)?.data || response) as Task;
+      if (!task) return;
+      const formData = taskToFormData(task);
+      form.reset(formData);
+   }, [task, form]);
 
-            if (!taskData) {
-               toast.error("Task not found");
-               router.push("/tasks");
-               return;
-            }
-
-            setTask(taskData);
-            const formData = taskToFormData(taskData);
-            form.reset(formData);
-         } catch (error) {
-            console.error("Error loading task:", error);
-            toast.error("Failed to load task", {
-               description: "Please try again later.",
-            });
-            router.push("/tasks");
-         } finally {
-            setLoading(false);
-         }
-      };
-
-      if (taskId) {
-         loadTask();
+   useEffect(() => {
+      if (!taskId) return;
+      if (taskQuery.isError) {
+         toast.error("Failed to load task", { description: "Please try again later." });
+         router.push("/tasks");
+         return;
       }
-   }, [taskId, form, router]);
+      if (taskQuery.isSuccess && task == null) {
+         toast.error("Task not found");
+         router.push("/tasks");
+      }
+   }, [taskId, taskQuery.isError, taskQuery.isSuccess, task, router]);
 
-   const totalSteps = 3;
+   const totalSteps = 2;
    const progress = (currentStep / totalSteps) * 100;
 
    const handleNext = async () => {
@@ -180,14 +206,36 @@ export default function EditTaskPage() {
             "scheduledTimeStart",
             "scheduledTimeEnd",
             "flexibility",
+            "budget",
          ]);
-      } else if (currentStep === 3) {
-         isValid = await form.trigger(["budgetType", "budget", "urgency"]);
+
+         const budgetValue = form.getValues("budget");
+         const isBudgetValid =
+            typeof budgetValue === "number" &&
+            budgetValue >= 50 &&
+            budgetValue <= 50000;
+
+         if (!isBudgetValid) {
+            form.setError("budget", {
+               type: "manual",
+               message: "Enter a budget between ₹50 and ₹50,000.",
+            });
+            toast.error("Enter a valid budget", {
+               description: "Budget must be between ₹50 and ₹50,000.",
+            });
+            return;
+         }
       }
 
-      if (isValid && currentStep < totalSteps) {
+      if (!isValid) {
+         return;
+      }
+
+      if (currentStep < totalSteps) {
          setCurrentStep((prev) => prev + 1);
          window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+         form.handleSubmit(onSubmit)();
       }
    };
 
@@ -314,8 +362,28 @@ export default function EditTaskPage() {
 
    if (loading) {
       return (
-         <div className="min-h-screen flex items-center justify-center bg-gray-50">
-            <LoadingSpinner size="lg" />
+         <div className="min-h-screen bg-gray-50">
+            {/* Header skeleton */}
+            <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                     <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
+                     <div className="h-4 w-40 bg-gray-200 rounded animate-pulse" />
+                  </div>
+                  <div className="h-9 w-28 bg-gray-200 rounded-full animate-pulse" />
+               </div>
+            </header>
+
+            {/* Main content skeleton */}
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
+               <div className="h-6 w-48 bg-gray-200 rounded animate-pulse" />
+               <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 space-y-3">
+                  <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-10 w-full bg-gray-200 rounded animate-pulse" />
+                  <div className="h-4 w-40 bg-gray-200 rounded animate-pulse mt-4" />
+                  <div className="h-24 w-full bg-gray-200 rounded animate-pulse" />
+               </div>
+            </main>
          </div>
       );
    }
@@ -444,21 +512,6 @@ export default function EditTaskPage() {
                      />
                   )}
 
-                  {currentStep === 3 && (
-                     <BudgetStep
-                        form={form as unknown as UseFormReturn<TaskFormData>}
-                        onNext={async () => {
-                           const isValid = await form.trigger([
-                              "budgetType",
-                              "budget",
-                              "urgency",
-                           ]);
-                           if (isValid) {
-                              form.handleSubmit(onSubmit)();
-                           }
-                        }}
-                     />
-                  )}
                </form>
             </Form>
          </main>

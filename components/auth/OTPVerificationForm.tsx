@@ -2,10 +2,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { toast } from "sonner";
 import {
-   ArrowLeft,
    Loader2,
    CheckCircle2,
    Shield,
@@ -26,6 +24,7 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { useOTP } from "@/hooks/useOTP";
 import { authApi } from "@/lib/api/endpoints/auth";
+import { referralsApi } from "@/lib/api/endpoints/referrals";
 import { useAuth } from "@/lib/auth/context";
 import { sessionManager } from "@/lib/auth/session";
 import { setOTPAuthInProgress } from "@/lib/auth/authFlowState";
@@ -39,8 +38,8 @@ interface OTPVerificationFormProps {
    phone: string;
    userName?: string;
    authType?: "login" | "signup";
+   redirectTo?: string;
    onSuccess?: () => void;
-   onSkip?: () => void;
 }
 
 const maskPhone = (phone: string) => {
@@ -57,8 +56,8 @@ export function OTPVerificationForm({
    phone,
    userName = "",
    authType = "login",
+   redirectTo = "/home",
    onSuccess,
-   onSkip,
 }: OTPVerificationFormProps) {
    const router = useRouter();
    const { refreshUserData } = useAuth();
@@ -82,8 +81,28 @@ export function OTPVerificationForm({
    const [isVerified, setIsVerified] = useState(false);
    const [hasError, setHasError] = useState(false);
    const isVerifyingRef = useRef(false); // Prevent duplicate verification attempts
+   const verificationCompletedRef = useRef(false); // Track if verification succeeded
 
    const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+   const applyPendingReferralCode = useCallback(async () => {
+      if (authType !== "signup" || typeof window === "undefined") return;
+      const pendingReferralCode = sessionStorage.getItem("pendingReferralCode");
+      if (!pendingReferralCode) return;
+      try {
+         await referralsApi.applyReferralCode(pendingReferralCode);
+         sessionStorage.removeItem("pendingReferralCode");
+         toast.success("Referral code applied!", {
+            description: "Complete a task worth ₹500+ to unlock rewards.",
+         });
+      } catch (error: any) {
+         console.error("Failed to apply referral code:", error);
+         sessionStorage.removeItem("pendingReferralCode");
+         toast.error("Could not apply referral code", {
+            description: "You can apply it later from your profile.",
+         });
+      }
+   }, [authType]);
 
    // Initial auto-send OTP
    useEffect(() => {
@@ -194,11 +213,13 @@ export function OTPVerificationForm({
          });
          return;
       }
+      
       try {
          await sendOtp(phoneInput);
-         resetTimer();
-         toast.success("OTP sent!", {
-            description: `Verification code sent to ${maskPhone(phoneInput)}`,
+         // Note: sendOtp internally calls setTimer(30) on success — no resetTimer() needed here
+         // Show success toast when OTP is sent
+         toast.success("Verification code sent", {
+            description: `Code sent to ${phoneInput}. It will expire in 10 minutes.`,
          });
       } catch (error: any) {
          const errorMessage = error?.message || "Failed to send OTP";
@@ -224,8 +245,15 @@ export function OTPVerificationForm({
                   "Please check Firebase console settings. Phone authentication may not be properly configured.",
                duration: 10000,
             });
+            } else if (
+               errorCode === "auth/too-many-requests" ||
+               /too\s+many/i.test(errorMessage)
+            ) {
+               toast.error("Limit reached", {
+                  description: "Try later or use a different phone number.",
+               });
          } else {
-            toast.error("Failed to send OTP", {
+               toast.error("Something went wrong", {
                description: errorMessage || "Please try again.",
             });
          }
@@ -276,9 +304,18 @@ export function OTPVerificationForm({
             setOTPAuthInProgress(false);
             await new Promise((r) => setTimeout(r, 200));
             await refreshUserData();
+            await applyPendingReferralCode();
+            
+            // Mark verification as completed BEFORE setting isVerified
+            verificationCompletedRef.current = true;
             setIsVerified(true);
             clearSession();
-            isVerifyingRef.current = false;
+            
+            // Set client-side auth cookie for middleware detection
+            document.cookie = "extrahand_auth=1; path=/; max-age=2592000; SameSite=Lax";
+            
+            // Keep isVerifyingRef.current=true until after redirect fires so the
+            // auto-verify useEffect cannot re-trigger handleVerify with a stale state.
             toast.success(
                authType === "signup"
                   ? `Welcome to ExtraHand${userName ? `, ${userName}` : ""}!`
@@ -286,63 +323,20 @@ export function OTPVerificationForm({
                { description: "Phone verified successfully. Redirecting..." }
             );
             setTimeout(() => {
+               isVerifyingRef.current = false;
                if (onSuccess) onSuccess();
-               else router.push("/home");
-            }, 1000);
+               else window.location.href = redirectTo;
+            }, 800);
          } catch (err: any) {
             setOTPAuthInProgress(false);
             isVerifyingRef.current = false;
-            toast.error("Verification failed", {
-               description: err?.message || "Invalid OTP or test user not seeded.",
-            });
-            setOtp(Array(OTP_LENGTH).fill(""));
-            focusInput(0);
-         }
-         return;
-      }
-
-      // Dev bypass: LOCAL_TEST + dummy phone → backend completeOTPDev (no Firebase)
-      if (isLocalTestMode() && isTestPhone(phone)) {
-         try {
-            setOTPAuthInProgress(true);
-            const backendResult = await authApi.completeOTPDev(
-               formatPhoneNumber(phone),
-               code,
-               authType,
-               userName || undefined
-            );
-            if (!backendResult.success) {
-               throw new Error(backendResult.error || "Verification failed");
+            
+            // Only show error if verification didn't complete
+            if (!verificationCompletedRef.current) {
+               toast.error("Verification failed", {
+                  description: err?.message || "Invalid OTP or test user not seeded.",
+               });
             }
-            loginToStore({
-               user: backendResult.profile ?? undefined,
-            });
-            sessionManager.saveSession({
-               isAuthenticated: true,
-               lastRoute: "Landing",
-            });
-            setOTPAuthInProgress(false);
-            await new Promise((r) => setTimeout(r, 200));
-            await refreshUserData();
-            setIsVerified(true);
-            clearSession();
-            isVerifyingRef.current = false;
-            toast.success(
-               authType === "signup"
-                  ? `Welcome to ExtraHand${userName ? `, ${userName}` : ""}!`
-                  : "Welcome back!",
-               { description: "Phone verified successfully. Redirecting..." }
-            );
-            setTimeout(() => {
-               if (onSuccess) onSuccess();
-               else router.push("/home");
-            }, 1000);
-         } catch (err: any) {
-            setOTPAuthInProgress(false);
-            isVerifyingRef.current = false;
-            toast.error("Verification failed", {
-               description: err?.message || "Invalid OTP or test user not seeded.",
-            });
             setOtp(Array(OTP_LENGTH).fill(""));
             focusInput(0);
          }
@@ -359,6 +353,12 @@ export function OTPVerificationForm({
          if (!firebaseResult.success) {
             // Reset verification flag on error
             isVerifyingRef.current = false;
+            
+            // Don't show any error toasts if verification already completed successfully
+            if (verificationCompletedRef.current) {
+               console.warn("Firebase verification failed but already verified - ignoring");
+               return;
+            }
             
             // Handle Firebase verification errors
             if (
@@ -432,10 +432,20 @@ export function OTPVerificationForm({
          // Now fetch the full profile from backend (cookies are set)
          await refreshUserData();
 
+         // Apply referral code if user signed up with one
+         await applyPendingReferralCode();
+
          // 5. Success!
+         // Mark verification as completed BEFORE setting isVerified and showing toast
+         verificationCompletedRef.current = true;
          setIsVerified(true);
          clearSession();
-         isVerifyingRef.current = false; // Reset verification flag on success
+         
+         // Set client-side auth cookie for middleware detection
+         document.cookie = "extrahand_auth=1; path=/; max-age=2592000; SameSite=Lax";
+         
+         // Keep isVerifyingRef.current=true until after redirect fires so the
+         // auto-verify useEffect cannot re-trigger handleVerify with a stale state.
 
          const welcomeMessage =
             authType === "signup"
@@ -447,24 +457,35 @@ export function OTPVerificationForm({
          });
 
          setTimeout(() => {
+            isVerifyingRef.current = false;
             if (onSuccess) {
                onSuccess();
             } else {
-               router.push("/home");
+               // Use hard navigation to ensure middleware re-checks auth state
+               window.location.href = redirectTo;
             }
-         }, 1000);
+         }, 800);
       } catch (error: any) {
-         // Don't show error toast for code-expired if verification already succeeded
-         // This prevents duplicate toasts
+         // Don't show ANY error toasts if verification already completed successfully
+         // This is the key fix to prevent both success and error messages from appearing
+         if (verificationCompletedRef.current) {
+            console.info("Verification already completed successfully - suppressing error:", error?.message);
+            return;
+         }
+         
+         // Don't show error toast if verification already succeeded (state-based check)
+         if (isVerified) {
+            console.warn("Error caught after successful verification - ignoring:", error);
+            return;
+         }
+         
+         // Don't show error toast for code-expired errors
          const errorMessage = error?.message || "";
          const errorCode = error?.code || "";
          
          if (errorCode === "auth/code-expired" || errorMessage.includes("code-expired")) {
-            // If we're already verified, don't show the error
-            if (isVerified) {
-               console.warn("Code expired error after successful verification - ignoring");
-               return;
-            }
+            console.warn("Code expired error:", errorCode);
+            return;
          }
          
          console.error("OTP verification error:", error);
@@ -476,13 +497,13 @@ export function OTPVerificationForm({
          setOtp(Array(OTP_LENGTH).fill(""));
          focusInput(0);
       } finally {
-         // Ensure flags are cleared regardless of success or failure to avoid duplicate flows
+         // Ensure OTP auth flag is cleared. Do NOT reset isVerifyingRef here because
+         // the success path intentionally keeps it true until the redirect setTimeout fires.
          try {
             setOTPAuthInProgress(false);
          } catch (e) {
             /* ignore */
          }
-         isVerifyingRef.current = false;
       }
    };
 
@@ -494,28 +515,14 @@ export function OTPVerificationForm({
       await handleSendOtp(phone);
    };
 
-   const handleSkip = () => {
-      if (onSkip) {
-         onSkip();
-      } else {
-         router.push("/home");
-      }
-   };
-
    return (
       <div className="min-h-screen bg-linear-to-b from-white to-secondary-50 flex flex-col">
          {/* Main Content */}
          <div className="flex-1 flex flex-col items-center justify-center px-0 py-8 lg:px-4">
             <Card className="w-full lg:max-w-md shadow-none border-0 bg-transparent">
                <CardHeader className="space-y-4 px-4 lg:px-6">
-                  {/* Back button and Logo */}
-                  <div className="relative flex items-center justify-center mb-4">
-                     <Link
-                        href={authType === "signup" ? "/signup" : "/login"}
-                        className="absolute left-0 inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-                     >
-                        <ArrowLeft className="h-4 w-4" />
-                     </Link>
+                  {/* Logo */}
+                  <div className="flex items-center justify-center mb-4">
                      <Image
                         src="/assets/images/logo.png"
                         alt="Extrahand"
@@ -630,16 +637,6 @@ export function OTPVerificationForm({
                      <div className="flex items-center justify-center gap-2 text-sm text-gray-600 bg-gray-50 rounded-lg px-4 py-3">
                         <Shield className="h-4 w-4 text-primary-500" />
                         <span>Your phone number is secure</span>
-                     </div>
-
-                     {/* Skip Option */}
-                     <div className="text-center">
-                        <button
-                           onClick={handleSkip}
-                           className="text-sm text-gray-600 hover:text-gray-900 underline"
-                        >
-                           Skip verification for now
-                        </button>
                      </div>
                   </CardContent>
                )}

@@ -1,5 +1,117 @@
-// Mega-menu task types organized into columns (poster-facing)
-export const posterTaskTypes: string[][] = [
+// Mega-menu task types organized into columns for Taskers (people looking for work)
+export const taskerTypes: string[][] = [
+   [
+      "Appliance Repair",
+      "Auto Electrician",
+      "Bricklayer",
+      "Cabinet Maker",
+      "Carpenter",
+      "Carpet Cleaner",
+      "Cleaner",
+      "Commercial Cleaner",
+   ],
+   [
+      "Concreter",
+      "Decking",
+      "End Of Lease Cleaner",
+      "Fencing",
+      "Flooring",
+      "Furniture Assembler",
+      "Gardener",
+      "General Labour",
+   ],
+   [
+      "House Cleaner",
+      "Housekeeper",
+      "Landscaper",
+      "Locksmith",
+      "Mechanic",
+      "Mobile Bike Repair",
+      "Office Cleaner",
+      "Painter",
+   ],
+   [
+      "Paver",
+      "Pest Controller",
+      "Plasterer",
+      "Property Maintenance",
+      "Removalist",
+      "Roofing",
+      "Rubbish Removal",
+      "Tradesman",
+      "Turf Laying",
+      "Waterproofing",
+      "Window Cleaner",
+      "Car Wash",
+   ],
+];
+
+// Mega-menu task types organized into columns for Posters (people hiring services)
+export const posterTypes: string[][] = [
+   [
+      "Accountant",
+      "Admin Assistant",
+      "Architect",
+      "AV Specialist",
+      "Data Entry Specialist",
+      "Designer",
+      "Digital Design",
+      "Drafting",
+      "Logo Designer",
+      "Interior Designer",
+      "Marketing",
+      "Project Management",
+      "Copywriter",
+      "Proofreader",
+      "Content Writer",
+   ],
+   [
+      "IT Support",
+      "Web Design & Developer",
+      "Virtual Assistant",
+      "Research Assistant",
+      "Resume Writer",
+      "Translator",
+      "Information Technology",
+      "Business Consulting",
+      "Financial Advisor",
+      "Tax Specialist",
+      "Legal Consultant",
+      "Human Resources",
+      "Event Planning",
+      "Photography",
+   ],
+   [
+      "HIIT Trainer",
+      "Pilates Instructor",
+      "Yoga Instructor",
+      "Personal Training",
+      "Nutrition Coaching",
+      "Makeup Artist",
+      "Pet Groomer",
+      "Pet Minder",
+      "Tutor",
+      "General Teaching",
+      "Music Lessons",
+      "Language Coaching",
+      "Mentor",
+   ],
+   [
+      "Courier Services",
+      "Delivery",
+      "Moving Services",
+      "Storage Solutions",
+      "Graffiti Artist",
+      "Wedding Services",
+      "Party Planning",
+      "Entertainment Services",
+      "Videography",
+      "Graphic Design",
+   ],
+];
+
+// Legacy export for backward compatibility
+export const taskTypes: string[][] = [
    [
       "Accountant",
       "Admin Assistant",
@@ -91,9 +203,3 @@ export const posterTaskTypes: string[][] = [
       "Yoga Instructor",
    ],
 ];
-
-// Tasker-facing categories now use the full list for parity with posters.
-export const taskerTaskTypes: string[][] = posterTaskTypes;
-
-// Backward compatibility alias
-export const taskTypes = posterTaskTypes;

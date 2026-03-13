@@ -110,6 +110,18 @@ export const reviewsApi = {
   },
 
   /**
+   * Vote helpful/not helpful on a review (one vote per user)
+   * POST /api/v1/reviews/:id/vote
+   */
+  async voteHelpful(reviewId: string, helpful: boolean): Promise<Review> {
+    const response = await fetchWithAuth(`reviews/${reviewId}/vote`, {
+      method: 'POST',
+      body: JSON.stringify({ helpful }),
+    });
+    return response.data || response;
+  },
+
+  /**
    * Delete a review
    * DELETE /api/v1/reviews/:id
    */

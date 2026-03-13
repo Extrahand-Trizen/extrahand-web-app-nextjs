@@ -1,4 +1,5 @@
 import { fetchWithAuth } from '../client';
+import { getApiBaseUrl } from '@/lib/config';
 
 export interface BusinessDetails {
   name?: string;
@@ -171,7 +172,8 @@ export const businessApi = {
     formData.append('document', file);
     formData.append('documentType', documentType);
 
-    return fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/business/documents/upload`, {
+    const apiBase = getApiBaseUrl().replace(/\/$/, '');
+    return fetch(`${apiBase}/api/v1/business/documents/upload`, {
       method: 'POST',
       body: formData,
       credentials: 'include',

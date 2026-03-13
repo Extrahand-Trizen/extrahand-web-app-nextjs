@@ -5,7 +5,7 @@
  * Shows rating, comment, detailed ratings, and response
  */
 
-import React from "react";
+import React, { useState } from "react";
 import {
    Star,
    ThumbsUp,
@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 interface ReviewCardProps {
    review: Review;
    currentUserId?: string;
-   onHelpful?: (reviewId: string, helpful: boolean) => void;
+   onHelpful?: (reviewId: string, helpful: boolean) => Promise<void>;
 }
 
 export function ReviewCard({
@@ -28,6 +28,22 @@ export function ReviewCard({
    currentUserId,
    onHelpful,
 }: ReviewCardProps) {
+   // Determine if current user has already voted
+   const alreadyVotedHelpful = currentUserId ? (review.helpfulVoters ?? []).includes(currentUserId) : false;
+   const alreadyVotedNotHelpful = currentUserId ? (review.notHelpfulVoters ?? []).includes(currentUserId) : false;
+   const hasVoted = alreadyVotedHelpful || alreadyVotedNotHelpful;
+
+   const [isVoting, setIsVoting] = useState(false);
+
+   const handleVote = async (helpful: boolean) => {
+      if (hasVoted || isVoting || !onHelpful) return;
+      setIsVoting(true);
+      try {
+         await onHelpful(review._id, helpful);
+      } finally {
+         setIsVoting(false);
+      }
+   };
    const renderStars = (rating: number) => {
       return Array.from({ length: 5 }).map((_, i) => (
          <Star
@@ -143,19 +159,38 @@ export function ReviewCard({
          {/* Helpful Actions */}
          <div className="flex items-center gap-4 pt-3 border-t border-secondary-100">
             <button
-               onClick={() => onHelpful?.(review._id, true)}
-               className="flex items-center gap-1.5 text-xs md:text-sm text-secondary-600 hover:text-primary-600 transition-colors"
+               onClick={() => handleVote(true)}
+               disabled={hasVoted || isVoting}
+               className={cn(
+                  "flex items-center gap-1.5 text-xs md:text-sm transition-colors",
+                  alreadyVotedHelpful
+                     ? "text-primary-600 font-semibold cursor-default"
+                     : hasVoted || isVoting
+                     ? "text-secondary-300 cursor-not-allowed"
+                     : "text-secondary-600 hover:text-primary-600"
+               )}
             >
-               <ThumbsUp className="w-4 h-4" />
+               <ThumbsUp className={cn("w-4 h-4", alreadyVotedHelpful && "fill-primary-600")} />
                <span>Helpful ({review.helpful})</span>
             </button>
             <button
-               onClick={() => onHelpful?.(review._id, false)}
-               className="flex items-center gap-1.5 text-xs md:text-sm text-secondary-600 hover:text-secondary-900 transition-colors"
+               onClick={() => handleVote(false)}
+               disabled={hasVoted || isVoting}
+               className={cn(
+                  "flex items-center gap-1.5 text-xs md:text-sm transition-colors",
+                  alreadyVotedNotHelpful
+                     ? "text-secondary-900 font-semibold cursor-default"
+                     : hasVoted || isVoting
+                     ? "text-secondary-300 cursor-not-allowed"
+                     : "text-secondary-600 hover:text-secondary-900"
+               )}
             >
-               <ThumbsDown className="w-4 h-4" />
+               <ThumbsDown className={cn("w-4 h-4", alreadyVotedNotHelpful && "fill-secondary-900")} />
                <span>{review.notHelpful}</span>
             </button>
+            {hasVoted && (
+               <span className="text-xs text-secondary-400 ml-auto">You voted</span>
+            )}
          </div>
       </div>
    );

@@ -60,6 +60,34 @@ export async function GET(request: NextRequest) {
          return component?.long_name || "";
       };
 
+      // Try to extract postal code from multiple possible locations
+      let postcode = getComponent("postal_code");
+      if (!postcode) {
+         postcode = getComponent("postcode");
+      }
+      if (!postcode) {
+         // Also try postal_code_prefix (sometimes used by Google)
+         postcode = getComponent("postal_code_prefix");
+      }
+      if (!postcode) {
+         // Try extracting from formatted address as last resort (Indian pincodes are 6 digits)
+         const postcodeMatch = address.match(/\b\d{6}\b/);
+         if (postcodeMatch) {
+            postcode = postcodeMatch[0];
+         } else {
+            // Fallback to 5 digit postal codes for other countries
+            const postcodeMatch5 = address.match(/\b\d{5}\b/);
+            postcode = postcodeMatch5 ? postcodeMatch5[0] : "";
+         }
+      }
+      
+      // Log for debugging if postal code is missing
+      if (!postcode) {
+         console.warn(`No postal code found for coordinates ${lat},${lng}`);
+         console.warn(`Address: ${address}`);
+         console.warn(`Components:`, components);
+      }
+
       const responseData = {
          address: address,
          raw: {
@@ -74,7 +102,9 @@ export async function GET(request: NextRequest) {
                   getComponent("administrative_area_level_2"),
                state: getComponent("administrative_area_level_1"),
                country: getComponent("country"),
-               postcode: getComponent("postal_code"),
+               postcode: postcode,
+               postalCode: postcode, // Also provide camelCase version for compatibility
+               postal_code: postcode, // Also provide snake_case version
             },
          },
       };

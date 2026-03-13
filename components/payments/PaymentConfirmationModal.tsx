@@ -37,6 +37,7 @@ interface PaymentConfirmationModalProps {
     proposedBudget: {
       amount: number;
     };
+    selectedDates?: Array<Date | string>;
   };
   posterUid: string;
   onSuccess: (escrowId: string, paymentId: string) => void;
@@ -58,7 +59,9 @@ export function PaymentConfirmationModal({
   const [error, setError] = useState<string | null>(null);
   const [escrowId, setEscrowId] = useState<string | null>(null);
 
-  const amount = application.proposedBudget.amount;
+  const selectedDatesCount = application.selectedDates?.length ?? 0;
+  const baseAmount = application.proposedBudget.amount;
+  const amount = baseAmount * (selectedDatesCount || 1);
 
   // Calculate fees when modal opens (category-aware for correct GST/fees)
   useEffect(() => {
@@ -179,7 +182,7 @@ export function PaymentConfirmationModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
       <DialogContent className="sm:max-w-[500px]" showCloseButton={!isPaymentProcessing}>
         <DialogHeader>
           <DialogTitle>Complete Payment</DialogTitle>
@@ -230,13 +233,17 @@ export function PaymentConfirmationModal({
                 {/* Fee Breakdown */}
                 <div className="border rounded-lg p-4 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Task Amount</span>
+                    <span className="text-gray-600">
+                      {selectedDatesCount > 1
+                        ? `Task Amount (${formatCurrency(baseAmount)} × ${selectedDatesCount} days)`
+                        : "Task Amount"}
+                    </span>
                     <span className="font-medium">{formatCurrency(amount)}</span>
                   </div>
 
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">
-                      Platform Fee ({((fees.metadata?.platformFeePercentage || 0.1) * 100).toFixed(0)}%)
+                      Platform Fee ({((fees.metadata?.platformFeePercentage || 0.05) * 100).toFixed(0)}%)
                     </span>
                     <span className="text-gray-600">
                       +{formatCurrency(fees.platformFee)}
@@ -248,19 +255,9 @@ export function PaymentConfirmationModal({
                       GST ({((fees.metadata?.gstPercentage || 0.18) * 100).toFixed(0)}%)
                     </span>
                     <span className="text-gray-600">
-                      +{formatCurrency(fees.platformFeeGst + fees.processingFeeGst)}
+                      +{formatCurrency(fees.platformFeeGst)}
                     </span>
                   </div>
-
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Payment Gateway Fee</span>
-                    <span className="text-gray-600">
-                      +{formatCurrency(fees.processingFeeShare)}
-                    </span>
-                  </div>
-
-                  <div className="border-t pt-2 mt-2"></div>
-
                   <div className="flex justify-between text-base font-semibold">
                     <span className="text-gray-900">Total Amount</span>
                     <span className="text-primary">{formatCurrency(fees.totalAmount)}</span>
@@ -284,7 +281,7 @@ export function PaymentConfirmationModal({
                   <div className="flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
                     <p className="text-xs text-green-800">
-                      Full refund if task not completed
+                      Refund and cancellation policy
                     </p>
                   </div>
                 </div>

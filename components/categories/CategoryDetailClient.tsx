@@ -49,6 +49,14 @@ const CategoryDetailClient: React.FC<CategoryDetailClientProps> = ({
    const [openAccordion, setOpenAccordion] = useState<number | null>(null);
    const [errorModal, setErrorModal] = useState({ show: false, message: "" });
 
+  const getServiceBaseLabel = () => {
+     return (
+        (category.name || "")
+           .replace(/\s*Services?\s*$/i, "")
+           .trim() || category.name || "Task"
+     );
+  };
+
    const toggleAccordion = (index: number) => {
       setOpenAccordion(openAccordion === index ? null : index);
    };
@@ -225,8 +233,8 @@ const CategoryDetailClient: React.FC<CategoryDetailClientProps> = ({
          <HeroSection
             categoryName={category.name}
             heroImage={category.heroImage}
-            heroTitle={category.heroTitle}
-            heroDescription={category.heroDescription}
+            heroTitle={`${getServiceBaseLabel()} tasks near you`}
+            heroDescription={`Browse through over 500 ${getServiceBaseLabel().toLowerCase()} tasks`}
             breadcrumbCategory={breadcrumbCategory}
             breadcrumbCategoryLink={breadcrumbCategoryLink}
             rightCard={
@@ -259,7 +267,7 @@ const CategoryDetailClient: React.FC<CategoryDetailClientProps> = ({
                <TasksSection
                   title={
                      category.staticTasksSectionTitle ||
-                     `${category.name} tasks in ${category.location || "India"}`
+                     `${getServiceBaseLabel()} tasks in ${category.location || "India"}`
                   }
                   description={
                      category.staticTasksSectionDescription ||
@@ -278,7 +286,7 @@ const CategoryDetailClient: React.FC<CategoryDetailClientProps> = ({
             Array.isArray(category.tasks) &&
             category.tasks.length > 0 && (
                <TasksSection
-                  title={`${category.name} tasks in ${
+                  title={`${getServiceBaseLabel()} tasks in ${
                      category.location || "India"
                   }`}
                   description="Check out what tasks people want done near you right now..."

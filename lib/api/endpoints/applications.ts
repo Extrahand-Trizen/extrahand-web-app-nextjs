@@ -3,7 +3,7 @@
  * Matches task-connect-relay routes/applications.js
  */
 
-import { fetchWithAuth } from '../client';
+import { fetchWithAuth, fetchPublic } from '../client';
 import { TaskApplication, CreateApplicationRequest, UpdateApplicationRequest, ApplicationsResponse } from '@/types/application';
 import { ApplicationQueryParams } from '@/types/api';
 
@@ -65,11 +65,25 @@ export const applicationsApi = {
   },
 
   /**
+   * Withdraw current user's pending application
+   * DELETE /api/v1/applications/:id
+   */
+  async withdrawApplication(applicationId: string): Promise<void> {
+    await fetchWithAuth(`applications/${applicationId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  /**
    * Get applications for a specific task
    * GET /api/v1/applications?taskId=:taskId
+   * Uses fetchPublic (with credentials included when available) since endpoint supports optional auth
    */
   async getTaskApplications(taskId: string): Promise<ApplicationsResponse> {
-    const response = await fetchWithAuth(`applications?taskId=${taskId}`);
+    // Use fetchPublic since the endpoint supports optional auth.
+    // It sends cookies when present, so logged-in users are personalized,
+    // and still works for non-logged-in users when backend allows public access.
+    const response = await fetchPublic(`applications?taskId=${taskId}`);
     
     // Handle standardized response format
     if (response.data && response.meta?.pagination) {
