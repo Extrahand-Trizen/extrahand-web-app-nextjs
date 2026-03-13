@@ -136,9 +136,7 @@ export function ConversationView({
                            {otherParticipant.name}
                         </h2>
                         <p className="text-xs text-gray-500">
-                           {otherParticipant.role === "poster"
-                              ? "Task Poster"
-                              : "Tasker"}
+                           {chat.taskMetadata.taskTitle}
                         </p>
                      </div>
                   </>

@@ -59,10 +59,11 @@ export const FCMProvider: React.FC<FCMProviderProps> = ({ children }) => {
     typeof window !== 'undefined' ? getNotificationPermissionStatus() : null
   );
   const [isInitialized, setIsInitialized] = useState(false);
+  const actorUid = userData?.uid || currentUser?.uid;
 
   // Initialize FCM when user is authenticated
   useEffect(() => {
-    if (!currentUser || !userData || !isSupported || isInitialized) {
+    if (!actorUid || !isSupported || isInitialized) {
       return;
     }
 
@@ -71,7 +72,7 @@ export const FCMProvider: React.FC<FCMProviderProps> = ({ children }) => {
         // Log environment variables for debugging
         logEnvironmentVariables();
         
-        console.log('🚀 Initializing FCM for user:', userData.uid);
+        console.log('🚀 Initializing FCM for user:', actorUid);
 
         // Check if permission was previously granted
         const currentPermission = getNotificationPermissionStatus();
@@ -81,7 +82,7 @@ export const FCMProvider: React.FC<FCMProviderProps> = ({ children }) => {
           const token = await requestNotificationPermission();
           
           if (token) {
-            await registerFCMToken(token, userData.uid);
+            await registerFCMToken(token, actorUid);
             setIsInitialized(true);
             setPermissionStatus(currentPermission);
             console.log('✅ FCM initialized successfully');
@@ -99,7 +100,7 @@ export const FCMProvider: React.FC<FCMProviderProps> = ({ children }) => {
     };
 
     initializeFCM();
-  }, [currentUser, userData, isSupported, isInitialized]);
+  }, [actorUid, isSupported, isInitialized]);
 
   // Listen for foreground messages
   useEffect(() => {
@@ -111,6 +112,33 @@ export const FCMProvider: React.FC<FCMProviderProps> = ({ children }) => {
 
     const unsubscribe = onForegroundMessage((payload) => {
       console.log('📨 Received foreground notification:', payload);
+
+      const actionUrl =
+        (payload.data?.actionUrl as string | undefined) ||
+        (payload.data?.url as string | undefined) ||
+        (payload.data?.taskUrl as string | undefined);
+
+      const shouldRedirectToApproval =
+        payload.data?.action === 'approve_completion' &&
+        typeof actionUrl === 'string' &&
+        actionUrl.includes('/track');
+
+      const navigateToAction = () => {
+        if (!actionUrl) return;
+
+        try {
+          // Support both absolute and relative URLs.
+          const nextHref = actionUrl.startsWith('http')
+            ? actionUrl
+            : `${window.location.origin}${actionUrl.startsWith('/') ? actionUrl : `/${actionUrl}`}`;
+
+          if (window.location.href !== nextHref) {
+            window.location.assign(nextHref);
+          }
+        } catch {
+          // Ignore navigation parsing errors.
+        }
+      };
 
       // Create notification object
       const notification: FCMNotification = {
@@ -126,14 +154,25 @@ export const FCMProvider: React.FC<FCMProviderProps> = ({ children }) => {
       // Add to notifications list
       setNotifications((prev) => [notification, ...prev]);
 
+      // Immediate navigation for approval-required tasks.
+      if (shouldRedirectToApproval && actionUrl) {
+        navigateToAction();
+      }
+
       // Show browser notification if tab is not focused
       if (document.hidden) {
-        new Notification(notification.title, {
+        const browserNotification = new Notification(notification.title, {
           body: notification.body,
           icon: '/logo.png',
           badge: '/logo.png',
           tag: notification.type || 'general',
         });
+
+        // Clicking foreground browser notification should also deep-link.
+        browserNotification.onclick = () => {
+          window.focus();
+          navigateToAction();
+        };
       }
 
       // Play notification sound (optional)
@@ -159,7 +198,7 @@ export const FCMProvider: React.FC<FCMProviderProps> = ({ children }) => {
         return false;
       }
 
-      if (!currentUser || !userData) {
+      if (!actorUid) {
         console.error('❌ User not authenticated');
         return false;
       }
@@ -167,7 +206,7 @@ export const FCMProvider: React.FC<FCMProviderProps> = ({ children }) => {
       const token = await requestNotificationPermission();
       
       if (token) {
-        const registered = await registerFCMToken(token, userData.uid);
+        const registered = await registerFCMToken(token, actorUid);
         
         if (registered) {
           setIsInitialized(true);

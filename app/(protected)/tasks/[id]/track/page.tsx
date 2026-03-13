@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/context";
@@ -54,6 +54,7 @@ import { useUserStore } from "@/lib/state/userStore";
 export default function TaskTrackingPage() {
    const router = useRouter();
    const params = useParams();
+   const searchParams = useSearchParams();
    const { currentUser, loading: authLoading } = useAuth();
    const taskId = params.id as string;
 
@@ -147,6 +148,19 @@ export default function TaskTrackingPage() {
          setActiveTab("requested-changes");
       }
    }, [task, userRole, taskId]);
+
+   // If user lands from approval notification/app-open redirect, focus approval context.
+   useEffect(() => {
+      if (!task || userRole !== "poster") return;
+
+      const pendingApproval =
+         searchParams.get("pendingApproval") === "1" ||
+         searchParams.get("action") === "approve";
+
+      if (pendingApproval && task.status === "review") {
+         setActiveTab("proof");
+      }
+   }, [searchParams, task, userRole]);
 
    const handleTabChange = (tab: string) => {
       setActiveTab(tab);
@@ -609,6 +623,7 @@ export default function TaskTrackingPage() {
                            task={task}
                            userRole={userRole}
                            onStatusUpdate={handleStatusUpdate}
+                           onSubmitProof={handleSubmitProof}
                            onTaskUpdated={(updatedTask) => setTaskInCache(updatedTask)}
                         />
                      </div>
@@ -710,6 +725,7 @@ export default function TaskTrackingPage() {
                         task={task}
                         userRole={userRole}
                         onStatusUpdate={handleStatusUpdate}
+                        onSubmitProof={handleSubmitProof}
                         onTaskUpdated={(updatedTask) => setTaskInCache(updatedTask)}
                      />
                   )}

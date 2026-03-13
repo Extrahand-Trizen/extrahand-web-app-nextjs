@@ -19,6 +19,18 @@ export interface Chat {
     name: string;
     profileImage?: string;
   };
+  taskDetails?: {
+    title?: string;
+    category?: string;
+    categoryLabel?: string;
+    subcategory?: string;
+    status?: string;
+    requesterId?: string;
+    requesterName?: string;
+    assigneeId?: string;
+    assigneeName?: string;
+    taskerName?: string;
+  };
   relatedTask?: string;
   relatedApplication?: string;
   unreadCount: number;
@@ -115,7 +127,13 @@ export const chatsApi = {
     chatId: string,
     text: string,
     type: 'text' | 'image' | 'file' = 'text',
-    replyTo?: string
+    replyTo?: string,
+    metadata?: {
+      fileName?: string;
+      fileType?: string;
+      fileUrl?: string;
+      fileSize?: number;
+    }
   ): Promise<Message> {
     const response = await fetchWithAuth(`chats/${chatId}/messages`, {
       method: 'POST',
@@ -123,6 +141,7 @@ export const chatsApi = {
         text,
         type,
         replyTo,
+        metadata,
       }),
     });
     // API returns: { success, data: { message: {...} } }
@@ -162,5 +181,38 @@ export const chatsApi = {
     });
     return response.data || { chat: null };
   },
-};
 
+  /**
+   * Upload an image that can be sent in chat as an image message.
+   * Reuses the task-image upload endpoint and stores URL in message metadata.
+   */
+  async uploadChatImage(file: File, taskId?: string): Promise<string> {
+    const formData = new FormData();
+    formData.append("image", file);
+    if (taskId) {
+      formData.append("taskId", taskId);
+    }
+
+    const response = await fetchWithAuth("uploads/task-image", {
+      method: "POST",
+      body: formData,
+    });
+
+    const url = response?.data?.url || response?.url;
+    if (!url) {
+      throw new Error("Image upload failed");
+    }
+
+    return url;
+  },
+
+  /**
+   * Delete a chat from user's view
+   * DELETE /api/v1/chats/:chatId
+   */
+  async deleteChat(chatId: string): Promise<{ success: boolean }> {
+    return fetchWithAuth(`chats/${chatId}`, {
+      method: 'DELETE',
+    });
+  },
+};

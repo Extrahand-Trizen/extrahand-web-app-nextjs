@@ -271,6 +271,19 @@ function ProfilePageContent() {
       maxPerDay: prefs?.frequency?.maxPerDay ?? DEFAULT_FREQUENCY.maxPerDay,
    });
 
+   const cloneNotificationSettings = (
+      source: NotificationSettingsState
+   ): NotificationSettingsState => ({
+      push: { ...source.push },
+      email: { ...source.email },
+      sms: { ...source.sms },
+   });
+
+   const cloneFrequencySettings = (source: FrequencySettings): FrequencySettings => ({
+      ...source,
+      quietHours: { ...source.quietHours },
+   });
+
    useEffect(() => {
       const fetchNotificationPreferences = async () => {
          if (!userData?.uid) return;
@@ -485,25 +498,46 @@ function ProfilePageContent() {
       onSaveNotifications: async (
          settings: NotificationSettingsState,
          frequency?: FrequencySettings,
-         preferredChannel?: CommunicationChannel
+         preferredChannel?: CommunicationChannel,
+         changed?: {
+            push?: boolean;
+            email?: boolean;
+            sms?: boolean;
+            frequency?: boolean;
+            preferredChannel?: boolean;
+         }
       ) => {
          try {
             const finalFrequency = frequency || DEFAULT_FREQUENCY;
             const finalChannel = preferredChannel || "push";
 
-            await notificationPreferencesApi.updatePreferences({
-               push: settings.push,
-               email: settings.email,
-               sms: settings.sms,
-               preferredChannel: finalChannel,
-               frequency: finalFrequency,
-            });
+            const payload: {
+               push?: NotificationSettingsState["push"];
+               email?: NotificationSettingsState["email"];
+               sms?: NotificationSettingsState["sms"];
+               preferredChannel?: CommunicationChannel;
+               frequency?: FrequencySettings;
+            } = {};
 
-            setNotificationSettings(settings);
-            setNotificationFrequency(finalFrequency);
+            if (changed?.push) payload.push = settings.push;
+            if (changed?.email) payload.email = settings.email;
+            if (changed?.sms) payload.sms = settings.sms;
+            if (changed?.preferredChannel) payload.preferredChannel = finalChannel;
+            if (changed?.frequency) payload.frequency = finalFrequency;
+
+            if (!changed || Object.keys(changed).length === 0) {
+               payload.push = settings.push;
+               payload.email = settings.email;
+               payload.sms = settings.sms;
+               payload.preferredChannel = finalChannel;
+               payload.frequency = finalFrequency;
+            }
+
+            await notificationPreferencesApi.updatePreferences(payload);
+
+            setNotificationSettings(cloneNotificationSettings(settings));
+            setNotificationFrequency(cloneFrequencySettings(finalFrequency));
             setNotificationChannel(finalChannel);
-
-            toast.success("Notification settings updated");
          } catch (error: any) {
             console.error("Failed to update notification settings:", error);
             toast.error("Failed to update notification settings", {
@@ -657,7 +691,14 @@ interface Props {
    onSaveNotifications: (
       settings: NotificationSettingsState,
       frequency?: FrequencySettings,
-      preferredChannel?: CommunicationChannel
+      preferredChannel?: CommunicationChannel,
+      changed?: {
+         push?: boolean;
+         email?: boolean;
+         sms?: boolean;
+         frequency?: boolean;
+         preferredChannel?: boolean;
+      }
    ) => Promise<void>;
    onSavePreferences: () => Promise<void>;
    onRevokeSession: () => Promise<void>;
@@ -802,7 +843,6 @@ function renderSection(s: ProfileSection, p: Props) {
                <BadgeDisplaySimple className="mb-6" />
             </div>
          );
-      // business-verification section removed - now integrated into verifications section
       default:
          return (
             <ProfileOverview

@@ -75,10 +75,10 @@ function taskToFormData(task: Task): Partial<EditTaskFormData> {
       priority: task.priority,
       attachments:
          task.attachments?.map((att) => ({
-            type: att.type,
+            type: att.type || 'application/octet-stream',
             url: att.url,
-            filename: att.filename,
-            uploadedAt: att.uploadedAt || new Date(),
+            filename: att.filename || 'image',
+            uploadedAt: att.uploadedAt ? new Date(att.uploadedAt) : new Date(),
          })) || [],
       location: {
          address: task.location?.address || "",
@@ -163,7 +163,9 @@ export default function EditTaskPage() {
 
    useEffect(() => {
       if (!task) return;
+      console.log('[EditTask] Task loaded with attachments:', task.attachments?.length, task.attachments);
       const formData = taskToFormData(task);
+      console.log('[EditTask] Converted formData attachments:', formData.attachments?.length, formData.attachments);
       form.reset(formData);
    }, [task, form]);
 
@@ -247,6 +249,7 @@ export default function EditTaskPage() {
    };
 
    const onSubmit = async (data: Partial<EditTaskFormData>) => {
+      console.log('[EditTask] Submit - attachments in form data:', data.attachments?.length, data.attachments);
       if (isSubmitting || !task) return;
 
       setIsSubmitting(true);

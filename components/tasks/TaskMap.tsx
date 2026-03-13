@@ -1,9 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { MapPin } from "lucide-react";
 import type { Task } from "@/types/task";
+
+const TaskMapOsmClient = dynamic(
+   () => import("./TaskMapOsmClient").then((mod) => mod.TaskMapOsmClient),
+   {
+      ssr: false,
+   }
+);
 
 interface TaskMapProps {
    tasks: Task[];
@@ -27,6 +35,8 @@ export function TaskMap({
    centerCoordinates = { lat: 17.385, lng: 78.4867 },
    className = "",
 }: TaskMapProps) {
+   // Keep OSM as default to avoid Google billing/auth popups in local/dev.
+   const useOsmFallback = true;
    const mapRef = useRef<HTMLDivElement>(null);
    const mapInstanceRef = useRef<google.maps.Map | null>(null);
    const markersRef = useRef<Array<{ id: string; marker: google.maps.Marker }>>(
@@ -39,44 +49,74 @@ export function TaskMap({
 
    // Load Google Maps Script securely via backend proxy (only once globally)
    useEffect(() => {
-      // Check if already loaded
-      if (window.google?.maps) {
-         setMapLoaded(true);
+      if (useOsmFallback) {
          return;
       }
+
+      let pollTimer: NodeJS.Timeout | null = null;
+
+      const markMapReady = () => {
+         if (window.google?.maps) {
+            setMapLoaded(true);
+            return true;
+         }
+         return false;
+      };
+
+      const handleMapsLoaded = () => {
+         markMapReady();
+      };
+
+      // Check if already loaded
+      if (markMapReady()) {
+         return;
+      }
+
+      window.addEventListener("google-maps-loaded", handleMapsLoaded);
 
       // Check if script is already being loaded
       const existingScript = document.querySelector(
          'script[src*="/api/maps/script"]'
       );
 
-      if (existingScript) {
-         // Script already exists, just wait for it to load
-         existingScript.addEventListener("load", () => setMapLoaded(true));
-         return;
+      const waitForMapsObject = () => {
+         if (markMapReady()) return;
+         pollTimer = setInterval(() => {
+            if (markMapReady() && pollTimer) {
+               clearInterval(pollTimer);
+               pollTimer = null;
+            }
+         }, 100);
       }
 
-      // Load script from our secure backend proxy
-      const script = document.createElement("script");
-      script.src = "/api/maps/script"; // Backend route that hides the API key
-      script.async = true;
-      script.defer = true;
-      script.onload = () => setMapLoaded(true);
-      script.onerror = () => console.error("Failed to load Google Maps");
-      document.head.appendChild(script);
+      if (existingScript) {
+         // Proxy loader exists; wait for custom event or poll until google.maps is available.
+         waitForMapsObject();
+      } else {
+         // Load script from our secure backend proxy
+         const script = document.createElement("script");
+         script.src = "/api/maps/script"; // Backend route that hides the API key
+         script.async = true;
+         script.defer = true;
+         script.onload = () => waitForMapsObject();
+         script.onerror = () => console.error("Failed to load Google Maps");
+         document.head.appendChild(script);
+      }
 
       return () => {
-         // Cleanup: remove event listener if component unmounts before load
-         if (existingScript) {
-            existingScript.removeEventListener("load", () =>
-               setMapLoaded(true)
-            );
+         window.removeEventListener("google-maps-loaded", handleMapsLoaded);
+         if (pollTimer) {
+            clearInterval(pollTimer);
          }
       };
-   }, []);
+   }, [useOsmFallback]);
 
    // Initialize Google Map
    useEffect(() => {
+      if (useOsmFallback) {
+         return;
+      }
+
       if (
          !mapLoaded ||
          !window.google?.maps ||
@@ -173,7 +213,7 @@ export function TaskMap({
       } catch (error) {
          console.error("Error initializing Google Maps:", error);
       }
-   }, [mapLoaded, centerCoordinates]);
+   }, [mapLoaded, centerCoordinates, useOsmFallback]);
 
    // Handle apply bounds update
    const handleApplyBounds = () => {
@@ -187,6 +227,10 @@ export function TaskMap({
 
    // Update markers when tasks change
    useEffect(() => {
+      if (useOsmFallback) {
+         return;
+      }
+
       if (!mapInstanceRef.current || !mapLoaded) return;
 
       const map = mapInstanceRef.current;
@@ -288,10 +332,14 @@ export function TaskMap({
             markersRef.current.push({ id: task._id, marker });
          }
       });
-   }, [tasks, onTaskSelect, mapLoaded]);
+   }, [tasks, onTaskSelect, mapLoaded, useOsmFallback]);
 
    // Highlight selected task marker and keep InfoWindow closed when parent shows overlay
    useEffect(() => {
+      if (useOsmFallback) {
+         return;
+      }
+
       if (!mapInstanceRef.current || !mapLoaded) return;
       // Close any open InfoWindow when selection changes so overlay is the single source of truth
       infoWindowRef.current?.close();
@@ -305,7 +353,7 @@ export function TaskMap({
          mapInstanceRef.current.panTo(marker.getPosition()!);
          google.maps.event.trigger(marker, "click");
       }
-   }, [selectedTaskId, mapLoaded]);
+   }, [selectedTaskId, mapLoaded, useOsmFallback]);
 
    return (
       <div className={`relative w-full h-full ${className}`}>
@@ -324,7 +372,7 @@ export function TaskMap({
          )}
 
          {/* Loading state */}
-         {!mapLoaded && (
+         {!useOsmFallback && !mapLoaded && (
             <div className="absolute inset-0 flex items-center justify-center bg-secondary-50 z-10 rounded-lg">
                <div className="text-center p-8">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
@@ -333,11 +381,19 @@ export function TaskMap({
             </div>
          )}
 
-         <div
-            ref={mapRef}
-            className="w-full h-full rounded-lg"
-            style={{ minHeight: "500px" }}
-         />
+         {useOsmFallback ? (
+            <TaskMapOsmClient
+               tasks={tasks}
+               centerCoordinates={centerCoordinates}
+               onTaskSelect={onTaskSelect}
+            />
+         ) : (
+            <div
+               ref={mapRef}
+               className="w-full h-full rounded-lg"
+               style={{ minHeight: "500px" }}
+            />
+         )}
       </div>
    );
 }

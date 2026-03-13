@@ -20,6 +20,7 @@ import {
 import Image from "next/image";
 import type { Task } from "@/types/task";
 import { toast } from "sonner";
+import { ProofOfWorkModal } from "./ProofOfWorkModal";
 
 interface ProofUploadSectionProps {
   task: Task;
@@ -36,6 +37,7 @@ export function ProofUploadSection({
   const [notes, setNotes] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showProofModal, setShowProofModal] = useState(false);
 
   const hasExistingProof =
     task.completionProof && task.completionProof.length > 0;
@@ -62,9 +64,9 @@ export function ProofUploadSection({
           continue;
         }
 
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-          toast.error(`${file.name} is too large (max 5MB)`);
+        // Validate file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          toast.error(`${file.name} is too large (max 10MB)`);
           continue;
         }
 
@@ -132,12 +134,14 @@ export function ProofUploadSection({
 
   // Submit proof
   const handleSubmit = async () => {
-    // Check if there are uploaded images (local state) or existing proof
-    const hasProof = uploadedImages.length > 0 || (task.completionProof && task.completionProof.length > 0);
-    if (!hasProof) {
-      toast.error("Please upload at least one proof image");
-      return;
-    }
+    // Show the "Add Proof of Work" modal first
+    setShowProofModal(true);
+  };
+
+  // Handle user clicking "Skip & Submit" in the modal
+  const handleSkipAndSubmit = async () => {
+    // Close the modal
+    setShowProofModal(false);
 
     setIsSubmitting(true);
     try {
@@ -151,6 +155,17 @@ export function ProofUploadSection({
       toast.error("Failed to submit proof");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Handle user clicking "Upload" in the modal
+  const handleUploadImages = () => {
+    // Close the modal and let user continue uploading through the form
+    setShowProofModal(false);
+    // Optionally trigger the file input click to make it easier
+    const fileInput = document.getElementById("proof-upload") as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
     }
   };
 
@@ -338,7 +353,7 @@ export function ProofUploadSection({
                     Click to upload images
                   </span>
                   <span className="text-xs text-secondary-500 mt-1">
-                    PNG, JPG up to 5MB each
+                    PNG, JPG, WEBP up to 10MB each
                   </span>
                 </div>
               )}
@@ -403,7 +418,7 @@ export function ProofUploadSection({
         {/* Submit Button */}
         <Button
           onClick={handleSubmit}
-          disabled={isSubmitting || (uploadedImages.length === 0 && (!task.completionProof || task.completionProof.length === 0))}
+          disabled={isSubmitting}
           className="w-full"
         >
           {isSubmitting ? (
@@ -419,6 +434,15 @@ export function ProofUploadSection({
           )}
         </Button>
       </div>
+
+      {/* Proof of Work Modal */}
+      <ProofOfWorkModal
+        open={showProofModal}
+        onOpenChange={setShowProofModal}
+        onUpload={handleUploadImages}
+        onSkip={handleSkipAndSubmit}
+        isLoading={isSubmitting}
+      />
     </div>
   );
 }

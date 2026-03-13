@@ -164,6 +164,40 @@ export const tasksApi = {
   },
 
   /**
+   * Request start OTP to be sent to task requester.
+   * POST /api/v1/tasks/:id/start-otp/send
+   */
+  async sendStartOtp(taskId: string): Promise<{ expiresAt: string; sentTo: string }> {
+    const response = await fetchWithAuth(`tasks/${taskId}/start-otp/send`, {
+      method: 'POST',
+    });
+    return response.data || response;
+  },
+
+  /**
+   * Resend start OTP to task requester.
+   * POST /api/v1/tasks/:id/start-otp/resend
+   */
+  async resendStartOtp(taskId: string): Promise<{ expiresAt: string; sentTo: string }> {
+    const response = await fetchWithAuth(`tasks/${taskId}/start-otp/resend`, {
+      method: 'POST',
+    });
+    return response.data || response;
+  },
+
+  /**
+   * Verify start OTP and start task.
+   * POST /api/v1/tasks/:id/start-otp/verify
+   */
+  async verifyStartOtp(taskId: string, otp: string): Promise<Task> {
+    const response = await fetchWithAuth(`tasks/${taskId}/start-otp/verify`, {
+      method: 'POST',
+      body: JSON.stringify({ otp }),
+    });
+    return response.data || response;
+  },
+
+  /**
    * Request changes on a task (poster sends feedback to tasker)
    * This doesn't change the task status, just creates a comment/notification
    * POST /api/v1/tasks/:id/request-changes

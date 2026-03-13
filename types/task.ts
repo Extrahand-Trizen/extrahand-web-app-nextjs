@@ -40,6 +40,8 @@ export interface Task {
   actualDuration?: number; // in hours
   scheduledDate?: Date;
   scheduledTime?: string;
+  dateOption?: 'flexible' | 'on-date' | 'before-date';
+  timeSlot?: 'morning' | 'midday' | 'afternoon' | 'evening';
   flexibility: 'strict' | 'flexible' | 'anytime';
   recurring?: {
     enabled: boolean;

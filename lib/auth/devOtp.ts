@@ -3,8 +3,8 @@
  * When NEXT_PUBLIC_LOCAL_TEST=true and on localhost: phone +91 9876543210, OTP 123456.
  */
 
-const DUMMY_PHONE_LAST10 = "9876543210";
-export const DUMMY_OTP = "123456";
+const DUMMY_PHONES_LAST10 = ["9876543210", "1234567890"];
+export const DUMMY_OTP = "654321";
 
 function getLocalTestEnabled(): boolean {
    if (typeof process === "undefined") return false;
@@ -27,7 +27,7 @@ export function isTestPhone(phone: string): boolean {
    if (!phone) return false;
    const digits = phone.replace(/\D/g, "");
    const last10 = digits.length >= 10 ? digits.slice(-10) : digits;
-   return last10 === DUMMY_PHONE_LAST10;
+   return DUMMY_PHONES_LAST10.includes(last10);
 }
 
 /** Use dummy OTP flow (skip Firebase send/verify) when in local test mode and phone matches. */

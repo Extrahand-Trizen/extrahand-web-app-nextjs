@@ -132,10 +132,12 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
                                     <div className="relative">
                                        <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
                                        <Input
-                                          placeholder="976543210"
+                                          placeholder="Enter your phone number"
                                           className="pl-10"
                                           autoComplete="tel"
                                           maxLength={10}
+                                          type="tel"
+                                          inputMode="numeric"
                                           {...field}
                                        />
                                     </div>

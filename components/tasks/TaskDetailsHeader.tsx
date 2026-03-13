@@ -193,6 +193,14 @@ export function TaskDetailsHeader({
                      ? formatDate(task.scheduledDate)
                      : "Flexible"}
                </p>
+               {task.timeSlot && (
+                  <p className="text-[10px] md:text-xs text-secondary-500 mt-0.5">
+                     {task.timeSlot === "morning" && "Morning (6am–12pm)"}
+                     {task.timeSlot === "midday" && "Midday (10am–2pm)"}
+                     {task.timeSlot === "afternoon" && "Afternoon (2pm–6pm)"}
+                     {task.timeSlot === "evening" && "Evening (6pm–9pm)"}
+                  </p>
+               )}
             </div>
          </div>
 

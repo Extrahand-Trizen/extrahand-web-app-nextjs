@@ -12,11 +12,11 @@ export interface NotificationPreferencesResponse {
 }
 
 export interface UpdateNotificationPreferencesPayload {
-  push: NotificationSettingsState['push'];
-  email: NotificationSettingsState['email'];
-  sms: NotificationSettingsState['sms'];
-  preferredChannel: CommunicationChannel;
-  frequency: FrequencySettings;
+  push?: NotificationSettingsState['push'];
+  email?: NotificationSettingsState['email'];
+  sms?: NotificationSettingsState['sms'];
+  preferredChannel?: CommunicationChannel;
+  frequency?: FrequencySettings;
 }
 
 export const notificationPreferencesApi = {

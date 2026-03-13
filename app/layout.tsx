@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { EnvironmentLogger } from "@/components/EnvironmentLogger";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { AutoApprovalRedirect } from "@/components/layout/AutoApprovalRedirect";
 
 const inter = Inter({
    subsets: ["latin"],
@@ -98,6 +99,7 @@ export default function RootLayout({
                   <AuthProvider>
                      <Suspense fallback={null}>
                         <ScrollToTop />
+                        <AutoApprovalRedirect />
                      </Suspense>
                      <Toaster />
                      {children}

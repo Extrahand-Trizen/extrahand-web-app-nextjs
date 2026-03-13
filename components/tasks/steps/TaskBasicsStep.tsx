@@ -521,7 +521,7 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
                         value={field.value || []}
                         onChange={field.onChange}
                         maxFiles={5}
-                        maxSizeMB={5}
+                        maxSizeMB={10}
                      />
                   </FormControl>
                   <FormDescription className="text-xs">

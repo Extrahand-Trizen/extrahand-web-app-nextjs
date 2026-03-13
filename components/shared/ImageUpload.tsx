@@ -6,7 +6,7 @@
  * Production-grade with strict validation and sanitization
  */
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { Upload, X, Image as ImageIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -32,7 +32,7 @@ export function ImageUpload({
    value = [],
    onChange,
    maxFiles = 5,
-   maxSizeMB = 5,
+   maxSizeMB = 10,
 }: ImageUploadProps) {
    const [isUploading, setIsUploading] = useState(false);
    const [isDragging, setIsDragging] = useState(false);
@@ -80,7 +80,7 @@ export function ImageUpload({
          url,
          filename: file.name,
          uploadedAt: new Date(),
-      };
+      } as Attachment;
    };
 
    const validateFile = (file: File): string | null => {
@@ -99,7 +99,7 @@ export function ImageUpload({
          return "Filename is too long";
       }
 
-      // Check total number of files
+      // Check total number of files (including already uploaded)
       if (value.length >= maxFiles) {
          return `Maximum ${maxFiles} images allowed`;
       }
@@ -142,7 +142,8 @@ export function ImageUpload({
          }
 
          if (newAttachments.length > 0) {
-            onChange([...value, ...newAttachments]);
+            const updated = [...value, ...newAttachments];
+            onChange(updated);
             toast.success(`${newAttachments.length} image(s) uploaded successfully`);
          }
 
@@ -178,6 +179,13 @@ export function ImageUpload({
       },
       [value, onChange]
    );
+
+   // Debug: Log component state
+   useEffect(() => {
+      if (value.length > 0) {
+         console.log('[ImageUpload] Current attachments:', value.length, value);
+      }
+   }, [value]);
 
    return (
       <div className="space-y-4">
