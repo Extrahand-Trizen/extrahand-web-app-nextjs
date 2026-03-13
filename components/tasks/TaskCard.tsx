@@ -51,9 +51,13 @@ export function TaskCard({ task, isSelected = false, onClick, distance }: TaskCa
          {/* Top Row - Title and Amount */}
          <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2 flex-wrap">
-                   {/* Offers badge moved to bottom next to status */}
-                </div>
+               <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  {task.applications > 0 && (
+                     <span className="inline-flex items-center px-2 md:px-2.5 py-0.5 rounded text-[9px] md:text-xs font-medium bg-purple-100 text-purple-700">
+                        {task.applications} {task.applications === 1 ? "offer" : "offers"}
+                     </span>
+                  )}
+               </div>
                <h3 className="text-base md:text-lg font-bold text-secondary-900 line-clamp-1 group-hover:text-primary-600 transition-colors">
                   {task.title}
                </h3>
@@ -107,11 +111,6 @@ export function TaskCard({ task, isSelected = false, onClick, distance }: TaskCa
          <div className="flex items-center justify-between pt-2 border-t border-secondary-100">
             <div className="flex items-center gap-3">
                {getStatusBadge()}
-               {task.applications > 0 && (
-                  <span className="text-xs text-secondary-500 font-medium">
-                     {task.applications} {task.applications === 1 ? "offer" : "offers"}
-                  </span>
-               )}
             </div>
 
             {/* User Profile Avatar */}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Category } from "@/types/category";
@@ -13,28 +13,25 @@ interface CategoriesClientProps {
 // Display category name as-is from database (no modification)
 const getCategoryDisplayName = (name: string): string => name;
 
+const getCategoryAnchorKey = (category: Category): string => {
+   const raw = (
+      category.slug ||
+      category.name ||
+      category._id ||
+      ""
+   )
+      .trim()
+      .toLowerCase();
+   return raw
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-");
+};
+
 const CategoriesClient: React.FC<CategoriesClientProps> = ({
    categories = [],
    viewType = "jobs",
 }) => {
-   const [selectedCategory, setSelectedCategory] = useState<string | null>(
-      null
-   );
-
-   const scrollToCategory = (categorySlug: string) => {
-      const element = document.getElementById(`category-${categorySlug}`);
-      if (element) {
-         const elementPosition = element.getBoundingClientRect().top;
-         const offsetPosition = elementPosition + window.pageYOffset - 100;
-
-         window.scrollTo({
-            top: offsetPosition,
-            behavior: "smooth",
-         });
-         setSelectedCategory(categorySlug);
-      }
-   };
-
    return (
       <main className="min-h-[calc(100vh-56px)] w-full pb-8 sm:pt-12 sm:pb-12 md:py-16 lg:py-20 px-4 sm:px-6 md:px-8 lg:px-20 grid grid-cols-1 gap-4 sm:gap-6 md:gap-[30px] ml-0 sm:ml-6 md:grid-cols-[280px_1fr] md:ml-20 lg:ml-[180px]">
          {/* Left Sidebar - Categories List with Images */}
@@ -42,16 +39,17 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
             {categories.map((category) => {
                // Display category name directly from database
                const displayName = getCategoryDisplayName(category.name);
+               const anchorKey = getCategoryAnchorKey(category);
 
                return (
-                  <button
+                  <a
                      key={category._id || category.slug}
-                     onClick={() => scrollToCategory(category.slug)}
+                     href={`#category-${anchorKey}`}
                      className="py-2 sm:py-3 px-3 sm:px-4 rounded-lg border border-transparent flex items-center gap-3 transition-all duration-200 hover:border-yellow-500 hover:bg-yellow-50 group text-sm sm:text-base text-left w-full"
                   >
                      {/* Category Image Thumbnail */}
                      {category.heroImage && (
-                        <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                        <div className="shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
                            {category.heroImage.startsWith("data:") ||
                            category.heroImage.startsWith("http") ? (
                               <img
@@ -87,10 +85,10 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                            )}
                      </div>
 
-                     <span className="text-sm ml-2 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-200 flex-shrink-0">
+                     <span className="text-sm ml-2 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-200 shrink-0">
                         →
                      </span>
-                  </button>
+                  </a>
                );
             })}
          </section>
@@ -116,26 +114,34 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
             {/* All Categories List */}
             {categories.map((category) => {
                const categoryDisplayName = getCategoryDisplayName(category.name);
+               const anchorKey = getCategoryAnchorKey(category);
+               const hasCategorySlug = Boolean(category.slug?.trim());
+               const categoryHref =
+                  viewType === "jobs"
+                     ? `/task/${category.slug}`
+                     : viewType === "services"
+                     ? `/services/${category.slug}`
+                     : `/categories/${category.slug}`;
 
                return (
                   <div
                      key={category._id || category.slug}
-                     id={`category-${category.slug}`}
+                     id={`category-${anchorKey}`}
                      className="mb-8 sm:mb-10 md:mb-12 scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32"
                   >
                      {/* Category Name - Clickable Link */}
-                     <Link
-                        href={
-                           viewType === "jobs"
-                              ? `/task/${category.slug}`
-                              : viewType === "services"
-                              ? `/services/${category.slug}`
-                              : `/categories/${category.slug}`
-                        }
-                        className="text-xl sm:text-2xl text-[#0a1f44] my-4 sm:my-5 mb-3 sm:mb-4 hover:text-yellow-500 hover:cursor-pointer transition-colors font-semibold block"
-                     >
-                        {categoryDisplayName}
-                     </Link>
+                     {hasCategorySlug ? (
+                        <Link
+                           href={categoryHref}
+                           className="text-xl sm:text-2xl text-[#0a1f44] my-4 sm:my-5 mb-3 sm:mb-4 hover:text-yellow-500 hover:cursor-pointer transition-colors font-semibold block"
+                        >
+                           {categoryDisplayName}
+                        </Link>
+                     ) : (
+                        <h2 className="text-xl sm:text-2xl text-[#0a1f44] my-4 sm:my-5 mb-3 sm:mb-4 font-semibold block">
+                           {categoryDisplayName}
+                        </h2>
+                     )}
 
                      {/* Category Hero Image (only if provided) */}
                      {category.heroImage &&
@@ -182,16 +188,33 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                                        );
                                     }
 
+                                    const hasSubcategorySlug = Boolean(
+                                       subcategorySlug?.trim()
+                                    );
+                                    const subcategoryHref =
+                                       viewType === "jobs"
+                                          ? `/task/${category.slug}/${subcategorySlug}`
+                                          : viewType === "services"
+                                          ? `/services/${category.slug}/${subcategorySlug}`
+                                          : `/categories/${category.slug}/${subcategorySlug}`;
+
+                                    if (!hasSubcategorySlug || !hasCategorySlug) {
+                                       return (
+                                          <div
+                                             key={subcategory._id || subcategory.slug || subcategory.name}
+                                             className="p-3 sm:p-4 bg-gray-50 border border-gray-200 rounded-lg text-center"
+                                          >
+                                             <span className="text-gray-700 text-sm sm:text-base font-semibold block">
+                                                {subcategory.name}
+                                             </span>
+                                          </div>
+                                       );
+                                    }
+
                                     return (
                                        <Link
                                           key={subcategory._id || subcategory.slug}
-                                          href={
-                                             viewType === "jobs"
-                                                ? `/task/${category.slug}/${subcategorySlug}`
-                                                : viewType === "services"
-                                                ? `/services/${category.slug}/${subcategorySlug}`
-                                                : `/categories/${category.slug}/${subcategorySlug}`
-                                          }
+                                          href={subcategoryHref}
                                           className="p-3 sm:p-4 bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 hover:border-yellow-400 rounded-lg transition-all duration-200 text-center"
                                        >
                                           <span className="text-yellow-700 hover:text-yellow-900 transition-colors duration-200 text-sm sm:text-base font-semibold block">

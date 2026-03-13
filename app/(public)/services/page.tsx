@@ -18,7 +18,7 @@ export default async function ServicesPage() {
 
       // Filter and map categories for poster view
       if (Array.isArray(allCategories)) {
-         categories = allCategories
+         const posterCategories = allCategories
             .filter((cat: any) => {
                const type = (cat.categoryType || "").toLowerCase();
                // Show categories that are for "poster" or "both"
@@ -33,6 +33,30 @@ export default async function ServicesPage() {
                heroDescription: cat.heroDescription || "",
                subcategories: Array.isArray(cat.subcategories) ? cat.subcategories : [],
             }));
+
+         // Fallback: if embedded subcategories are empty, fetch by category slug.
+         categories = await Promise.all(
+            posterCategories.map(async (category) => {
+               const hasEmbeddedSubcategories =
+                  Array.isArray(category.subcategories) &&
+                  category.subcategories.length > 0;
+
+               if (hasEmbeddedSubcategories || !category.slug) {
+                  return category;
+               }
+
+               const fetchedSubcategories = await categoriesApi.getSubcategories(
+                  category.slug
+               );
+
+               return {
+                  ...category,
+                  subcategories: Array.isArray(fetchedSubcategories)
+                     ? fetchedSubcategories
+                     : [],
+               };
+            })
+         );
       }
    } catch (error) {
       console.error("Error fetching categories from content-admin");

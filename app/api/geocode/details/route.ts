@@ -20,14 +20,6 @@ export async function GET(request: NextRequest) {
       );
    }
 
-   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-   if (!apiKey) {
-      return NextResponse.json(
-         { error: "Google Maps API key not configured" },
-         { status: 500 }
-      );
-   }
-
    // Check cache first
    const cached = detailsCache.get(placeId);
    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
@@ -35,52 +27,81 @@ export async function GET(request: NextRequest) {
    }
 
    try {
-      // Use Google Places Details API
-      const url = new URL("https://maps.googleapis.com/maps/api/place/details/json");
-      url.searchParams.set("place_id", placeId);
-      url.searchParams.set("key", apiKey);
-      url.searchParams.set("fields", "formatted_address,geometry,address_components");
+      // Check if placeId is formatted as osm_ids (starts with R, W, or N)
+      const isOsmId = /^[RWN]\d+$/.test(placeId);
+      
+      let url: string;
+      if (isOsmId) {
+         // Use lookup API which returns full address mapping and coordinates
+         url = `https://nominatim.openstreetmap.org/lookup?osm_ids=${placeId}&format=json&addressdetails=1`;
+      } else {
+         // Fallback to details API using standard place_id if it's purely numeric
+         url = `https://nominatim.openstreetmap.org/details?place_id=${placeId}&format=json&addressdetails=1`;
+      }
 
-      const response = await fetch(url.toString(), {
+      const response = await fetch(url, {
+         headers: {
+            "User-Agent": "ExtraHandApp/1.0",
+         },
          next: { revalidate: 3600 }, // Cache for 1 hour
       });
 
       if (!response.ok) {
-         throw new Error("Places Details API request failed");
+         throw new Error("Nominatim API request failed");
       }
 
-      const data = await response.json();
+      let data = await response.json();
+      
+      // The lookup API returns an array, the details API returns an object
+      const result = Array.isArray(data) ? data[0] : data;
 
-      if (data.status !== "OK" || !data.result) {
-         throw new Error(`Place details failed: ${data.status}`);
+      if (!result || result.error) {
+         throw new Error(`Place details failed: ${result?.error || 'No results'}`);
       }
 
-      const result = data.result;
-      const location = result.geometry?.location;
+      // Extract coordinates from either lookup or details format
+      const lat = result.lat ? parseFloat(result.lat) : (result.centroid?.coordinates?.[1] || 0);
+      const lng = result.lon ? parseFloat(result.lon) : (result.centroid?.coordinates?.[0] || 0);
 
-      if (!location) {
-         throw new Error("No location data in place details");
+      if (!lat || !lng) {
+         throw new Error("No coordinate data in place details");
       }
 
-      // Extract address components
-      const components = result.address_components || [];
-      const getComponent = (type: string) => {
-         const component = components.find((c: any) => c.types.includes(type));
-         return component?.long_name || "";
-      };
+      let address = result.display_name;
+      
+      // If using details API without display_name, use localname
+      if (!address && result.localname) {
+         address = result.localname;
+      }
+
+      // To handle both lookup (returns full address object) and details (returns array of components)
+      const components = Array.isArray(result.address) ? {} : (result.address || {});
+
+      let postcode = components.postcode || "";
+
+      // Try extracting from formatted address as last resort
+      if (!postcode) {
+         const postcodeMatch = address?.match(/\b\d{6}\b/);
+         if (postcodeMatch) {
+            postcode = postcodeMatch[0];
+         } else {
+            const postcodeMatch5 = address?.match(/\b\d{5}\b/);
+            postcode = postcodeMatch5 ? postcodeMatch5[0] : "";
+         }
+      }
 
       const responseData = {
-         lat: location.lat,
-         lng: location.lng,
-         coordinates: [location.lng, location.lat],
-         address: result.formatted_address,
+         lat: lat,
+         lng: lng,
+         coordinates: [lng, lat],
+         address: address,
          raw: {
             address: {
-               street: getComponent("route"),
-               city: getComponent("locality") || getComponent("administrative_area_level_2"),
-               state: getComponent("administrative_area_level_1"),
-               country: getComponent("country"),
-               postcode: getComponent("postal_code"),
+               street: components.road || "",
+               city: components.city || components.town || components.village || components.county || "",
+               state: components.state || "",
+               country: components.country || "",
+               postcode: postcode,
             },
          },
       };

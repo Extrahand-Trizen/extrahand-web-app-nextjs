@@ -20,7 +20,7 @@ function DiscoverSkeleton() {
       {/* Filters + list skeleton */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-4">
         <div className="h-10 w-full max-w-3xl bg-secondary-100 rounded-xl animate-pulse" />
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr),minmax(0,1.4fr)] gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-[minmax(0,2fr),minmax(0,1.4fr)] gap-4 md:gap-6">
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, index) => (
               <div
@@ -29,7 +29,7 @@ function DiscoverSkeleton() {
               />
             ))}
           </div>
-          <div className="hidden lg:block">
+          <div className="hidden md:block">
             <div className="h-[320px] bg-white border border-secondary-100 rounded-2xl shadow-sm animate-pulse" />
           </div>
         </div>
@@ -77,7 +77,6 @@ async function DiscoverPageContent() {
 export default function TasksPage() {
   return (
     <Suspense fallback={<DiscoverSkeleton />}>
-      {/* @ts-expect-error Async Server Component wrapped in Suspense */}
       <DiscoverPageContent />
     </Suspense>
   );

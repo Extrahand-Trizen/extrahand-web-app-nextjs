@@ -13,14 +13,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ suggestions: [] });
    }
 
-   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-   if (!apiKey) {
-      return NextResponse.json(
-         { error: "Google Maps API key not configured", suggestions: [] },
-         { status: 500 }
-      );
-   }
-
    // Check cache first
    const cacheKey = `${input.toLowerCase()}`;
    const cached = autocompleteCache.get(cacheKey);
@@ -29,37 +21,50 @@ export async function GET(request: NextRequest) {
    }
 
    try {
-      // Use Google Places Autocomplete API with session token for cost optimization
-      // Session tokens group multiple autocomplete calls into a single billing unit
-      const url = new URL("https://maps.googleapis.com/maps/api/place/autocomplete/json");
-      url.searchParams.set("input", input);
-      url.searchParams.set("key", apiKey);
-      url.searchParams.set("components", "country:in"); // Restrict to India
-      if (sessionToken) {
-         url.searchParams.set("sessiontoken", sessionToken);
-      }
+      // Use Nominatim API for search autocomplete
+      const url = new URL("https://nominatim.openstreetmap.org/search");
+      url.searchParams.set("q", input);
+      url.searchParams.set("format", "json");
+      url.searchParams.set("addressdetails", "1");
+      url.searchParams.set("countrycodes", "in"); // Restrict to India
+      url.searchParams.set("limit", "5");
 
       const response = await fetch(url.toString(), {
+         headers: {
+            "User-Agent": "ExtraHandApp/1.0",
+         },
          next: { revalidate: 300 }, // Cache for 5 minutes
       });
 
       if (!response.ok) {
-         throw new Error("Places Autocomplete API request failed");
+         throw new Error("Nominatim API request failed");
       }
 
       const data = await response.json();
 
-      if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
-         throw new Error(`Autocomplete failed: ${data.status}`);
-      }
+   // Format results to match our interface
+      const suggestions = (data || []).map((prediction: any) => {
+         const mainText = prediction.name || prediction.display_name.split(",")[0];
+         const secondaryText = prediction.display_name.split(",").slice(1).join(",").trim();
+         
+         // Format osm_type for lookup: R=relation, W=way, N=node
+         const osmTypeMap: Record<string, string> = {
+            relation: "R",
+            way: "W",
+            node: "N"
+         };
+         const osmType = prediction.osm_type ? osmTypeMap[prediction.osm_type] : "";
+         const placeIdToUse = osmType && prediction.osm_id 
+            ? `${osmType}${prediction.osm_id}`
+            : prediction.place_id.toString();
 
-      // Format results to match our interface - LIMIT TO 5 to reduce costs
-      const suggestions = (data.predictions || []).slice(0, 5).map((prediction: any) => ({
-         place_id: prediction.place_id,
-         description: prediction.description,
-         main_text: prediction.structured_formatting?.main_text || prediction.description.split(",")[0],
-         secondary_text: prediction.structured_formatting?.secondary_text || prediction.description.split(",").slice(1).join(",").trim(),
-      }));
+         return {
+            place_id: placeIdToUse,
+            description: prediction.display_name,
+            main_text: mainText,
+            secondary_text: secondaryText,
+         };
+      });
 
       // Cache the results
       autocompleteCache.set(cacheKey, {

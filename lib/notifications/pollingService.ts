@@ -26,6 +26,11 @@ export interface NotificationResponse {
   hasMore: boolean;
 }
 
+type RawInAppNotification = Partial<InAppNotification> & {
+  _id?: string;
+  id?: string;
+};
+
 /**
  * Notification polling service configuration
  */
@@ -184,13 +189,47 @@ export class NotificationPollingService {
         throw new Error(`Failed to fetch notifications: ${response.statusText}`);
       }
 
-      const data: NotificationResponse = await response.json();
-      console.log('✅ Notifications fetched successfully:', data.notifications?.length || 0);
-      return data.notifications || [];
+      const data: NotificationResponse & { notifications?: RawInAppNotification[] } = await response.json();
+      const normalizedNotifications = this.normalizeNotifications(data.notifications || []);
+      console.log('✅ Notifications fetched successfully:', normalizedNotifications.length);
+      return normalizedNotifications;
     } catch (error) {
       console.error('❌ Error fetching notifications:', error);
       throw error;
     }
+  }
+
+  /**
+   * Normalize backend payload (Mongo _id -> id, date parsing) for UI/store consistency.
+   */
+  private static normalizeNotifications(
+    notifications: RawInAppNotification[]
+  ): InAppNotification[] {
+    return notifications
+      .map((notification) => {
+        const id = notification.id || notification._id;
+        if (!id) return null;
+
+        return {
+          ...notification,
+          id,
+          userId: notification.userId || '',
+          title: notification.title || '',
+          body: notification.body || '',
+          type: notification.type || 'info',
+          read: Boolean(notification.read),
+          createdAt: notification.createdAt
+            ? new Date(notification.createdAt)
+            : new Date(),
+          readAt: notification.readAt
+            ? new Date(notification.readAt)
+            : undefined,
+          expiresAt: notification.expiresAt
+            ? new Date(notification.expiresAt)
+            : undefined,
+        } as InAppNotification;
+      })
+      .filter((notification): notification is InAppNotification => notification !== null);
   }
 
   /**
