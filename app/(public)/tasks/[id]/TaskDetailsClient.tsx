@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +36,7 @@ const TASK_STALE_MS = 60 * 1000;
 
 export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProps) {
    const router = useRouter();
+   const searchParams = useSearchParams();
    const queryClient = useQueryClient();
    const initialForId =
       initialTask && String((initialTask as Task & { _id?: string })._id) === taskId ? initialTask : null;
@@ -61,7 +62,7 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
    });
 
    const isMobile = useIsMobile();
-   const { currentUser } = useAuth();
+   const { currentUser, loading: authLoading } = useAuth();
    const userProfile = useUserStore((state) => state.user);
 
    const task = taskQuery.data ?? null;
@@ -135,6 +136,7 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
    const [openQuestionFormTrigger, setOpenQuestionFormTrigger] = useState(0);
    const [shareOpen, setShareOpen] = useState(false);
    const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
+   const shouldOpenOfferAfterLogin = searchParams.get("action") === "offer";
 
    const isOwner = (() => {
       if (!task || !userProfile) return false;
@@ -151,6 +153,32 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
       window.addEventListener("scroll", handleScroll);
       return () => window.removeEventListener("scroll", handleScroll);
    }, []);
+
+   useEffect(() => {
+      if (
+         !shouldOpenOfferAfterLogin ||
+         authLoading ||
+         !currentUser ||
+         !task ||
+         task.status !== "open" ||
+         isOwner ||
+         hasApplied
+      ) {
+         return;
+      }
+
+      setShowMakeOfferModal(true);
+      router.replace(`/tasks/${taskId}`);
+   }, [
+      shouldOpenOfferAfterLogin,
+      authLoading,
+      currentUser,
+      task,
+      isOwner,
+      hasApplied,
+      router,
+      taskId,
+   ]);
 
    if (loading && !task) {
       return (
@@ -211,8 +239,15 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
    };
 
    const handleMakeOffer = () => {
+      if (authLoading) {
+         toast.info("Checking account", {
+            description: "Please wait a moment and try again.",
+         });
+         return;
+      }
+
       if (!currentUser) {
-         router.push(`/login?next=${encodeURIComponent(`/tasks/${taskId}`)}`);
+         router.push(`/login?next=${encodeURIComponent(`/tasks/${taskId}?action=offer`)}`);
          return;
       }
       if (isOwner) {
