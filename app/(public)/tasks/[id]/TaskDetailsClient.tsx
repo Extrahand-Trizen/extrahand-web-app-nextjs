@@ -64,12 +64,14 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
    const isMobile = useIsMobile();
    const { currentUser, loading: authLoading } = useAuth();
    const userProfile = useUserStore((state) => state.user);
+   const isStoreAuthenticated = useUserStore((state) => state.isAuthenticated);
 
    const task = taskQuery.data ?? null;
    const loading = taskQuery.isLoading && !taskQuery.data;
    const applications = applicationsQuery.data?.applications ?? [];
    const userId = (userProfile as { _id?: string } | null)?._id;
    const currentUid = currentUser?.uid;
+   const isLoggedIn = Boolean(currentUser || isStoreAuthenticated || userId);
 
    const matchesCurrentUserApplication = (app: { applicantId?: unknown; applicantUid?: string }) => {
       const applicantProfileId = String(app.applicantId ?? "");
@@ -158,7 +160,7 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
       if (
          !shouldOpenOfferAfterLogin ||
          authLoading ||
-         !currentUser ||
+         !isLoggedIn ||
          !task ||
          task.status !== "open" ||
          isOwner ||
@@ -172,7 +174,7 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
    }, [
       shouldOpenOfferAfterLogin,
       authLoading,
-      currentUser,
+      isLoggedIn,
       task,
       isOwner,
       hasApplied,
@@ -246,7 +248,7 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
          return;
       }
 
-      if (!currentUser) {
+      if (!isLoggedIn) {
          router.push(`/login?next=${encodeURIComponent(`/tasks/${taskId}?action=offer`)}`);
          return;
       }
