@@ -498,6 +498,27 @@ export function TaskCreationFlow() {
          stepValidationFields[currentStep as keyof typeof stepValidationFields];
 
       if (currentStep === 2) {
+         const locationMode = form.getValues("locationMode");
+         const location = form.getValues("location");
+
+         // In-person tasks must have a selected address before progressing.
+         if (locationMode === "in-person") {
+            const hasAddress = Boolean(location?.address?.trim());
+            const hasCity = Boolean(location?.city?.trim());
+            const hasState = Boolean(location?.state?.trim());
+
+            if (!hasAddress || !hasCity || !hasState) {
+               form.setError("location.address", {
+                  type: "manual",
+                  message: "Please select an address for in-person tasks",
+               });
+               toast.error("Address required for in-person tasks", {
+                  description: "Select task location to continue.",
+               });
+               return;
+            }
+         }
+
          const budgetValue = form.getValues("budget");
          const isBudgetValid =
             typeof budgetValue === "number" &&

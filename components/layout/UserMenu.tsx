@@ -14,6 +14,8 @@ type UserMenuProps = {
    initials: string;
    onNavigate: (route: string) => void;
    onLogout: () => Promise<void>;
+   open?: boolean;
+   onOpenChange?: (open: boolean) => void;
 };
 
 export const UserMenu: React.FC<UserMenuProps> = ({
@@ -21,8 +23,20 @@ export const UserMenu: React.FC<UserMenuProps> = ({
    initials,
    onNavigate,
    onLogout,
+   open: openProp,
+   onOpenChange,
 }) => {
-   const [open, setOpen] = useState(false);
+   const [internalOpen, setInternalOpen] = useState(false);
+   const isControlled = typeof openProp === "boolean";
+   const open = isControlled ? openProp : internalOpen;
+
+   const setOpen = (nextOpen: boolean) => {
+      if (!isControlled) {
+         setInternalOpen(nextOpen);
+      }
+      onOpenChange?.(nextOpen);
+   };
+
    const menuRef = useRef<HTMLDivElement>(null);
 
    useEffect(() => {
@@ -55,7 +69,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
    return (
       <div className="relative" ref={menuRef}>
          <button
-            onClick={() => setOpen((prev) => !prev)}
+            onClick={() => setOpen(!open)}
             aria-label="Open user menu"
             className="p-2 text-secondary-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors bg-white shadow-sm"
          >

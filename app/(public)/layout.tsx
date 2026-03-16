@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { LandingHeader } from "@/components/layout/LandingHeader";
 import { LandingFooter } from "@/components/layout/LandingFooter";
 
@@ -9,10 +10,50 @@ export default function PublicLayout({
 }: {
    children: React.ReactNode;
 }) {
-   // Ensure scroll starts at top for public pages
+   const pathname = usePathname();
+
+   // Keep route scroll behavior predictable while respecting hash section navigation.
    useEffect(() => {
-      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-   }, []);
+      const scrollToHowItWorks = () => {
+         if (window.location.hash !== "#how-it-works") return;
+
+         let attempts = 0;
+         const maxAttempts = 30;
+
+         const tryScroll = () => {
+            const section = document.getElementById("how-it-works");
+            if (section) {
+               const headerOffset = 88;
+               const top = section.getBoundingClientRect().top + window.scrollY - headerOffset;
+               window.scrollTo({ top: Math.max(top, 0), behavior: "auto" });
+               return;
+            }
+
+            attempts += 1;
+            if (attempts < maxAttempts) {
+               window.setTimeout(tryScroll, 100);
+            }
+         };
+
+         tryScroll();
+      };
+
+      const handleHashChange = () => {
+         scrollToHowItWorks();
+      };
+
+      window.addEventListener("hashchange", handleHashChange);
+
+      if (window.location.hash === "#how-it-works") {
+         scrollToHowItWorks();
+      } else {
+         window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      }
+
+      return () => {
+         window.removeEventListener("hashchange", handleHashChange);
+      };
+   }, [pathname]);
 
    return (
       <div suppressHydrationWarning style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
