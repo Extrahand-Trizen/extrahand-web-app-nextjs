@@ -207,9 +207,11 @@ export function ReviewStep({
                   <MapPin className="size-4 md:size-5 text-gray-400 shrink-0 mt-0.5" />
                   <div>
                      <p className="text-xs md:text-sm font-medium text-gray-900">
-                        {data.location.address}
+                        {data.locationMode === "online"
+                           ? "Remote"
+                           : data.location.address || "Location not specified"}
                      </p>
-                     {data.location.city && (
+                     {data.locationMode !== "online" && data.location.city && (
                         <p className="text-[9px] md:text-xs text-gray-500 mt-1">
                            {data.location.city}
                            {data.location.state && `, ${data.location.state}`}

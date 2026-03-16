@@ -49,6 +49,26 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
             mappedType = "payout";
           }
 
+          const metadata = tx.metadata || {};
+          const taskId =
+            tx.taskId ||
+            metadata.taskId ||
+            metadata.task?._id ||
+            metadata.task?.id ||
+            tx.relatedTaskId;
+          const taskTitle =
+            tx.taskTitle ||
+            metadata.taskTitle ||
+            metadata.task?.title ||
+            tx.title;
+
+          const fallbackDescription =
+            mappedType === "payment"
+              ? "Payment"
+              : mappedType === "payout"
+              ? "Earnings"
+              : "Transaction";
+
           return {
             id: tx.transactionId || tx.id,
             type: mappedType,
@@ -58,10 +78,10 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
               tx.status === "held" || tx.status === "pending"
                 ? "pending"
                 : "completed",
-            description: tx.description || "",
+            description: tx.description || fallbackDescription,
             createdAt: new Date(tx.date || tx.createdAt),
-            taskId: tx.metadata?.taskId,
-            taskTitle: tx.metadata?.taskTitle,
+            taskId,
+            taskTitle,
           };
         });
       }

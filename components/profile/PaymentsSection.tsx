@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useMemo, useEffect } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -908,6 +909,8 @@ interface TransactionRowProps {
 function TransactionRow({ transaction }: TransactionRowProps) {
    const isCredit =
       transaction.type === "payout" || transaction.type === "refund";
+   const titleText = transaction.taskTitle || transaction.description;
+   const canOpenTask = Boolean(transaction.taskId && transaction.taskTitle);
 
    return (
       <div className="px-4 py-3 sm:px-5 sm:py-4 hover:bg-gray-50 transition-colors">
@@ -926,12 +929,21 @@ function TransactionRow({ transaction }: TransactionRowProps) {
             </div>
 
             <div className="flex-1 min-w-0">
-               <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">
-                  {transaction.description}
-               </p>
+               {canOpenTask ? (
+                  <Link
+                     href={`/tasks/${transaction.taskId}`}
+                     className="text-xs sm:text-sm font-medium text-gray-900 truncate block hover:text-primary-700 underline-offset-2 hover:underline"
+                  >
+                     {titleText}
+                  </Link>
+               ) : (
+                  <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">
+                     {titleText}
+                  </p>
+               )}
                <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 truncate">
                   {formatDate(transaction.createdAt)}
-                  {transaction.taskTitle && ` • ${transaction.taskTitle}`}
+                  {transaction.taskId && !transaction.taskTitle && " • Task linked"}
                </p>
             </div>
 

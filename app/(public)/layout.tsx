@@ -26,6 +26,21 @@ export default function PublicLayout({
                const headerOffset = 88;
                const top = section.getBoundingClientRect().top + window.scrollY - headerOffset;
                window.scrollTo({ top: Math.max(top, 0), behavior: "auto" });
+
+               // Re-apply after potential layout shifts (images/fonts) or other scroll handlers.
+               window.setTimeout(() => {
+                  if (window.location.hash !== "#how-it-works") return;
+                  const stableTop =
+                     section.getBoundingClientRect().top + window.scrollY - headerOffset;
+                  window.scrollTo({ top: Math.max(stableTop, 0), behavior: "auto" });
+               }, 120);
+
+               window.setTimeout(() => {
+                  if (window.location.hash !== "#how-it-works") return;
+                  const stableTop =
+                     section.getBoundingClientRect().top + window.scrollY - headerOffset;
+                  window.scrollTo({ top: Math.max(stableTop, 0), behavior: "auto" });
+               }, 400);
                return;
             }
 
@@ -43,6 +58,7 @@ export default function PublicLayout({
       };
 
       window.addEventListener("hashchange", handleHashChange);
+      window.addEventListener("load", handleHashChange);
 
       if (window.location.hash === "#how-it-works") {
          scrollToHowItWorks();
@@ -52,6 +68,7 @@ export default function PublicLayout({
 
       return () => {
          window.removeEventListener("hashchange", handleHashChange);
+         window.removeEventListener("load", handleHashChange);
       };
    }, [pathname]);
 

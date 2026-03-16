@@ -33,6 +33,22 @@ import { useUserStore } from "@/lib/state/userStore";
 import { formatPhoneNumber } from "@/lib/utils/phone";
 
 const OTP_LENGTH = 6;
+const INVALID_OTP_TOAST_MESSAGE =
+   "Invalid OTP. Please enter the correct 6-digit code and try again.";
+
+const isInvalidOtpFailure = (code?: string, message?: string) => {
+   const normalizedCode = (code || "").toLowerCase();
+   const normalizedMessage = (message || "").toLowerCase();
+
+   return (
+      normalizedCode === "auth/invalid-verification-code" ||
+      normalizedCode === "auth/invalid-code" ||
+      normalizedCode === "auth/code-mismatch" ||
+      normalizedMessage.includes("invalid-verification-code") ||
+      normalizedMessage.includes("invalid verification code") ||
+      normalizedMessage.includes("code-mismatch")
+   );
+};
 
 interface OTPVerificationFormProps {
    phone: string;
@@ -378,11 +394,15 @@ export function OTPVerificationForm({
                // This prevents the duplicate toast issue
                console.warn("OTP code expired (likely already used):", firebaseResult.code);
             } else {
-               toast.error("Invalid OTP", {
-                  description:
-                     firebaseResult.error ||
-                     "The code entered is invalid. Please try again.",
-               });
+               if (isInvalidOtpFailure(firebaseResult.code, firebaseResult.error)) {
+                  toast.error(INVALID_OTP_TOAST_MESSAGE);
+               } else {
+                  toast.error("Invalid OTP", {
+                     description:
+                        firebaseResult.error ||
+                        "The code entered is invalid. Please try again.",
+                  });
+               }
                setOtp(Array(OTP_LENGTH).fill(""));
                focusInput(0);
             }
@@ -490,10 +510,14 @@ export function OTPVerificationForm({
          
          console.error("OTP verification error:", error);
          setHasError(true);
-         toast.error("Verification failed", {
-            description:
-               errorMessage || "Something went wrong. Please try again.",
-         });
+         if (isInvalidOtpFailure(errorCode, errorMessage)) {
+            toast.error(INVALID_OTP_TOAST_MESSAGE);
+         } else {
+            toast.error("Verification failed", {
+               description:
+                  errorMessage || "Something went wrong. Please try again.",
+            });
+         }
          setOtp(Array(OTP_LENGTH).fill(""));
          focusInput(0);
       } finally {

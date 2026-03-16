@@ -36,7 +36,7 @@ import {
    phoneAuthSchema,
    type PhoneAuthFormData,
 } from "@/lib/validations/auth";
-import { formatPhoneNumber } from "@/lib/utils/phone";
+import { extractIndianMobileNumber, formatPhoneNumber } from "@/lib/utils/phone";
 import { authApi } from "@/lib/api/endpoints/auth";
 import Image from "next/image";
 
@@ -69,6 +69,18 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
    // Capture referral code from URL on mount
    useEffect(() => {
       const refCode = searchParams.get('ref');
+      const prefillPhone = searchParams.get("phone");
+
+      if (prefillPhone) {
+         const normalized = extractIndianMobileNumber(prefillPhone).slice(0, 10);
+         if (normalized) {
+            form.setValue("phone", normalized, {
+               shouldValidate: true,
+               shouldDirty: true,
+            });
+         }
+      }
+
       if (refCode) {
          setReferralCode(refCode.toUpperCase());
          // Store in sessionStorage for later use after profile creation
@@ -77,7 +89,7 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
             description: `You'll earn rewards when you complete your first task.`,
          });
       }
-   }, [searchParams]);
+   }, [form, searchParams]);
 
    const onSubmit = async (data: PhoneAuthFormData) => {
       setIsSubmitting(true);
@@ -204,7 +216,7 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
                   <CardContent className="space-y-6 px-4 lg:px-6">
                      {/* Referral Code Banner */}
                      {referralCode && (
-                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg p-4">
+                        <div className="bg-linear-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg p-4">
                            <div className="flex items-center gap-3">
                               <Gift className="h-5 w-5 text-green-600 shrink-0" />
                               <div>
@@ -249,16 +261,37 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
                                  <FormItem>
                                     <FormLabel>Phone Number</FormLabel>
                                     <FormControl>
-                                       <div className="relative">
-                                          <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                                       <div className="flex items-center gap-2">
+                                          <div className="h-10 px-3 rounded-md border border-input bg-muted text-sm text-gray-700 flex items-center">
+                                             +91
+                                          </div>
+                                          <div className="relative flex-1">
+                                             <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
                                           <Input
-                                             placeholder="Enter your phone number"
+                                             placeholder="Enter 10-digit mobile number"
                                              className="pl-10"
                                              maxLength={10}
                                              type="tel"
                                              inputMode="numeric"
                                              {...field}
+                                             value={field.value || ""}
+                                             onChange={(e) => {
+                                                const normalized = extractIndianMobileNumber(
+                                                   e.target.value
+                                                ).slice(0, 10);
+                                                field.onChange(normalized);
+                                             }}
+                                             onPaste={(e) => {
+                                                e.preventDefault();
+                                                const pasted =
+                                                   e.clipboardData.getData("text") || "";
+                                                const normalized = extractIndianMobileNumber(
+                                                   pasted
+                                                ).slice(0, 10);
+                                                field.onChange(normalized);
+                                             }}
                                           />
+                                          </div>
                                        </div>
                                     </FormControl>
                                     <FormMessage />
@@ -275,7 +308,7 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
                                        <Checkbox
                                           checked={field.value}
                                           onCheckedChange={field.onChange}
-                                          className="[&[data-state=checked]]:bg-primary-500 [&[data-state=checked]]:border-primary-500"
+                                          className="data-[state=checked]:bg-primary-500 data-[state=checked]:border-primary-500"
                                        />
                                     </FormControl>
                                     <div className="space-y-1">

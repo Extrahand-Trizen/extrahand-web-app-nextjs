@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+   extractIndianMobileNumber,
+   isValidIndianMobileNumber,
+} from "@/lib/utils/phone";
 
 /**
  * Authentication validation schemas - Phone + OTP based
@@ -23,10 +27,11 @@ export const phoneAuthSchema = z.object({
       ),
    phone: z
       .string()
-      .min(10, "Phone number is required")
+      .min(1, "Phone number is required")
       .refine(
-         (val) => val.replace(/\D/g, "").length >= 10,
-         "Please enter a valid phone number (at least 10 digits)"
+         (val) =>
+            isValidIndianMobileNumber(extractIndianMobileNumber(val)),
+         "Please enter a valid 10-digit Indian mobile number"
       ),
    agreeTerms: z.boolean().refine((val) => val === true, {
       message: "You must accept the terms to continue",
@@ -36,10 +41,11 @@ export const phoneAuthSchema = z.object({
 export const phoneLoginSchema = z.object({
    phone: z
       .string()
-      .min(10, "Phone number is required")
+      .min(1, "Phone number is required")
       .refine(
-         (val) => val.replace(/\D/g, "").length >= 10,
-         "Please enter a valid phone number (at least 10 digits)"
+         (val) =>
+            isValidIndianMobileNumber(extractIndianMobileNumber(val)),
+         "Please enter a valid 10-digit Indian mobile number"
       ),
 });
 

@@ -29,7 +29,8 @@ import {
    phoneLoginSchema,
    type PhoneLoginFormData,
 } from "@/lib/validations/auth";
-import { formatPhoneNumber } from "@/lib/utils/phone";
+import { extractIndianMobileNumber, formatPhoneNumber } from "@/lib/utils/phone";
+import { authApi } from "@/lib/api/endpoints/auth";
 import Image from "next/image";
 
 interface LoginFormProps {
@@ -56,6 +57,28 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       try {
          // Format phone number
          const formattedPhone = formatPhoneNumber(data.phone);
+
+         // Check if phone exists first so unregistered users see feedback on login page.
+         try {
+            const digitsOnly = formattedPhone.replace(/\D/g, "");
+            const result = await authApi.checkPhone(digitsOnly);
+            if (!result?.exists) {
+               toast.error("User not registered", {
+                  description:
+                     "This phone number is not registered. Please sign up.",
+               });
+
+               setTimeout(() => {
+                  router.push(
+                     `/signup?phone=${encodeURIComponent(formattedPhone)}`
+                  );
+               }, 400);
+               return;
+            }
+         } catch (checkErr) {
+            // Non-blocking: if phone check fails, continue with OTP screen.
+            console.warn("Phone check failed during login, continuing", checkErr);
+         }
 
          // Redirect to OTP verification page without showing success message
          // The OTP will be sent on the verification page after checking if user exists
@@ -129,17 +152,38 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
                               <FormItem>
                                  <FormLabel>Phone Number</FormLabel>
                                  <FormControl>
-                                    <div className="relative">
-                                       <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                                    <div className="flex items-center gap-2">
+                                       <div className="h-10 px-3 rounded-md border border-input bg-muted text-sm text-gray-700 flex items-center">
+                                          +91
+                                       </div>
+                                       <div className="relative flex-1">
+                                          <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
                                        <Input
-                                          placeholder="Enter your phone number"
+                                          placeholder="Enter 10-digit mobile number"
                                           className="pl-10"
                                           autoComplete="tel"
                                           maxLength={10}
                                           type="tel"
                                           inputMode="numeric"
                                           {...field}
+                                          value={field.value || ""}
+                                          onChange={(e) => {
+                                             const normalized = extractIndianMobileNumber(
+                                                e.target.value
+                                             ).slice(0, 10);
+                                             field.onChange(normalized);
+                                          }}
+                                          onPaste={(e) => {
+                                             e.preventDefault();
+                                             const pasted =
+                                                e.clipboardData.getData("text") || "";
+                                             const normalized = extractIndianMobileNumber(
+                                                pasted
+                                             ).slice(0, 10);
+                                             field.onChange(normalized);
+                                          }}
                                        />
+                                       </div>
                                     </div>
                                  </FormControl>
                                  <FormMessage />

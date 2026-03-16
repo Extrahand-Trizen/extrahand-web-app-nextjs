@@ -48,8 +48,12 @@ export default function LandingPage() {
       if (typeof window === "undefined") return false;
       return window.location.hash === "#how-it-works";
    });
+   const [hasAppliedHashScroll, setHasAppliedHashScroll] = useState(() => {
+      if (typeof window === "undefined") return true;
+      return window.location.hash !== "#how-it-works";
+   });
 
-   const scrollToHowItWorks = useCallback(() => {
+   const scrollToHowItWorks = useCallback((onDone?: () => void) => {
       if (typeof window === "undefined") return;
 
       let attempts = 0;
@@ -63,12 +67,15 @@ export default function LandingPage() {
                element.getBoundingClientRect().top + window.scrollY - headerOffset;
 
             window.scrollTo({ top: Math.max(top, 0), behavior: "auto" });
+            onDone?.();
             return;
          }
 
          attempts += 1;
          if (attempts < maxAttempts) {
             window.setTimeout(tryScroll, 100);
+         } else {
+            onDone?.();
          }
       };
 
@@ -79,7 +86,9 @@ export default function LandingPage() {
       if (typeof window === "undefined") return;
 
       const updateAllow = () => {
-         setAllowHowItWorks(window.location.hash === "#how-it-works");
+         const hasHowItWorksHash = window.location.hash === "#how-it-works";
+         setAllowHowItWorks(hasHowItWorksHash);
+         setHasAppliedHashScroll(!hasHowItWorksHash);
       };
 
       updateAllow();
@@ -111,10 +120,12 @@ export default function LandingPage() {
       }
       
       // Trigger immediately; retry logic handles any late-mount edge case.
-      scrollToHowItWorks();
+      scrollToHowItWorks(() => setHasAppliedHashScroll(true));
       
       return;
    }, [allowHowItWorks, scrollToHowItWorks]);
+
+   const shouldHideForHashJump = allowHowItWorks && !hasAppliedHashScroll;
 
    // Show nothing while checking authentication or redirecting
    if (loading || (isAuthenticated && !allowHowItWorks)) {
@@ -126,7 +137,13 @@ export default function LandingPage() {
    }
 
    return (
-      <div style={{ minHeight: '100vh', position: 'relative' }}>
+      <div
+         style={{
+            minHeight: "100vh",
+            position: "relative",
+            visibility: shouldHideForHashJump ? "hidden" : "visible",
+         }}
+      >
          <HeroSection />
          <SocialProofBar />
          <HowItWorksSection />
