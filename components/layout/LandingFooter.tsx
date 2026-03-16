@@ -12,7 +12,6 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
 import { Facebook, Twitter, Instagram, Linkedin, Youtube, ChevronDown } from "lucide-react";
 import { useState } from "react";
 
@@ -20,8 +19,8 @@ const footerLinks = {
   discover: {
     title: "Discover",
     links: [
-      { label: "How it Works", href: "#how-it-works" },
-      { label: "Browse Categories", href: "#categories" },
+      { label: "How it Works", href: "/#how-it-works" },
+      { label: "Browse Categories", href: "https://extrahand.in/discover" },
       { label: "Trust & Safety", href: "/trust-safety" },
       { label: "Pricing", href: "/pricing" },
     ],
@@ -42,7 +41,7 @@ const footerLinks = {
       { label: "About Us", href: "/about-us" },
       { label: "Careers", href: "/careers" },
       { label: "Press", href: "/press" },
-      { label: "Contact", href: "https://extrhand-support-frontend.apps.extrahand.in" },
+      { label: "Contact Us", href: "https://extrhand-support-frontend.apps.extrahand.in/contact" },
       { label: "Help Center", href: "https://extrhand-support-frontend.apps.extrahand.in" },
       { label: "FAQs", href: "/faqs" },
       { label: "Privacy Policy", href: "/privacy-policy" },
@@ -89,11 +88,20 @@ const socialLinks = [
 ];
 
 export const LandingFooter: React.FC = () => {
-  const pathname = usePathname();
   const [openSection, setOpenSection] = useState<string | null>(null);
+  const isExternalLink = (href: string) => /^https?:\/\//.test(href);
 
   const handleToggle = (title: string) => {
     setOpenSection((prev) => (prev === title ? null : title));
+  };
+
+  const getColumnLinks = (column: (typeof footerLinks)[keyof typeof footerLinks]) => {
+    if (column.title !== "Discover") return column.links;
+
+    const hasHowItWorks = column.links.some((link) => link.label === "How it Works");
+    if (hasHowItWorks) return column.links;
+
+    return [{ label: "How it Works", href: "/#how-it-works" }, ...column.links];
   };
 
   return (
@@ -144,12 +152,8 @@ export const LandingFooter: React.FC = () => {
         {/* Mobile: stacked accordion sections */}
         <div className="md:hidden border-t border-secondary-800 mb-8">
           {Object.values(footerLinks).map((column) => {
-            const links =
-              column.title === "Discover" && pathname !== "/"
-                ? column.links.filter((link) => link.label !== "How it Works")
-                : column.links;
-
             const isOpen = openSection === column.title;
+            const links = getColumnLinks(column);
 
             return (
               <div key={column.title}>
@@ -171,12 +175,22 @@ export const LandingFooter: React.FC = () => {
                   <ul className="pb-3 space-y-2">
                     {links.map((link) => (
                       <li key={link.label}>
-                        <Link
-                          href={link.href}
-                          className="text-secondary-400 hover:text-white text-xs transition-colors"
-                        >
-                          {link.label}
-                        </Link>
+                        {isExternalLink(link.href) ? (
+                          <a
+                            href={link.href}
+                            className="text-secondary-400 hover:text-white text-xs transition-colors"
+                            rel="noopener noreferrer"
+                          >
+                            {link.label}
+                          </a>
+                        ) : (
+                          <Link
+                            href={link.href}
+                            className="text-secondary-400 hover:text-white text-xs transition-colors"
+                          >
+                            {link.label}
+                          </Link>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -189,11 +203,7 @@ export const LandingFooter: React.FC = () => {
         {/* Desktop / tablet: grid of link columns */}
         <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-5 gap-8 lg:gap-10 mb-12">
           {Object.values(footerLinks).map((column) => {
-            const links =
-              column.title === "Discover" && pathname !== "/"
-                ? column.links.filter((link) => link.label !== "How it Works")
-                : column.links;
-
+            const links = getColumnLinks(column);
             return (
               <div key={column.title}>
                 <h3 className="text-sm md:text-base font-semibold text-white mb-3 md:mb-4">
@@ -202,12 +212,22 @@ export const LandingFooter: React.FC = () => {
                 <ul className="space-y-3">
                   {links.map((link) => (
                     <li key={link.label}>
-                      <Link
-                        href={link.href}
-                        className="text-secondary-400 hover:text-white text-sm transition-colors"
-                      >
-                        {link.label}
-                      </Link>
+                      {isExternalLink(link.href) ? (
+                        <a
+                          href={link.href}
+                          className="text-secondary-400 hover:text-white text-sm transition-colors"
+                          rel="noopener noreferrer"
+                        >
+                          {link.label}
+                        </a>
+                      ) : (
+                        <Link
+                          href={link.href}
+                          className="text-secondary-400 hover:text-white text-sm transition-colors"
+                        >
+                          {link.label}
+                        </Link>
+                      )}
                     </li>
                   ))}
                 </ul>

@@ -7,7 +7,7 @@ const footerColumns = [
   {
     title: 'Discover',
     links: [
-      { label: 'How it works', href: '#how-it-works' },
+      { label: 'How it works', href: '/#how-it-works' },
       { label: 'Earn money', href: '/coming-soon?type=info&label=Earn%20money' },
       { label: 'Cost Guides', href: '/coming-soon?type=info&label=Cost%20Guides' },
       { label: 'Service Guides', href: '/coming-soon?type=info&label=Service%20Guides' },
@@ -26,7 +26,7 @@ const footerColumns = [
       { label: 'Privacy Policy', href: '/privacy-policy' },
       { label: 'Refund Policy', href: '/refund-policy' },
       { label: 'Tasker Agreement', href: '/provider-agreement' },
-      { label: 'Contact Us', href: 'https://extrhand-support-frontend.apps.extrahand.in' },
+      { label: 'Contact Us', href: 'https://extrhand-support-frontend.apps.extrahand.in/contact' },
     ],
   },
   {
@@ -107,6 +107,8 @@ const socialIcons = [
 ];
 
 export const Footer: React.FC = () => {
+  const isExternalLink = (href: string) => /^https?:\/\//.test(href);
+
   return (
     <footer className="bg-secondary-900 text-neutral-gray-50 w-full rounded-2xl mx-1 md:mx-2 mt-6 md:mt-10">
       <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-8 md:py-12">
@@ -119,12 +121,22 @@ export const Footer: React.FC = () => {
               <ul className="list-none p-0 m-0">
                 {col.links.map((link, linkIdx) => (
                   <li key={linkIdx}>
-                    <Link
-                      href={link.href}
-                      className="text-neutral-gray-50/60 no-underline text-xs md:text-sm font-normal block mb-1.5 md:mb-2 transition-colors duration-200 leading-snug hover:text-white"
-                    >
-                      {link.label}
-                    </Link>
+                    {isExternalLink(link.href) ? (
+                      <a
+                        href={link.href}
+                        className="text-neutral-gray-50/60 no-underline text-xs md:text-sm font-normal block mb-1.5 md:mb-2 transition-colors duration-200 leading-snug hover:text-white"
+                        rel="noopener noreferrer"
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link
+                        href={link.href}
+                        className="text-neutral-gray-50/60 no-underline text-xs md:text-sm font-normal block mb-1.5 md:mb-2 transition-colors duration-200 leading-snug hover:text-white"
+                      >
+                        {link.label}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -161,7 +173,7 @@ export const Footer: React.FC = () => {
               aria-label="Download on the App Store"
               className="inline-block no-underline"
             >
-              <div className="flex items-center gap-2 md:gap-3 bg-white rounded-2xl px-4 md:px-6 py-2.5 md:py-3 shadow-md min-w-[140px] md:min-w-[180px] min-h-[48px] md:min-h-[56px] w-full max-w-[80px] md:max-w-none">
+              <div className="flex items-center gap-2 md:gap-3 bg-white rounded-2xl px-4 md:px-6 py-2.5 md:py-3 shadow-md min-w-[140px] md:min-w-[180px] min-h-12 md:min-h-14 w-full max-w-20 md:max-w-none">
                 <svg width="32" height="32" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M21.7 14.7c-.1-2.1 1.7-3.1 1.8-3.2-1-1.5-2.6-1.7-3.1-1.7-1.3-.1-2.5.8-3.1.8-.6 0-1.6-.8-2.7-.8-1.4.1-2.7.8-3.4 2-1.5 2.6-.4 6.4 1.1 8.5.7 1 1.5 2.1 2.6 2.1 1 0 1.3-.7 2.6-.7s1.6.7 2.7.7c1.1 0 1.8-1 2.5-2 .8-1.1 1.1-2.2 1.1-2.3 0-.1-2.1-.8-2.1-3.2zm-2-6c.6-.7 1-1.7.9-2.7-.9.1-2 .6-2.6 1.3-.6.6-1.1 1.6-.9 2.5 1 .1 2-.5 2.6-1.1z" fill="#111"/>
                 </svg>
@@ -176,7 +188,7 @@ export const Footer: React.FC = () => {
               aria-label="Get it on Google Play"
               className="inline-block no-underline"
             >
-              <div className="flex items-center gap-2 md:gap-3 bg-white rounded-2xl px-4 md:px-6 py-2.5 md:py-3 shadow-md min-w-[140px] md:min-w-[180px] min-h-[48px] md:min-h-[56px] w-full max-w-[80px] md:max-w-none">
+              <div className="flex items-center gap-2 md:gap-3 bg-white rounded-2xl px-4 md:px-6 py-2.5 md:py-3 shadow-md min-w-[140px] md:min-w-[180px] min-h-12 md:min-h-14 w-full max-w-20 md:max-w-none">
                 <svg width="24" height="24" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <polygon points="3,2 33,18 3,34" fill="#34A853"/>
                   <polygon points="3,2 19,18 3,34" fill="#FBBC05"/>

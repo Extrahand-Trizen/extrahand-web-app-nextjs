@@ -5,19 +5,15 @@
  * Redirects authenticated users to home page
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { HeroSection } from "@/components/landing";
+import { HeroSection, HowItWorksSection } from "@/components/landing";
 import { useAuth } from "@/lib/auth/context";
 
 // Defer below-the-fold marketing sections to reduce initial bundle size.
 const SocialProofBar = dynamic(
    () => import("@/components/landing/SocialProofBar")
-);
-
-const HowItWorksSection = dynamic(
-   () => import("@/components/landing/HowItWorksSection")
 );
 
 const CategoriesExplorer = dynamic(
@@ -53,11 +49,30 @@ export default function LandingPage() {
       return window.location.hash === "#how-it-works";
    });
 
-   // Force scroll to top on landing page mount
-   useEffect(() => {
-      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
+   const scrollToHowItWorks = useCallback(() => {
+      if (typeof window === "undefined") return;
+
+      let attempts = 0;
+      const maxAttempts = 30;
+
+      const tryScroll = () => {
+         const element = document.getElementById("how-it-works");
+         if (element) {
+            const headerOffset = 88;
+            const top =
+               element.getBoundingClientRect().top + window.scrollY - headerOffset;
+
+            window.scrollTo({ top: Math.max(top, 0), behavior: "auto" });
+            return;
+         }
+
+         attempts += 1;
+         if (attempts < maxAttempts) {
+            window.setTimeout(tryScroll, 100);
+         }
+      };
+
+      tryScroll();
    }, []);
 
    useEffect(() => {
@@ -80,9 +95,6 @@ export default function LandingPage() {
          window.location.hash === "#how-it-works";
 
       if (hasHowItWorksHash) {
-         if (!allowHowItWorks) {
-            setAllowHowItWorks(true);
-         }
          return;
       }
 
@@ -95,21 +107,14 @@ export default function LandingPage() {
    useEffect(() => {
       // Only scroll to section if explicitly requested via hash
       if (!allowHowItWorks) {
-         // Ensure we're at top if no hash
-         window.scrollTo({ top: 0, left: 0, behavior: "auto" });
          return;
       }
       
-      // Small delay to ensure content is loaded
-      const timeoutId = setTimeout(() => {
-         const element = document.getElementById("how-it-works");
-         if (element) {
-            element.scrollIntoView({ behavior: "smooth", block: "start" });
-         }
-      }, 100);
+      // Trigger immediately; retry logic handles any late-mount edge case.
+      scrollToHowItWorks();
       
-      return () => clearTimeout(timeoutId);
-   }, [allowHowItWorks]);
+      return;
+   }, [allowHowItWorks, scrollToHowItWorks]);
 
    // Show nothing while checking authentication or redirecting
    if (loading || (isAuthenticated && !allowHowItWorks)) {

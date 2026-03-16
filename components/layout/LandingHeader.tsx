@@ -101,6 +101,7 @@ export const LandingHeader: React.FC = () => {
    const { currentUser, userData, logout } = useAuth();
    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
    const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
+   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
    const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false);
    const [activeRole, setActiveRole] = useState<"poster" | "tasker">("poster");
    const [mobileActiveRole, setMobileActiveRole] = useState<
@@ -138,6 +139,7 @@ export const LandingHeader: React.FC = () => {
    // Hover handlers for dropdown
    const handleMouseEnter = () => {
       if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+      setIsUserMenuOpen(false);
       setIsCategoriesOpen(true);
    };
    const handleMouseLeave = () => {
@@ -198,16 +200,8 @@ export const LandingHeader: React.FC = () => {
       setIsMobileMenuOpen(false);
 
       if (href.startsWith("#")) {
-         // If we're not on the home page, navigate there first
-         if (pathname !== "/") {
-            router.push("/" + href);
-         } else {
-            // We're already on home page, just scroll
-            const element = document.querySelector(href);
-            if (element) {
-               element.scrollIntoView({ behavior: "smooth", block: "start" });
-            }
-         }
+         // Always route through hash URL so section-scroll logic runs consistently.
+         router.push("/" + href);
       } else {
          router.push(href);
       }
@@ -456,6 +450,13 @@ export const LandingHeader: React.FC = () => {
                               initials={initials}
                               onNavigate={handleRouteChange}
                               onLogout={handleLogout}
+                              open={isUserMenuOpen}
+                              onOpenChange={(nextOpen) => {
+                                 setIsUserMenuOpen(nextOpen);
+                                 if (nextOpen) {
+                                    setIsCategoriesOpen(false);
+                                 }
+                              }}
                            />
                         </>
                      )}
