@@ -38,10 +38,29 @@ function buildAuthHeaders(request: NextRequest): HeadersInit {
   return headers;
 }
 
-interface RouteParams {
+type RouteParams = {
   params: {
     notificationId: string;
-  };
+  } | Promise<{
+    notificationId: string;
+  }>;
+};
+
+async function resolveRouteParams(routeParams: RouteParams['params']) {
+  if (routeParams && typeof (routeParams as Promise<{ notificationId: string }>).then === 'function') {
+    return await routeParams;
+  }
+  return routeParams as { notificationId: string };
+}
+
+async function parseJsonIfPresent(response: Response): Promise<any | null> {
+  const text = await response.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -53,7 +72,7 @@ export async function PATCH(
   { params }: RouteParams
 ) {
   try {
-    const { notificationId } = params;
+    const { notificationId } = await resolveRouteParams(params);
 
     if (!notificationId) {
       return NextResponse.json(
@@ -78,8 +97,8 @@ export async function PATCH(
       );
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    const data = await parseJsonIfPresent(response);
+    return NextResponse.json(data ?? { success: true });
   } catch (error) {
     console.error('Error marking notification as read:', error);
     return NextResponse.json(
@@ -101,7 +120,7 @@ export async function DELETE(
   { params }: RouteParams
 ) {
   try {
-    const { notificationId } = params;
+    const { notificationId } = await resolveRouteParams(params);
 
     if (!notificationId) {
       return NextResponse.json(
@@ -126,8 +145,8 @@ export async function DELETE(
       );
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    const data = await parseJsonIfPresent(response);
+    return NextResponse.json(data ?? { success: true });
   } catch (error) {
     console.error('Error deleting notification:', error);
     return NextResponse.json(

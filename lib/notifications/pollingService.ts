@@ -238,7 +238,7 @@ export class NotificationPollingService {
   static async markAsRead(notificationId: string): Promise<boolean> {
     try {
       const response = await fetch(
-        `/api/notifications/${notificationId}/read`,
+        `/api/notifications/${encodeURIComponent(notificationId)}`,
         {
           method: 'PATCH',
           headers: {
@@ -250,6 +250,11 @@ export class NotificationPollingService {
 
       if (!response.ok) {
         throw new Error('Failed to mark notification as read');
+      }
+
+      const payload = await response.json().catch(() => null);
+      if (payload && typeof payload.success === 'boolean') {
+        return payload.success;
       }
 
       return true;
@@ -292,7 +297,7 @@ export class NotificationPollingService {
   static async deleteNotification(notificationId: string): Promise<boolean> {
     try {
       const response = await fetch(
-        `/api/notifications/${notificationId}`,
+        `/api/notifications/${encodeURIComponent(notificationId)}`,
         {
           method: 'DELETE',
           headers: {
@@ -304,6 +309,11 @@ export class NotificationPollingService {
 
       if (!response.ok) {
         throw new Error('Failed to delete notification');
+      }
+
+      const payload = await response.json().catch(() => null);
+      if (payload && typeof payload.success === 'boolean') {
+        return payload.success;
       }
 
       return true;

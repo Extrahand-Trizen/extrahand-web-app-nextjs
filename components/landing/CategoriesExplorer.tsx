@@ -162,7 +162,7 @@ export const CategoriesExplorer = () => {
                            : { x: ["-33.333%", "0%"] }
                      }
                      transition={{
-                        duration: 120,
+                        duration: 290,
                         ease: "linear",
                         repeat: Infinity,
                      }}
