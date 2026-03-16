@@ -183,6 +183,15 @@ export const chatsApi = {
   },
 
   /**
+   * Get existing chat for a task without creating one.
+   * GET /api/v1/chats/task/:taskId
+   */
+  async getTaskChat(taskId: string): Promise<{ chat: Chat | null }> {
+    const response = await fetchWithAuth(`chats/task/${taskId}`);
+    return response.data || { chat: null };
+  },
+
+  /**
    * Upload an image that can be sent in chat as an image message.
    * Reuses the task-image upload endpoint and stores URL in message metadata.
    */

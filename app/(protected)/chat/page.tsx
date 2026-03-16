@@ -147,9 +147,9 @@ export default function ChatPage() {
 
   // Handle URL params to open specific chat
   useEffect(() => {
-    // Priority 1: If taskId is provided (poster/tasker), start/get chat for that task
+    // Priority 1: If taskId is provided, open task chat context without auto-creating chat.
     if (taskIdParam) {
-      startChatForTask(taskIdParam);
+      openTaskChatContext(taskIdParam);
       return;
     }
 
@@ -215,36 +215,37 @@ export default function ChatPage() {
     }
   };
 
-  const startChatForTask = async (taskId: string) => {
+  const openTaskChatContext = async (taskId: string) => {
     try {
       setLoading(true);
-      const { chat } = await chatsApi.startChatForTask(taskId);
+      setShowMobileList(false);
+      const { chat } = await chatsApi.getTaskChat(taskId);
+
+      if (!chat) {
+        setSelectedChat(null);
+        setMessages([]);
+        return;
+      }
+
       const hydratedChat = await resolveOtherParticipant(chat);
-      
-      // Add/update chat in list
+
       setChats((prev) => {
         const existingIndex = prev.findIndex(
           (c) => c.chatId === hydratedChat.chatId || c._id === hydratedChat._id
         );
         if (existingIndex >= 0) {
-          // Update existing chat
           const updated = [...prev];
           updated[existingIndex] = hydratedChat;
           return updated;
-        } else {
-          // Add new chat at the top
-          return [hydratedChat, ...prev];
         }
+        return [hydratedChat, ...prev];
       });
 
       setSelectedChat(hydratedChat);
       await loadMessages(hydratedChat);
-      setShowMobileList(false);
     } catch (error) {
-      console.error("Failed to start chat for task:", error);
-      toast.error("Unable to start task chat", {
-        description: error instanceof Error ? error.message : "Please try again",
-      });
+      console.error("Failed to open task chat context:", error);
+      toast.error("Unable to open task chat");
     } finally {
       setLoading(false);
     }
@@ -389,16 +390,53 @@ export default function ChatPage() {
   }, [selectedChat, showMobileList]);
 
   const handleSendMessage = async () => {
-    if (!messageText.trim() || !selectedChat || sending || !isChatOpen(selectedChat)) {
-      if (selectedChat && !isChatOpen(selectedChat)) {
+    if (!messageText.trim() || sending) {
+      return;
+    }
+
+    if (selectedChat && !isChatOpen(selectedChat)) {
         toast.error("This task chat is closed");
+      return;
+    }
+
+    let activeChat = selectedChat;
+
+    // Lazy-create task chat only when first message is sent.
+    if (!activeChat && taskIdParam) {
+      try {
+        const { chat } = await chatsApi.startChatForTask(taskIdParam);
+        const hydratedChat = await resolveOtherParticipant(chat);
+
+        setChats((prev) => {
+          const existingIndex = prev.findIndex(
+            (c) => c.chatId === hydratedChat.chatId || c._id === hydratedChat._id
+          );
+          if (existingIndex >= 0) {
+            const updated = [...prev];
+            updated[existingIndex] = hydratedChat;
+            return updated;
+          }
+          return [hydratedChat, ...prev];
+        });
+
+        setSelectedChat(hydratedChat);
+        setShowMobileList(false);
+        activeChat = hydratedChat;
+      } catch (error) {
+        console.error("Failed to create task chat on first message:", error);
+        toast.error("Unable to start chat");
+        return;
       }
+    }
+
+    if (!activeChat) {
+      toast.error("Select a conversation to send a message");
       return;
     }
 
     const tempMessage: Message = {
       _id: `temp-${Date.now()}`,
-      chatId: selectedChat.chatId,
+      chatId: activeChat.chatId,
       senderId: user?._id || "",
       text: messageText,
       type: "text",
@@ -418,7 +456,7 @@ export default function ChatPage() {
 
     try {
       const sentMessage = await chatsApi.sendMessage(
-        selectedChat.chatId,
+        activeChat.chatId,
         messageText
       );
 
@@ -430,7 +468,7 @@ export default function ChatPage() {
       // Update last message in chat list
       setChats((prev) =>
         prev.map((c) =>
-          c.chatId === selectedChat.chatId
+          c.chatId === activeChat.chatId
             ? {
                 ...c,
                 lastMessage: {
@@ -555,8 +593,8 @@ export default function ChatPage() {
     return formatDistanceToNow(new Date(date), { addSuffix: true });
   };
 
-  // Chat list component
-  const ChatList = () => (
+  // Chat list content - inlined (not a nested component) so search input doesn't remount on each keystroke
+  const chatListContent = (
     <div className="h-full flex flex-col bg-white border-r border-secondary-200">
       {/* Header */}
       <div className="p-4 border-b border-secondary-200">
@@ -824,7 +862,7 @@ export default function ChatPage() {
       {/* Desktop: side by side */}
       <div className="hidden md:flex w-full">
         <div className="w-80 lg:w-96">
-          <ChatList />
+          {chatListContent}
         </div>
         <div className="flex-1">
           {chatMessagesContent}
@@ -833,7 +871,7 @@ export default function ChatPage() {
 
       {/* Mobile: toggle between list and chat */}
       <div className="md:hidden w-full">
-        {showMobileList ? <ChatList /> : chatMessagesContent}
+        {showMobileList ? chatListContent : chatMessagesContent}
       </div>
     </div>
   );

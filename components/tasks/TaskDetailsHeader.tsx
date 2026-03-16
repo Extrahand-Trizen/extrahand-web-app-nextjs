@@ -96,6 +96,26 @@ export function TaskDetailsHeader({
       return `${formatDate(start)} - ${formatDate(end)}`;
    };
 
+   const getScheduleLabel = () => {
+      if (task.recurring?.enabled) {
+         return formatRange(task.recurring.startDate, task.recurring.endDate) || "Flexible";
+      }
+
+      if (!task.scheduledDate || task.dateOption === "flexible" || !task.dateOption) {
+         return "Flexible";
+      }
+
+      if (task.dateOption === "before-date") {
+         return `Before ${formatDate(task.scheduledDate)}`;
+      }
+
+      if (task.dateOption === "on-date") {
+         return `On ${formatDate(task.scheduledDate)}`;
+      }
+
+      return formatDate(task.scheduledDate) || "Flexible";
+   };
+
    const getTimeAgo = (date: Date | string | undefined) => {
       if (!date) return "Recently";
       const now = new Date();
@@ -187,11 +207,7 @@ export function TaskDetailsHeader({
                   <span className="font-medium">When</span>
                </div>
                <p className="text-xs md:text-sm font-semibold text-secondary-900 truncate">
-                  {task.recurring?.enabled
-                     ? formatRange(task.recurring.startDate, task.recurring.endDate) || "Flexible"
-                     : task.scheduledDate
-                     ? formatDate(task.scheduledDate)
-                     : "Flexible"}
+                  {getScheduleLabel()}
                </p>
                {task.timeSlot && (
                   <p className="text-[10px] md:text-xs text-secondary-500 mt-0.5">

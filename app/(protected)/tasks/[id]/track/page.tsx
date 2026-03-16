@@ -299,7 +299,7 @@ export default function TaskTrackingPage() {
       }
    };
 
-   // Load chat - Start or get existing chat for this task
+   // Load chat - get existing chat only (do not create on page load)
    useEffect(() => {
       if (!task || userRole === "viewer") return;
 
@@ -314,8 +314,8 @@ export default function TaskTrackingPage() {
          setChatError(null);
          
          try {
-            // Start or get existing chat for this task
-            const response = await chatsApi.startChatForTask(task._id);
+            // Fetch existing chat only. Chat will be lazily created on first message.
+            const response = await chatsApi.getTaskChat(task._id);
             
             // Check if component is still mounted and this request is still active
             if (!isActive) return;
@@ -359,6 +359,9 @@ export default function TaskTrackingPage() {
                });
                
                setChatMessages(formattedMessages);
+            } else {
+               setChatId(null);
+               setChatMessages([]);
             }
          } catch (error: any) {
             console.error("Failed to load chat:", error);
@@ -439,11 +442,26 @@ export default function TaskTrackingPage() {
 
    // Handle send message
    const handleSendMessage = async (text: string) => {
-      if (!task || !chatId) return;
+      if (!task) return;
 
       try {
+         let effectiveChatId = chatId;
+
+         // Lazy-create chat only when user sends first message.
+         if (!effectiveChatId) {
+            const response = await chatsApi.startChatForTask(task._id);
+            const createdChat = response.chat;
+
+            if (!createdChat?.chatId) {
+               throw new Error("Unable to create chat");
+            }
+
+            effectiveChatId = createdChat.chatId;
+            setChatId(createdChat.chatId);
+         }
+
          // Send message via API
-         const newMessage = await chatsApi.sendMessage(chatId, text);
+         const newMessage = await chatsApi.sendMessage(effectiveChatId, text);
          
          // Add message to local state immediately (optimistic update)
          const formattedMessage: Message = {
