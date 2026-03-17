@@ -136,6 +136,24 @@ export interface Transaction {
    payoutMethodId?: string;
    createdAt: Date;
    completedAt?: Date;
+   metadata?: Record<string, unknown>;
+   rawStatus?: string;
+   taskCategory?: string;
+   taskStatus?:
+      | "open"
+      | "assigned"
+      | "started"
+      | "in_progress"
+      | "review"
+      | "completed"
+      | "cancelled";
+   assignedToName?: string;
+   paidToName?: string;
+   escrowStatus?: "pending" | "held" | "released" | "refunded" | "cancelled";
+   taskAmount?: number;
+   platformFee?: number;
+   gstAmount?: number;
+   totalPaid?: number;
 }
 
 // Address types

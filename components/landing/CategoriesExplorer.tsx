@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { categoriesApi } from "@/lib/api/endpoints/categories";
 
@@ -39,6 +38,8 @@ const colorPalette = [
    "from-yellow-50 to-orange-50",
    "from-slate-50 to-gray-100",
 ];
+
+const CATEGORY_MARQUEE_DURATION_SECONDS = 480;
 
 export const CategoriesExplorer = () => {
    const [categories, setCategories] = useState<Category[]>([]);
@@ -162,7 +163,7 @@ export const CategoriesExplorer = () => {
                            : { x: ["-33.333%", "0%"] }
                      }
                      transition={{
-                        duration: 290,
+                        duration: CATEGORY_MARQUEE_DURATION_SECONDS,
                         ease: "linear",
                         repeat: Infinity,
                      }}

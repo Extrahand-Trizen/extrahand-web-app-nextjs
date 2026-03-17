@@ -50,7 +50,18 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
             mappedType = "payout";
           }
 
+          const amount = Number.parseFloat(tx.amount);
+
           const metadata = tx.metadata || {};
+          const toNumber = (value: unknown): number | undefined => {
+            if (typeof value === "number" && Number.isFinite(value)) return value;
+            if (typeof value === "string") {
+              const parsed = Number.parseFloat(value);
+              if (Number.isFinite(parsed)) return parsed;
+            }
+            return undefined;
+          };
+
           const taskId =
             tx.taskId ||
             metadata.taskId ||
@@ -66,6 +77,27 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
             metadata.title ||
             tx.title;
 
+          const taskAmount =
+            toNumber(metadata.taskAmount) ||
+            toNumber(metadata.amountBreakdown?.taskAmount) ||
+            toNumber(metadata.fees?.taskAmount);
+          const platformFee =
+            toNumber(metadata.platformFee) ||
+            toNumber(metadata.platformFeeAmount) ||
+            toNumber(metadata.amountBreakdown?.platformFee) ||
+            toNumber(metadata.fees?.platformFee);
+          const gstAmount =
+            toNumber(metadata.gstAmount) ||
+            toNumber(metadata.platformFeeGst) ||
+            toNumber(metadata.gst) ||
+            toNumber(metadata.amountBreakdown?.gst) ||
+            toNumber(metadata.fees?.gst);
+          const totalPaid =
+            toNumber(metadata.totalPaid) ||
+            toNumber(metadata.totalAmount) ||
+            toNumber(metadata.amountBreakdown?.totalAmount) ||
+            amount;
+
           const fallbackDescription =
             mappedType === "payment"
               ? "Payment"
@@ -73,19 +105,44 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
               ? "Earnings"
               : "Transaction";
 
+          const rawStatus = String(tx.status || "").toLowerCase();
+
+          const normalizedStatus: Transaction["status"] =
+            rawStatus === "held" ||
+            rawStatus === "pending" ||
+            rawStatus === "processing" ||
+            rawStatus === "authorized"
+              ? "pending"
+              : rawStatus === "failed"
+              ? "failed"
+              : rawStatus === "cancelled"
+              ? "cancelled"
+              : "completed";
+
           return {
             id: tx.transactionId || tx.id,
             type: mappedType,
-            amount: parseFloat(tx.amount),
+            amount,
             currency: "INR",
-            status:
-              tx.status === "held" || tx.status === "pending"
-                ? "pending"
-                : "completed",
+            status: normalizedStatus,
             description: tx.description || fallbackDescription,
             createdAt: new Date(tx.date || tx.createdAt),
             taskId,
             taskTitle,
+            metadata,
+            rawStatus,
+            taskCategory:
+              metadata.taskCategory || metadata.task?.category || metadata.category,
+            taskStatus: metadata.taskStatus || metadata.task?.status,
+            assignedToName:
+              metadata.assignedToName || metadata.task?.assignedToName,
+            paidToName:
+              metadata.paidToName || metadata.performerName || metadata.taskerName,
+            escrowStatus: metadata.escrowStatus || metadata.escrow?.status,
+            taskAmount,
+            platformFee,
+            gstAmount,
+            totalPaid,
           };
         });
       }

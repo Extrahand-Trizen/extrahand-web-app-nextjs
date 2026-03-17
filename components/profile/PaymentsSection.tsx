@@ -6,7 +6,6 @@
  */
 
 import React, { useState, useMemo, useEffect } from "react";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +50,8 @@ import { DateRange } from "react-day-picker";
 import { useAuth } from "@/lib/auth/context";
 import { toast } from "sonner";
 import { usePaymentsStore } from "@/lib/state/paymentsStore";
+import { tasksApi } from "@/lib/api/endpoints/tasks";
+import { paymentApi } from "@/lib/api/endpoints/payment";
 import {
    exportTransactionsToPdf,
    exportTransactionsToExcel,
@@ -104,6 +105,8 @@ export function PaymentsSection({
    // Internal modal state
    const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false);
    const [showPayoutMethodModal, setShowPayoutMethodModal] = useState(false);
+   const [selectedTransaction, setSelectedTransaction] =
+      useState<Transaction | null>(null);
 
    // Fetch earnings + transactions as soon as Payments section is shown (use userId
    // from parent so Total Earnings/Total Spent load without waiting for auth or tab).
@@ -646,6 +649,9 @@ export function PaymentsSection({
                            <TransactionRow
                               key={transaction.id}
                               transaction={transaction}
+                              onOpenDetails={() =>
+                                 setSelectedTransaction(transaction)
+                              }
                            />
                         ))}
                      </div>
@@ -689,6 +695,11 @@ export function PaymentsSection({
             isOpen={showPayoutMethodModal}
             onClose={() => setShowPayoutMethodModal(false)}
             onSave={handleSavePayoutMethod}
+         />
+
+         <TransactionDetailsModal
+            transaction={selectedTransaction}
+            onClose={() => setSelectedTransaction(null)}
          />
       </div>
    );
@@ -904,19 +915,38 @@ function PayoutMethodRow({
 
 interface TransactionRowProps {
    transaction: Transaction;
+   onOpenDetails: () => void;
 }
 
-function TransactionRow({ transaction }: TransactionRowProps) {
+function TransactionRow({ transaction, onOpenDetails }: TransactionRowProps) {
    const isCredit =
       transaction.type === "payout" || transaction.type === "refund";
    const fallbackTaskLabel = transaction.taskId
       ? `Task ${transaction.taskId.slice(0, 8)}`
       : transaction.description;
    const titleText = transaction.taskTitle || fallbackTaskLabel;
-   const canOpenTask = Boolean(transaction.taskId);
+   const canOpenDetails = Boolean(transaction.taskId);
 
    return (
-      <div className="px-4 py-3 sm:px-5 sm:py-4 hover:bg-gray-50 transition-colors">
+      <div
+         className={cn(
+            "px-4 py-3 sm:px-5 sm:py-4 hover:bg-gray-50 transition-colors",
+            canOpenDetails && "cursor-pointer"
+         )}
+         onClick={canOpenDetails ? onOpenDetails : undefined}
+         role={canOpenDetails ? "button" : undefined}
+         tabIndex={canOpenDetails ? 0 : undefined}
+         onKeyDown={
+            canOpenDetails
+               ? (event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                       event.preventDefault();
+                       onOpenDetails();
+                    }
+                 }
+               : undefined
+         }
+      >
          <div className="flex items-center gap-3 sm:gap-4">
             <div
                className={cn(
@@ -932,18 +962,15 @@ function TransactionRow({ transaction }: TransactionRowProps) {
             </div>
 
             <div className="flex-1 min-w-0">
-               {canOpenTask ? (
-                  <Link
-                     href={`/tasks/${transaction.taskId}`}
-                     className="text-xs sm:text-sm font-medium text-gray-900 truncate block hover:text-primary-700 underline-offset-2 hover:underline"
-                  >
-                     {titleText}
-                  </Link>
-               ) : (
-                  <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">
-                     {titleText}
-                  </p>
-               )}
+               <p
+                  className={cn(
+                     "text-xs sm:text-sm font-medium text-gray-900 truncate",
+                     canOpenDetails &&
+                        "hover:text-primary-700 underline-offset-2 hover:underline"
+                  )}
+               >
+                  {titleText}
+               </p>
                <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 truncate">
                   {formatDate(transaction.createdAt)}
                   {transaction.taskId && !transaction.taskTitle && " • Task linked"}
@@ -962,6 +989,207 @@ function TransactionRow({ transaction }: TransactionRowProps) {
                <TransactionStatusBadge status={transaction.status} />
             </div>
          </div>
+      </div>
+   );
+}
+
+interface TransactionDetailsModalProps {
+   transaction: Transaction | null;
+   onClose: () => void;
+}
+
+function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsModalProps) {
+   const [taskStatus, setTaskStatus] = useState<Transaction["taskStatus"]>();
+   const [taskCategory, setTaskCategory] = useState<string | undefined>();
+   const [paidToName, setPaidToName] = useState<string | undefined>();
+   const [escrowStatus, setEscrowStatus] =
+      useState<Transaction["escrowStatus"]>();
+   const [isRefreshing, setIsRefreshing] = useState(false);
+
+   useEffect(() => {
+      if (!transaction) return;
+
+      let cancelled = false;
+
+      const loadLatest = async () => {
+         setIsRefreshing(true);
+         try {
+            if (transaction.taskId) {
+               const [task, escrowRes] = await Promise.all([
+                  tasksApi.getTask(transaction.taskId).catch(() => null),
+                  paymentApi
+                     .getEscrowByTaskId(transaction.taskId)
+                     .catch(() => ({ success: false })),
+               ]);
+
+               if (cancelled) return;
+
+               if (task) {
+                  setTaskStatus((task as any).status);
+                  setTaskCategory((task as any).categoryLabel || (task as any).category);
+                  setPaidToName((task as any).assignedToName || (task as any).performerName);
+               }
+
+               if (escrowRes?.success && escrowRes.escrow?.status) {
+                  setEscrowStatus(escrowRes.escrow.status);
+               }
+            }
+         } finally {
+            if (!cancelled) setIsRefreshing(false);
+         }
+      };
+
+      setTaskStatus(transaction.taskStatus);
+      setTaskCategory(transaction.taskCategory);
+      setPaidToName(transaction.paidToName || transaction.assignedToName);
+      setEscrowStatus(transaction.escrowStatus);
+
+      loadLatest();
+      const timer = setInterval(loadLatest, 20_000);
+
+      return () => {
+         cancelled = true;
+         clearInterval(timer);
+      };
+   }, [transaction]);
+
+   if (!transaction) return null;
+
+   const statusMessage = getEscrowStatusMessage(escrowStatus, transaction.status);
+   const breakdown = buildPaymentBreakdown(transaction);
+   const timeline = buildPaymentTimeline(taskStatus, escrowStatus);
+
+   return (
+      <Dialog open={Boolean(transaction)} onOpenChange={(open) => !open && onClose()}>
+         <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+               <DialogTitle className="text-base font-semibold">Payment Successful</DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4">
+               <div className="border-b border-dashed border-gray-200 pb-4">
+                  <p className="text-2xl font-bold text-gray-900">
+                     ₹{Math.round(Math.abs(transaction.totalPaid ?? transaction.amount)).toLocaleString()}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                     {formatDateTime(transaction.createdAt)}
+                  </p>
+                  <p className="text-sm font-medium text-gray-900 mt-3">
+                     {transaction.taskTitle || transaction.description}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">{taskCategory || "General"}</p>
+               </div>
+
+               <div className="space-y-2 border-b border-dashed border-gray-200 pb-4">
+                  <h4 className="text-sm font-semibold text-gray-900">Payment Details</h4>
+                  <DetailRow label="Task Amount" value={breakdown.taskAmount} />
+                  <DetailRow label="Platform Fee" value={breakdown.platformFee} />
+                  <DetailRow label="GST" value={breakdown.gstAmount} />
+                  <div className="pt-2 mt-2 border-t border-gray-200">
+                     <DetailRow label="Total Paid" value={breakdown.totalPaid} strong />
+                  </div>
+               </div>
+
+               <div className="space-y-2 border-b border-dashed border-gray-200 pb-4">
+                  <p className="text-sm font-medium text-gray-900">
+                     Status: <span className="text-amber-700">{statusMessage}</span>
+                  </p>
+               </div>
+
+               <div className="space-y-2 border-b border-dashed border-gray-200 pb-4">
+                  <h4 className="text-sm font-semibold text-gray-900">Timeline</h4>
+                  {timeline.map((item) => (
+                     <p key={item.label} className="text-sm text-gray-700">
+                        {item.done ? "✔" : "⏳"} {item.label}
+                     </p>
+                  ))}
+               </div>
+
+               <div>
+                  <h4 className="text-sm font-semibold text-gray-900">Paid to</h4>
+                  <p className="text-sm text-gray-700 mt-1">{paidToName || "Will be assigned"}</p>
+               </div>
+
+               {isRefreshing && (
+                  <p className="text-[11px] text-gray-500">Refreshing payment status...</p>
+               )}
+            </div>
+         </DialogContent>
+      </Dialog>
+   );
+}
+
+function buildPaymentBreakdown(transaction: Transaction) {
+   const totalPaid = Math.round(
+      Math.abs(transaction.totalPaid ?? transaction.amount ?? 0)
+   );
+   const taskAmount = Math.round(
+      transaction.taskAmount ?? Math.max(totalPaid - 59, 0)
+   );
+   const platformFee = Math.round(transaction.platformFee ?? Math.round(taskAmount * 0.05));
+   const gstAmount = Math.round(
+      transaction.gstAmount ?? Math.max(totalPaid - taskAmount - platformFee, 0)
+   );
+
+   return {
+      taskAmount,
+      platformFee,
+      gstAmount,
+      totalPaid,
+   };
+}
+
+function buildPaymentTimeline(
+   taskStatus?: Transaction["taskStatus"],
+   escrowStatus?: Transaction["escrowStatus"]
+) {
+   const assignedDone =
+      taskStatus === "assigned" ||
+      taskStatus === "started" ||
+      taskStatus === "in_progress" ||
+      taskStatus === "review" ||
+      taskStatus === "completed";
+
+   const inProgressDone =
+      taskStatus === "started" ||
+      taskStatus === "in_progress" ||
+      taskStatus === "review" ||
+      taskStatus === "completed";
+
+   const releaseDone =
+      escrowStatus === "released" || taskStatus === "completed";
+
+   return [
+      { label: "Paid", done: true },
+      { label: "Assigned", done: assignedDone },
+      { label: "In progress", done: inProgressDone },
+      { label: "Release pending", done: releaseDone },
+   ];
+}
+
+function getEscrowStatusMessage(
+   escrowStatus?: Transaction["escrowStatus"],
+   paymentStatus?: Transaction["status"]
+) {
+   if (escrowStatus === "released") return "Payment released to tasker";
+   if (escrowStatus === "refunded") return "Payment refunded";
+   if (escrowStatus === "cancelled") return "Payment cancelled";
+   if (escrowStatus === "held" || escrowStatus === "pending") {
+      return "🟡 Payment secured in escrow";
+   }
+   if (paymentStatus === "completed") return "🟡 Payment secured in escrow";
+   if (paymentStatus === "pending") return "⏳ Payment is being processed";
+   if (paymentStatus === "failed") return "Payment failed";
+   return "⏳ Status updating";
+}
+
+function DetailRow({ label, value, strong = false }: { label: string; value: number; strong?: boolean }) {
+   return (
+      <div className="flex items-center justify-between text-sm">
+         <span className="text-gray-600">{label}</span>
+         <span className={cn("text-gray-900", strong && "font-semibold")}>
+            ₹{Math.round(Math.abs(value)).toLocaleString()}
+         </span>
       </div>
    );
 }
@@ -996,6 +1224,21 @@ function formatDate(date: Date | string): string {
       month: "short",
       year: "numeric",
    });
+}
+
+function formatDateTime(date: Date | string): string {
+   const d = new Date(date);
+   const dateText = d.toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+   });
+   const timeText = d.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+   });
+   return `${dateText} • ${timeText}`;
 }
 
 // ============================================================================
