@@ -37,8 +37,7 @@ const colorPalette = [
    "from-slate-50 to-gray-100",
 ];
 
-const CATEGORY_MARQUEE_DURATION_SECONDS = 480;
-
+const CATEGORY_MARQUEE_DURATION_SECONDS = 50;
 const curatedCategories: Category[] = [
    {
       title: "Home Cleaning Tasks",

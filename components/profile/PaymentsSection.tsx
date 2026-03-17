@@ -58,6 +58,7 @@ import { toast } from "sonner";
 import { usePaymentsStore } from "@/lib/state/paymentsStore";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
 import { paymentApi } from "@/lib/api/endpoints/payment";
+import { profilesApi } from "@/lib/api/endpoints/profiles";
 import {
    exportTransactionsToPdf,
    exportTransactionsToExcel,
@@ -1037,11 +1038,43 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
                if (task) {
                   setTaskStatus((task as any).status);
                   setTaskCategory((task as any).categoryLabel || (task as any).category);
-                  setPaidToName((task as any).assignedToName || (task as any).performerName);
+
+                  const taskerNameFromTask =
+                     (task as any).assignedToName ||
+                     (task as any).assigneeName ||
+                     (task as any).performerName ||
+                     (task as any).assignedUser?.name ||
+                     (task as any).assignedTo?.name;
+
+                  const taskerUidOrId =
+                     (task as any).assigneeUid ||
+                     (task as any).assignedTo ||
+                     (task as any).assignedUser?._id ||
+                     (task as any).assignedUser?.uid;
+
+                  if (taskerNameFromTask) {
+                     setPaidToName(taskerNameFromTask);
+                  } else if (typeof taskerUidOrId === "string" && taskerUidOrId.trim()) {
+                     const profile = await profilesApi
+                        .getPublicProfile(taskerUidOrId)
+                        .catch(() => null);
+
+                     const profileName =
+                        (profile as any)?.name ||
+                        (profile as any)?.displayName ||
+                        (profile as any)?.fullName;
+
+                     if (profileName) {
+                        setPaidToName(profileName);
+                     }
+                  }
                }
 
-               if (escrowRes?.success && escrowRes.escrow?.status) {
-                  setEscrowStatus(escrowRes.escrow.status);
+               const escrow =
+                  (escrowRes as { escrow?: { status?: Transaction["escrowStatus"] } })
+                     ?.escrow;
+               if (escrowRes?.success && escrow?.status) {
+                  setEscrowStatus(escrow.status);
                }
             }
          } catch (error) {
