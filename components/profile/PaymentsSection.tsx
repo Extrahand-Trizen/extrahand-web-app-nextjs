@@ -921,11 +921,13 @@ interface TransactionRowProps {
 function TransactionRow({ transaction, onOpenDetails }: TransactionRowProps) {
    const isCredit =
       transaction.type === "payout" || transaction.type === "refund";
-   const fallbackTaskLabel = transaction.taskId
-      ? `Task ${transaction.taskId.slice(0, 8)}`
+   const safeTaskId =
+      typeof transaction.taskId === "string" ? transaction.taskId : "";
+   const fallbackTaskLabel = safeTaskId
+      ? `Task ${safeTaskId.slice(0, 8)}`
       : transaction.description;
    const titleText = transaction.taskTitle || fallbackTaskLabel;
-   const canOpenDetails = Boolean(transaction.taskId);
+   const canOpenDetails = Boolean(safeTaskId);
 
    return (
       <div
@@ -973,7 +975,7 @@ function TransactionRow({ transaction, onOpenDetails }: TransactionRowProps) {
                </p>
                <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 truncate">
                   {formatDate(transaction.createdAt)}
-                  {transaction.taskId && !transaction.taskTitle && " • Task linked"}
+                  {safeTaskId && !transaction.taskTitle && " • Task linked"}
                </p>
             </div>
 
@@ -1008,17 +1010,19 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
 
    useEffect(() => {
       if (!transaction) return;
+      const taskId =
+         typeof transaction.taskId === "string" ? transaction.taskId : "";
 
       let cancelled = false;
 
       const loadLatest = async () => {
          setIsRefreshing(true);
          try {
-            if (transaction.taskId) {
+            if (taskId) {
                const [task, escrowRes] = await Promise.all([
-                  tasksApi.getTask(transaction.taskId).catch(() => null),
+                  tasksApi.getTask(taskId).catch(() => null),
                   paymentApi
-                     .getEscrowByTaskId(transaction.taskId)
+                     .getEscrowByTaskId(taskId)
                      .catch(() => ({ success: false })),
                ]);
 
@@ -1033,6 +1037,10 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
                if (escrowRes?.success && escrowRes.escrow?.status) {
                   setEscrowStatus(escrowRes.escrow.status);
                }
+            }
+         } catch (error) {
+            if (!cancelled) {
+               console.warn("Failed to refresh transaction details", error);
             }
          } finally {
             if (!cancelled) setIsRefreshing(false);
@@ -1069,7 +1077,7 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
             <div className="space-y-4">
                <div className="border-b border-dashed border-gray-200 pb-4">
                   <p className="text-2xl font-bold text-gray-900">
-                     ₹{Math.round(Math.abs(transaction.totalPaid ?? transaction.amount)).toLocaleString()}
+                     ₹{safeCurrency(transaction.totalPaid ?? transaction.amount)}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
                      {formatDateTime(transaction.createdAt)}
@@ -1120,15 +1128,16 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
 }
 
 function buildPaymentBreakdown(transaction: Transaction) {
-   const totalPaid = Math.round(
-      Math.abs(transaction.totalPaid ?? transaction.amount ?? 0)
-   );
+   const totalPaid = safeNumber(transaction.totalPaid ?? transaction.amount);
    const taskAmount = Math.round(
-      transaction.taskAmount ?? Math.max(totalPaid - 59, 0)
+      safeNumber(transaction.taskAmount) || Math.max(totalPaid - 59, 0)
    );
-   const platformFee = Math.round(transaction.platformFee ?? Math.round(taskAmount * 0.05));
+   const platformFee = Math.round(
+      safeNumber(transaction.platformFee) || Math.round(taskAmount * 0.05)
+   );
    const gstAmount = Math.round(
-      transaction.gstAmount ?? Math.max(totalPaid - taskAmount - platformFee, 0)
+      safeNumber(transaction.gstAmount) ||
+         Math.max(totalPaid - taskAmount - platformFee, 0)
    );
 
    return {
@@ -1188,7 +1197,7 @@ function DetailRow({ label, value, strong = false }: { label: string; value: num
       <div className="flex items-center justify-between text-sm">
          <span className="text-gray-600">{label}</span>
          <span className={cn("text-gray-900", strong && "font-semibold")}>
-            ₹{Math.round(Math.abs(value)).toLocaleString()}
+            ₹{safeCurrency(value)}
          </span>
       </div>
    );
@@ -1219,6 +1228,7 @@ function TransactionStatusBadge({ status }: { status: Transaction["status"] }) {
 
 function formatDate(date: Date | string): string {
    const d = new Date(date);
+   if (Number.isNaN(d.getTime())) return "Date unavailable";
    return d.toLocaleDateString("en-IN", {
       day: "numeric",
       month: "short",
@@ -1228,6 +1238,7 @@ function formatDate(date: Date | string): string {
 
 function formatDateTime(date: Date | string): string {
    const d = new Date(date);
+   if (Number.isNaN(d.getTime())) return "Date unavailable";
    const dateText = d.toLocaleDateString("en-IN", {
       day: "numeric",
       month: "short",
@@ -1239,6 +1250,19 @@ function formatDateTime(date: Date | string): string {
       hour12: true,
    });
    return `${dateText} • ${timeText}`;
+}
+
+function safeNumber(value: unknown): number {
+   if (typeof value === "number" && Number.isFinite(value)) return Math.round(Math.abs(value));
+   if (typeof value === "string") {
+      const parsed = Number.parseFloat(value.replace(/,/g, ""));
+      if (Number.isFinite(parsed)) return Math.round(Math.abs(parsed));
+   }
+   return 0;
+}
+
+function safeCurrency(value: unknown): string {
+   return safeNumber(value).toLocaleString("en-IN");
 }
 
 // ============================================================================
