@@ -42,12 +42,25 @@ interface EmailVerificationState {
    isAlreadyVerified?: boolean;
 }
 
+const EMAIL_ALREADY_LINKED_MESSAGE =
+   "This email is already linked to an account. Please use a different email.";
+
 const isEmailAlreadyUsedMessage = (message: string) => {
    const normalizedMessage = message.toLowerCase();
    return (
+      normalizedMessage.includes("status code 409") ||
+      normalizedMessage.includes("email_already_verified") ||
       normalizedMessage.includes("already verified on another account") ||
       normalizedMessage.includes("use a different email")
    );
+};
+
+const getEmailInitiationErrorMessage = (message: string) => {
+   if (isEmailAlreadyUsedMessage(message)) {
+      return EMAIL_ALREADY_LINKED_MESSAGE;
+   }
+
+   return message;
 };
 
 export default function EmailVerificationPage() {
@@ -136,13 +149,17 @@ export default function EmailVerificationPage() {
                description: `Code sent to ${state.email}. It will expire in ${response.data.expiresInMinutes} minutes.`,
             });
          } else {
-            setState((p) => ({ ...p, error: response.message || "Failed to send verification code" }));
-            toast.error("Failed to send code", {
-               description: response.message || "Please try again",
+            const errorMessage = getEmailInitiationErrorMessage(
+               response.message || "Failed to send verification code"
+            );
+            setState((p) => ({ ...p, error: errorMessage }));
+            toast.error(isEmailAlreadyUsedMessage(errorMessage) ? "Email already in use" : "Failed to send code", {
+               description: errorMessage,
             });
          }
       } catch (err: unknown) {
-         const errorMessage = err instanceof Error ? err.message : "Failed to send verification code";
+         const rawErrorMessage = err instanceof Error ? err.message : "Failed to send verification code";
+         const errorMessage = getEmailInitiationErrorMessage(rawErrorMessage);
          setState((p) => ({ ...p, error: errorMessage }));
          toast.error(isEmailAlreadyUsedMessage(errorMessage) ? "Email already in use" : "Failed to send code", {
             description: errorMessage,

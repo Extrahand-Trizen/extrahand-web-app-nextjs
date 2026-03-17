@@ -25,12 +25,25 @@ interface EmailVerificationProps {
 
 type EmailStep = "display" | "input" | "otp" | "verified";
 
+const EMAIL_ALREADY_LINKED_MESSAGE =
+   "This email is already linked to an account. Please use a different email.";
+
 const isEmailAlreadyUsedMessage = (message: string) => {
    const normalizedMessage = message.toLowerCase();
    return (
+      normalizedMessage.includes("status code 409") ||
+      normalizedMessage.includes("email_already_verified") ||
       normalizedMessage.includes("already verified on another account") ||
       normalizedMessage.includes("use a different email")
    );
+};
+
+const getEmailInitiationErrorMessage = (message: string) => {
+   if (isEmailAlreadyUsedMessage(message)) {
+      return EMAIL_ALREADY_LINKED_MESSAGE;
+   }
+
+   return message;
 };
 
 export function EmailVerification({
@@ -80,10 +93,14 @@ export function EmailVerification({
             setStep("otp");
             setOtpTimer((response.data?.expiresInMinutes || 5) * 60);
          } else {
-            setError(response.message || "Failed to send verification code.");
+            const errorMessage = getEmailInitiationErrorMessage(
+               response.message || "Failed to send verification code."
+            );
+            setError(errorMessage);
          }
       } catch (err: unknown) {
-         const message = err instanceof Error ? err.message : "Failed to send verification code.";
+         const rawMessage = err instanceof Error ? err.message : "Failed to send verification code.";
+         const message = getEmailInitiationErrorMessage(rawMessage);
          setError(message);
       } finally {
          setIsLoading(false);

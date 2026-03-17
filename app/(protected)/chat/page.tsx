@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { chatsApi, type Chat, type Message } from "@/lib/api/endpoints/chats";
+import { tasksApi } from "@/lib/api/endpoints/tasks";
 import { profilesApi } from "@/lib/api/endpoints/profiles";
 import { useChatSocket } from "@/lib/socket/hooks/useChatSocket";
 import { useUserStore } from "@/lib/state/userStore";
@@ -45,13 +46,65 @@ export default function ChatPage() {
   );
 
   const ACTIVE_CHAT_STATUSES = ["assigned", "started", "in_progress", "review"];
+  const CLOSED_CHAT_STATUSES = ["completed", "cancelled", "closed", "inactive"];
+
+  const normalizeTaskStatus = useCallback((status?: string) => {
+    return status?.toLowerCase().trim().replace(/\s+/g, "_");
+  }, []);
+
+  const extractTaskStatus = useCallback((taskResponse: unknown): string | undefined => {
+    if (!taskResponse || typeof taskResponse !== "object") {
+      return undefined;
+    }
+
+    const root = taskResponse as Record<string, unknown>;
+
+    if (typeof root.status === "string") {
+      return root.status;
+    }
+
+    const taskField = root.task;
+    if (taskField && typeof taskField === "object") {
+      const status = (taskField as Record<string, unknown>).status;
+      if (typeof status === "string") {
+        return status;
+      }
+    }
+
+    const dataField = root.data;
+    if (dataField && typeof dataField === "object") {
+      const dataObject = dataField as Record<string, unknown>;
+      if (typeof dataObject.status === "string") {
+        return dataObject.status;
+      }
+
+      const nestedTask = dataObject.task;
+      if (nestedTask && typeof nestedTask === "object") {
+        const nestedStatus = (nestedTask as Record<string, unknown>).status;
+        if (typeof nestedStatus === "string") {
+          return nestedStatus;
+        }
+      }
+    }
+
+    return undefined;
+  }, []);
 
   const isChatOpen = useCallback((chat: Chat | null) => {
     if (!chat?.isActive) return false;
-    const status = chat.taskDetails?.status;
-    if (!status) return true;
-    return ACTIVE_CHAT_STATUSES.includes(status);
-  }, []);
+    const normalizedStatus = normalizeTaskStatus(chat.taskDetails?.status);
+
+    // For task chats, do not show composer when status is unknown.
+    if (!normalizedStatus) {
+      return !chat.relatedTask;
+    }
+
+    if (CLOSED_CHAT_STATUSES.includes(normalizedStatus)) {
+      return false;
+    }
+
+    return ACTIVE_CHAT_STATUSES.includes(normalizedStatus);
+  }, [normalizeTaskStatus]);
 
   const getOtherParticipantName = useCallback((chat: Chat) => {
     // Always show the OTHER person's name (opposite participant)
@@ -140,6 +193,39 @@ export default function ChatPage() {
     [resolveOtherParticipant]
   );
 
+  const refreshChatWithLiveTaskStatus = useCallback(
+    async (chat: Chat): Promise<Chat> => {
+      if (!chat.relatedTask) {
+        return chat;
+      }
+
+      try {
+        const task = await tasksApi.getTask(chat.relatedTask);
+        const liveStatus = extractTaskStatus(task);
+
+        if (!liveStatus) {
+          return chat;
+        }
+
+        const normalizedStatus = normalizeTaskStatus(liveStatus);
+        const isClosedByStatus = !!normalizedStatus && CLOSED_CHAT_STATUSES.includes(normalizedStatus);
+
+        return {
+          ...chat,
+          isActive: isClosedByStatus ? false : chat.isActive,
+          taskDetails: {
+            ...chat.taskDetails,
+            status: liveStatus,
+          },
+        };
+      } catch (error) {
+        console.error("Failed to fetch live task status:", error);
+        return chat;
+      }
+    },
+    [extractTaskStatus, normalizeTaskStatus]
+  );
+
   // Load chats on mount
   useEffect(() => {
     loadChats();
@@ -178,7 +264,10 @@ export default function ChatPage() {
       setLoading(true);
       const { chats: loadedChats } = await chatsApi.getChats();
       const hydratedChats = await hydrateChats(loadedChats);
-      setChats(hydratedChats);
+      const chatsWithLiveStatus = await Promise.all(
+        hydratedChats.map((chat) => refreshChatWithLiveTaskStatus(chat))
+      );
+      setChats(chatsWithLiveStatus);
     } catch (error) {
       console.error("Failed to load chats:", error);
     } finally {
@@ -193,19 +282,20 @@ export default function ChatPage() {
         throw new Error("Chat creation failed");
       }
       const hydratedChat = await resolveOtherParticipant(chat);
+      const chatWithLiveStatus = await refreshChatWithLiveTaskStatus(hydratedChat);
       setChats((prev) => {
         const existingIndex = prev.findIndex(
-          (c) => c.chatId === hydratedChat.chatId || c._id === hydratedChat._id
+          (c) => c.chatId === chatWithLiveStatus.chatId || c._id === chatWithLiveStatus._id
         );
         if (existingIndex >= 0) {
           const updated = [...prev];
-          updated[existingIndex] = hydratedChat;
+          updated[existingIndex] = chatWithLiveStatus;
           return updated;
         }
-        return [hydratedChat, ...prev];
+        return [chatWithLiveStatus, ...prev];
       });
-      setSelectedChat(hydratedChat);
-      await loadMessages(hydratedChat);
+      setSelectedChat(chatWithLiveStatus);
+      await loadMessages(chatWithLiveStatus);
       setShowMobileList(false);
     } catch (error) {
       console.error("Failed to start chat:", error);
@@ -228,21 +318,22 @@ export default function ChatPage() {
       }
 
       const hydratedChat = await resolveOtherParticipant(chat);
+      const chatWithLiveStatus = await refreshChatWithLiveTaskStatus(hydratedChat);
 
       setChats((prev) => {
         const existingIndex = prev.findIndex(
-          (c) => c.chatId === hydratedChat.chatId || c._id === hydratedChat._id
+          (c) => c.chatId === chatWithLiveStatus.chatId || c._id === chatWithLiveStatus._id
         );
         if (existingIndex >= 0) {
           const updated = [...prev];
-          updated[existingIndex] = hydratedChat;
+          updated[existingIndex] = chatWithLiveStatus;
           return updated;
         }
-        return [hydratedChat, ...prev];
+        return [chatWithLiveStatus, ...prev];
       });
 
-      setSelectedChat(hydratedChat);
-      await loadMessages(hydratedChat);
+      setSelectedChat(chatWithLiveStatus);
+      await loadMessages(chatWithLiveStatus);
     } catch (error) {
       console.error("Failed to open task chat context:", error);
       toast.error("Unable to open task chat");
@@ -255,19 +346,20 @@ export default function ChatPage() {
     try {
       const chat = await chatsApi.getChatDetails(chatId);
       const hydratedChat = await resolveOtherParticipant(chat);
+      const chatWithLiveStatus = await refreshChatWithLiveTaskStatus(hydratedChat);
       setChats((prev) => {
         const existingIndex = prev.findIndex(
-          (c) => c.chatId === hydratedChat.chatId || c._id === hydratedChat._id
+          (c) => c.chatId === chatWithLiveStatus.chatId || c._id === chatWithLiveStatus._id
         );
         if (existingIndex >= 0) {
           const updated = [...prev];
-          updated[existingIndex] = hydratedChat;
+          updated[existingIndex] = chatWithLiveStatus;
           return updated;
         }
-        return [hydratedChat, ...prev];
+        return [chatWithLiveStatus, ...prev];
       });
-      setSelectedChat(hydratedChat);
-      await loadMessages(hydratedChat);
+      setSelectedChat(chatWithLiveStatus);
+      await loadMessages(chatWithLiveStatus);
       setShowMobileList(false);
     } catch (error) {
       console.error("Failed to load chat details:", error);
@@ -283,6 +375,7 @@ export default function ChatPage() {
     setMessages([]);
 
     let chatToSelect = await resolveOtherParticipant(chat);
+    chatToSelect = await refreshChatWithLiveTaskStatus(chatToSelect);
 
     // Re-check task chat status before opening so completed tasks are locked immediately.
     if (chatToSelect.relatedTask) {
@@ -507,6 +600,22 @@ export default function ChatPage() {
         error instanceof Error ? error.message.toLowerCase() : "";
       if (description.includes("closed") || description.includes("inactive")) {
         toast.error("Cannot send message: Task is completed or closed");
+
+        const closedChat: Chat = {
+          ...activeChat,
+          isActive: false,
+          taskDetails: {
+            ...activeChat.taskDetails,
+            status: "completed",
+          },
+        };
+
+        setSelectedChat(closedChat);
+        setChats((prev) =>
+          prev.map((c) =>
+            c.chatId === activeChat.chatId ? closedChat : c
+          )
+        );
       } else {
         toast.error("Unable to send message");
       }
