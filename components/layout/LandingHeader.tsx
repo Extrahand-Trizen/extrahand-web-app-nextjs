@@ -22,6 +22,14 @@ import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
+   Dialog,
+   DialogContent,
+   DialogDescription,
+   DialogFooter,
+   DialogHeader,
+   DialogTitle,
+} from "@/components/ui/dialog";
+import {
    Menu,
    X,
    ChevronDown,
@@ -103,6 +111,8 @@ export const LandingHeader: React.FC = () => {
    const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
    const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
    const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false);
+   const [showEmailVerifyModal, setShowEmailVerifyModal] = useState(false);
+   const [pendingRoute, setPendingRoute] = useState<string | null>(null);
    const [activeRole, setActiveRole] = useState<"poster" | "tasker">("poster");
    const [mobileActiveRole, setMobileActiveRole] = useState<
       "poster" | "tasker"
@@ -199,6 +209,14 @@ export const LandingHeader: React.FC = () => {
 
       setIsMobileMenuOpen(false);
 
+      if (href === "/discover") {
+         if (isAuthenticated && !userData?.isEmailVerified) {
+            setPendingRoute(href);
+            setShowEmailVerifyModal(true);
+            return;
+         }
+      }
+
       if (href.startsWith("#")) {
          // Always route through hash URL so section-scroll logic runs consistently.
          router.push("/" + href);
@@ -209,9 +227,18 @@ export const LandingHeader: React.FC = () => {
 
    const handleRouteChange = useCallback(
       (path: string) => {
+         if (
+            (path === "/tasks/new" || path === "/discover") &&
+            isAuthenticated &&
+            !userData?.isEmailVerified
+         ) {
+            setPendingRoute(path);
+            setShowEmailVerifyModal(true);
+            return;
+         }
          router.push(path);
       },
-      [router]
+      [router, isAuthenticated, userData?.isEmailVerified]
    );
 
    const handleLogout = useCallback(async () => {
@@ -255,19 +282,18 @@ export const LandingHeader: React.FC = () => {
 
                   {/* Desktop Navigation */}
                   <nav className="hidden lg:flex items-center gap-6">
-                     <Link href="/tasks/new">
-                        <Button 
-                           variant={pathname === "/tasks/new" ? "default" : "ghost"}
-                           className={cn(
-                              "font-semibold",
-                              pathname === "/tasks/new"
-                                 ? "bg-primary-500 hover:bg-primary-600 text-secondary-900 shadow-sm"
-                                 : "text-secondary-600 hover:text-secondary-900 hover:bg-secondary-50"
-                           )}
-                        >
-                           Post a Task
-                        </Button>
-                     </Link>
+                     <Button 
+                        variant={pathname === "/tasks/new" ? "default" : "ghost"}
+                        className={cn(
+                           "font-semibold",
+                           pathname === "/tasks/new"
+                              ? "bg-primary-500 hover:bg-primary-600 text-secondary-900 shadow-sm"
+                              : "text-secondary-600 hover:text-secondary-900 hover:bg-secondary-50"
+                        )}
+                        onClick={() => handleRouteChange("/tasks/new")}
+                     >
+                        Post a Task
+                     </Button>
                      {navItems.map((item) =>
                         item.hasDropdown ? (
                            <div
@@ -464,15 +490,14 @@ export const LandingHeader: React.FC = () => {
 
                   {/* Mobile: Post Task + Menu Button */}
                   <div className="flex items-center gap-2 lg:hidden">
-                     <Link href="/tasks/new">
-                        <Button
-                           size="sm"
-                           className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold shadow-sm"
-                        >
-                           <PlusCircle className="w-4 h-4 mr-1.5" />
-                           Post Task
-                        </Button>
-                     </Link>
+                     <Button
+                        size="sm"
+                        className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold shadow-sm"
+                        onClick={() => handleRouteChange("/tasks/new")}
+                     >
+                        <PlusCircle className="w-4 h-4 mr-1.5" />
+                        Post Task
+                     </Button>
                      <button
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                         className="p-2 rounded-lg hover:bg-secondary-100 transition-colors"
@@ -639,19 +664,21 @@ export const LandingHeader: React.FC = () => {
 
                            {/* CTA Section */}
                            <div className="px-2">
-                              <Link href="/tasks/new" onClick={() => setIsMobileMenuOpen(false)}>
-                                 <button 
-                                    className={cn(
-                                       "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors font-semibold",
-                                       pathname === "/tasks/new"
-                                          ? "text-primary-600 bg-primary-50"
-                                          : "text-secondary-700 hover:bg-secondary-50"
-                                    )}
-                                 >
-                                    <PlusCircle className="w-4 h-4" />
-                                    <span className="text-sm">Post a Task</span>
-                                 </button>
-                              </Link>
+                              <button 
+                                 onClick={() => {
+                                    setIsMobileMenuOpen(false);
+                                    handleRouteChange("/tasks/new");
+                                 }}
+                                 className={cn(
+                                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors font-semibold",
+                                    pathname === "/tasks/new"
+                                       ? "text-primary-600 bg-primary-50"
+                                       : "text-secondary-700 hover:bg-secondary-50"
+                                 )}
+                              >
+                                 <PlusCircle className="w-4 h-4" />
+                                 <span className="text-sm">Post a Task</span>
+                              </button>
                               {!isAuthenticated && (
                                  <button
                                     onClick={() => {
@@ -817,6 +844,41 @@ export const LandingHeader: React.FC = () => {
                </div>
             </div>
          )}
+
+         <Dialog open={showEmailVerifyModal} onOpenChange={setShowEmailVerifyModal}>
+            <DialogContent>
+               <DialogHeader>
+                  <DialogTitle>Verify your email to continue</DialogTitle>
+                  <DialogDescription>
+                     Please verify your email before posting or browsing tasks.
+                     Verified users receive important notifications for task
+                     updates, offers, and responses.
+                  </DialogDescription>
+               </DialogHeader>
+               <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+                  <Button
+                     variant="outline"
+                     className="w-full sm:w-auto"
+                     onClick={() => {
+                        setShowEmailVerifyModal(false);
+                        setPendingRoute(null);
+                     }}
+                  >
+                     Later
+                  </Button>
+                  <Button
+                     className="w-full sm:w-auto"
+                     onClick={() => {
+                        setShowEmailVerifyModal(false);
+                        setPendingRoute(null);
+                        router.push("/profile?section=verifications");
+                     }}
+                  >
+                     Verify email
+                  </Button>
+               </DialogFooter>
+            </DialogContent>
+         </Dialog>
 
          {/* Spacer for fixed header */}
          <div className="h-16" />

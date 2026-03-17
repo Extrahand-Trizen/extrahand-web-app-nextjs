@@ -786,73 +786,66 @@ export default function ChatPage() {
           )}
         </div>
 
-        {/* Message input or closed banner */}
-        {isChatOpen(selectedChat) ? (
-          <div className="p-4 border-t border-secondary-200">
-            <form
-              onSubmit={(e) => e.preventDefault()}
-              className="flex items-center gap-2"
+        {/* Message composer */}
+        <div className="p-4 border-t border-secondary-200">
+          <form
+            onSubmit={(e) => e.preventDefault()}
+            className="flex items-center gap-2"
+          >
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleSelectImage}
+              className="hidden"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => imageInputRef.current?.click()}
+              disabled={sending || uploadingImage || !selectedChat || !isChatOpen(selectedChat)}
             >
-              <input
-                ref={imageInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleSelectImage}
-                className="hidden"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => imageInputRef.current?.click()}
-                disabled={sending || uploadingImage || !selectedChat || !isChatOpen(selectedChat)}
-              >
-                {uploadingImage ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <ImagePlus className="w-4 h-4" />
-                )}
-              </Button>
-              <Input
-                ref={messageInputRef}
-                type="text"
-                placeholder="Type a message..."
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-                className="flex-1"
-              />
-              <Button
-                type="button"
-                onClick={handleSendMessage}
-                disabled={
-                  !messageText.trim() ||
-                  sending ||
-                  uploadingImage ||
-                  !selectedChat ||
-                  !isChatOpen(selectedChat)
+              {uploadingImage ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <ImagePlus className="w-4 h-4" />
+              )}
+            </Button>
+            <Input
+              ref={messageInputRef}
+              type="text"
+              placeholder={isChatOpen(selectedChat) ? "Type a message..." : "Task completed, cannot message"}
+              value={messageText}
+              onChange={(e) => setMessageText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
                 }
-                className="bg-primary-500 hover:bg-primary-600 text-secondary-900"
-              >
-                {sending ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Send className="w-5 h-5" />
-                )}
-              </Button>
-            </form>
-          </div>
-        ) : (
-          <div className="p-4 border-t border-secondary-200 bg-secondary-50">
-            <p className="text-center text-secondary-600 font-medium">
-              Task completed - Can't send messages
-            </p>
-          </div>
-        )}
+              }}
+              disabled={!isChatOpen(selectedChat)}
+              className="flex-1"
+            />
+            <Button
+              type="button"
+              onClick={handleSendMessage}
+              disabled={
+                !messageText.trim() ||
+                sending ||
+                uploadingImage ||
+                !selectedChat ||
+                !isChatOpen(selectedChat)
+              }
+              className="bg-primary-500 hover:bg-primary-600 text-secondary-900"
+            >
+              {sending ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Send className="w-5 h-5" />
+              )}
+            </Button>
+          </form>
+        </div>
       </div>
     );
   })();
