@@ -72,7 +72,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
                   router.push(
                      `/signup?phone=${encodeURIComponent(formattedPhone)}`
                   );
-               }, 400);
+               }, 3000);
                return;
             }
          } catch (checkErr) {
