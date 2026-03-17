@@ -65,6 +65,13 @@ export const serviceCategories: ServiceCategory[] = [
       gradient: "from-slate-500 via-gray-500 to-zinc-500",
    },
    {
+      id: "delivery-pickup-services",
+      name: "Delivery / Pickup Services",
+      description: "Pickup, drop-off, courier, and parcel delivery help",
+      icon: "",
+      gradient: "from-slate-500 via-gray-500 to-zinc-500",
+   },
+   {
       id: "driver-chauffeur",
       name: "Driver / Chauffeur",
       description: "Driver and chauffeur services",
@@ -145,6 +152,13 @@ export const serviceCategories: ServiceCategory[] = [
       id: "other",
       name: "Other",
       description: "Custom or uncommon tasks",
+      icon: "",
+      gradient: "from-slate-500 via-gray-500 to-zinc-500",
+   },
+   {
+      id: "packers-movers",
+      name: "Packers & Movers",
+      description: "Home and office packing, moving, and relocation support",
       icon: "",
       gradient: "from-slate-500 via-gray-500 to-zinc-500",
    },

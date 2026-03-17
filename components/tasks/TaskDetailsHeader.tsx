@@ -147,12 +147,12 @@ export function TaskDetailsHeader({
          </div>
 
          {/* Title & Budget */}
-         <div className="flex items-start justify-between gap-4 mb-4 lg:mb-6">
-            <h3 className="md:text-lg font-bold text-secondary-900 line-clamp-2 transition-colors">
+         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-4 lg:mb-6">
+            <h3 className="flex-1 min-w-0 md:text-lg font-bold text-secondary-900 line-clamp-2 transition-colors wrap-break-word">
                {task.title}
             </h3>
 
-            <div className="text-right hidden lg:block shrink-0">
+            <div className="text-left sm:text-right hidden lg:block shrink-0 self-start">
                <div className="text-sm text-secondary-600 mb-1">Budget</div>
                <div className="text-2xl lg:text-3xl font-bold text-primary-600">
                   ₹{budgetAmount.toLocaleString()}

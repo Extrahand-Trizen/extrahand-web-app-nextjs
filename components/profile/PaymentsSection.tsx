@@ -909,8 +909,11 @@ interface TransactionRowProps {
 function TransactionRow({ transaction }: TransactionRowProps) {
    const isCredit =
       transaction.type === "payout" || transaction.type === "refund";
-   const titleText = transaction.taskTitle || transaction.description;
-   const canOpenTask = Boolean(transaction.taskId && transaction.taskTitle);
+   const fallbackTaskLabel = transaction.taskId
+      ? `Task ${transaction.taskId.slice(0, 8)}`
+      : transaction.description;
+   const titleText = transaction.taskTitle || fallbackTaskLabel;
+   const canOpenTask = Boolean(transaction.taskId);
 
    return (
       <div className="px-4 py-3 sm:px-5 sm:py-4 hover:bg-gray-50 transition-colors">

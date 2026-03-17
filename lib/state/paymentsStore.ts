@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { paymentApi } from "@/lib/api/endpoints/payment";
+import { tasksApi } from "@/lib/api/endpoints/tasks";
 import type { Transaction } from "@/types/profile";
 
 type PaymentsState = {
@@ -59,7 +60,10 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
           const taskTitle =
             tx.taskTitle ||
             metadata.taskTitle ||
+            metadata.taskName ||
+            metadata.taskDescription ||
             metadata.task?.title ||
+            metadata.title ||
             tx.title;
 
           const fallbackDescription =
@@ -84,6 +88,41 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
             taskTitle,
           };
         });
+      }
+
+      // Backfill missing task titles so payment rows can show task names instead of generic labels.
+      const missingTitleTaskIds = Array.from(
+        new Set(
+          mapped
+            .filter((t) => t.taskId && !t.taskTitle)
+            .map((t) => t.taskId as string)
+        )
+      );
+
+      if (missingTitleTaskIds.length > 0) {
+        const taskTitleMap = new Map<string, string>();
+
+        await Promise.all(
+          missingTitleTaskIds.map(async (taskId) => {
+            try {
+              const task = await tasksApi.getTask(taskId);
+              const title = (task as any)?.title;
+              if (typeof title === "string" && title.trim()) {
+                taskTitleMap.set(taskId, title.trim());
+              }
+            } catch {
+              // Ignore fetch failures; UI will fall back to generic task label.
+            }
+          })
+        );
+
+        if (taskTitleMap.size > 0) {
+          mapped = mapped.map((t) => {
+            if (!t.taskId || t.taskTitle) return t;
+            const resolvedTitle = taskTitleMap.get(t.taskId);
+            return resolvedTitle ? { ...t, taskTitle: resolvedTitle } : t;
+          });
+        }
       }
 
       // Fetch earnings summary
