@@ -21,20 +21,21 @@ type ApplicationStatus = TaskApplication["status"];
 
 interface MyApplicationsFiltersProps {
    searchQuery: string;
-   statusFilter: ApplicationStatus | "all";
+   statusFilter: ApplicationStatus | "all" | "completed";
    sortBy: string;
    onSearchChange: (query: string) => void;
-   onStatusChange: (status: ApplicationStatus | "all") => void;
+   onStatusChange: (status: ApplicationStatus | "all" | "completed") => void;
    onSortChange: (sort: string) => void;
 }
 
 const STATUS_FILTERS: Array<{
-   value: ApplicationStatus | "all";
+   value: ApplicationStatus | "all" | "completed";
    label: string;
 }> = [
    { value: "all", label: "All Applications" },
    { value: "pending", label: "Pending" },
    { value: "accepted", label: "Accepted" },
+   { value: "completed", label: "Completed" },
    { value: "rejected", label: "Rejected" },
    { value: "withdrawn", label: "Withdrawn" },
 ];
@@ -44,7 +45,6 @@ const SORT_OPTIONS = [
    { value: "oldest", label: "Oldest First" },
    { value: "budget-high", label: "Budget: High to Low" },
    { value: "budget-low", label: "Budget: Low to High" },
-   { value: "status", label: "By Status" },
 ];
 
 export function MyApplicationsFilters({

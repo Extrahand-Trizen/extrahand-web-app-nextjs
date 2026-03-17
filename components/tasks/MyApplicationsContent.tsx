@@ -36,7 +36,7 @@ export function MyApplicationsContent({
    const [allApplications, setAllApplications] = useState<TaskApplication[]>([]);
    const [tasks, setTasks] = useState<Map<string, Task>>(new Map());
    const [searchQuery, setSearchQuery] = useState("");
-   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | "all">(
+   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | "all" | "completed">(
       "all"
    );
    const [sortBy, setSortBy] = useState("recent");
@@ -102,7 +102,12 @@ export function MyApplicationsContent({
       let result = [...allApplications];
 
       // Status filter
-      if (statusFilter !== "all") {
+      if (statusFilter === "completed") {
+         result = result.filter((app: any) => {
+            const task = typeof app.taskId === "object" ? app.taskId : null;
+            return app.status === "accepted" && task?.status === "completed";
+         });
+      } else if (statusFilter !== "all") {
          result = result.filter((app) => app.status === statusFilter);
       }
 
@@ -141,14 +146,6 @@ export function MyApplicationsContent({
                return (b.proposedBudget?.amount || 0) - (a.proposedBudget?.amount || 0);
             case "budget-low":
                return (a.proposedBudget?.amount || 0) - (b.proposedBudget?.amount || 0);
-            case "status":
-               const statusOrder: Record<ApplicationStatus, number> = {
-                  pending: 1,
-                  accepted: 2,
-                  rejected: 3,
-                  withdrawn: 4,
-               };
-               return statusOrder[a.status as ApplicationStatus] - statusOrder[b.status as ApplicationStatus];
             default:
                return 0;
          }

@@ -36,7 +36,7 @@ const footerColumns = [
       { label: 'Browse Tasks', href: '/discover' },
       { label: 'Login', href: '/login' },
       { label: 'Support Centre', href: 'https://extrhand-support-frontend.apps.extrahand.in' },
-      { label: 'Become a Tasker', href: '/earn-money' },
+      { label: 'Become a Tasker', href: '/earn-money#how-to-become-tasker' },
     ],
   },
   {

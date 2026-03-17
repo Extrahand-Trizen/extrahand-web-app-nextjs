@@ -368,6 +368,8 @@ export function TaskCreationFlow() {
    const [retryCount, setRetryCount] = useState(0);
    const [showAuthModal, setShowAuthModal] = useState(false);
    const [showVerificationModal, setShowVerificationModal] = useState(false);
+   const [showEmailVerifyModal, setShowEmailVerifyModal] = useState(false);
+   const [pendingPostData, setPendingPostData] = useState<TaskFormData | null>(null);
    const { currentUser, userData } = useAuth();
    const isAuthenticated = Boolean(currentUser) || Boolean(userData);
    const verificationStatus = getTaskPostingVerificationStatus(userData ?? null);
@@ -622,36 +624,15 @@ export function TaskCreationFlow() {
    );
 
    // Form submission handler
-   const onSubmit = useCallback(
+   const submitTask = useCallback(
       async (data: TaskFormData) => {
-         // If user is not authenticated, save draft and prompt for login/signup
-         if (!isAuthenticated) {
-            const values = form.getValues();
-            localStorage.setItem(DRAFT_KEY, JSON.stringify(values));
-            setHasUnsavedChanges(false);
-            setShowAuthModal(true);
-            return;
-         }
-
-         // Background check: Aadhaar must be verified to post a task
-         if (!verificationStatus.allowed) {
-            setShowVerificationModal(true);
-            return;
-         }
-
-         // Prevent duplicate submissions
-         if (isSubmitting) {
-            return;
-         }
+         if (isSubmitting) return;
 
          setIsSubmitting(true);
          setRetryCount(0);
 
          try {
-            if (data.budgetType === "negotiable") {
-               // Negotiable tasks don't require a specific budget
-            } else {
-               // Fixed and hourly budgets require a valid amount
+            if (data.budgetType !== "negotiable") {
                const budgetValue = data.budget ?? null;
                if (budgetValue === null || budgetValue < 50 || budgetValue > 50000) {
                   toast.error(`Please enter a ${data.budgetType} budget between ₹50 and ₹50,000`);
@@ -660,11 +641,9 @@ export function TaskCreationFlow() {
                }
             }
 
-            // Transform form data to match backend Task schema
             const taskPayload = transformFormDataToTask(data);
             logTransformedTask(taskPayload);
 
-            // Use toast.promise for loading state
             const response = await toast.promise(
                createTaskWithRetry(taskPayload),
                {
@@ -674,22 +653,18 @@ export function TaskCreationFlow() {
                }
             );
 
-            // Clear draft after successful submission
             localStorage.removeItem(DRAFT_KEY);
             setHasUnsavedChanges(false);
 
-            // Navigate to task details if we have an ID, otherwise go to my-tasks
             const taskId =
                (response as any)?.data?._id || (response as any)?._id;
 
-            // Delay navigation slightly for toast to be visible
             setTimeout(() => {
                router.push(taskId ? `/tasks/${taskId}` : "/tasks");
             }, 500);
          } catch (error) {
             console.error("Task submission error:", error);
 
-            // Show retry action for network errors
             if (isNetworkError(error)) {
                toast.error("Connection failed", {
                   description: "Please check your internet connection.",
@@ -709,7 +684,40 @@ export function TaskCreationFlow() {
             setRetryCount(0);
          }
       },
-      [isSubmitting, isAuthenticated, verificationStatus.allowed, createTaskWithRetry, router, form]
+      [isSubmitting, createTaskWithRetry, router, form]
+   );
+
+   const onSubmit = useCallback(
+      async (data: TaskFormData) => {
+         if (!isAuthenticated) {
+            const values = form.getValues();
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(values));
+            setHasUnsavedChanges(false);
+            setShowAuthModal(true);
+            return;
+         }
+
+         const nonEmailMissing = verificationStatus.missing.filter(
+            (item) => item.toLowerCase() !== "email"
+         );
+
+         if (nonEmailMissing.length > 0) {
+            setShowVerificationModal(true);
+            return;
+         }
+
+         if (!userData?.isEmailVerified) {
+            const values = form.getValues();
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(values));
+            setHasUnsavedChanges(false);
+            setPendingPostData(data);
+            setShowEmailVerifyModal(true);
+            return;
+         }
+
+         await submitTask(data);
+      },
+      [isAuthenticated, verificationStatus.missing, userData?.isEmailVerified, form, submitTask]
    );
 
    // Save draft handler
@@ -871,7 +879,9 @@ export function TaskCreationFlow() {
                   </DialogDescription>
                </DialogHeader>
                <ul className="list-disc list-inside text-sm text-secondary-700 space-y-1">
-                  {verificationStatus.missing.map((item) => (
+                  {verificationStatus.missing
+                     .filter((item) => item.toLowerCase() !== "email")
+                     .map((item) => (
                      <li key={item}>{item}</li>
                   ))}
                </ul>
@@ -891,6 +901,49 @@ export function TaskCreationFlow() {
                      }}
                   >
                      Complete verification
+                  </Button>
+               </DialogFooter>
+            </DialogContent>
+         </Dialog>
+
+         <Dialog open={showEmailVerifyModal} onOpenChange={setShowEmailVerifyModal}>
+            <DialogContent>
+               <DialogHeader>
+                  <DialogTitle>Verify your email to continue</DialogTitle>
+                  <DialogDescription>
+                     Verify now to receive important notifications for task
+                     updates, offers, and responses. You can also continue and
+                     post the task now.
+                  </DialogDescription>
+               </DialogHeader>
+               <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+                  <Button
+                     variant="outline"
+                     className="w-full sm:w-auto"
+                     disabled={isSubmitting}
+                     onClick={async () => {
+                        setShowEmailVerifyModal(false);
+                        if (pendingPostData) {
+                           const dataToPost = pendingPostData;
+                           setPendingPostData(null);
+                           await submitTask(dataToPost);
+                        }
+                     }}
+                  >
+                     Later
+                  </Button>
+                  <Button
+                     className="w-full sm:w-auto"
+                     disabled={isSubmitting}
+                     onClick={() => {
+                        const values = form.getValues();
+                        localStorage.setItem(DRAFT_KEY, JSON.stringify(values));
+                        setHasUnsavedChanges(false);
+                        setShowEmailVerifyModal(false);
+                        router.push("/profile/verify/email?next=/tasks/new");
+                     }}
+                  >
+                     Verify email
                   </Button>
                </DialogFooter>
             </DialogContent>

@@ -42,6 +42,27 @@ interface EmailVerificationState {
    isAlreadyVerified?: boolean;
 }
 
+const EMAIL_ALREADY_LINKED_MESSAGE =
+   "This email is already linked to an account. Please use a different email.";
+
+const isEmailAlreadyUsedMessage = (message: string) => {
+   const normalizedMessage = message.toLowerCase();
+   return (
+      normalizedMessage.includes("status code 409") ||
+      normalizedMessage.includes("email_already_verified") ||
+      normalizedMessage.includes("already verified on another account") ||
+      normalizedMessage.includes("use a different email")
+   );
+};
+
+const getEmailInitiationErrorMessage = (message: string) => {
+   if (isEmailAlreadyUsedMessage(message)) {
+      return EMAIL_ALREADY_LINKED_MESSAGE;
+   }
+
+   return message;
+};
+
 export default function EmailVerificationPage() {
    const router = useRouter();
    const inputRef = useRef<HTMLInputElement>(null);
@@ -128,15 +149,19 @@ export default function EmailVerificationPage() {
                description: `Code sent to ${state.email}. It will expire in ${response.data.expiresInMinutes} minutes.`,
             });
          } else {
-            setState((p) => ({ ...p, error: response.message || "Failed to send verification code" }));
-            toast.error("Failed to send code", {
-               description: response.message || "Please try again",
+            const errorMessage = getEmailInitiationErrorMessage(
+               response.message || "Failed to send verification code"
+            );
+            setState((p) => ({ ...p, error: errorMessage }));
+            toast.error(isEmailAlreadyUsedMessage(errorMessage) ? "Email already in use" : "Failed to send code", {
+               description: errorMessage,
             });
          }
       } catch (err: unknown) {
-         const errorMessage = err instanceof Error ? err.message : "Failed to send verification code";
+         const rawErrorMessage = err instanceof Error ? err.message : "Failed to send verification code";
+         const errorMessage = getEmailInitiationErrorMessage(rawErrorMessage);
          setState((p) => ({ ...p, error: errorMessage }));
-         toast.error("Failed to send code", {
+         toast.error(isEmailAlreadyUsedMessage(errorMessage) ? "Email already in use" : "Failed to send code", {
             description: errorMessage,
          });
       } finally {
@@ -472,7 +497,7 @@ export default function EmailVerificationPage() {
             {state.step === "success" && (
                <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
                   <div className="text-center">
-                     <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center mb-5 shadow-lg shadow-green-100">
+                     <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full bg-linear-to-br from-green-50 to-emerald-100 flex items-center justify-center mb-5 shadow-lg shadow-green-100">
                         <CheckCircle2 className="w-10 h-10 sm:w-12 sm:h-12 text-green-600" />
                      </div>
                      <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
