@@ -86,7 +86,7 @@ export function TaskerHero() {
                   asChild
                   className="px-8 py-5 text-base border-secondary-300 text-secondary-800 hover:bg-secondary-50"
                >
-                  <Link href="#how-it-works">How it works</Link>
+                  <Link href="/#how-it-works">How it works</Link>
                </Button>
             </div>
          </div>
