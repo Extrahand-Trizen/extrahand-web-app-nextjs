@@ -25,6 +25,14 @@ interface EmailVerificationProps {
 
 type EmailStep = "display" | "input" | "otp" | "verified";
 
+const isEmailAlreadyUsedMessage = (message: string) => {
+   const normalizedMessage = message.toLowerCase();
+   return (
+      normalizedMessage.includes("already verified on another account") ||
+      normalizedMessage.includes("use a different email")
+   );
+};
+
 export function EmailVerification({
    currentEmail,
    isVerified,
@@ -318,7 +326,14 @@ export function EmailVerification({
 
             {/* Error */}
             {error && (
-               <p className="text-xs text-red-600 text-center flex items-center justify-center gap-1">
+               <p
+                  className={cn(
+                     "text-xs text-center flex items-center justify-center gap-1 rounded-md px-2 py-1.5",
+                     isEmailAlreadyUsedMessage(error)
+                        ? "bg-amber-50 text-amber-800"
+                        : "bg-red-50 text-red-600"
+                  )}
+               >
                   <AlertCircle className="w-3 h-3" />
                   {error}
                </p>

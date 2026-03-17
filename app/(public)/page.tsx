@@ -118,10 +118,10 @@ export default function LandingPage() {
       if (!allowHowItWorks) {
          return;
       }
-      
+
       // Trigger immediately; retry logic handles any late-mount edge case.
       scrollToHowItWorks(() => setHasAppliedHashScroll(true));
-      
+
       return;
    }, [allowHowItWorks, scrollToHowItWorks]);
 

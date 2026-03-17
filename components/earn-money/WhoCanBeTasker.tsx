@@ -35,7 +35,7 @@ export function WhoCanBeTasker() {
    ];
 
    return (
-      <section className="py-12 bg-white">
+      <section id="how-to-become-tasker" className="py-12 bg-white">
          <div className="max-w-6xl mx-auto px-4 lg:px-6">
             <div className="text-center mb-8 md:mb-12">
                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-secondary-900 mb-6">

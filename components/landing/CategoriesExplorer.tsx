@@ -40,7 +40,7 @@ const colorPalette = [
 const CATEGORY_MARQUEE_DURATION_SECONDS = 50;
 const curatedCategories: Category[] = [
    {
-      title: "Home Cleaning Tasks",
+      title: "Home Cleaning",
       description: "Book trusted cleaners for regular, deep, or move-in cleaning.",
       image: "/assets/mobilescreens/cleaning.png",
       color: colorPalette[0],
@@ -52,7 +52,7 @@ const curatedCategories: Category[] = [
       ],
    },
    {
-      title: "Packers & Movers Tasks",
+      title: "Packers & Movers",
       description: "Get help with house shifting, loading, unloading, and packing.",
       image: "/assets/mobilescreens/moving.png",
       color: colorPalette[1],
@@ -64,7 +64,7 @@ const curatedCategories: Category[] = [
       ],
    },
    {
-      title: "Delivery / Pickup Services",
+      title: "Delivery & Pickup",
       description: "Same-day local pickup and drop for parcels, groceries, and items.",
       image: "/assets/mobilescreens/delivery.png",
       color: colorPalette[2],
@@ -76,9 +76,9 @@ const curatedCategories: Category[] = [
       ],
    },
    {
-      title: "AC Repair & Service Tasks",
+      title: "AC Repair",
       description: "AC installation, gas refill, maintenance, and repair by experts.",
-      image: "/assets/mobilescreens/tech.png",
+      image: "https://whirlpoolservicescenterfaridabad.in/wp-content/uploads/2022/12/ac-service.jpg",
       color: colorPalette[3],
       slug: "ac-repair-service",
       subcategories: [
@@ -88,7 +88,7 @@ const curatedCategories: Category[] = [
       ],
    },
    {
-      title: "Electrical Tasks",
+      title: "Electrical",
       description: "Electricians for wiring, switch boards, fittings, and fault fixes.",
       image: "/assets/mobilescreens/electrical.png",
       color: colorPalette[4],
@@ -100,7 +100,7 @@ const curatedCategories: Category[] = [
       ],
    },
    {
-      title: "Plumbing Tasks",
+      title: "Plumbing",
       description: "Resolve leaks, clogs, pipe issues, and bathroom fitting jobs.",
       image: "/assets/mobilescreens/plumbing.png",
       color: colorPalette[5],
@@ -112,7 +112,7 @@ const curatedCategories: Category[] = [
       ],
    },
    {
-      title: "Appliance Repair Tasks",
+      title: "Appliance Repair",
       description: "Repair and service support for fridge, washing machine, and more.",
       image: "/assets/mobilescreens/handy.png",
       color: colorPalette[6],
@@ -124,7 +124,7 @@ const curatedCategories: Category[] = [
       ],
    },
    {
-      title: "Handyperson / General Repairs",
+      title: "Handyman",
       description: "Quick home fixes, fittings, and odd jobs handled efficiently.",
       image: "/assets/mobilescreens/work.png",
       color: colorPalette[7],
@@ -136,9 +136,9 @@ const curatedCategories: Category[] = [
       ],
    },
    {
-      title: "Car Washing / Car Cleaning",
+      title: "Car Cleaning",
       description: "Interior and exterior car cleaning services at your convenience.",
-      image: "/assets/mobilescreens/cleaning.png",
+      image: "https://www.windshieldshatterfix.com/images/car-cleaning.jpg",
       color: colorPalette[8],
       slug: "car-washing-car-cleaning",
       subcategories: [
@@ -148,7 +148,7 @@ const curatedCategories: Category[] = [
       ],
    },
    {
-      title: "Pest Control Tasks",
+      title: "Pest Control",
       description: "Safe and reliable pest control solutions for home and office.",
       image: "/assets/mobilescreens/garden.png",
       color: colorPalette[9],

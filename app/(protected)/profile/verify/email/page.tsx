@@ -42,6 +42,14 @@ interface EmailVerificationState {
    isAlreadyVerified?: boolean;
 }
 
+const isEmailAlreadyUsedMessage = (message: string) => {
+   const normalizedMessage = message.toLowerCase();
+   return (
+      normalizedMessage.includes("already verified on another account") ||
+      normalizedMessage.includes("use a different email")
+   );
+};
+
 export default function EmailVerificationPage() {
    const router = useRouter();
    const inputRef = useRef<HTMLInputElement>(null);
@@ -136,7 +144,7 @@ export default function EmailVerificationPage() {
       } catch (err: unknown) {
          const errorMessage = err instanceof Error ? err.message : "Failed to send verification code";
          setState((p) => ({ ...p, error: errorMessage }));
-         toast.error("Failed to send code", {
+         toast.error(isEmailAlreadyUsedMessage(errorMessage) ? "Email already in use" : "Failed to send code", {
             description: errorMessage,
          });
       } finally {
@@ -472,7 +480,7 @@ export default function EmailVerificationPage() {
             {state.step === "success" && (
                <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
                   <div className="text-center">
-                     <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center mb-5 shadow-lg shadow-green-100">
+                     <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full bg-linear-to-br from-green-50 to-emerald-100 flex items-center justify-center mb-5 shadow-lg shadow-green-100">
                         <CheckCircle2 className="w-10 h-10 sm:w-12 sm:h-12 text-green-600" />
                      </div>
                      <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
