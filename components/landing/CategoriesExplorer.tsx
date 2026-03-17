@@ -4,8 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
-import { categoriesApi } from "@/lib/api/endpoints/categories";
 
 type Subcategory = {
    _id?: string;
@@ -41,90 +39,133 @@ const colorPalette = [
 
 const CATEGORY_MARQUEE_DURATION_SECONDS = 480;
 
+const curatedCategories: Category[] = [
+   {
+      title: "Home Cleaning Tasks",
+      description: "Book trusted cleaners for regular, deep, or move-in cleaning.",
+      image: "/assets/mobilescreens/cleaning.png",
+      color: colorPalette[0],
+      slug: "home-cleaning",
+      subcategories: [
+         { name: "Deep Cleaning", slug: "home-cleaning/deep-cleaning" },
+         { name: "Sofa Cleaning", slug: "home-cleaning/sofa-cleaning" },
+         { name: "Kitchen Cleaning", slug: "home-cleaning/kitchen-cleaning" },
+      ],
+   },
+   {
+      title: "Packers & Movers Tasks",
+      description: "Get help with house shifting, loading, unloading, and packing.",
+      image: "/assets/mobilescreens/moving.png",
+      color: colorPalette[1],
+      slug: "packers-movers",
+      subcategories: [
+         { name: "Home Shifting", slug: "packers-movers/home-shifting" },
+         { name: "Packing Help", slug: "packers-movers/packing-help" },
+         { name: "Truck Unloading", slug: "packers-movers/truck-unloading" },
+      ],
+   },
+   {
+      title: "Delivery / Pickup Services",
+      description: "Same-day local pickup and drop for parcels, groceries, and items.",
+      image: "/assets/mobilescreens/delivery.png",
+      color: colorPalette[2],
+      slug: "delivery-pickup-services",
+      subcategories: [
+         { name: "Parcel Pickup", slug: "delivery-pickup-services/parcel-pickup" },
+         { name: "Grocery Delivery", slug: "delivery-pickup-services/grocery-delivery" },
+         { name: "Document Drop", slug: "delivery-pickup-services/document-drop" },
+      ],
+   },
+   {
+      title: "AC Repair & Service Tasks",
+      description: "AC installation, gas refill, maintenance, and repair by experts.",
+      image: "/assets/mobilescreens/tech.png",
+      color: colorPalette[3],
+      slug: "ac-repair-service",
+      subcategories: [
+         { name: "AC Service", slug: "ac-repair-service/ac-service" },
+         { name: "Gas Refill", slug: "ac-repair-service/gas-refill" },
+         { name: "AC Installation", slug: "ac-repair-service/ac-installation" },
+      ],
+   },
+   {
+      title: "Electrical Tasks",
+      description: "Electricians for wiring, switch boards, fittings, and fault fixes.",
+      image: "/assets/mobilescreens/electrical.png",
+      color: colorPalette[4],
+      slug: "electrical",
+      subcategories: [
+         { name: "Wiring", slug: "electrical/wiring" },
+         { name: "Fan Installation", slug: "electrical/fan-installation" },
+         { name: "Light Fixtures", slug: "electrical/light-fixtures" },
+      ],
+   },
+   {
+      title: "Plumbing Tasks",
+      description: "Resolve leaks, clogs, pipe issues, and bathroom fitting jobs.",
+      image: "/assets/mobilescreens/plumbing.png",
+      color: colorPalette[5],
+      slug: "plumbing",
+      subcategories: [
+         { name: "Leak Repair", slug: "plumbing/leak-repair" },
+         { name: "Tap Installation", slug: "plumbing/tap-installation" },
+         { name: "Drain Cleaning", slug: "plumbing/drain-cleaning" },
+      ],
+   },
+   {
+      title: "Appliance Repair Tasks",
+      description: "Repair and service support for fridge, washing machine, and more.",
+      image: "/assets/mobilescreens/handy.png",
+      color: colorPalette[6],
+      slug: "appliance-repair",
+      subcategories: [
+         { name: "Fridge Repair", slug: "appliance-repair/fridge-repair" },
+         { name: "Washing Machine", slug: "appliance-repair/washing-machine" },
+         { name: "Microwave Repair", slug: "appliance-repair/microwave-repair" },
+      ],
+   },
+   {
+      title: "Handyperson / General Repairs",
+      description: "Quick home fixes, fittings, and odd jobs handled efficiently.",
+      image: "/assets/mobilescreens/work.png",
+      color: colorPalette[7],
+      slug: "handyperson-general-repairs",
+      subcategories: [
+         { name: "Curtain Rod Fix", slug: "handyperson-general-repairs/curtain-rod-fix" },
+         { name: "Door Repair", slug: "handyperson-general-repairs/door-repair" },
+         { name: "Furniture Fix", slug: "handyperson-general-repairs/furniture-fix" },
+      ],
+   },
+   {
+      title: "Car Washing / Car Cleaning",
+      description: "Interior and exterior car cleaning services at your convenience.",
+      image: "/assets/mobilescreens/cleaning.png",
+      color: colorPalette[8],
+      slug: "car-washing-car-cleaning",
+      subcategories: [
+         { name: "Exterior Wash", slug: "car-washing-car-cleaning/exterior-wash" },
+         { name: "Interior Cleaning", slug: "car-washing-car-cleaning/interior-cleaning" },
+         { name: "Foam Wash", slug: "car-washing-car-cleaning/foam-wash" },
+      ],
+   },
+   {
+      title: "Pest Control Tasks",
+      description: "Safe and reliable pest control solutions for home and office.",
+      image: "/assets/mobilescreens/garden.png",
+      color: colorPalette[9],
+      slug: "pest-control",
+      subcategories: [
+         { name: "Termite Control", slug: "pest-control/termite-control" },
+         { name: "Cockroach Control", slug: "pest-control/cockroach-control" },
+         { name: "Rodent Control", slug: "pest-control/rodent-control" },
+      ],
+   },
+];
+
 export const CategoriesExplorer = () => {
-   const [categories, setCategories] = useState<Category[]>([]);
-   const [loading, setLoading] = useState(true);
-
-   useEffect(() => {
-      const fetchCategories = async () => {
-         try {
-            const data = await categoriesApi.getCategories({
-               includeUnpublished: false,
-            });
-            
-            console.log("🔍 Raw categories data from API:", data);
-            console.log("🔍 First category subcategories:", data?.[0]?.subcategories);
-            
-            // Map backend data to frontend format
-            const formattedCategories = (data || []).map((cat, index) => {
-               console.log(`Category: ${cat.name}, Subcategories:`, cat.subcategories);
-               
-               // Determine appropriate fallback image based on category name
-               const nameLower = cat.name.toLowerCase();
-               let fallbackImage = "/assets/images/default.png";
-               if (nameLower.includes("clean")) fallbackImage = "/assets/mobilescreens/cleaning.png";
-               else if (nameLower.includes("deliver")) fallbackImage = "/assets/mobilescreens/delivery.png";
-               else if (nameLower.includes("electric")) fallbackImage = "/assets/mobilescreens/electrical.png";
-               else if (nameLower.includes("furnitur") || nameLower.includes("assembl")) fallbackImage = "/assets/mobilescreens/furniture.png";
-               else if (nameLower.includes("garden") || nameLower.includes("landscap")) fallbackImage = "/assets/mobilescreens/garden.png";
-               else if (nameLower.includes("handyman") || nameLower.includes("repair")) fallbackImage = "/assets/mobilescreens/handy.png";
-               else if (nameLower.includes("market") || nameLower.includes("business")) fallbackImage = "/assets/mobilescreens/marketing.png";
-               else if (nameLower.includes("mount")) fallbackImage = "/assets/mobilescreens/mounting.png";
-               else if (nameLower.includes("mov")) fallbackImage = "/assets/mobilescreens/moving.png";
-               else if (nameLower.includes("paint")) fallbackImage = "/assets/mobilescreens/painting.png";
-               else if (nameLower.includes("plumb")) fallbackImage = "/assets/mobilescreens/plumbing.png";
-               else if (nameLower.includes("tech") || nameLower.includes("computer") || nameLower.includes("it")) fallbackImage = "/assets/mobilescreens/tech.png";
-               else if (nameLower.includes("work") || nameLower.includes("construct")) fallbackImage = "/assets/mobilescreens/work.png";
-               
-               return {
-                  title: cat.name,
-                  description: cat.heroDescription || "Discover this category",
-                  image: cat.heroImage || fallbackImage,
-                  color: colorPalette[index % colorPalette.length],
-                  slug: cat.slug,
-                  subcategories: cat.subcategories?.filter(
-                     (sub) => sub._id || sub.name
-                  ) || [],
-               };
-            });
-
-            console.log("🔍 Formatted categories:", formattedCategories);
-            setCategories(formattedCategories);
-         } catch (error) {
-            console.error("Failed to fetch categories:", error);
-            setCategories([]);
-         } finally {
-            setLoading(false);
-         }
-      };
-
-      fetchCategories();
-   }, []);
+   const categories = curatedCategories;
 
    const marqueeItems = [...categories, ...categories];
-   if (loading || categories.length === 0) {
-      return (
-         <section className="py-12 md:py-20 bg-linear-to-b from-primary-50/30 via-white to-primary-50/30 relative overflow-hidden">
-            <div className="absolute top-10 left-10 w-72 h-72 bg-primary-200/20 rounded-full blur-3xl" />
-            <div className="absolute bottom-10 right-10 w-96 h-96 bg-primary-300/10 rounded-full blur-3xl" />
-
-            <div className="max-w-7xl mx-auto md:px-8 relative z-10">
-               <div className="text-center max-w-2xl mx-auto mb-12">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 md:px-4 md:py-2 bg-primary-100 rounded-full text-primary-700 text-xs md:text-sm font-medium mb-4">
-                     <Sparkles className="size-3 md:size-4" />
-                     Popular Categories
-                  </div>
-                  <h2 className="text-2xl md:text-4xl font-bold text-secondary-900 mb-4">
-                     Browse by category
-                  </h2>
-                  <p className="text-sm md:text-lg text-secondary-600">
-                     {loading ? "Loading categories..." : "No categories available"}
-                  </p>
-               </div>
-            </div>
-         </section>
-      );
-   }
 
    return (
       <section className="py-12 md:py-20 bg-linear-to-b from-primary-50/30 via-white to-primary-50/30 relative overflow-hidden">
