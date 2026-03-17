@@ -12,6 +12,14 @@ interface PosterFooterProps {
 export default function PosterFooter({ footerData }: PosterFooterProps) {
    if (!footerData) return null;
 
+   const resolveHref = (label: string) => {
+      const normalized = label.trim().toLowerCase();
+      if (normalized === "how it works") {
+         return "/#how-it-works";
+      }
+      return "#";
+   };
+
    return (
       <footer
          className="relative mx-4 sm:mx-8 md:mx-12 lg:mx-16 xl:mx-24 rounded-2xl sm:rounded-3xl my-8 sm:my-12 md:my-16 py-12 sm:py-16 md:py-20 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-[100px] overflow-hidden"
@@ -24,7 +32,11 @@ export default function PosterFooter({ footerData }: PosterFooterProps) {
                </h3>
                <div className="flex flex-col gap-3">
                   {footerData.discoverLinks?.map((link, index) => (
-                     <Link key={index} href="#" className="text-gray-300 hover:text-white transition-colors duration-200 text-xs sm:text-sm">
+                     <Link
+                        key={index}
+                        href={resolveHref(link)}
+                        className="text-gray-300 hover:text-white transition-colors duration-200 text-xs sm:text-sm"
+                     >
                         {link}
                      </Link>
                   ))}
