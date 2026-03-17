@@ -278,18 +278,39 @@ export default function ChatPage() {
   };
 
   const handleSelectChat = async (chat: Chat) => {
-    const hydratedChat = await resolveOtherParticipant(chat);
-    setSelectedChat(hydratedChat);
     setShowMobileList(false);
-    await loadMessages(hydratedChat);
+    setSelectedChat(null);
+    setMessages([]);
+
+    let chatToSelect = await resolveOtherParticipant(chat);
+
+    // Re-check task chat status before opening so completed tasks are locked immediately.
+    if (chatToSelect.relatedTask) {
+      try {
+        const { chat: latestTaskChat } = await chatsApi.getTaskChat(chatToSelect.relatedTask);
+        if (latestTaskChat) {
+          chatToSelect = await resolveOtherParticipant(latestTaskChat);
+          setChats((prev) =>
+            prev.map((c) =>
+              c.chatId === chatToSelect.chatId ? chatToSelect : c
+            )
+          );
+        }
+      } catch (error) {
+        console.error("Failed to refresh task chat status:", error);
+      }
+    }
+
+    setSelectedChat(chatToSelect);
+    await loadMessages(chatToSelect);
     
     // Mark as read
-    if (hydratedChat.unreadCount > 0) {
+    if (chatToSelect.unreadCount > 0) {
       try {
-        await chatsApi.markChatAsRead(hydratedChat.chatId);
+        await chatsApi.markChatAsRead(chatToSelect.chatId);
         setChats((prev) =>
           prev.map((c) =>
-            c.chatId === hydratedChat.chatId ? { ...c, unreadCount: 0 } : c
+            c.chatId === chatToSelect.chatId ? { ...c, unreadCount: 0 } : c
           )
         );
       } catch (error) {
@@ -786,66 +807,73 @@ export default function ChatPage() {
           )}
         </div>
 
-        {/* Message composer */}
-        <div className="p-4 border-t border-secondary-200">
-          <form
-            onSubmit={(e) => e.preventDefault()}
-            className="flex items-center gap-2"
-          >
-            <input
-              ref={imageInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleSelectImage}
-              className="hidden"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => imageInputRef.current?.click()}
-              disabled={sending || uploadingImage || !selectedChat || !isChatOpen(selectedChat)}
+        {/* Message input or closed banner */}
+        {isChatOpen(selectedChat) ? (
+          <div className="p-4 border-t border-secondary-200">
+            <form
+              onSubmit={(e) => e.preventDefault()}
+              className="flex items-center gap-2"
             >
-              {uploadingImage ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <ImagePlus className="w-4 h-4" />
-              )}
-            </Button>
-            <Input
-              ref={messageInputRef}
-              type="text"
-              placeholder={isChatOpen(selectedChat) ? "Type a message..." : "Task completed, cannot message"}
-              value={messageText}
-              onChange={(e) => setMessageText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleSelectImage}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={sending || uploadingImage || !selectedChat || !isChatOpen(selectedChat)}
+              >
+                {uploadingImage ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ImagePlus className="w-4 h-4" />
+                )}
+              </Button>
+              <Input
+                ref={messageInputRef}
+                type="text"
+                placeholder="Type a message..."
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                onClick={handleSendMessage}
+                disabled={
+                  !messageText.trim() ||
+                  sending ||
+                  uploadingImage ||
+                  !selectedChat ||
+                  !isChatOpen(selectedChat)
                 }
-              }}
-              disabled={!isChatOpen(selectedChat)}
-              className="flex-1"
-            />
-            <Button
-              type="button"
-              onClick={handleSendMessage}
-              disabled={
-                !messageText.trim() ||
-                sending ||
-                uploadingImage ||
-                !selectedChat ||
-                !isChatOpen(selectedChat)
-              }
-              className="bg-primary-500 hover:bg-primary-600 text-secondary-900"
-            >
-              {sending ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <Send className="w-5 h-5" />
-              )}
-            </Button>
-          </form>
-        </div>
+                className="bg-primary-500 hover:bg-primary-600 text-secondary-900"
+              >
+                {sending ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Send className="w-5 h-5" />
+                )}
+              </Button>
+            </form>
+          </div>
+        ) : (
+          <div className="p-4 border-t border-secondary-200 bg-secondary-50">
+            <p className="text-center text-secondary-600 font-medium">
+              Task completed cannot send message
+            </p>
+          </div>
+        )}
       </div>
     );
   })();

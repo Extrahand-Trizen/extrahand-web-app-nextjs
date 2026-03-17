@@ -2,17 +2,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/auth/context';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 
 const footerColumns = [
   {
@@ -118,27 +107,11 @@ const socialIcons = [
 ];
 
 export const Footer: React.FC = () => {
-  const router = useRouter();
-  const { currentUser, userData } = useAuth();
-  const isAuthenticated = Boolean(currentUser) || Boolean(userData);
-  const [showEmailVerifyModal, setShowEmailVerifyModal] = React.useState(false);
   const isExternalLink = (href: string) => /^https?:\/\//.test(href);
-  const isTaskEntryLink = (href: string) => href === '/tasks/new' || href === '/discover';
-
-  const handleProtectedTaskNavigation = (
-    e: React.MouseEvent<HTMLAnchorElement>,
-    href: string
-  ) => {
-    if (isTaskEntryLink(href) && isAuthenticated && !userData?.isEmailVerified) {
-      e.preventDefault();
-      setShowEmailVerifyModal(true);
-    }
-  };
 
   return (
-    <>
-      <footer className="bg-secondary-900 text-neutral-gray-50 w-full rounded-2xl mx-1 md:mx-2 mt-6 md:mt-10">
-        <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-8 md:py-12">
+    <footer className="bg-secondary-900 text-neutral-gray-50 w-full rounded-2xl mx-1 md:mx-2 mt-6 md:mt-10">
+      <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-8 md:py-12">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 md:gap-9 text-left">
           {footerColumns.map((col, idx) => (
             <div key={idx}>
@@ -159,7 +132,6 @@ export const Footer: React.FC = () => {
                     ) : (
                       <Link
                         href={link.href}
-                        onClick={(e) => handleProtectedTaskNavigation(e, link.href)}
                         className="text-neutral-gray-50/60 no-underline text-xs md:text-sm font-normal block mb-1.5 md:mb-2 transition-colors duration-200 leading-snug hover:text-white"
                       >
                         {link.label}
@@ -234,40 +206,8 @@ export const Footer: React.FC = () => {
         <div className="border-t border-neutral-gray-600 mt-6 md:mt-8 pt-4 md:pt-6 text-center text-neutral-gray-50/60 text-sm md:text-base leading-snug">
           © {new Date().getFullYear()} Naipunya AI Labs Private Limited. All rights reserved.
         </div>
-        </div>
-      </footer>
-
-      <Dialog open={showEmailVerifyModal} onOpenChange={setShowEmailVerifyModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Verify your email to continue</DialogTitle>
-            <DialogDescription>
-              Please verify your email before posting or browsing tasks.
-              Verified users receive important notifications for task updates,
-              offers, and responses.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-end">
-            <Button
-              variant="outline"
-              className="w-full sm:w-auto"
-              onClick={() => setShowEmailVerifyModal(false)}
-            >
-              Later
-            </Button>
-            <Button
-              className="w-full sm:w-auto"
-              onClick={() => {
-                setShowEmailVerifyModal(false);
-                router.push('/profile?section=verifications');
-              }}
-            >
-              Verify email
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+      </div>
+    </footer>
   );
 };
 
