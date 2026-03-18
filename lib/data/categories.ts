@@ -14,6 +14,43 @@ export interface ServiceCategory {
    avgPrice?: string;
 }
 
+export interface PostTaskCategory {
+   id: string;
+   label: string;
+}
+
+// Keep this list in sync with the "Select Category" list in Post a Task flow.
+export const postTaskCategories: PostTaskCategory[] = [
+   { id: "ac-repair", label: "AC Repair & Service" },
+   { id: "appliance-repair", label: "Appliance Repair" },
+   { id: "beauty-services", label: "Beauty Services" },
+   { id: "car-washing", label: "Car Washing / Car Cleaning" },
+   { id: "carpenter", label: "Carpenter" },
+   { id: "cooking-home-chef", label: "Cooking / Home Chef" },
+   { id: "deep-cleaning", label: "Deep Cleaning" },
+   { id: "delivery-pickup-services", label: "Delivery / Pickup Services" },
+   { id: "driver-chauffeur", label: "Driver / Chauffeur" },
+   { id: "electrical", label: "Electrical" },
+   { id: "event-services", label: "Event Services" },
+   { id: "fitness-trainers", label: "Fitness Trainers" },
+   { id: "furniture-assembly", label: "Furniture Assembly" },
+   { id: "gardening", label: "Gardening" },
+   { id: "handyperson", label: "Handyperson / General Repairs" },
+   { id: "home-cleaning", label: "Home Cleaning" },
+   { id: "it-support", label: "IT Support / Laptop Repair" },
+   { id: "laundry-ironing", label: "Laundry / Ironing" },
+   { id: "massage-spa", label: "Massage / Spa" },
+   { id: "other", label: "Other" },
+   { id: "packers-movers", label: "Packers & Movers" },
+   { id: "painting", label: "Painting" },
+   { id: "pest-control", label: "Pest Control" },
+   { id: "photographer-videographer", label: "Photographer / Videographer" },
+   { id: "plumbing", label: "Plumbing" },
+   { id: "security-patrol", label: "Security Patrol / Watchman" },
+   { id: "tutors", label: "Tutors" },
+   { id: "water-tanker-services", label: "Water & Tanker Services" },
+];
+
 export const serviceCategories: ServiceCategory[] = [
    {
       id: "ac-repair",

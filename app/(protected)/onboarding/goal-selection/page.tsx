@@ -2,7 +2,7 @@
 
 /**
  * Goal Selection Page
- * User selects their main goal on Airtasker: "Get things done" or "Earn money"
+ * User selects their main goal on ExtraHand: "Get things done" or "Earn money"
  * Shows immediately after OTP verification
  */
 
@@ -87,7 +87,7 @@ export default function GoalSelectionPage() {
         {/* Heading */}
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold" style={{ color: DARK }}>
-            What is your main goal on Airtasker?
+            What is your main goal on ExtraHand?
           </h1>
           <p className="text-gray-600 text-base mt-2">
             Choose what you&apos;d like to do on our platform

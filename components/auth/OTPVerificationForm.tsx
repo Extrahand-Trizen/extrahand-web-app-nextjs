@@ -79,7 +79,6 @@ export function OTPVerificationForm({
    const { refreshUserData } = useAuth();
    const loginToStore = useUserStore((state) => state.login);
 
-   // Determine redirect destination: new signups go to goal selection, logins go to home
    const finalRedirectTo =
       redirectTo ||
       (authType === "signup" ? "/onboarding/goal-selection" : "/home");
