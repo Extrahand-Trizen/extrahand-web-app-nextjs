@@ -10,7 +10,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, ArrowLeft } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { profilesApi } from '@/lib/api/endpoints/profiles';
 import { useUserStore } from '@/lib/state/userStore';
 
@@ -70,17 +70,6 @@ export default function GoalSelectionPage() {
   return (
     <div className="min-h-screen bg-linear-to-b from-white to-gray-50 flex flex-col items-center justify-center px-4 py-8">
       <div className="w-full max-w-2xl">
-        <div className="mb-4">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </button>
-        </div>
-
         {/* Heading */}
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold" style={{ color: DARK }}>
@@ -96,7 +85,7 @@ export default function GoalSelectionPage() {
           {/* Get Things Done Option */}
           <button
             onClick={() => setSelectedGoal('get')}
-            className={`relative p-4 md:p-5 rounded-xl border-2 transition-all duration-200 text-left ${
+            className={`relative p-4 md:p-5 rounded-xl border-2 transition-all duration-200 text-left min-h-[210px] md:aspect-square md:min-h-0 flex flex-col ${
               selectedGoal === 'get'
                 ? 'border-blue-500 bg-blue-50 shadow-lg shadow-blue-100'
                 : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
@@ -128,10 +117,10 @@ export default function GoalSelectionPage() {
             <div className="w-8 h-8 mb-2 text-xl">✓</div>
 
             {/* Text */}
-            <h2 className="text-2xl font-bold" style={{ color: DARK }}>
+            <h2 className="text-2xl font-bold mt-1" style={{ color: DARK }}>
               Get things done
             </h2>
-            <p className="text-gray-600 text-sm mt-1">
+            <p className="text-gray-600 text-sm mt-2 leading-6">
               Post tasks and hire skilled professionals to help you get things done
             </p>
           </button>
@@ -139,7 +128,7 @@ export default function GoalSelectionPage() {
           {/* Earn Money Option */}
           <button
             onClick={() => setSelectedGoal('earn')}
-            className={`relative p-4 md:p-5 rounded-xl border-2 transition-all duration-200 text-left ${
+            className={`relative p-4 md:p-5 rounded-xl border-2 transition-all duration-200 text-left min-h-[210px] md:aspect-square md:min-h-0 flex flex-col ${
               selectedGoal === 'earn'
                 ? 'border-green-500 bg-green-50 shadow-lg shadow-green-100'
                 : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
@@ -171,10 +160,10 @@ export default function GoalSelectionPage() {
             <div className="w-8 h-8 mb-2 text-2xl">₹</div>
 
             {/* Text */}
-            <h2 className="text-2xl font-bold" style={{ color: DARK }}>
+            <h2 className="text-2xl font-bold mt-1" style={{ color: DARK }}>
               Earn money
             </h2>
-            <p className="text-gray-600 text-sm mt-1">
+            <p className="text-gray-600 text-sm mt-2 leading-6">
               Offer your services and skills to earn money by helping others
             </p>
           </button>

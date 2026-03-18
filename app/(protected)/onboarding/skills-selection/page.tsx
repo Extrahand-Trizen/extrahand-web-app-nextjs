@@ -11,7 +11,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, ArrowLeft, MapPin } from 'lucide-react';
+import { ChevronRight, MapPin, LocateFixed } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { profilesApi } from '@/lib/api/endpoints/profiles';
 import { useUserStore } from '@/lib/state/userStore';
@@ -42,6 +42,7 @@ export default function SkillsSelectionPage() {
   const router = useRouter();
   const categories = postTaskCategories;
   const [locationInput, setLocationInput] = useState('');
+  const [detectingLocation, setDetectingLocation] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,6 +51,70 @@ export default function SkillsSelectionPage() {
   const filteredLocations = HYDERABAD_LOCATION_SUGGESTIONS.filter((item) =>
     item.toLowerCase().includes(locationInput.trim().toLowerCase())
   ).slice(0, 6);
+
+  const resolveCoordinatesToAddress = async (
+    latitude: number,
+    longitude: number
+  ): Promise<string> => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
+        {
+          headers: {
+            Accept: 'application/json',
+          },
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error('Reverse geocoding failed');
+      }
+
+      const data = await res.json();
+      const fullAddress = (data?.display_name || '').trim();
+      if (fullAddress) return fullAddress;
+
+      return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+    } catch {
+      return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+    }
+  };
+
+  const handleDetectCurrentLocation = async () => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      toast.error('GPS not supported', {
+        description: 'Your browser does not support GPS location.',
+      });
+      return;
+    }
+
+    setDetectingLocation(true);
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 12000,
+          maximumAge: 0,
+        });
+      });
+
+      const { latitude, longitude } = position.coords;
+      const fullAddress = await resolveCoordinatesToAddress(latitude, longitude);
+      setLocationInput(fullAddress);
+      setShowSuggestions(false);
+
+      toast.success('Location detected', {
+        description: fullAddress,
+      });
+    } catch (error) {
+      console.error('GPS detection failed', error);
+      toast.error('Unable to detect location', {
+        description: 'Please allow location permission or type area and city manually.',
+      });
+    } finally {
+      setDetectingLocation(false);
+    }
+  };
 
   const toggleSkill = (categorySlug: string) => {
     setSelectedSkills((prev) => {
@@ -121,23 +186,8 @@ export default function SkillsSelectionPage() {
     }
   };
 
-  const handleBack = () => {
-    router.back();
-  };
-
   return (
     <div className="min-h-screen bg-linear-to-b from-white to-gray-50 flex flex-col">
-      {/* Header with Back Button */}
-      <div className="px-4 md:px-6 py-4 border-b border-gray-200">
-        <button
-          onClick={handleBack}
-          className="flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span className="font-semibold">Back</span>
-        </button>
-      </div>
-
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-start px-4 md:px-6 py-8">
         <div className="w-full max-w-3xl">
@@ -152,12 +202,38 @@ export default function SkillsSelectionPage() {
           </div>
 
           <div className="mb-5 rounded-xl border border-gray-200 bg-white p-4">
+            <div className="mb-3 flex justify-center">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+                <MapPin className="h-5 w-5" />
+              </div>
+            </div>
+
             <p className="mb-2 text-sm font-medium text-gray-900">Your location *</p>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="mb-3 w-full"
+              onClick={handleDetectCurrentLocation}
+              disabled={detectingLocation || isSubmitting}
+            >
+              {detectingLocation ? (
+                'Detecting current location...'
+              ) : (
+                <>
+                  <LocateFixed className="mr-2 h-4 w-4" />
+                  Detect current location using GPS
+                </>
+              )}
+            </Button>
+
+            <p className="mb-2 text-xs text-gray-500">or type area and city</p>
+
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
               <Input
                 value={locationInput}
-                placeholder="Type area, e.g. Madh"
+                placeholder="Type area/city, e.g. Madh"
                 className="pl-10"
                 onFocus={() => setShowSuggestions(true)}
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
@@ -174,7 +250,8 @@ export default function SkillsSelectionPage() {
                       key={item}
                       type="button"
                       className="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
-                      onClick={() => {
+                      onMouseDown={(e) => {
+                        e.preventDefault();
                         setLocationInput(item);
                         setShowSuggestions(false);
                       }}
