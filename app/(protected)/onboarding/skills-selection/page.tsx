@@ -44,6 +44,7 @@ export default function SkillsSelectionPage() {
   const [locationInput, setLocationInput] = useState('');
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showSkillsStep, setShowSkillsStep] = useState(false);
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const patchUser = useUserStore((state) => state.patchUser);
@@ -126,6 +127,17 @@ export default function SkillsSelectionPage() {
     });
   };
 
+  const handleContinueToSkills = () => {
+    if (!locationInput.trim()) {
+      toast.error('Please enter your location', {
+        description: 'Select or type your location to continue.',
+      });
+      return;
+    }
+
+    setShowSkillsStep(true);
+  };
+
   const handleContinue = async () => {
     if (!locationInput.trim()) {
       toast.error('Please enter your location', {
@@ -194,10 +206,12 @@ export default function SkillsSelectionPage() {
           {/* Heading */}
           <div className="text-center mb-5">
             <h1 className="text-2xl md:text-3xl font-bold" style={{ color: DARK }}>
-              Select your skills
+              {showSkillsStep ? 'Select your skills' : 'Set your location'}
             </h1>
             <p className="text-gray-600 text-sm mt-2">
-              Enter your location and choose the services you want to offer.
+              {showSkillsStep
+                ? 'Choose the services you want to offer.'
+                : 'First set your location, then continue to skills.'}
             </p>
           </div>
 
@@ -262,14 +276,29 @@ export default function SkillsSelectionPage() {
                 </div>
               )}
             </div>
+
+            {!showSkillsStep && (
+              <Button
+                type="button"
+                className="mt-3 w-full h-11 text-sm font-semibold"
+                style={{
+                  backgroundColor: PRIMARY_YELLOW,
+                  color: DARK,
+                }}
+                disabled={!locationInput.trim() || detectingLocation || isSubmitting}
+                onClick={handleContinueToSkills}
+              >
+                Continue to skills
+              </Button>
+            )}
           </div>
 
           {/* Categories */}
-          {categories.length === 0 ? (
+          {showSkillsStep && categories.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-600">No categories available</p>
             </div>
-          ) : (
+          ) : showSkillsStep ? (
             <>
               {/* Categories Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
@@ -346,6 +375,18 @@ export default function SkillsSelectionPage() {
                 {!isSubmitting && <ChevronRight className="w-5 h-5 ml-2" />}
               </Button>
             </>
+          ) : null}
+
+          {showSkillsStep && (
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-3 w-full"
+              onClick={() => setShowSkillsStep(false)}
+              disabled={isSubmitting}
+            >
+              Edit location
+            </Button>
           )}
         </div>
       </div>

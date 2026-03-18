@@ -71,7 +71,7 @@ export default function GoalSelectionPage() {
     <div className="min-h-screen bg-linear-to-b from-white to-gray-50 flex flex-col items-center justify-center px-4 py-8">
       <div className="w-full max-w-2xl">
         {/* Heading */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <h1 className="text-3xl md:text-4xl font-bold" style={{ color: DARK }}>
             What is your main goal on ExtraHand?
           </h1>
@@ -81,11 +81,11 @@ export default function GoalSelectionPage() {
         </div>
 
         {/* Options Container */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-5">
           {/* Get Things Done Option */}
           <button
             onClick={() => setSelectedGoal('get')}
-            className={`relative p-4 md:p-5 rounded-xl border-2 transition-all duration-200 text-left min-h-[210px] md:aspect-square md:min-h-0 flex flex-col ${
+            className={`relative p-4 rounded-xl border-2 transition-all duration-200 text-left min-h-[150px] flex flex-col ${
               selectedGoal === 'get'
                 ? 'border-blue-500 bg-blue-50 shadow-lg shadow-blue-100'
                 : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
@@ -117,10 +117,10 @@ export default function GoalSelectionPage() {
             <div className="w-8 h-8 mb-2 text-xl">✓</div>
 
             {/* Text */}
-            <h2 className="text-2xl font-bold mt-1" style={{ color: DARK }}>
+            <h2 className="text-xl font-bold mt-1" style={{ color: DARK }}>
               Get things done
             </h2>
-            <p className="text-gray-600 text-sm mt-2 leading-6">
+            <p className="text-gray-600 text-sm mt-1.5 leading-6">
               Post tasks and hire skilled professionals to help you get things done
             </p>
           </button>
@@ -128,7 +128,7 @@ export default function GoalSelectionPage() {
           {/* Earn Money Option */}
           <button
             onClick={() => setSelectedGoal('earn')}
-            className={`relative p-4 md:p-5 rounded-xl border-2 transition-all duration-200 text-left min-h-[210px] md:aspect-square md:min-h-0 flex flex-col ${
+            className={`relative p-4 rounded-xl border-2 transition-all duration-200 text-left min-h-[150px] flex flex-col ${
               selectedGoal === 'earn'
                 ? 'border-green-500 bg-green-50 shadow-lg shadow-green-100'
                 : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
@@ -160,10 +160,10 @@ export default function GoalSelectionPage() {
             <div className="w-8 h-8 mb-2 text-2xl">₹</div>
 
             {/* Text */}
-            <h2 className="text-2xl font-bold mt-1" style={{ color: DARK }}>
+            <h2 className="text-xl font-bold mt-1" style={{ color: DARK }}>
               Earn money
             </h2>
-            <p className="text-gray-600 text-sm mt-2 leading-6">
+            <p className="text-gray-600 text-sm mt-1.5 leading-6">
               Offer your services and skills to earn money by helping others
             </p>
           </button>
