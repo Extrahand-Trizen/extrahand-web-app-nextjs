@@ -9,9 +9,8 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, ArrowLeft } from 'lucide-react';
 import { profilesApi } from '@/lib/api/endpoints/profiles';
 import { useUserStore } from '@/lib/state/userStore';
 
@@ -50,14 +49,14 @@ export default function GoalSelectionPage() {
 
         router.push('/home');
       } else if (selectedGoal === 'earn') {
-        // Path 2: Earn money → Save goal → Ask for location
+        // Path 2: Earn money → Ask location + skills in the same page
         // Store selected goal in sessionStorage to know user wants tasker role
         if (typeof window !== 'undefined') {
           sessionStorage.setItem('selectedGoal', 'earn');
         }
 
-        // Navigate to location selection
-        router.push('/onboarding/choose-location-method');
+        // Navigate to unified location + skills page
+        router.push('/onboarding/skills-selection');
       }
     } catch (error) {
       console.error('Error in goal selection:', error);
@@ -71,17 +70,15 @@ export default function GoalSelectionPage() {
   return (
     <div className="min-h-screen bg-linear-to-b from-white to-gray-50 flex flex-col items-center justify-center px-4 py-8">
       <div className="w-full max-w-2xl">
-        {/* Icon */}
-        <div className="flex justify-center mb-8">
-          <div className="relative w-24 h-24">
-            <Image
-              src="/assets/images/goal-selection-icon.png"
-              alt="Select your goal"
-              fill
-              className="object-contain"
-              priority
-            />
-          </div>
+        <div className="mb-4">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </button>
         </div>
 
         {/* Heading */}
@@ -95,11 +92,11 @@ export default function GoalSelectionPage() {
         </div>
 
         {/* Options Container */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-6">
           {/* Get Things Done Option */}
           <button
             onClick={() => setSelectedGoal('get')}
-            className={`relative p-6 md:p-8 rounded-2xl border-2 transition-all duration-200 text-left ${
+            className={`relative p-4 md:p-5 rounded-xl border-2 transition-all duration-200 text-left ${
               selectedGoal === 'get'
                 ? 'border-blue-500 bg-blue-50 shadow-lg shadow-blue-100'
                 : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
@@ -128,26 +125,21 @@ export default function GoalSelectionPage() {
             )}
 
             {/* Icon */}
-            <div className="w-12 h-12 mb-4 text-2xl">✓</div>
+            <div className="w-8 h-8 mb-2 text-xl">✓</div>
 
             {/* Text */}
-            <h2 className="text-xl md:text-2xl font-bold" style={{ color: DARK }}>
+            <h2 className="text-2xl font-bold" style={{ color: DARK }}>
               Get things done
             </h2>
-            <p className="text-gray-600 text-sm md:text-base mt-2">
+            <p className="text-gray-600 text-sm mt-1">
               Post tasks and hire skilled professionals to help you get things done
             </p>
-
-            {/* Role Badge */}
-            <div className="mt-4 inline-block px-3 py-1 bg-gray-100 rounded-full text-xs font-semibold text-gray-700">
-              Role: Poster
-            </div>
           </button>
 
           {/* Earn Money Option */}
           <button
             onClick={() => setSelectedGoal('earn')}
-            className={`relative p-6 md:p-8 rounded-2xl border-2 transition-all duration-200 text-left ${
+            className={`relative p-4 md:p-5 rounded-xl border-2 transition-all duration-200 text-left ${
               selectedGoal === 'earn'
                 ? 'border-green-500 bg-green-50 shadow-lg shadow-green-100'
                 : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
@@ -176,20 +168,15 @@ export default function GoalSelectionPage() {
             )}
 
             {/* Icon */}
-            <div className="w-12 h-12 mb-4 text-3xl">₹</div>
+            <div className="w-8 h-8 mb-2 text-2xl">₹</div>
 
             {/* Text */}
-            <h2 className="text-xl md:text-2xl font-bold" style={{ color: DARK }}>
+            <h2 className="text-2xl font-bold" style={{ color: DARK }}>
               Earn money
             </h2>
-            <p className="text-gray-600 text-sm md:text-base mt-2">
+            <p className="text-gray-600 text-sm mt-1">
               Offer your services and skills to earn money by helping others
             </p>
-
-            {/* Role Badge */}
-            <div className="mt-4 inline-block px-3 py-1 bg-gray-100 rounded-full text-xs font-semibold text-gray-700">
-              Role: Tasker
-            </div>
           </button>
         </div>
 
@@ -214,11 +201,6 @@ export default function GoalSelectionPage() {
           {isLoading ? 'Loading...' : 'Continue'}
           {!isLoading && <ChevronRight className="w-5 h-5 ml-2" />}
         </Button>
-
-        {/* Info Text */}
-        <p className="text-center text-xs text-gray-500 mt-6">
-          You can switch between roles anytime from your profile settings
-        </p>
       </div>
     </div>
   );

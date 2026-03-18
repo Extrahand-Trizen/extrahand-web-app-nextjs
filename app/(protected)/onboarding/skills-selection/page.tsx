@@ -11,7 +11,8 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, ArrowLeft } from 'lucide-react';
+import { ChevronRight, ArrowLeft, MapPin } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { profilesApi } from '@/lib/api/endpoints/profiles';
 import { useUserStore } from '@/lib/state/userStore';
 import { postTaskCategories } from '@/lib/data/categories';
@@ -19,12 +20,36 @@ import { postTaskCategories } from '@/lib/data/categories';
 const PRIMARY_YELLOW = '#f9b233';
 const DARK = '#222';
 
+const HYDERABAD_LOCATION_SUGGESTIONS = [
+  'Madhapur, Hyderabad',
+  'Kondapur, Hyderabad',
+  'Gachibowli, Hyderabad',
+  'Hitech City, Hyderabad',
+  'Kukatpally, Hyderabad',
+  'Miyapur, Hyderabad',
+  'Jubilee Hills, Hyderabad',
+  'Banjara Hills, Hyderabad',
+  'Begumpet, Hyderabad',
+  'Ameerpet, Hyderabad',
+  'Secunderabad, Hyderabad',
+  'Uppal, Hyderabad',
+  'LB Nagar, Hyderabad',
+  'Manikonda, Hyderabad',
+  'Nallagandla, Hyderabad',
+];
+
 export default function SkillsSelectionPage() {
   const router = useRouter();
   const categories = postTaskCategories;
+  const [locationInput, setLocationInput] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const patchUser = useUserStore((state) => state.patchUser);
+
+  const filteredLocations = HYDERABAD_LOCATION_SUGGESTIONS.filter((item) =>
+    item.toLowerCase().includes(locationInput.trim().toLowerCase())
+  ).slice(0, 6);
 
   const toggleSkill = (categorySlug: string) => {
     setSelectedSkills((prev) => {
@@ -37,6 +62,13 @@ export default function SkillsSelectionPage() {
   };
 
   const handleContinue = async () => {
+    if (!locationInput.trim()) {
+      toast.error('Please enter your location', {
+        description: 'Type your area and choose a location from suggestions.',
+      });
+      return;
+    }
+
     if (selectedSkills.length === 0) {
       toast.error('Please select at least one skill', {
         description: 'Choose the skills you want to offer on ExtraHand.',
@@ -67,6 +99,10 @@ export default function SkillsSelectionPage() {
       patchUser({
         roles: ['tasker'],
       });
+
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('pendingTaskerLocationText', locationInput.trim());
+      }
 
       toast.success('Profile setup complete!', {
         description: 'Welcome to ExtraHand. Let\'s get you earning!',
@@ -106,13 +142,49 @@ export default function SkillsSelectionPage() {
       <div className="flex-1 flex flex-col items-center justify-start px-4 md:px-6 py-8">
         <div className="w-full max-w-3xl">
           {/* Heading */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold" style={{ color: DARK }}>
+          <div className="text-center mb-5">
+            <h1 className="text-2xl md:text-3xl font-bold" style={{ color: DARK }}>
               Select your skills
             </h1>
-            <p className="text-gray-600 text-base mt-2">
-              Choose the services you want to offer. You can add more later.
+            <p className="text-gray-600 text-sm mt-2">
+              Enter your location and choose the services you want to offer.
             </p>
+          </div>
+
+          <div className="mb-5 rounded-xl border border-gray-200 bg-white p-4">
+            <p className="mb-2 text-sm font-medium text-gray-900">Your location *</p>
+            <div className="relative">
+              <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+              <Input
+                value={locationInput}
+                placeholder="Type area, e.g. Madh"
+                className="pl-10"
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                onChange={(e) => {
+                  setLocationInput(e.target.value);
+                  setShowSuggestions(true);
+                }}
+              />
+
+              {showSuggestions && locationInput.trim().length > 0 && filteredLocations.length > 0 && (
+                <div className="absolute z-20 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
+                  {filteredLocations.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      className="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                      onClick={() => {
+                        setLocationInput(item);
+                        setShowSuggestions(false);
+                      }}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Categories */}
@@ -123,12 +195,12 @@ export default function SkillsSelectionPage() {
           ) : (
             <>
               {/* Categories Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
                 {categories.map((category) => (
                   <button
                     key={category.id}
                     onClick={() => toggleSkill(category.id || '')}
-                    className={`relative p-4 md:p-6 rounded-2xl border-2 transition-all duration-200 text-left ${
+                    className={`relative p-3 md:p-4 rounded-xl border-2 transition-all duration-200 text-left ${
                       selectedSkills.includes(category.id || '')
                         ? 'border-yellow-400 bg-yellow-50 shadow-lg shadow-yellow-100'
                         : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
@@ -157,7 +229,7 @@ export default function SkillsSelectionPage() {
                     )}
 
                     {/* Category Name */}
-                    <h3 className="font-semibold text-gray-900 text-sm md:text-base">
+                    <h3 className="font-semibold text-gray-900 text-sm leading-5">
                       {category.label}
                     </h3>
                   </button>
@@ -176,7 +248,7 @@ export default function SkillsSelectionPage() {
               {/* Continue Button */}
               <Button
                 onClick={handleContinue}
-                disabled={selectedSkills.length === 0 || isSubmitting}
+                disabled={!locationInput.trim() || selectedSkills.length === 0 || isSubmitting}
                 className="w-full h-12 text-base font-semibold"
                 style={{
                   backgroundColor: PRIMARY_YELLOW,
@@ -196,11 +268,6 @@ export default function SkillsSelectionPage() {
                 {isSubmitting ? 'Setting up...' : 'Continue'}
                 {!isSubmitting && <ChevronRight className="w-5 h-5 ml-2" />}
               </Button>
-
-              {/* Info Text */}
-              <p className="text-center text-xs text-gray-500 mt-6">
-                You can update your skills anytime from your profile settings
-              </p>
             </>
           )}
         </div>
