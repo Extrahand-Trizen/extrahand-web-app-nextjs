@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronRight, MapPin, LocateFixed } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { profilesApi } from '@/lib/api/endpoints/profiles';
+import { addressesApi } from '@/lib/api/endpoints/addresses';
 import { useUserStore } from '@/lib/state/userStore';
 
 const PRIMARY_YELLOW = '#f9b233';
@@ -21,10 +22,19 @@ export default function SkillsSelectionPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedGoal = searchParams.get('goal');
+  const user = useUserStore((state) => state.user);
   const [locationInput, setLocationInput] = useState('');
   const [locationCoords, setLocationCoords] = useState<
     { latitude: number; longitude: number } | null
   >(null);
+  const [resolvedLocationMeta, setResolvedLocationMeta] = useState<{
+    city?: string;
+    state?: string;
+    country?: string;
+    pinCode?: string;
+    area?: string;
+    landmark?: string;
+  } | null>(null);
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const patchUser = useUserStore((state) => state.patchUser);
@@ -32,10 +42,18 @@ export default function SkillsSelectionPage() {
   const resolveCoordinatesToAddress = async (
     latitude: number,
     longitude: number
-  ): Promise<string> => {
+  ): Promise<{
+    fullAddress: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    pinCode?: string;
+    area?: string;
+    landmark?: string;
+  }> => {
     try {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&accept-language=en`,
         {
           headers: {
             Accept: 'application/json',
@@ -49,11 +67,32 @@ export default function SkillsSelectionPage() {
 
       const data = await res.json();
       const fullAddress = (data?.display_name || '').trim();
-      if (fullAddress) return fullAddress;
+      const address = data?.address || {};
+      if (fullAddress) {
+        return {
+          fullAddress,
+          city: address?.city || address?.town || address?.village,
+          state: address?.state,
+          country: address?.country || 'India',
+          pinCode: address?.postcode,
+          area:
+            address?.suburb ||
+            address?.neighbourhood ||
+            address?.residential ||
+            address?.quarter,
+          landmark: address?.road || address?.building,
+        };
+      }
 
-      return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+      return {
+        fullAddress: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+        country: 'India',
+      };
     } catch {
-      return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+      return {
+        fullAddress: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+        country: 'India',
+      };
     }
   };
 
@@ -76,12 +115,20 @@ export default function SkillsSelectionPage() {
       });
 
       const { latitude, longitude } = position.coords;
-      const fullAddress = await resolveCoordinatesToAddress(latitude, longitude);
-      setLocationInput(fullAddress);
+      const locationData = await resolveCoordinatesToAddress(latitude, longitude);
+      setLocationInput(locationData.fullAddress);
       setLocationCoords({ latitude, longitude });
+      setResolvedLocationMeta({
+        city: locationData.city,
+        state: locationData.state,
+        country: locationData.country,
+        pinCode: locationData.pinCode,
+        area: locationData.area,
+        landmark: locationData.landmark,
+      });
 
       toast.success('Location detected', {
-        description: fullAddress,
+        description: locationData.fullAddress,
       });
     } catch (error) {
       console.error('GPS detection failed', error);
@@ -127,6 +174,41 @@ export default function SkillsSelectionPage() {
           address: locationInput.trim(),
         },
       });
+
+      // Save to user's address book as default (Home) with registered name/phone.
+      // This ensures location appears under Profile > Addresses, not only service area.
+      if (locationCoords) {
+        const existing = await addressesApi.getAddresses();
+        const sameAddress = existing.find(
+          (addr) =>
+            addr.addressLine1.trim().toLowerCase() === locationInput.trim().toLowerCase()
+        );
+
+        if (sameAddress) {
+          if (!sameAddress.isDefault) {
+            await addressesApi.setDefaultAddress(sameAddress.id);
+          }
+        } else {
+          await addressesApi.addAddress({
+            label: 'Home',
+            type: 'home',
+            isDefault: true,
+            name: user?.name || 'User',
+            phone: user?.phone || '',
+            addressLine1: locationInput.trim(),
+            addressLine2: resolvedLocationMeta?.area || '',
+            landmark: resolvedLocationMeta?.landmark,
+            city: resolvedLocationMeta?.city || '',
+            state: resolvedLocationMeta?.state || '',
+            country: resolvedLocationMeta?.country || 'India',
+            pinCode: resolvedLocationMeta?.pinCode || '',
+            coordinates: {
+              lat: locationCoords.latitude,
+              lng: locationCoords.longitude,
+            },
+          });
+        }
+      }
 
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('pendingPosterLocationText', locationInput.trim());
