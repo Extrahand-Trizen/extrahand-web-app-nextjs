@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, MapPin, LocateFixed } from 'lucide-react';
@@ -19,7 +19,12 @@ const DARK = '#222';
 
 export default function SkillsSelectionPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const selectedGoal = searchParams.get('goal');
   const [locationInput, setLocationInput] = useState('');
+  const [locationCoords, setLocationCoords] = useState<
+    { latitude: number; longitude: number } | null
+  >(null);
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const patchUser = useUserStore((state) => state.patchUser);
@@ -73,6 +78,7 @@ export default function SkillsSelectionPage() {
       const { latitude, longitude } = position.coords;
       const fullAddress = await resolveCoordinatesToAddress(latitude, longitude);
       setLocationInput(fullAddress);
+      setLocationCoords({ latitude, longitude });
 
       toast.success('Location detected', {
         description: fullAddress,
@@ -98,12 +104,28 @@ export default function SkillsSelectionPage() {
     setIsSubmitting(true);
 
     try {
+      const selectedRole = selectedGoal === 'earn' ? 'tasker' : 'poster';
+
       await profilesApi.upsertProfile({
-        roles: ['poster'],
+        roles: [selectedRole],
+        location: {
+          type: 'Point',
+          coordinates: locationCoords
+            ? [locationCoords.longitude, locationCoords.latitude]
+            : [0, 0],
+          address: locationInput.trim(),
+        },
       });
 
       patchUser({
-        roles: ['poster'],
+        roles: [selectedRole],
+        location: {
+          type: 'Point',
+          coordinates: locationCoords
+            ? [locationCoords.longitude, locationCoords.latitude]
+            : [0, 0],
+          address: locationInput.trim(),
+        },
       });
 
       if (typeof window !== 'undefined') {

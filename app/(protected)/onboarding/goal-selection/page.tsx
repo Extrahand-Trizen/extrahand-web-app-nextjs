@@ -34,25 +34,15 @@ export default function GoalSelectionPage() {
     setIsLoading(true);
 
     try {
-      if (selectedGoal === 'get') {
-        // Path 1: Get Help → Set role to poster → Ask location (GPS only)
-        await profilesApi.upsertProfile({
-          roles: ['poster'],
-        });
-        
-        // Update local store
-        patchUser({ roles: ['poster'] });
+      // Both goals should complete location step first.
+      // Save only role here, then location page persists location + role together.
+      const selectedRole = selectedGoal === 'earn' ? 'tasker' : 'poster';
+      await profilesApi.upsertProfile({
+        roles: [selectedRole],
+      });
 
-        router.push('/onboarding/skills-selection');
-      } else if (selectedGoal === 'earn') {
-        // Path 2: Earn Money → Set role tasker and go home (no location/skills)
-        await profilesApi.upsertProfile({
-          roles: ['tasker'],
-        });
-
-        patchUser({ roles: ['tasker'] });
-        router.push('/home');
-      }
+      patchUser({ roles: [selectedRole] });
+      router.push(`/onboarding/skills-selection?goal=${selectedGoal}`);
     } catch (error) {
       console.error('Error in goal selection:', error);
       toast.error('Something went wrong', {
