@@ -11,9 +11,7 @@ function OTPVerificationContent() {
    const phone = rawPhone ? formatPhoneNumber(rawPhone) : "";
    const userName = searchParams.get("name") || "";
    const authType = (searchParams.get("type") || "login") as "login" | "signup";
-   const redirectTo =
-      searchParams.get("next") ||
-      (authType === "signup" ? "/onboarding/goal-selection" : "/home");
+   const redirectTo = searchParams.get("next") || "/onboarding/goal-selection";
 
    return (
       <OTPVerificationForm

@@ -26,7 +26,7 @@ export default function GoalSelectionPage() {
   const handleContinue = async () => {
     if (!selectedGoal) {
       toast.error('Please select an option', {
-        description: 'Choose either "Get things done" or "Earn money" to continue.',
+        description: 'Choose either "Get Help" or "Earn Money" to continue.',
       });
       return;
     }
@@ -35,7 +35,7 @@ export default function GoalSelectionPage() {
 
     try {
       if (selectedGoal === 'get') {
-        // Path 1: Get things done → Set role to "poster" → Go to home
+        // Path 1: Get Help → Set role to poster → Ask location (GPS only)
         await profilesApi.upsertProfile({
           roles: ['poster'],
         });
@@ -43,20 +43,15 @@ export default function GoalSelectionPage() {
         // Update local store
         patchUser({ roles: ['poster'] });
 
-        toast.success('Welcome! You\'re all set up as a Poster.', {
-          description: 'Ready to post tasks and get help.',
+        router.push('/onboarding/skills-selection');
+      } else if (selectedGoal === 'earn') {
+        // Path 2: Earn Money → Set role tasker and go home (no location/skills)
+        await profilesApi.upsertProfile({
+          roles: ['tasker'],
         });
 
+        patchUser({ roles: ['tasker'] });
         router.push('/home');
-      } else if (selectedGoal === 'earn') {
-        // Path 2: Earn money → Ask location + skills in the same page
-        // Store selected goal in sessionStorage to know user wants tasker role
-        if (typeof window !== 'undefined') {
-          sessionStorage.setItem('selectedGoal', 'earn');
-        }
-
-        // Navigate to unified location + skills page
-        router.push('/onboarding/skills-selection');
       }
     } catch (error) {
       console.error('Error in goal selection:', error);
@@ -118,7 +113,7 @@ export default function GoalSelectionPage() {
 
             {/* Text */}
             <h2 className="text-xl font-bold mt-1" style={{ color: DARK }}>
-              Get things done
+              Get Help
             </h2>
             <p className="text-gray-600 text-sm mt-1.5 leading-6">
               Post tasks and hire skilled professionals to help you get things done
@@ -161,7 +156,7 @@ export default function GoalSelectionPage() {
 
             {/* Text */}
             <h2 className="text-xl font-bold mt-1" style={{ color: DARK }}>
-              Earn money
+              Earn Money
             </h2>
             <p className="text-gray-600 text-sm mt-1.5 leading-6">
               Offer your services and skills to earn money by helping others

@@ -1,10 +1,8 @@
 'use client';
 
 /**
- * Skills Selection Page (Onboarding)
- * User selects their skills/services after choosing "Earn money" goal
- * Shows categories that match tasker role
- * Appears after location confirmation
+ * Poster Location Page (Onboarding)
+ * User sets location using GPS after choosing "Get Help"
  */
 
 import React, { useState } from 'react';
@@ -15,43 +13,16 @@ import { ChevronRight, MapPin, LocateFixed } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { profilesApi } from '@/lib/api/endpoints/profiles';
 import { useUserStore } from '@/lib/state/userStore';
-import { postTaskCategories } from '@/lib/data/categories';
 
 const PRIMARY_YELLOW = '#f9b233';
 const DARK = '#222';
 
-const HYDERABAD_LOCATION_SUGGESTIONS = [
-  'Madhapur, Hyderabad',
-  'Kondapur, Hyderabad',
-  'Gachibowli, Hyderabad',
-  'Hitech City, Hyderabad',
-  'Kukatpally, Hyderabad',
-  'Miyapur, Hyderabad',
-  'Jubilee Hills, Hyderabad',
-  'Banjara Hills, Hyderabad',
-  'Begumpet, Hyderabad',
-  'Ameerpet, Hyderabad',
-  'Secunderabad, Hyderabad',
-  'Uppal, Hyderabad',
-  'LB Nagar, Hyderabad',
-  'Manikonda, Hyderabad',
-  'Nallagandla, Hyderabad',
-];
-
 export default function SkillsSelectionPage() {
   const router = useRouter();
-  const categories = postTaskCategories;
   const [locationInput, setLocationInput] = useState('');
   const [detectingLocation, setDetectingLocation] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [showSkillsStep, setShowSkillsStep] = useState(false);
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const patchUser = useUserStore((state) => state.patchUser);
-
-  const filteredLocations = HYDERABAD_LOCATION_SUGGESTIONS.filter((item) =>
-    item.toLowerCase().includes(locationInput.trim().toLowerCase())
-  ).slice(0, 6);
 
   const resolveCoordinatesToAddress = async (
     latitude: number,
@@ -102,7 +73,6 @@ export default function SkillsSelectionPage() {
       const { latitude, longitude } = position.coords;
       const fullAddress = await resolveCoordinatesToAddress(latitude, longitude);
       setLocationInput(fullAddress);
-      setShowSuggestions(false);
 
       toast.success('Location detected', {
         description: fullAddress,
@@ -110,45 +80,17 @@ export default function SkillsSelectionPage() {
     } catch (error) {
       console.error('GPS detection failed', error);
       toast.error('Unable to detect location', {
-        description: 'Please allow location permission or type area and city manually.',
+        description: 'Please allow location permission.',
       });
     } finally {
       setDetectingLocation(false);
     }
   };
 
-  const toggleSkill = (categorySlug: string) => {
-    setSelectedSkills((prev) => {
-      if (prev.includes(categorySlug)) {
-        return prev.filter((s) => s !== categorySlug);
-      } else {
-        return [...prev, categorySlug];
-      }
-    });
-  };
-
-  const handleContinueToSkills = () => {
-    if (!locationInput.trim()) {
-      toast.error('Please enter your location', {
-        description: 'Select or type your location to continue.',
-      });
-      return;
-    }
-
-    setShowSkillsStep(true);
-  };
-
   const handleContinue = async () => {
     if (!locationInput.trim()) {
-      toast.error('Please enter your location', {
-        description: 'Type your area and choose a location from suggestions.',
-      });
-      return;
-    }
-
-    if (selectedSkills.length === 0) {
-      toast.error('Please select at least one skill', {
-        description: 'Choose the skills you want to offer on ExtraHand.',
+      toast.error('Please detect your location', {
+        description: 'Use GPS detection to continue.',
       });
       return;
     }
@@ -156,41 +98,27 @@ export default function SkillsSelectionPage() {
     setIsSubmitting(true);
 
     try {
-      // Save selected skills and role to user profile
-      const skillsList = selectedSkills.map((slug) => {
-        const category = categories.find((c) => c.id === slug);
-        return {
-          name: category?.label || slug,
-          category: slug,
-        };
-      });
-
       await profilesApi.upsertProfile({
-        roles: ['tasker'],
-        skills: {
-          list: skillsList,
-        },
+        roles: ['poster'],
       });
 
-      // Update local store with tasker role
       patchUser({
-        roles: ['tasker'],
+        roles: ['poster'],
       });
 
       if (typeof window !== 'undefined') {
-        sessionStorage.setItem('pendingTaskerLocationText', locationInput.trim());
+        sessionStorage.setItem('pendingPosterLocationText', locationInput.trim());
       }
 
-      toast.success('Profile setup complete!', {
-        description: 'Welcome to ExtraHand. Let\'s get you earning!',
+      toast.success('Location set successfully!', {
+        description: 'Welcome to ExtraHand.',
       });
 
-      // Redirect to home
       setTimeout(() => {
         router.push('/home');
-      }, 800);
+      }, 600);
     } catch (error) {
-      console.error('Error saving skills:', error);
+      console.error('Error saving location:', error);
       toast.error('Something went wrong', {
         description: 'Please try again.',
       });
@@ -200,18 +128,14 @@ export default function SkillsSelectionPage() {
 
   return (
     <div className="min-h-screen bg-linear-to-b from-white to-gray-50 flex flex-col">
-      {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-start px-4 md:px-6 py-8">
         <div className="w-full max-w-3xl">
-          {/* Heading */}
           <div className="text-center mb-5">
             <h1 className="text-2xl md:text-3xl font-bold" style={{ color: DARK }}>
-              {showSkillsStep ? 'Select your skills' : 'Set your location'}
+              Set your location
             </h1>
             <p className="text-gray-600 text-sm mt-2">
-              {showSkillsStep
-                ? 'Choose the services you want to offer.'
-                : 'First set your location, then continue to skills.'}
+              Detect your current location using GPS.
             </p>
           </div>
 
@@ -241,153 +165,29 @@ export default function SkillsSelectionPage() {
               )}
             </Button>
 
-            <p className="mb-2 text-xs text-gray-500">or type area and city</p>
-
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
               <Input
                 value={locationInput}
-                placeholder="Type area/city, e.g. Madh"
+                placeholder="Detected location will appear here"
                 className="pl-10"
-                onFocus={() => setShowSuggestions(true)}
-                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-                onChange={(e) => {
-                  setLocationInput(e.target.value);
-                  setShowSuggestions(true);
-                }}
+                readOnly
               />
-
-              {showSuggestions && locationInput.trim().length > 0 && filteredLocations.length > 0 && (
-                <div className="absolute z-20 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
-                  {filteredLocations.map((item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      className="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        setLocationInput(item);
-                        setShowSuggestions(false);
-                      }}
-                    >
-                      {item}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
-
-            {!showSkillsStep && (
-              <Button
-                type="button"
-                className="mt-3 w-full h-11 text-sm font-semibold"
-                style={{
-                  backgroundColor: PRIMARY_YELLOW,
-                  color: DARK,
-                }}
-                disabled={!locationInput.trim() || detectingLocation || isSubmitting}
-                onClick={handleContinueToSkills}
-              >
-                Continue to skills
-              </Button>
-            )}
           </div>
 
-          {/* Categories */}
-          {showSkillsStep && categories.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-600">No categories available</p>
-            </div>
-          ) : showSkillsStep ? (
-            <>
-              {/* Categories Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
-                {categories.map((category) => (
-                  <button
-                    key={category.id}
-                    onClick={() => toggleSkill(category.id || '')}
-                    className={`relative p-3 md:p-4 rounded-xl border-2 transition-all duration-200 text-left ${
-                      selectedSkills.includes(category.id || '')
-                        ? 'border-yellow-400 bg-yellow-50 shadow-lg shadow-yellow-100'
-                        : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
-                    }`}
-                    disabled={isSubmitting}
-                  >
-                    {/* Checkmark for selected state */}
-                    {selectedSkills.includes(category.id || '') && (
-                      <div className="absolute top-3 right-3">
-                        <div className="w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center">
-                          <svg
-                            className="w-3 h-3 text-white"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={3}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Category Name */}
-                    <h3 className="font-semibold text-gray-900 text-sm leading-5">
-                      {category.label}
-                    </h3>
-                  </button>
-                ))}
-              </div>
-
-              {/* Selected Count Info */}
-              <div className="text-center mb-6">
-                <p className="text-sm text-gray-600">
-                  {selectedSkills.length === 0
-                    ? 'Select at least one skill to continue'
-                    : `You've selected ${selectedSkills.length} skill${selectedSkills.length !== 1 ? 's' : ''}`}
-                </p>
-              </div>
-
-              {/* Continue Button */}
-              <Button
-                onClick={handleContinue}
-                disabled={!locationInput.trim() || selectedSkills.length === 0 || isSubmitting}
-                className="w-full h-12 text-base font-semibold"
-                style={{
-                  backgroundColor: PRIMARY_YELLOW,
-                  color: DARK,
-                }}
-                onMouseEnter={(e) => {
-                  if (!(selectedSkills.length === 0 || isSubmitting)) {
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      '#f5a200';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor =
-                    PRIMARY_YELLOW;
-                }}
-              >
-                {isSubmitting ? 'Setting up...' : 'Continue'}
-                {!isSubmitting && <ChevronRight className="w-5 h-5 ml-2" />}
-              </Button>
-            </>
-          ) : null}
-
-          {showSkillsStep && (
-            <Button
-              type="button"
-              variant="outline"
-              className="mt-3 w-full"
-              onClick={() => setShowSkillsStep(false)}
-              disabled={isSubmitting}
-            >
-              Edit location
-            </Button>
-          )}
+          <Button
+            onClick={handleContinue}
+            disabled={!locationInput.trim() || isSubmitting}
+            className="w-full h-12 text-base font-semibold"
+            style={{
+              backgroundColor: PRIMARY_YELLOW,
+              color: DARK,
+            }}
+          >
+            {isSubmitting ? 'Saving...' : 'Continue'}
+            {!isSubmitting && <ChevronRight className="w-5 h-5 ml-2" />}
+          </Button>
         </div>
       </div>
     </div>

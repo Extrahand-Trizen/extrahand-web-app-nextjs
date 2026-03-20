@@ -3,7 +3,7 @@
  * When NEXT_PUBLIC_LOCAL_TEST=true and on localhost: phone +91 9876543210, OTP 123456.
  */
 
-const DUMMY_PHONES_LAST10 = ["9876543210", "1234567890"];
+const DUMMY_PHONES_LAST10 = ["9876543210", "9876543211"];
 export const DUMMY_OTP = "654321";
 
 function getLocalTestEnabled(): boolean {

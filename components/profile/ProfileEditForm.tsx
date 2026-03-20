@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { UserProfile } from "@/types/user";
 import { api } from "@/lib/api";
 import { isValidImageType, isValidFileSize } from "@/lib/utils/sanitization";
+import { postTaskCategories } from "@/lib/data/categories";
 
 interface ProfileEditFormProps {
    user: UserProfile;
@@ -63,8 +64,33 @@ export function ProfileEditForm({
    const [isSaving, setIsSaving] = useState(false);
    const [errors, setErrors] = useState<Record<string, string>>({});
    const [newSkill, setNewSkill] = useState("");
+   const [skillsInputFocused, setSkillsInputFocused] = useState(false);
    const [hasChanges, setHasChanges] = useState(false);
    const fileInputRef = useRef<HTMLInputElement>(null);
+   const suggestedSkills = useMemo(() => {
+      const query = newSkill.trim().toLowerCase();
+      return postTaskCategories
+         .map((item) => item.label)
+         .filter((name) => {
+            if (!query) return false;
+            return name.toLowerCase().includes(query);
+         })
+         .filter(
+            (name) =>
+               !formData.skills.some(
+                  (skill) => skill.toLowerCase() === name.toLowerCase()
+               )
+         )
+         .slice(0, 8);
+   }, [formData.skills, newSkill]);
+
+
+   const cachedPhotoUrl = React.useMemo(() => {
+      if (!photoURL) return "";
+      const rawVersion = user.updatedAt ? new Date(user.updatedAt).getTime() : Date.now();
+      const separator = photoURL.includes("?") ? "&" : "?";
+      return `${photoURL}${separator}v=${rawVersion}`;
+   }, [photoURL, user.updatedAt]);
 
    const MAX_PHOTO_MB = 5;
 
@@ -165,16 +191,34 @@ export function ProfileEditForm({
    };
 
    const addSkill = () => {
+      const cleanSkill = newSkill.trim();
+      if (!cleanSkill) return;
       if (
-         newSkill.trim() &&
-         !formData.skills.includes(newSkill.trim().toLowerCase())
+         formData.skills.some(
+            (existingSkill) =>
+               existingSkill.toLowerCase() === cleanSkill.toLowerCase()
+         )
       ) {
-         updateField("skills", [
-            ...formData.skills,
-            newSkill.trim().toLowerCase(),
-         ]);
          setNewSkill("");
+         return;
       }
+
+      updateField("skills", [...formData.skills, cleanSkill]);
+      setNewSkill("");
+   };
+
+   const addSuggestedSkill = (skillName: string) => {
+      if (
+         formData.skills.some(
+            (existingSkill) =>
+               existingSkill.toLowerCase() === skillName.toLowerCase()
+         )
+      ) {
+         return;
+      }
+
+      updateField("skills", [...formData.skills, skillName]);
+      setNewSkill("");
    };
 
    const removeSkill = (skillToRemove: string) => {
@@ -214,7 +258,7 @@ export function ProfileEditForm({
       setHasChanges(true);
    };
 
-   const displayPhotoUrl = photoPreviewUrl || photoURL || undefined;
+   const displayPhotoUrl = photoPreviewUrl || cachedPhotoUrl || undefined;
 
    return (
       <div className="max-w-4xl space-y-4 sm:space-y-6">
@@ -493,26 +537,53 @@ export function ProfileEditForm({
             </div>
 
             {/* Add New Skill */}
-            <div className="flex gap-2">
-               <Input
-                  value={newSkill}
-                  onChange={(e) => setNewSkill(e.target.value)}
-                  placeholder="Add a skill..."
-                  className="flex-1 h-9 sm:h-10 text-xs md:text-sm"
-                  onKeyDown={(e) =>
-                     e.key === "Enter" && (e.preventDefault(), addSkill())
-                  }
-               />
-               <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={addSkill}
-                  disabled={!newSkill.trim()}
-                  className="size-8 md:size-9 sm:size-10"
-               >
-                  <Plus className="size-3.5 md:size-4" />
-               </Button>
+            <div className="relative">
+               <div className="flex gap-2">
+                  <Input
+                     value={newSkill}
+                     onChange={(e) => setNewSkill(e.target.value)}
+                     placeholder="Add a skill..."
+                     className="flex-1 h-9 sm:h-10 text-xs md:text-sm"
+                     onFocus={() => setSkillsInputFocused(true)}
+                     onBlur={() => {
+                        setTimeout(() => setSkillsInputFocused(false), 120);
+                     }}
+                     onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                           e.preventDefault();
+                           addSkill();
+                        }
+                     }}
+                  />
+                  <Button
+                     type="button"
+                     variant="outline"
+                     size="icon"
+                     onClick={addSkill}
+                     disabled={!newSkill.trim()}
+                     className="size-8 md:size-9 sm:size-10"
+                  >
+                     <Plus className="size-3.5 md:size-4" />
+                  </Button>
+               </div>
+
+               {skillsInputFocused && newSkill.trim().length > 0 && suggestedSkills.length > 0 && (
+                  <div className="absolute z-20 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
+                     {suggestedSkills.map((skill) => (
+                        <button
+                           key={skill}
+                           type="button"
+                           className="block w-full px-3 py-2 text-left text-xs sm:text-sm hover:bg-gray-50"
+                           onPointerDown={(e) => {
+                              e.preventDefault();
+                              addSuggestedSkill(skill);
+                           }}
+                        >
+                           {skill}
+                        </button>
+                     ))}
+                  </div>
+               )}
             </div>
             <p className="text-[10px] sm:text-xs text-gray-500 mt-2">
                Add skills to help people find you for relevant tasks
