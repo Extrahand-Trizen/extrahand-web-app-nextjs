@@ -40,6 +40,34 @@ function buildAuthHeaders(request: NextRequest): HeadersInit {
   return headers;
 }
 
+function normalizeNotificationsPayload(raw: any) {
+  const nested = raw?.data ?? {};
+  const notifications =
+    (Array.isArray(raw?.notifications) && raw.notifications) ||
+    (Array.isArray(nested?.notifications) && nested.notifications) ||
+    [];
+  const unreadCount =
+    typeof raw?.unreadCount === 'number'
+      ? raw.unreadCount
+      : typeof nested?.unreadCount === 'number'
+      ? nested.unreadCount
+      : 0;
+  const hasMore =
+    typeof raw?.hasMore === 'boolean'
+      ? raw.hasMore
+      : typeof nested?.hasMore === 'boolean'
+      ? nested.hasMore
+      : false;
+
+  return {
+    success: raw?.success !== false,
+    notifications,
+    unreadCount,
+    hasMore,
+    ...(raw?.message ? { message: raw.message } : {}),
+  };
+}
+
 /**
  * GET /api/notifications
  * Fetch in-app notifications for current user
@@ -70,7 +98,7 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json();
-    return NextResponse.json(data);
+    return NextResponse.json(normalizeNotificationsPayload(data));
   } catch (error) {
     console.error('Error fetching notifications:', error);
     return NextResponse.json(
@@ -82,39 +110,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
-
-/**
- * GET /api/notifications/unread-count
- * Get unread notification count
- */
-export async function GET_UNREAD(request: NextRequest) {
-  if (request.nextUrl.pathname.includes('unread-count')) {
-    try {
-      const response = await fetch(
-        `${API_GATEWAY_URL}/api/v1/notifications/in-app/unread-count`,
-        {
-          method: 'GET',
-          headers: buildAuthHeaders(request),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Notification service error: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      return NextResponse.json(data);
-    } catch (error) {
-      console.error('Error fetching unread count:', error);
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: error instanceof Error ? error.message : 'Failed to fetch unread count'
-        },
-        { status: 500 }
-      );
-    }
-  }
-  return GET(request);
 }

@@ -5,7 +5,7 @@
  * User sets location using GPS after choosing "Get Help"
  */
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -37,7 +37,33 @@ export default function SkillsSelectionPage() {
   } | null>(null);
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
   const patchUser = useUserStore((state) => state.patchUser);
+
+  const normalizeAddress = (value: string) =>
+    value
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .replace(/[,.]+/g, '');
+
+  const getPrimaryAddressLine = () => {
+    const fromMeta = [resolvedLocationMeta?.landmark, resolvedLocationMeta?.area]
+      .filter((item): item is string => !!item && item.trim().length > 0)
+      .join(', ')
+      .trim();
+
+    if (fromMeta) return fromMeta;
+
+    const fromDetected = locationInput
+      .split(',')
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .slice(0, 2)
+      .join(', ');
+
+    return fromDetected || locationInput.trim();
+  };
 
   const resolveCoordinatesToAddress = async (
     latitude: number,
@@ -141,6 +167,8 @@ export default function SkillsSelectionPage() {
   };
 
   const handleContinue = async () => {
+    if (isSubmittingRef.current || isSubmitting) return;
+
     if (!locationInput.trim()) {
       toast.error('Please detect your location', {
         description: 'Use GPS detection to continue.',
@@ -148,10 +176,12 @@ export default function SkillsSelectionPage() {
       return;
     }
 
+    isSubmittingRef.current = true;
     setIsSubmitting(true);
 
     try {
       const selectedRole = selectedGoal === 'earn' ? 'tasker' : 'poster';
+      const primaryAddressLine = getPrimaryAddressLine();
 
       await profilesApi.upsertProfile({
         roles: [selectedRole],
@@ -180,8 +210,13 @@ export default function SkillsSelectionPage() {
       if (locationCoords) {
         const existing = await addressesApi.getAddresses();
         const sameAddress = existing.find(
-          (addr) =>
-            addr.addressLine1.trim().toLowerCase() === locationInput.trim().toLowerCase()
+          (addr) => {
+            const existingLine = normalizeAddress(addr.addressLine1 || '');
+            const newLine = normalizeAddress(primaryAddressLine);
+            const existingCity = normalizeAddress(addr.city || '');
+            const newCity = normalizeAddress(resolvedLocationMeta?.city || '');
+            return existingLine === newLine && existingCity === newCity;
+          }
         );
 
         if (sameAddress) {
@@ -195,7 +230,7 @@ export default function SkillsSelectionPage() {
             isDefault: true,
             name: user?.name || 'User',
             phone: user?.phone || '',
-            addressLine1: locationInput.trim(),
+            addressLine1: primaryAddressLine,
             addressLine2: resolvedLocationMeta?.area || '',
             landmark: resolvedLocationMeta?.landmark,
             city: resolvedLocationMeta?.city || '',
@@ -227,6 +262,7 @@ export default function SkillsSelectionPage() {
         description: 'Please try again.',
       });
       setIsSubmitting(false);
+      isSubmittingRef.current = false;
     }
   };
 

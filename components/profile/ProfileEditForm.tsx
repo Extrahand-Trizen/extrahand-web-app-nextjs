@@ -66,6 +66,7 @@ export function ProfileEditForm({
    const [newSkill, setNewSkill] = useState("");
    const [skillsInputFocused, setSkillsInputFocused] = useState(false);
    const [hasChanges, setHasChanges] = useState(false);
+   const [activeSaveSection, setActiveSaveSection] = useState<string | null>(null);
    const fileInputRef = useRef<HTMLInputElement>(null);
    const suggestedSkills = useMemo(() => {
       const query = newSkill.trim().toLowerCase();
@@ -145,9 +146,11 @@ export function ProfileEditForm({
       return Object.keys(newErrors).length === 0;
    };
 
-   const handleSave = async () => {
+   const handleSave = async (sectionKey: string) => {
+      if (isSaving) return;
       if (!validateForm()) return;
 
+      setActiveSaveSection(sectionKey);
       setIsSaving(true);
       try {
          let savedPhotoURL: string | undefined = photoURL || undefined;
@@ -187,8 +190,34 @@ export function ProfileEditForm({
          toast.error("Failed to save profile. Please try again.");
       } finally {
          setIsSaving(false);
+         setActiveSaveSection(null);
       }
    };
+
+   const renderSaveButton = (sectionKey: string) => (
+      <div className="flex justify-end pt-2">
+         <Button
+            type="button"
+            onClick={() => handleSave(sectionKey)}
+            disabled={isSaving || !hasChanges}
+            className="min-w-24 sm:min-w-[130px] bg-primary-500 hover:bg-primary-600"
+            size="sm"
+         >
+            {isSaving && activeSaveSection === sectionKey ? (
+               <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <span className="hidden sm:inline">Saving...</span>
+                  <span className="sm:hidden">...</span>
+               </>
+            ) : (
+               <>
+                  <Check className="size-3.5 md:size-4 mr-2" />
+                  Save
+               </>
+            )}
+         </Button>
+      </div>
+   );
 
    const addSkill = () => {
       const cleanSkill = newSkill.trim();
@@ -270,6 +299,13 @@ export function ProfileEditForm({
             <p className="text-xs sm:text-sm text-gray-500 mt-1">
                Update your personal information and how you appear on ExtraHand
             </p>
+            {hasChanges && (
+               <p className="text-xs sm:text-sm text-amber-600 flex items-center gap-1.5 mt-2">
+                  <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">You have unsaved changes</span>
+                  <span className="sm:hidden">Unsaved changes</span>
+               </p>
+            )}
          </div>
 
          {/* Photo Section */}
@@ -316,6 +352,7 @@ export function ProfileEditForm({
                   </p>
                </div>
             </div>
+            {renderSaveButton("photo")}
          </div>
 
          {/* Basic Info */}
@@ -395,6 +432,7 @@ export function ProfileEditForm({
                   {formData.bio.length}/500
                </p>
             </div>
+            {renderSaveButton("basic")}
          </div>
 
          {/* Contact Info */}
@@ -476,6 +514,7 @@ export function ProfileEditForm({
                   This helps users find you in their area
                </p>
             </div>
+            {renderSaveButton("contact")}
          </div>
 
          {/* Account Type */}
@@ -509,6 +548,7 @@ export function ProfileEditForm({
                   Business
                </button>
             </div>
+            {renderSaveButton("accountType")}
          </div>
 
          {/* Skills */}
@@ -588,53 +628,7 @@ export function ProfileEditForm({
             <p className="text-[10px] sm:text-xs text-gray-500 mt-2">
                Add skills to help people find you for relevant tasks
             </p>
-         </div>
-
-         {/* Save Actions */}
-         <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-            <div>
-               {hasChanges && (
-                  <p className="text-xs sm:text-sm text-amber-600 flex items-center gap-1.5">
-                     <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                     <span className="hidden sm:inline">
-                        You have unsaved changes
-                     </span>
-                     <span className="sm:hidden">Unsaved changes</span>
-                  </p>
-               )}
-            </div>
-            <div className="flex gap-2 sm:gap-3">
-               {onCancel && (
-                  <Button
-                     variant="ghost"
-                     onClick={onCancel}
-                     disabled={isSaving}
-                     size="sm"
-                     className="text-xs h-9 px-3"
-                  >
-                     Cancel
-                  </Button>
-               )}
-               <Button
-                  onClick={handleSave}
-                  disabled={isSaving || !hasChanges}
-                  className="min-w-20 sm:min-w-[100px] bg-primary-500 hover:bg-primary-600"
-                  size="sm"
-               >
-                  {isSaving ? (
-                     <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        <span className="hidden sm:inline">Saving...</span>
-                        <span className="sm:hidden">...</span>
-                     </>
-                  ) : (
-                     <>
-                        <Check className="size-3.5 md:size-4 mr-2" />
-                        Save
-                     </>
-                  )}
-               </Button>
-            </div>
+            {renderSaveButton("skills")}
          </div>
       </div>
    );
