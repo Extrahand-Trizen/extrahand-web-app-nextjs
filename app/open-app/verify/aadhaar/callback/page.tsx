@@ -33,8 +33,10 @@ export default function OpenAppAadhaarCallbackPage() {
       // 2) On Android, some webviews/browsers need intent:// fallback.
       if (isAndroid) {
         window.setTimeout(() => {
+          // If app opened successfully, page becomes hidden; skip fallback.
+          if (document.visibilityState === "hidden") return;
           window.location.href = ANDROID_INTENT_LINK;
-        }, fromUserClick ? 120 : 280);
+        }, fromUserClick ? 900 : 1200);
       }
     } catch {
       setOpenError("Could not trigger app open. Please use the button below to retry.");
