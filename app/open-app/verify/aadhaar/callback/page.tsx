@@ -10,8 +10,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 
 const APP_DEEP_LINK = "extrahand://verify/aadhaar/callback";
-const ANDROID_INTENT_LINK =
-  "intent://verify/aadhaar/callback#Intent;scheme=extrahand;package=com.extrahand;end";
 
 export default function OpenAppAadhaarCallbackPage() {
   const [attempted, setAttempted] = useState(false);
@@ -28,15 +26,20 @@ export default function OpenAppAadhaarCallbackPage() {
       setAttempted(true);
 
       // 1) Try standard deep link first.
-      window.location.href = APP_DEEP_LINK;
+      window.location.assign(APP_DEEP_LINK);
 
-      // 2) On Android, some webviews/browsers need intent:// fallback.
+      // 2) Some Android webviews block direct navigation but allow iframe-based scheme triggers.
       if (isAndroid) {
         window.setTimeout(() => {
-          // If app opened successfully, page becomes hidden; skip fallback.
           if (document.visibilityState === "hidden") return;
-          window.location.href = ANDROID_INTENT_LINK;
-        }, fromUserClick ? 900 : 1200);
+          const iframe = document.createElement("iframe");
+          iframe.style.display = "none";
+          iframe.src = APP_DEEP_LINK;
+          document.body.appendChild(iframe);
+          window.setTimeout(() => {
+            document.body.removeChild(iframe);
+          }, 1200);
+        }, fromUserClick ? 300 : 600);
       }
     } catch {
       setOpenError("Could not trigger app open. Please use the button below to retry.");
@@ -70,7 +73,7 @@ export default function OpenAppAadhaarCallbackPage() {
       </a>
       {attempted && !openError && (
         <p className="mt-4 text-xs text-gray-500 text-center max-w-xs">
-          If nothing happens, switch to your browser (Chrome/Safari) and tap the button again.
+          If nothing happens, open this page in Chrome/Safari and tap the button again.
         </p>
       )}
       {openError && (
