@@ -32,9 +32,10 @@ export default function LocationConfirmationPage() {
   }, []);
 
   useEffect(() => {
-    // Auto-navigate to role selection after 1 second
+    // Auto-navigate to skills selection after 1 second
+    // (User selected "Earn money" goal, so next is skills selection)
     const timer = setTimeout(() => {
-      router.push('/onboarding/role-selection');
+      router.push('/onboarding/skills-selection');
     }, 1000);
 
     return () => clearTimeout(timer);

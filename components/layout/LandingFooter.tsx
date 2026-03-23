@@ -19,7 +19,7 @@ const footerLinks = {
   discover: {
     title: "Discover",
     links: [
-      { label: "How it Works", href: "/#how-it-works" },
+      { label: "How it Works", href: "/how-it-works#how-it-works" },
       { label: "Browse Categories", href: "https://extrahand.in/discover" },
       { label: "Trust & Safety", href: "/trust-safety" },
       { label: "Pricing", href: "/pricing" },
@@ -101,7 +101,7 @@ export const LandingFooter: React.FC = () => {
     const hasHowItWorks = column.links.some((link) => link.label === "How it Works");
     if (hasHowItWorks) return column.links;
 
-    return [{ label: "How it Works", href: "/#how-it-works" }, ...column.links];
+    return [{ label: "How it Works", href: "/how-it-works#how-it-works" }, ...column.links];
   };
 
   return (

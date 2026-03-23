@@ -53,6 +53,10 @@ export default function PublicLayout({
          tryScroll();
       };
 
+      const scrollToTop = () => {
+         window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      };
+
       const handleHashChange = () => {
          scrollToHowItWorks();
       };
@@ -60,13 +64,53 @@ export default function PublicLayout({
       window.addEventListener("hashchange", handleHashChange);
       window.addEventListener("load", handleHashChange);
 
-      if (window.location.hash === "#how-it-works") {
-         scrollToHowItWorks();
-      } else {
-         window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      if (pathname !== "/") {
+         scrollToTop();
+         return () => {
+            window.removeEventListener("hashchange", handleHashChange);
+            window.removeEventListener("load", handleHashChange);
+         };
       }
 
+      // pathname === "/": Next.js client nav can set pathname before the hash is applied.
+      // Do not scroll to top until we've given the URL a chance to include #how-it-works.
+      let cancelled = false;
+      let timeoutId: number | undefined;
+
+      const tryHowItWorksOrDeferTop = (): boolean => {
+         if (window.location.hash === "#how-it-works") {
+            scrollToHowItWorks();
+            return true;
+         }
+         return false;
+      };
+
+      if (tryHowItWorksOrDeferTop()) {
+         return () => {
+            cancelled = true;
+            if (timeoutId !== undefined) clearTimeout(timeoutId);
+            window.removeEventListener("hashchange", handleHashChange);
+            window.removeEventListener("load", handleHashChange);
+         };
+      }
+
+      requestAnimationFrame(() => {
+         if (cancelled) return;
+         if (tryHowItWorksOrDeferTop()) return;
+         requestAnimationFrame(() => {
+            if (cancelled) return;
+            if (tryHowItWorksOrDeferTop()) return;
+            timeoutId = window.setTimeout(() => {
+               if (cancelled) return;
+               if (tryHowItWorksOrDeferTop()) return;
+               scrollToTop();
+            }, 120);
+         });
+      });
+
       return () => {
+         cancelled = true;
+         if (timeoutId !== undefined) clearTimeout(timeoutId);
          window.removeEventListener("hashchange", handleHashChange);
          window.removeEventListener("load", handleHashChange);
       };

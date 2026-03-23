@@ -62,7 +62,7 @@ export function TaskTrackingHeader({
    const categoryLabel = task.categoryLabel || task.subcategory || task.category;
 
    return (
-      <div className="bg-white/95 backdrop-blur-sm border-b border-secondary-100 sticky top-0 z-40">
+      <div className="bg-white/95 backdrop-blur-sm border-b border-secondary-100 sticky top-16 z-20">
          <div className="max-w-7xl mx-auto px-4 sm:px-6">
             {/* Back Button Row */}
             <div className="flex items-center justify-between h-12 md:h-14">
@@ -92,10 +92,10 @@ export function TaskTrackingHeader({
             {/* Title & Meta Row - stack on very small screens so title and badge don't overlap */}
             <div className="pb-3 md:pb-4">
                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4 mb-2">
-                  <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-secondary-900 line-clamp-2 leading-tight flex-1 min-w-0 break-words pr-2 sm:pr-0">
+                  <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-secondary-900 line-clamp-2 leading-tight flex-1 min-w-0 wrap-break-word pr-2 sm:pr-0">
                      {task.title}
                   </h1>
-                  <div className="flex-shrink-0 self-start sm:pt-0.5">
+                  <div className="shrink-0 self-start sm:pt-0.5">
                      <TaskStatusBadge status={task.status} size="sm" />
                   </div>
                </div>

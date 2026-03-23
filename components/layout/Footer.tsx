@@ -7,7 +7,7 @@ const footerColumns = [
   {
     title: 'Discover',
     links: [
-      { label: 'How it works', href: '/#how-it-works' },
+      { label: 'How it works', href: '/how-it-works#how-it-works' },
       { label: 'Earn money', href: '/coming-soon?type=info&label=Earn%20money' },
       { label: 'Cost Guides', href: '/coming-soon?type=info&label=Cost%20Guides' },
       { label: 'Service Guides', href: '/coming-soon?type=info&label=Service%20Guides' },

@@ -96,22 +96,50 @@ export default function LandingPage() {
       return () => window.removeEventListener("hashchange", updateAllow);
    }, []);
 
+   // Authenticated users on "/" are sent to /home unless they opened /#how-it-works.
+   // Client-side navigation can apply the hash after pathname updates; defer redirect
+   // so footer "How it Works" works after sign-in.
    useEffect(() => {
       if (loading || !isAuthenticated) return;
 
-      const hasHowItWorksHash =
-         typeof window !== "undefined" &&
-         window.location.hash === "#how-it-works";
+      let cancelled = false;
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
-      if (hasHowItWorksHash) {
-         return;
-      }
+      const syncHashAllow = () => {
+         if (typeof window === "undefined") return false;
+         if (window.location.hash === "#how-it-works") {
+            setAllowHowItWorks(true);
+            setHasAppliedHashScroll(false);
+            return true;
+         }
+         return false;
+      };
 
-      // Redirect authenticated users to home page
-      if (!allowHowItWorks) {
-         router.replace("/home");
-      }
-   }, [allowHowItWorks, isAuthenticated, loading, router]);
+      if (syncHashAllow()) return () => { cancelled = true; };
+
+      const scheduleRedirectIfStillPlainHome = () => {
+         timeoutId = window.setTimeout(() => {
+            if (cancelled) return;
+            if (syncHashAllow()) return;
+            router.replace("/home");
+         }, 200);
+      };
+
+      requestAnimationFrame(() => {
+         if (cancelled) return;
+         if (syncHashAllow()) return;
+         requestAnimationFrame(() => {
+            if (cancelled) return;
+            if (syncHashAllow()) return;
+            scheduleRedirectIfStillPlainHome();
+         });
+      });
+
+      return () => {
+         cancelled = true;
+         if (timeoutId !== undefined) clearTimeout(timeoutId);
+      };
+   }, [isAuthenticated, loading, router]);
 
    useEffect(() => {
       // Only scroll to section if explicitly requested via hash

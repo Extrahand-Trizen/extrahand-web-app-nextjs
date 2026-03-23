@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { TaskFormData } from "../TaskCreationFlow";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import {
    DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { postTaskCategories } from "@/lib/data/categories";
 
 interface TaskBasicsStepProps {
    form: UseFormReturn<TaskFormData>;
@@ -35,36 +36,7 @@ interface CategorySuggestion {
    confidence: number;
 }
 
-const CATEGORIES = [
-   { id: "ac-repair", label: "AC Repair & Service" },
-   { id: "appliance-repair", label: "Appliance Repair" },
-   { id: "beauty-services", label: "Beauty Services" },
-   { id: "car-washing", label: "Car Washing / Car Cleaning" },
-   { id: "carpenter", label: "Carpenter" },
-   { id: "cooking-home-chef", label: "Cooking / Home Chef" },
-   { id: "deep-cleaning", label: "Deep Cleaning" },
-   { id: "delivery-pickup-services", label: "Delivery / Pickup Services" },
-   { id: "driver-chauffeur", label: "Driver / Chauffeur" },
-   { id: "electrical", label: "Electrical" },
-   { id: "event-services", label: "Event Services" },
-   { id: "fitness-trainers", label: "Fitness Trainers" },
-   { id: "furniture-assembly", label: "Furniture Assembly" },
-   { id: "gardening", label: "Gardening" },
-   { id: "handyperson", label: "Handyperson / General Repairs" },
-   { id: "home-cleaning", label: "Home Cleaning" },
-   { id: "it-support", label: "IT Support / Laptop Repair" },
-   { id: "laundry-ironing", label: "Laundry / Ironing" },
-   { id: "massage-spa", label: "Massage / Spa" },
-   { id: "other", label: "Other" },
-   { id: "packers-movers", label: "Packers & Movers" },
-   { id: "painting", label: "Painting" },
-   { id: "pest-control", label: "Pest Control" },
-   { id: "photographer-videographer", label: "Photographer / Videographer" },
-   { id: "plumbing", label: "Plumbing" },
-   { id: "security-patrol", label: "Security Patrol / Watchman" },
-   { id: "tutors", label: "Tutors" },
-   { id: "water-tanker-services", label: "Water & Tanker Services" },
-];
+const CATEGORIES = postTaskCategories;
 
 const CATEGORY_TAGS: Record<string, string[]> = {
    "home-cleaning": ["dusting", "mopping", "vacuuming", "bathrooms", "kitchens", "pet-friendly", "eco-friendly"],
@@ -256,9 +228,7 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
    const [categoryEditedManually, setCategoryEditedManually] = useState(
       Boolean(form.getValues("category"))
    );
-   const [autoSelectedCategory, setAutoSelectedCategory] = useState<string | null>(
-      null
-   );
+   const autoSelectedCategoryRef = useRef<string | null>(null);
    const category = form.watch("category");
    const title = form.watch("title");
    const description = form.watch("description");
@@ -271,6 +241,8 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
    const shouldAutoSelect = isHighConfidence(categorySuggestions);
 
    useEffect(() => {
+      const autoSelectedCategory = autoSelectedCategoryRef.current;
+
       if (categoryEditedManually) return;
 
       if (!bestSuggestion) {
@@ -278,7 +250,7 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
             form.setValue("category", "", { shouldValidate: true, shouldDirty: true });
             form.setValue("subcategory", "", { shouldValidate: true, shouldDirty: true });
          }
-         setAutoSelectedCategory(null);
+         autoSelectedCategoryRef.current = null;
          return;
       }
 
@@ -287,7 +259,7 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
             form.setValue("category", "", { shouldValidate: true, shouldDirty: true });
             form.setValue("subcategory", "", { shouldValidate: true, shouldDirty: true });
          }
-         setAutoSelectedCategory(null);
+         autoSelectedCategoryRef.current = null;
          return;
       }
 
@@ -301,9 +273,8 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
             shouldDirty: true,
          });
       }
-      setAutoSelectedCategory(bestSuggestion.id);
+      autoSelectedCategoryRef.current = bestSuggestion.id;
    }, [
-      autoSelectedCategory,
       bestSuggestion,
       category,
       categoryEditedManually,
@@ -314,7 +285,7 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
    const selectCategory = (categoryId: string, isManualSelection = true) => {
       if (isManualSelection) {
          setCategoryEditedManually(true);
-         setAutoSelectedCategory(null);
+         autoSelectedCategoryRef.current = null;
       }
 
       if (category === categoryId) {

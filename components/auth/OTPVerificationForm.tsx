@@ -72,12 +72,16 @@ export function OTPVerificationForm({
    phone,
    userName = "",
    authType = "login",
-   redirectTo = "/home",
+   redirectTo = "",
    onSuccess,
 }: OTPVerificationFormProps) {
    const router = useRouter();
    const { refreshUserData } = useAuth();
    const loginToStore = useUserStore((state) => state.login);
+
+   const finalRedirectTo =
+      redirectTo ||
+      (authType === "signup" ? "/onboarding/goal-selection" : "/home");
    const hasAttemptedInitialSend = useRef(false);
    const lastSentPhone = useRef<string | null>(null);
 
@@ -341,7 +345,7 @@ export function OTPVerificationForm({
             setTimeout(() => {
                isVerifyingRef.current = false;
                if (onSuccess) onSuccess();
-               else window.location.href = redirectTo;
+               else window.location.href = finalRedirectTo;
             }, 800);
          } catch (err: any) {
             setOTPAuthInProgress(false);
@@ -482,7 +486,7 @@ export function OTPVerificationForm({
                onSuccess();
             } else {
                // Use hard navigation to ensure middleware re-checks auth state
-               window.location.href = redirectTo;
+               window.location.href = finalRedirectTo;
             }
          }, 800);
       } catch (error: any) {
