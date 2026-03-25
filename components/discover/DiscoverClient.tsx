@@ -16,6 +16,7 @@ import { useTasksInfinite } from "@/hooks/useTasksInfinite";
 import { serviceCategories } from "@/lib/data/categories";
 import { PrefetchTaskWrapper } from "@/hooks/usePrefetchTaskDetails";
 import { getLocationCoordinates } from "@/lib/utils/locationMapping";
+import { useAuth } from "@/lib/auth/context";
 
 const DEFAULT_CENTER = { lat: 17.385, lng: 78.4867 }; // Hyderabad
 
@@ -124,6 +125,7 @@ export function DiscoverClient({
 
   const isMobile = useIsMobile();
   const userProfile = useUserStore((state) => state.user);
+  const { loading: authLoading } = useAuth();
 
   const {
     data,
@@ -373,6 +375,10 @@ export function DiscoverClient({
                   </Button>
                 </div>
               ) : isLoading ? (
+                <div className="p-4">
+                  <TaskListSkeleton count={8} />
+                </div>
+              ) : authLoading && initialData && !userProfile?._id ? (
                 <div className="p-4">
                   <TaskListSkeleton count={8} />
                 </div>

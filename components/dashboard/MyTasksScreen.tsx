@@ -192,7 +192,7 @@ export default function MyTasksScreen() {
                               Location:
                            </span>
                            <span className="text-sm text-gray-900 font-semibold">
-                              {task.location.city || "N/A"}
+                              {!task.location?.coordinates || !task.location?.address ? "Remote" : task.location.city || "N/A"}
                            </span>
                         </div>
                         <div className="flex items-center justify-between">

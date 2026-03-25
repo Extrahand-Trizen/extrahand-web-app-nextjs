@@ -43,13 +43,6 @@ import { NotificationCenter } from "@/components/home";
 import { categoriesApi } from "@/lib/api/endpoints/categories";
 import type { UserCurrentStatus } from "@/types/dashboard";
 
-const USER_MENU_ITEMS = [
-   { label: "Home", route: "/home" },
-   { label: "Dashboard", route: "/tasks" },
-   { label: "Profile", route: "/profile" },
-   { label: "Post a Task", route: "/tasks/new" },
-];
-
 const navItems = [
    { label: "Categories", href: "#categories", hasDropdown: true },
    { label: "Browse tasks", href: "/discover" },
@@ -126,6 +119,13 @@ export const LandingHeader: React.FC = () => {
       .join("")
       .slice(0, 2)
       .toUpperCase();
+   const userMenuRole: "poster" | "tasker" = useMemo(() => {
+      const roles = userData?.roles ?? [];
+      if (roles.includes("tasker") || roles.includes("both")) {
+         return "tasker";
+      }
+      return "poster";
+   }, [userData?.roles]);
 
    // Handle scroll for sticky header styling
    useEffect(() => {
@@ -447,6 +447,7 @@ export const LandingHeader: React.FC = () => {
                            <UserMenu
                               displayName={displayName}
                               initials={initials}
+                              role={userMenuRole}
                               onNavigate={handleRouteChange}
                               onLogout={handleLogout}
                               open={isUserMenuOpen}
@@ -570,7 +571,9 @@ export const LandingHeader: React.FC = () => {
                                        className="w-full flex items-center gap-3 px-3 py-2.5 text-secondary-700 hover:bg-secondary-50 rounded-lg transition-colors"
                                     >
                                        <LayoutDashboard className="w-4 h-4" />
-                                       <span className="text-sm font-medium">Dashboard</span>
+                                       <span className="text-sm font-medium">
+                                          {userMenuRole === "poster" ? "My Tasks" : "My Applications"}
+                                       </span>
                                     </button>
                                     <button
                                        onClick={() => {

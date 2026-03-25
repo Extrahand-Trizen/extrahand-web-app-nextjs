@@ -9,6 +9,7 @@ import { QueryProvider } from "@/components/providers/QueryProvider";
 import { EnvironmentLogger } from "@/components/EnvironmentLogger";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { AutoApprovalRedirect } from "@/components/layout/AutoApprovalRedirect";
+import { ConditionalPublicChrome } from "@/components/layout/ConditionalPublicChrome";
 
 const inter = Inter({
    subsets: ["latin"],
@@ -102,7 +103,7 @@ export default function RootLayout({
                         <AutoApprovalRedirect />
                      </Suspense>
                      <Toaster />
-                     {children}
+                     <ConditionalPublicChrome>{children}</ConditionalPublicChrome>
                   </AuthProvider>
                </QueryProvider>
             </ErrorBoundary>

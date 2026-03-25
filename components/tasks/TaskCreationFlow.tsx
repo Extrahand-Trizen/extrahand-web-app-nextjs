@@ -49,6 +49,10 @@ const TOTAL_STEPS = 3;
 const MAX_RETRY_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 1000;
 const DRAFT_KEY = "taskDraft";
+const TOAST_ID_DRAFT_RESTORED = "task-create-draft-restored";
+const TOAST_ID_ADDRESS_REQUIRED = "task-create-address-required";
+const TOAST_ID_BUDGET_INVALID = "task-create-budget-invalid";
+const TOAST_ID_STEP_INVALID = "task-create-step-invalid";
 
 const URGENCY_SURCHARGES: Record<string, number> = {
    standard: 0,
@@ -366,6 +370,7 @@ export function TaskCreationFlow() {
    const [isSubmitting, setIsSubmitting] = useState(false);
    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
    const [retryCount, setRetryCount] = useState(0);
+   const [isStepTransitioning, setIsStepTransitioning] = useState(false);
    const [showAuthModal, setShowAuthModal] = useState(false);
    const [showVerificationModal, setShowVerificationModal] = useState(false);
    const [showEmailVerifyModal, setShowEmailVerifyModal] = useState(false);
@@ -451,6 +456,7 @@ export function TaskCreationFlow() {
             const normalized = normalizeDraft(parsedDraft);
             form.reset(normalized);
             toast.info("Draft restored", {
+               id: TOAST_ID_DRAFT_RESTORED,
                description: "Your previous progress has been loaded.",
                action: {
                   label: "Clear",
@@ -496,6 +502,13 @@ export function TaskCreationFlow() {
 
    // Handle navigation between steps
    const handleNext = useCallback(async () => {
+      if (isSubmitting || isStepTransitioning) {
+         return;
+      }
+
+      setIsStepTransitioning(true);
+
+      try {
       const fieldsToValidate =
          stepValidationFields[currentStep as keyof typeof stepValidationFields];
 
@@ -515,6 +528,7 @@ export function TaskCreationFlow() {
                   message: "Please select an address for in-person tasks",
                });
                toast.error("Address required for in-person tasks", {
+                  id: TOAST_ID_ADDRESS_REQUIRED,
                   description: "Select task location to continue.",
                });
                return;
@@ -533,6 +547,7 @@ export function TaskCreationFlow() {
                message: "Enter a budget between ₹50 and ₹50,000.",
             });
             toast.error("Enter a valid budget", {
+               id: TOAST_ID_BUDGET_INVALID,
                description: "Budget must be between ₹50 and ₹50,000.",
             });
             return;
@@ -564,6 +579,7 @@ export function TaskCreationFlow() {
                   : undefined;
 
             toast.error(primaryMessage, {
+               id: TOAST_ID_STEP_INVALID,
                description: secondary,
             });
             return;
@@ -581,7 +597,18 @@ export function TaskCreationFlow() {
             setHasUnsavedChanges(false);
          }
       }
-   }, [currentStep, form, stepValidationFields, hasUnsavedChanges, scrollToTop]);
+      } finally {
+         setIsStepTransitioning(false);
+      }
+   }, [
+      currentStep,
+      form,
+      stepValidationFields,
+      hasUnsavedChanges,
+      isStepTransitioning,
+      isSubmitting,
+      scrollToTop,
+   ]);
 
    const handleBack = useCallback(() => {
       if (currentStep > 1) {

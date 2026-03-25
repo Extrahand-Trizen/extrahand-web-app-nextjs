@@ -54,10 +54,29 @@ const parseLocationFromGeocode = (data: any): Partial<LocationData> => {
       console.warn("No pinCode found in geocoding data:", data);
    }
    
+   const city = data.raw?.address?.city || "";
+   const state = data.raw?.address?.state || "";
+   
+   // Parse address to show only until city to avoid duplication
+   // Extract street/area parts from the full address (everything before city)
+   const fullAddress = data.address || data.description || "";
+   let addressLine1 = fullAddress;
+   
+   // If we have city, extract the part of the address that's before or around the city
+   if (city && fullAddress) {
+      const cityIndex = fullAddress.toLowerCase().indexOf(city.toLowerCase());
+      if (cityIndex > 0) {
+         // Get everything before the city as address line 1
+         addressLine1 = fullAddress.substring(0, cityIndex).trim();
+         // Remove trailing commas or spaces
+         addressLine1 = addressLine1.replace(/[,\s]+$/, "");
+      }
+   }
+   
    return {
-      address: data.address || data.description || "",
-      city: data.raw?.address?.city || "",
-      state: data.raw?.address?.state || "",
+      address: addressLine1 || "",
+      city: city,
+      state: state,
       pinCode: pinCode,
       country: data.raw?.address?.country || "India",
    };
@@ -87,10 +106,12 @@ export function InteractiveLocationPicker({
    const [pendingAddressToBeSaved, setPendingAddressToBeSaved] = useState<{
       coordinates: [number, number];
       address: Partial<LocationData>;
+      fullAddress: string; // Store original full address for display
    } | null>(null);
    const [selectedAddressType, setSelectedAddressType] = useState<"Home" | "Work" | "Other">("Home");
    const [selectedSavedAddressId, setSelectedSavedAddressId] = useState<string | null>(null);
    const autoSelectRef = useRef(false); // Prevent duplicate auto-select
+   const locateToastShownRef = useRef(false); // Prevent duplicate toasts for "Locate Me"
 
    // Fetch saved addresses on mount
    useEffect(() => {
@@ -330,8 +351,12 @@ export function InteractiveLocationPicker({
          return;
       }
 
+      // Prevent duplicate location detection toasts
+      if (isLoadingLocation) {
+         return;
+      }
+
       setIsLoadingLocation(true);
-      toast.info("Getting your location...");
 
       navigator.geolocation.getCurrentPosition(
          async (position) => {
@@ -341,6 +366,7 @@ export function InteractiveLocationPicker({
             if (!isValidCoordinate(longitude, latitude)) {
                toast.error("Invalid coordinates received");
                setIsLoadingLocation(false);
+               locateToastShownRef.current = false;
                return;
             }
 
@@ -361,6 +387,7 @@ export function InteractiveLocationPicker({
 
                const data = await response.json();
                const locationData = parseLocationFromGeocode(data);
+               const fullAddress = data.address || data.description || ""; // Store the original full address
 
                const updatedLocation: LocationData = {
                   ...value,
@@ -368,15 +395,31 @@ export function InteractiveLocationPicker({
                   coordinates: coords,
                };
                onChange(updatedLocation);
-               setAddressInput(locationData.address || "");
+               setAddressInput(fullAddress || "");
                onCoordinatesChange?.(coords);
+               setSelectedSavedAddressId(null);
+
+               // Set pending address to show confirmation UI without needing to move cursor
+               setPendingAddressToBeSaved({
+                  coordinates: coords,
+                  address: {
+                     address: locationData.address || "",
+                     city: locationData.city || "",
+                     state: locationData.state || "",
+                     pinCode: locationData.pinCode || "",
+                     country: locationData.country || "India",
+                  },
+                  fullAddress: fullAddress,
+               });
 
                // Show success with pinCode if available
                const description = locationData.pinCode 
                   ? `${locationData.city || ""}, ${locationData.state || ""} - ${locationData.pinCode}`
                   : `${locationData.city || ""}, ${locationData.state || ""}`;
 
+               // Use toast ID to prevent duplicate toasts on rapid clicks
                toast.success("Location detected successfully!", {
+                  id: "TOAST_ID_LOCATION_DETECTED",
                   description: description,
                });
                
@@ -388,10 +431,12 @@ export function InteractiveLocationPicker({
                toast.error("Could not get address details");
             } finally {
                setIsLoadingLocation(false);
+               locateToastShownRef.current = false;
             }
          },
          (error) => {
             setIsLoadingLocation(false);
+            locateToastShownRef.current = false;
             let errorMessage = "Could not get your location";
 
             switch (error.code) {
@@ -416,7 +461,7 @@ export function InteractiveLocationPicker({
             maximumAge: 0,
          }
       );
-   }, [value, onChange, onCoordinatesChange]);
+   }, [value, onChange, onCoordinatesChange, isLoadingLocation]);
 
    // Handle address search (when user presses Enter or searches)
    const handleAddressSearch = useCallback(
@@ -533,6 +578,7 @@ export function InteractiveLocationPicker({
          console.log('Geocoding API response:', data);
          
          const locationData = parseLocationFromGeocode(data);
+         const fullAddress = data.address || data.description || ""; // Store original full address
          console.log('Parsed location data:', locationData);
 
          // Always apply dragged location immediately so the user sees it in the form.
@@ -545,7 +591,7 @@ export function InteractiveLocationPicker({
             coordinates: coords,
          };
 
-         setAddressInput(updatedLocation.address);
+         setAddressInput(fullAddress || "");
          onChange(updatedLocation);
          onCoordinatesChange?.(coords);
          setSelectedSavedAddressId(null);
@@ -561,6 +607,7 @@ export function InteractiveLocationPicker({
                country: locationData.country || "India",
                coordinates: coords,
             },
+            fullAddress: fullAddress,
          });
          
          // Log if pinCode is missing
@@ -578,6 +625,13 @@ export function InteractiveLocationPicker({
       setPendingAddressToBeSaved(null);
       toast.success("Using this location for your task");
    };
+
+   const handleGoogleAuthFailure = useCallback(() => {
+      toast.error("Google Maps failed to load", {
+         description:
+            "Please verify API key referrer restrictions for localhost and billing in Google Cloud.",
+      });
+   }, []);
 
    // Handle saving the selected address
    const handleSaveSelectedAddress = async () => {
@@ -823,6 +877,7 @@ export function InteractiveLocationPicker({
                         markerPosition={markerPosition}
                         onMarkerDragEnd={handleMarkerDrag}
                         apiKey={mapsApiKey}
+                        onGoogleAuthFailure={handleGoogleAuthFailure}
                      />
                   ) : (
                      <div className="absolute inset-0 flex items-center justify-center">
@@ -839,7 +894,7 @@ export function InteractiveLocationPicker({
                      <div className="space-y-1">
                         <p className="text-sm font-semibold text-primary-900">Use this location?</p>
                         <p className="text-xs text-primary-800 line-clamp-2">
-                           {pendingAddressToBeSaved.address.address}
+                           {pendingAddressToBeSaved.fullAddress}
                         </p>
                         <p className="text-xs text-primary-700">
                            {[pendingAddressToBeSaved.address.city, pendingAddressToBeSaved.address.state]

@@ -173,7 +173,7 @@ export function MyApplicationCard({
             <div className="flex items-center mb-3 text-sm">
                <span className="flex items-center gap-1 text-xs md:text-sm text-secondary-600">
                   <MapPin className="size-3 md:size-4" />
-                  <span className="font-medium">{task.location.city}</span>
+                  <span className="font-medium">{!task.location?.coordinates || !task.location?.address ? "Remote" : task.location.city}</span>
                </span>
             </div>
          )}

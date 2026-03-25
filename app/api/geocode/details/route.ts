@@ -79,15 +79,31 @@ export async function GET(request: NextRequest) {
 
       let postcode = components.postcode || "";
 
-      // Try extracting from formatted address as last resort
+      // Try extracting from formatted address as last resort (Indian pincodes are 6 digits)
       if (!postcode) {
+         // First try 6-digit postcodes (most common for India)
          const postcodeMatch = address?.match(/\b\d{6}\b/);
          if (postcodeMatch) {
             postcode = postcodeMatch[0];
          } else {
+            // Fallback to 5 digit postal codes for other countries
             const postcodeMatch5 = address?.match(/\b\d{5}\b/);
             postcode = postcodeMatch5 ? postcodeMatch5[0] : "";
          }
+      }
+      
+      // If still not found, try extracting from the end of the address string
+      if (!postcode && address) {
+         // Look for any sequence of digits at the end of the address or in the last part
+         const lastNumberMatch = address.match(/(\d{5,6})\s*$/);
+         if (lastNumberMatch) {
+            postcode = lastNumberMatch[1];
+         }
+      }
+      
+      // Log for debugging if postal code is missing
+      if (!postcode) {
+         console.warn(`No postal code found. Address: ${address}, Components:`, components);
       }
 
       const responseData = {

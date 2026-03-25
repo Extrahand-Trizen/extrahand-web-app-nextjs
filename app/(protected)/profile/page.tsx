@@ -647,7 +647,7 @@ function ProfilePageContent() {
             <ProfileSidebar
                activeSection={section}
                onSectionChange={goTo}
-               className="hidden lg:block sticky top-0"
+               className="hidden lg:block"
             />
             <main className="flex-1 min-h-screen">
                <div className="max-w-4xl mx-auto py-8">

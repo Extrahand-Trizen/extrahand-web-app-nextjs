@@ -270,6 +270,7 @@ export function TaskMap({
                typeof task.budget === "object"
                   ? task.budget.amount
                   : task.budget;
+            const isRemoteTask = !task.location?.coordinates || !task.location?.address;
             const infoContent = `
           <div style="padding: 12px; min-width: 250px; font-family: Inter, sans-serif;">
             <h3 style="font-weight: 600; margin: 0 0 8px 0; font-size: 15px; color: #0d1117;">
@@ -277,7 +278,7 @@ export function TaskMap({
             </h3>
             <div style="display: flex; align-items: center; margin-bottom: 6px; color: #6b7280; font-size: 13px;">
               <span style="margin-right: 6px;">📍</span>
-              <span>${task.location.city}, ${task.location.state}</span>
+              <span>${isRemoteTask ? "Remote" : `${task.location.city}, ${task.location.state}`}</span>
             </div>
             <div style="display: flex; align-items: center; margin-bottom: 6px; color: #6b7280; font-size: 13px;">
               <span style="margin-right: 6px;">💰</span>

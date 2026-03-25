@@ -5,7 +5,9 @@ import { NextResponse } from "next/server";
  * Returns the key securely from server environment
  */
 export async function GET() {
-   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+   const apiKey =
+      process.env.GOOGLE_MAPS_API_KEY ||
+      process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
    if (!apiKey) {
       return NextResponse.json(

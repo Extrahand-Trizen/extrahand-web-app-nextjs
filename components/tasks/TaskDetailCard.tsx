@@ -73,8 +73,9 @@ export function TaskDetailCard({ task, onClose }: TaskDetailCardProps) {
       ? displayTask.scheduledTime
       : "Anytime";
    
-   const locationLabel =
-      displayTask.location?.city?.trim() || displayTask.location?.address?.trim() || "Remote";
+   // Determine if task is remote
+   const isRemote = !displayTask.location?.coordinates || !displayTask.location?.address;
+   const locationLabel = isRemote ? "Remote" : displayTask.location?.city?.trim() || "Remote";
 
    const getTimeAgo = (date: Date) => {
       const now = new Date();

@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { getBadgeProgress } from '@/lib/api/badge';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getBadgeProgress, checkBadgeUpgrade } from '@/lib/api/badge';
 import { BadgeCheck, Crown, Shield, ShieldCheck } from 'lucide-react';
 
 interface BadgeDisplaySimpleProps {
@@ -39,13 +39,42 @@ const BADGE_NOTES: Record<string, string> = {
   elite: 'Admin approval required',
 };
 
+// Default data shown when the API has no record for this user yet
+const DEFAULT_BADGE_DATA = {
+  currentBadge: 'none',
+  currentReputation: 0,
+  badgeRequirements: {
+    basic:   { minReputation: 10, minTasks: 0, minRating: 0, description: 'Get started on the platform' },
+    verified:{ minReputation: 25, minTasks: 0, minRating: 0, description: 'Complete Aadhaar verification' },
+    trusted: { minReputation: 50, minTasks: 3, minRating: 4, description: 'Build a strong track record' },
+    elite:   { minReputation: 100, minTasks: 10, minRating: 4.5, description: 'Top-tier platform member' },
+  },
+};
+
 export default function BadgeDisplaySimple({ className = '' }: BadgeDisplaySimpleProps) {
+  const queryClient = useQueryClient();
+  const [initialized, setInitialized] = React.useState(false);
+
   const { data: badgeData, isLoading, error } = useQuery({
     queryKey: ['badgeProgress'],
     queryFn: getBadgeProgress,
     staleTime: 5 * 60 * 1000,
-    retry: 2,
+    retry: 1,
   });
+
+  // Auto-initialize badge record on first failure, then re-fetch
+  React.useEffect(() => {
+    if (error && !initialized) {
+      setInitialized(true);
+      checkBadgeUpgrade()
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: ['badgeProgress'] });
+        })
+        .catch(() => {
+          // silently ignore — we'll show the default view below
+        });
+    }
+  }, [error, initialized, queryClient]);
 
   if (isLoading) {
     return (
@@ -63,31 +92,16 @@ export default function BadgeDisplaySimple({ className = '' }: BadgeDisplaySimpl
     );
   }
 
-  if (error) {
-    console.error('Badge loading error:', error);
-    return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-        <p className="text-red-600 font-medium mb-2">Failed to load badge information</p>
-        <p className="text-sm text-red-500">Please try refreshing the page</p>
-      </div>
-    );
-  }
-
-  if (!badgeData) {
-    return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
-        <p className="text-gray-600">No badge data available</p>
-      </div>
-    );
-  }
+  // Use fetched data or fall back to defaults — never show a red error
+  const data = badgeData ?? DEFAULT_BADGE_DATA;
 
   const badges = ['basic', 'verified', 'trusted', 'elite'];
-  const currentBadgeLower = badgeData.currentBadge?.toLowerCase() || 'none';
+  const currentBadgeLower = data.currentBadge?.toLowerCase() || 'none';
   const displayBadge = currentBadgeLower === 'none' ? 'basic' : currentBadgeLower;
   const currentBadgeIndex = badges.indexOf(displayBadge);
   const currentBadgeVisual = BADGE_VISUALS[(displayBadge as keyof typeof BADGE_VISUALS)] || BADGE_VISUALS.basic;
   const CurrentBadgeIcon = currentBadgeVisual.icon;
-  const requirements = badgeData.badgeRequirements || {};
+  const requirements = data.badgeRequirements || {};
   const badgeLabel = `${displayBadge.charAt(0).toUpperCase()}${displayBadge.slice(1)}`;
 
   const getRequiredCriteria = (badge: string, req: { minReputation: number; minTasks: number; minRating: number }) => {
@@ -108,7 +122,7 @@ export default function BadgeDisplaySimple({ className = '' }: BadgeDisplaySimpl
         </div>
         <h2 className="text-2xl font-bold capitalize text-gray-900 mb-1">{badgeLabel} Badge</h2>
         <p className="text-gray-600 mb-3 text-sm">Reputation Score</p>
-        <div className="inline-block text-3xl font-bold text-gray-900">{Math.round(badgeData.currentReputation)}/100</div>
+        <div className="inline-block text-3xl font-bold text-gray-900">{Math.round(data.currentReputation)}/100</div>
       </div>
 
       {/* Badge Requirements */}
