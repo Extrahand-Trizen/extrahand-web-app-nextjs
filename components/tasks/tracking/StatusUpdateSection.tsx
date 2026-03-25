@@ -114,35 +114,44 @@ export function StatusUpdateSection({
 
       let penaltyPercentage = 0;
       let activeRowIndex = 0;
+      let feeAmount = 0;
+
+      const platformFeeAndGst = budgetValue * 0.059;
 
       if (userRole === "poster") {
          if (minutesSinceAssigned <= 15) {
             penaltyPercentage = 0;
             activeRowIndex = 0;
+            feeAmount = 0;
          } else if (hoursUntilStart > 24) {
             penaltyPercentage = 0;
             activeRowIndex = 1;
+            feeAmount = 0;
          } else if (hoursUntilStart > 1) {
             penaltyPercentage = 10;
             activeRowIndex = 2;
+            feeAmount = (budgetValue * penaltyPercentage) / 100;
          } else {
             penaltyPercentage = 20;
             activeRowIndex = 3;
+            feeAmount = (budgetValue * penaltyPercentage) / 100;
          }
       } else {
          if (hoursUntilStart > 24) {
             penaltyPercentage = 0;
             activeRowIndex = 0;
+            feeAmount = platformFeeAndGst;
          } else if (hoursUntilStart > 1) {
             penaltyPercentage = 10;
             activeRowIndex = 1;
+            feeAmount = (budgetValue * penaltyPercentage) / 100;
          } else {
             penaltyPercentage = 15;
             activeRowIndex = 2;
+            feeAmount = (budgetValue * penaltyPercentage) / 100;
          }
       }
 
-      const feeAmount = (budgetValue * penaltyPercentage) / 100;
       const finalAmount = userRole === "poster" ? budgetValue - feeAmount : feeAmount; 
 
       return { 
@@ -573,7 +582,9 @@ export function StatusUpdateSection({
                                        <span className="font-semibold text-orange-900">{formatCurrency(info.budgetValue)}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-sm mb-1">
-                                       <span className="text-orange-800">Cancellation Fee ({info.penaltyPercentage}%):</span>
+                                       <span className="text-orange-800">
+                                          Cancellation Fee {userRole === "tasker" && info.activeRowIndex === 0 ? "(Platform Fees)" : `(${info.penaltyPercentage}%)`}:
+                                       </span>
                                        <span className="font-semibold text-red-600">-{formatCurrency(info.feeAmount)}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-sm font-medium pt-1 mt-1 border-t border-orange-100">
@@ -620,7 +631,7 @@ export function StatusUpdateSection({
                                              <p className={`text-xs ${info.activeRowIndex === 0 ? 'font-bold' : 'font-medium'} text-gray-800`}>More than 24 hrs</p>
                                              <p className="text-[10px] text-gray-500 mt-0.5">before task start</p>
                                           </div>
-                                          <span className="text-xs font-bold text-gray-600">No Penalty</span>
+                                          <span className="text-xs font-bold text-gray-600">Platform Fees</span>
                                        </div>
                                        <div className={`flex justify-between items-center px-3 py-2 ${info.activeRowIndex === 1 ? 'bg-amber-50 relative before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-amber-500' : 'bg-white'}`}>
                                           <div>
