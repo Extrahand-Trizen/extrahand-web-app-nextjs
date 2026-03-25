@@ -34,7 +34,7 @@ const BADGE_VISUALS = {
 
 const BADGE_NOTES: Record<string, string> = {
   basic: 'Email + phone verified',
-  verified: 'Aadhaar verified',
+  verified: 'Email + phone + Aadhaar verified',
   trusted: 'PAN + bank verified',
   elite: 'Admin approval required',
 };
@@ -44,8 +44,8 @@ const DEFAULT_BADGE_DATA = {
   currentBadge: 'none',
   currentReputation: 0,
   badgeRequirements: {
-    basic:   { minReputation: 10, minTasks: 0, minRating: 0, description: 'Get started on the platform' },
-    verified:{ minReputation: 25, minTasks: 0, minRating: 0, description: 'Complete Aadhaar verification' },
+    basic:   { minReputation: 0, minTasks: 0, minRating: 0, description: 'Email + Phone verified' },
+    verified:{ minReputation: 0, minTasks: 0, minRating: 0, description: 'Email + Phone + Aadhaar verified' },
     trusted: { minReputation: 50, minTasks: 3, minRating: 4, description: 'Build a strong track record' },
     elite:   { minReputation: 100, minTasks: 10, minRating: 4.5, description: 'Top-tier platform member' },
   },

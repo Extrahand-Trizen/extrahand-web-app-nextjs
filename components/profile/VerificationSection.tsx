@@ -194,6 +194,7 @@ export function VerificationSection({ user }: VerificationSectionProps) {
       verifiedText: `Verified ${user.maskedAadhaar || "XXXX XXXX XXXX"}`,
       defaultText: "Verify your identity with Aadhaar",
       route: "/profile/verify/aadhaar",
+      required: true,
       lockAfterVerification: true,
     }),
     createVerificationItem({
