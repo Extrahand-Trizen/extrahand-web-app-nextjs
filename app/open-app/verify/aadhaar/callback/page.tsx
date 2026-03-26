@@ -20,6 +20,17 @@ export default function OpenAppAadhaarCallbackPage() {
     []
   );
 
+  const openInChrome = () => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("viaChrome") !== "1") {
+      url.searchParams.set("viaChrome", "1");
+    }
+    const hostAndPath = `${url.host}${url.pathname}${url.search}`;
+    const chromeIntent = `intent://${hostAndPath}#Intent;scheme=https;package=com.android.chrome;end`;
+    window.location.href = chromeIntent;
+  };
+
   const tryOpenApp = (fromUserClick = false) => {
     try {
       setOpenError(null);
@@ -50,6 +61,17 @@ export default function OpenAppAadhaarCallbackPage() {
     // Try automatic redirect to the app; may be blocked by some browsers/webviews,
     // in which case the user can tap the button below.
     tryOpenApp(false);
+    // On Android in-app browsers, scheme links are often blocked.
+    // If app did not open, move to Chrome and retry from there.
+    if (isAndroid) {
+      const timeout = window.setTimeout(() => {
+        if (document.visibilityState === "hidden") return;
+        const url = new URL(window.location.href);
+        if (url.searchParams.get("viaChrome") === "1") return;
+        openInChrome();
+      }, 1800);
+      return () => window.clearTimeout(timeout);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -65,6 +87,15 @@ export default function OpenAppAadhaarCallbackPage() {
       >
         Open ExtraHand app
       </button>
+      {isAndroid && (
+        <button
+          type="button"
+          onClick={openInChrome}
+          className="mt-3 px-4 py-2 text-sm bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100"
+        >
+          Open this page in Chrome
+        </button>
+      )}
       <a
         href={APP_DEEP_LINK}
         className="mt-3 text-sm text-amber-700 underline"

@@ -2,8 +2,7 @@
 
 import { ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { LandingHeader } from "@/components/layout/LandingHeader";
-import { LandingFooter } from "@/components/layout/LandingFooter";
+import { RouteChrome } from "@/components/layout/RouteChrome";
 
 const INFO_ROUTES_WITH_PUBLIC_CHROME = new Set([
    "/tasker-guidelines",
@@ -48,22 +47,5 @@ export const ConditionalPublicChrome = ({
       return <>{children}</>;
    }
 
-   return (
-      <div
-         suppressHydrationWarning
-         style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}
-      >
-         <LandingHeader />
-         <main
-            style={{
-               flex: 1,
-               minHeight: "calc(100vh - 110px)",
-               position: "relative",
-            }}
-         >
-            <div className="w-full mx-auto">{children}</div>
-         </main>
-         <LandingFooter />
-      </div>
-   );
+   return <RouteChrome variant="public">{children}</RouteChrome>;
 };
