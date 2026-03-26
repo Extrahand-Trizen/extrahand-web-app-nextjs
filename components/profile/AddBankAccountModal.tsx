@@ -79,12 +79,15 @@ export function AddBankAccountModal({
     setLoading(true);
 
     try {
-      const token = await currentUser?.getIdToken();
+      if (!currentUser?.uid) {
+        throw new Error("Please log in to add a bank account");
+      }
+
       const response = await fetch("/api/payment/bank-accounts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          "X-User-Id": currentUser.uid,
         },
         body: JSON.stringify({
           accountNumber: formData.accountNumber,
@@ -102,7 +105,7 @@ export function AddBankAccountModal({
         throw new Error(errorData.error || "Failed to save bank account");
       }
 
-      const data = await response.json();
+      await response.json();
       toast.success("Bank account added successfully!");
       setFormData({
         accountNumber: "",

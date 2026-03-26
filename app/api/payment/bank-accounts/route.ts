@@ -1,18 +1,16 @@
-import { getAuth } from "firebase-admin/auth";
 import { NextRequest, NextResponse } from "next/server";
-import { admin } from "@/lib/firebase-admin";
+
+function getUidFromRequest(request: NextRequest): string | null {
+  const uid = request.headers.get("x-user-id")?.trim();
+  return uid || null;
+}
 
 export async function POST(request: NextRequest) {
   try {
-    // Get Bearer token from Authorization header
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    const uid = getUidFromRequest(request);
+    if (!uid) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    const idToken = authHeader.slice(7); // Remove "Bearer " prefix
-    const decodedToken = await getAuth(admin).verifyIdToken(idToken);
-    const uid = decodedToken.uid;
 
     const {
       accountNumber,
@@ -67,15 +65,10 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    // Get Bearer token from Authorization header
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    const uid = getUidFromRequest(request);
+    if (!uid) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    const idToken = authHeader.slice(7);
-    const decodedToken = await getAuth(admin).verifyIdToken(idToken);
-    const uid = decodedToken.uid;
 
     // Call payment service
     const paymentServiceUrl = process.env.PAYMENT_SERVICE_URL || "http://localhost:4003";

@@ -20,16 +20,15 @@ export function useBankAccounts() {
   const [hasBankAccount, setHasBankAccount] = useState(false);
 
   const fetchBankAccounts = async () => {
-    if (!currentUser) return;
+    if (!currentUser?.uid) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const token = await currentUser.getIdToken();
       const response = await fetch("/api/payment/bank-accounts", {
         headers: {
-          Authorization: `Bearer ${token}`,
+          "X-User-Id": currentUser.uid,
         },
       });
 
