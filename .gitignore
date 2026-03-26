@@ -41,3 +41,7 @@ yarn-error.log*
 next-env.d.ts
 docs
 .next
+
+# ignore docs/logs from git tracking
+*.md
+*.log
