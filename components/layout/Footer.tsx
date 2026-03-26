@@ -169,7 +169,7 @@ export const Footer: React.FC = () => {
           {/* App Download Buttons */}
           <div className="flex flex-col md:flex-row gap-3 md:gap-6.5 items-center">
             <a
-              href="/coming-soon/mobile-app"
+              href="/coming-soon"
               aria-label="Download on the App Store"
               className="inline-block no-underline"
             >
@@ -184,7 +184,7 @@ export const Footer: React.FC = () => {
               </div>
             </a>
             <a
-              href="/coming-soon/mobile-app"
+              href="/coming-soon"
               aria-label="Get it on Google Play"
               className="inline-block no-underline"
             >
