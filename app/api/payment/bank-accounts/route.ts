@@ -39,6 +39,52 @@ function getUidFromRequest(request: NextRequest, bodyUid?: string): string | nul
   return bodyUid?.trim() || null;
 }
 
+function normalizeBaseUrl(url: string): string {
+  return url.replace(/\/+$/, "");
+}
+
+function getBankAccountPostCandidates(baseUrl: string): string[] {
+  const base = normalizeBaseUrl(baseUrl);
+  const hasApiV1 = /\/api\/v1$/i.test(base);
+  if (hasApiV1) {
+    return [`${base}/bank-accounts`];
+  }
+
+  return [
+    `${base}/api/v1/bank-accounts`,
+    `${base}/bank-accounts`,
+    `${base}/api/bank-accounts`,
+  ];
+}
+
+function getBankAccountGetCandidates(baseUrl: string): string[] {
+  const base = normalizeBaseUrl(baseUrl);
+  const hasApiV1 = /\/api\/v1$/i.test(base);
+  if (hasApiV1) {
+    return [`${base}/bank-accounts/me`];
+  }
+
+  return [
+    `${base}/api/v1/bank-accounts/me`,
+    `${base}/bank-accounts/me`,
+    `${base}/api/bank-accounts/me`,
+  ];
+}
+
+async function fetchFirstNon404(urls: string[], init: RequestInit): Promise<Response> {
+  let lastResponse: Response | null = null;
+
+  for (const url of urls) {
+    const response = await fetch(url, init);
+    if (response.status !== 404) {
+      return response;
+    }
+    lastResponse = response;
+  }
+
+  return lastResponse as Response;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const {
@@ -59,7 +105,7 @@ export async function POST(request: NextRequest) {
 
     // Call payment service
     const paymentServiceUrl = process.env.PAYMENT_SERVICE_URL || "http://localhost:4003";
-    const response = await fetch(`${paymentServiceUrl}/api/v1/bank-accounts`, {
+    const response = await fetchFirstNon404(getBankAccountPostCandidates(paymentServiceUrl), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -80,9 +126,13 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response.json().catch(() => ({}));
       return NextResponse.json(
-        { error: errorData.error || "Failed to save bank account" },
+        {
+          error: errorData.error || "Failed to save bank account",
+          upstreamMessage: errorData.message || null,
+          upstreamStatus: response.status,
+        },
         { status: response.status }
       );
     }
@@ -107,7 +157,7 @@ export async function GET(request: NextRequest) {
 
     // Call payment service
     const paymentServiceUrl = process.env.PAYMENT_SERVICE_URL || "http://localhost:4003";
-    const response = await fetch(`${paymentServiceUrl}/api/v1/bank-accounts/me`, {
+    const response = await fetchFirstNon404(getBankAccountGetCandidates(paymentServiceUrl), {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -118,8 +168,13 @@ export async function GET(request: NextRequest) {
     });
 
     if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
       return NextResponse.json(
-        { error: "Failed to fetch bank accounts" },
+        {
+          error: errorData.error || "Failed to fetch bank accounts",
+          upstreamMessage: errorData.message || null,
+          upstreamStatus: response.status,
+        },
         { status: response.status }
       );
     }
