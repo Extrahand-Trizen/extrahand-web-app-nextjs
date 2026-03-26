@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import { useBankAccounts } from "@/lib/hooks/usePayments";
-import { BankAccountBanner } from "./BankAccountBanner";
-import { AddBankAccountModal } from "./AddBankAccountModal";
+import { BankAccountBanner } from "@/components/profile/BankAccountBanner";
+import { AddBankAccountModal } from "@/components/profile/AddBankAccountModal";
 
 interface TaskBankAccountBannerProps {
   taskTitle?: string;
