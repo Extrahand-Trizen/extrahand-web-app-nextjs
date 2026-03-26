@@ -3,9 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/context";
-import { LandingHeader } from "@/components/layout/LandingHeader";
-import { LandingFooter } from "@/components/layout/LandingFooter";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { RouteChrome } from "@/components/layout/RouteChrome";
 
 export default function DashboardLayout({
    children,
@@ -51,13 +49,5 @@ export default function DashboardLayout({
       return null;
    }
 
-   return (
-      <div suppressHydrationWarning>
-         <LandingHeader />
-         <main className="min-h-[calc(100vh - 110px)]">
-            <div className="w-full mx-auto">{children}</div>
-         </main>
-         <LandingFooter />
-      </div>
-   );
+   return <RouteChrome variant="protected">{children}</RouteChrome>;
 }
