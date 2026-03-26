@@ -57,6 +57,14 @@ function getBankAccountPostCandidates(baseUrl: string): string[] {
   ];
 }
 
+function getGatewayBankAccountPostCandidates(baseUrl: string): string[] {
+  const base = normalizeBaseUrl(baseUrl);
+  return [
+    `${base}/api/v1/payment/bank-accounts`,
+    `${base}/payment/bank-accounts`,
+  ];
+}
+
 function getBankAccountGetCandidates(baseUrl: string): string[] {
   const base = normalizeBaseUrl(baseUrl);
   const hasApiV1 = /\/api\/v1$/i.test(base);
@@ -68,6 +76,14 @@ function getBankAccountGetCandidates(baseUrl: string): string[] {
     `${base}/api/v1/bank-accounts/me`,
     `${base}/bank-accounts/me`,
     `${base}/api/bank-accounts/me`,
+  ];
+}
+
+function getGatewayBankAccountGetCandidates(baseUrl: string): string[] {
+  const base = normalizeBaseUrl(baseUrl);
+  return [
+    `${base}/api/v1/payment/bank-accounts/me`,
+    `${base}/payment/bank-accounts/me`,
   ];
 }
 
@@ -105,13 +121,20 @@ export async function POST(request: NextRequest) {
 
     // Call payment service
     const paymentServiceUrl = process.env.PAYMENT_SERVICE_URL || "http://localhost:4003";
-    const response = await fetchFirstNon404(getBankAccountPostCandidates(paymentServiceUrl), {
+    const apiGatewayUrl = process.env.API_GATEWAY_URL;
+    const postCandidates = [
+      ...getBankAccountPostCandidates(paymentServiceUrl),
+      ...(apiGatewayUrl ? getGatewayBankAccountPostCandidates(apiGatewayUrl) : []),
+    ];
+    const authHeader = request.headers.get("authorization");
+    const response = await fetchFirstNon404(postCandidates, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "X-Service-Auth": process.env.SERVICE_AUTH_TOKEN || "",
         "X-Service-Name": "api-gateway",
         "X-User-Id": uid,
+        ...(authHeader ? { Authorization: authHeader } : {}),
       },
       body: JSON.stringify({
         accountNumber,
@@ -157,13 +180,20 @@ export async function GET(request: NextRequest) {
 
     // Call payment service
     const paymentServiceUrl = process.env.PAYMENT_SERVICE_URL || "http://localhost:4003";
-    const response = await fetchFirstNon404(getBankAccountGetCandidates(paymentServiceUrl), {
+    const apiGatewayUrl = process.env.API_GATEWAY_URL;
+    const getCandidates = [
+      ...getBankAccountGetCandidates(paymentServiceUrl),
+      ...(apiGatewayUrl ? getGatewayBankAccountGetCandidates(apiGatewayUrl) : []),
+    ];
+    const authHeader = request.headers.get("authorization");
+    const response = await fetchFirstNon404(getCandidates, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
         "X-Service-Auth": process.env.SERVICE_AUTH_TOKEN || "",
         "X-Service-Name": "api-gateway",
         "X-User-Id": uid,
+        ...(authHeader ? { Authorization: authHeader } : {}),
       },
     });
 

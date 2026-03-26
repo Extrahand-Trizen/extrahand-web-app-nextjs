@@ -13,52 +13,20 @@ export interface BankAccount {
 }
 
 export function useBankAccounts() {
-  const { currentUser, userData } = useAuth();
+  const { userData } = useAuth();
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
-  const [loading, setLoading] = useState(false);
+  const loading = false;
   const [error, setError] = useState<string | null>(null);
-  const [hasBankAccount, setHasBankAccount] = useState(false);
+  const hasBankAccount = Boolean(
+    userData?.isBankVerified ||
+      userData?.maskedBankAccount ||
+      userData?.bankAccount?.maskedAccountNumber
+  );
 
   const fetchBankAccounts = async () => {
-    const uid = currentUser?.uid || userData?.uid || userData?._id;
-    if (!uid) return;
-
-    setLoading(true);
     setError(null);
-
-    try {
-      const token = currentUser ? await currentUser.getIdToken().catch(() => null) : null;
-      const headers: HeadersInit = {
-        "X-User-Id": uid,
-      };
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-
-      const response = await fetch("/api/payment/bank-accounts", {
-        headers,
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch bank accounts");
-      }
-
-      const data = await response.json();
-      setBankAccounts(data.data || []);
-      setHasBankAccount((data.data || []).length > 0);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error fetching bank accounts");
-      setHasBankAccount(false);
-    } finally {
-      setLoading(false);
-    }
+    setBankAccounts([]);
   };
-
-  useEffect(() => {
-    if (currentUser) {
-      fetchBankAccounts();
-    }
-  }, [currentUser]);
 
   return {
     bankAccounts,
