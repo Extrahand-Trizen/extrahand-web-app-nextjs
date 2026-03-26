@@ -27,7 +27,7 @@ export function AddBankAccountModal({
   onOpenChange,
   onSuccess,
 }: AddBankAccountModalProps) {
-  const { currentUser } = useAuth();
+  const { currentUser, userData } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -79,16 +79,23 @@ export function AddBankAccountModal({
     setLoading(true);
 
     try {
-      if (!currentUser?.uid) {
+      const uid = currentUser?.uid || userData?.uid || userData?._id;
+      if (!uid) {
         throw new Error("Please log in to add a bank account");
+      }
+
+      const token = currentUser ? await currentUser.getIdToken().catch(() => null) : null;
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+        "X-User-Id": uid,
+      };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
       }
 
       const response = await fetch("/api/payment/bank-accounts", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-User-Id": currentUser.uid,
-        },
+        headers,
         body: JSON.stringify({
           accountNumber: formData.accountNumber,
           ifscCode: formData.ifscCode.toUpperCase(),
@@ -97,6 +104,7 @@ export function AddBankAccountModal({
           email: currentUser?.email,
           phone: currentUser?.phoneNumber,
           setAsDefault: true,
+          userId: uid,
         }),
       });
 

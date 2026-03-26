@@ -1,17 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
 
-function getUidFromRequest(request: NextRequest): string | null {
-  const uid = request.headers.get("x-user-id")?.trim();
-  return uid || null;
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) {
+      return null;
+    }
+
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+    const json = Buffer.from(padded, "base64").toString("utf8");
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
+function getUidFromRequest(request: NextRequest, bodyUid?: string): string | null {
+  const headerUid = request.headers.get("x-user-id")?.trim();
+  if (headerUid) {
+    return headerUid;
+  }
+
+  const authHeader = request.headers.get("authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.slice(7).trim();
+    const payload = decodeJwtPayload(token);
+    const tokenUid =
+      (typeof payload?.user_id === "string" && payload.user_id) ||
+      (typeof payload?.uid === "string" && payload.uid) ||
+      (typeof payload?.sub === "string" && payload.sub) ||
+      null;
+    if (tokenUid) {
+      return tokenUid;
+    }
+  }
+
+  return bodyUid?.trim() || null;
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const uid = getUidFromRequest(request);
-    if (!uid) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const {
       accountNumber,
       ifscCode,
@@ -20,7 +49,13 @@ export async function POST(request: NextRequest) {
       email,
       phone,
       setAsDefault,
+      userId,
     } = await request.json();
+
+    const uid = getUidFromRequest(request, typeof userId === "string" ? userId : undefined);
+    if (!uid) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     // Call payment service
     const paymentServiceUrl = process.env.PAYMENT_SERVICE_URL || "http://localhost:4003";

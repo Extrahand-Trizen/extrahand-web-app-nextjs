@@ -13,23 +13,30 @@ export interface BankAccount {
 }
 
 export function useBankAccounts() {
-  const { currentUser } = useAuth();
+  const { currentUser, userData } = useAuth();
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasBankAccount, setHasBankAccount] = useState(false);
 
   const fetchBankAccounts = async () => {
-    if (!currentUser?.uid) return;
+    const uid = currentUser?.uid || userData?.uid || userData?._id;
+    if (!uid) return;
 
     setLoading(true);
     setError(null);
 
     try {
+      const token = currentUser ? await currentUser.getIdToken().catch(() => null) : null;
+      const headers: HeadersInit = {
+        "X-User-Id": uid,
+      };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const response = await fetch("/api/payment/bank-accounts", {
-        headers: {
-          "X-User-Id": currentUser.uid,
-        },
+        headers,
       });
 
       if (!response.ok) {
