@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { UserProfile } from "@/types/user";
 import { useUserStore } from "@/lib/state/userStore";
 
-type BannerType = "skills" | "aadhaar" | null;
+type BannerType = "skills" | "aadhaar" | "bank" | null;
 
 interface TaskerSetupBannerProps {
    user: UserProfile;
@@ -44,6 +44,10 @@ export function TaskerSetupBanner({ user }: TaskerSetupBannerProps) {
    const isAadhaarVerified =
       "isAadhaarVerified" in user
          ? Boolean((user as { isAadhaarVerified?: boolean }).isAadhaarVerified)
+         : false;
+   const isBankVerified =
+      "isBankVerified" in user
+         ? Boolean((user as { isBankVerified?: boolean }).isBankVerified)
          : false;
 
    useEffect(() => {
@@ -111,6 +115,8 @@ export function TaskerSetupBanner({ user }: TaskerSetupBannerProps) {
                sessionStorage.getItem(`tasker_banner_hidden_${uid}_skills`) === "1";
             const hiddenAadhaar =
                sessionStorage.getItem(`tasker_banner_hidden_${uid}_aadhaar`) === "1";
+            const hiddenBank =
+               sessionStorage.getItem(`tasker_banner_hidden_${uid}_bank`) === "1";
 
             if (!hasSkills) {
                return hiddenSkills ? null : "skills";
@@ -119,6 +125,10 @@ export function TaskerSetupBanner({ user }: TaskerSetupBannerProps) {
             // Show aadhaar only on a subsequent visit, not immediately after saving skills.
             if (!isAadhaarVerified && !skillsSavedThisVisit) {
                return hiddenAadhaar ? null : "aadhaar";
+            }
+
+            if (!isBankVerified) {
+               return hiddenBank ? null : "bank";
             }
          }
       } catch {
@@ -132,6 +142,7 @@ export function TaskerSetupBanner({ user }: TaskerSetupBannerProps) {
       isAadhaarVerified,
       isTasker,
       skillsSavedThisVisit,
+      isBankVerified,
       uid,
       visitId,
    ]);
@@ -250,7 +261,7 @@ export function TaskerSetupBanner({ user }: TaskerSetupBannerProps) {
                         Add now
                      </Button>
                   </>
-               ) : (
+               ) : bannerType === "aadhaar" ? (
                   <>
                      <p className="text-sm font-semibold text-gray-900">
                         Verify your account to apply for tasks
@@ -264,6 +275,25 @@ export function TaskerSetupBanner({ user }: TaskerSetupBannerProps) {
                         }}
                      >
                         Verify now
+                     </Button>
+                  </>
+               ) : (
+                  <>
+                     <p className="text-sm font-semibold text-gray-900">
+                        Add bank account to get amount
+                     </p>
+                     <p className="mt-1 text-sm text-gray-600">
+                        Your payouts are on hold until you add a bank account.
+                     </p>
+                     <Button
+                        className="mt-3 h-9 w-full"
+                        onClick={() => router.push("/profile/verify/bank")}
+                        style={{
+                           backgroundColor: "#f9b233",
+                           color: "#222",
+                        }}
+                     >
+                        Add bank account
                      </Button>
                   </>
                )}
