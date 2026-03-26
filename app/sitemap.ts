@@ -103,16 +103,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
          if (!sub.slug) continue;
 
          if (includeInServices) {
+            // `getSubcategories(cat.slug)` sometimes returns `sub.slug` as a full path
+            // like "{categorySlug}/{subcategorySlug}". In that case, we should not
+            // prefix with `cat.slug` again (otherwise we generate duplicate URLs).
+            const servicePath = sub.slug.includes("/")
+               ? `/services/${sub.slug}`
+               : `/services/${cat.slug}/${sub.slug}`;
             serviceEntries.push({
-               url: joinUrl(baseUrl, `/services/${cat.slug}/${sub.slug}`),
+               url: joinUrl(baseUrl, servicePath),
                lastModified: now,
                priority: 0.6,
             });
          }
 
          if (includeInJobs) {
+            const jobPath = sub.slug.includes("/")
+               ? `/jobs/${sub.slug}`
+               : `/jobs/${cat.slug}/${sub.slug}`;
             jobEntries.push({
-               url: joinUrl(baseUrl, `/jobs/${cat.slug}/${sub.slug}`),
+               url: joinUrl(baseUrl, jobPath),
                lastModified: now,
                priority: 0.6,
             });
@@ -120,5 +129,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }
    }
 
-   return [...entries, ...locationEntries, ...serviceEntries, ...jobEntries];
+   // Put dynamic routes earlier so tools that show only the first N URLs
+   // still display /services and /jobs.
+   return [...entries, ...serviceEntries, ...jobEntries, ...locationEntries];
 }
