@@ -392,6 +392,34 @@ export function TaskCreationFlow() {
       },
    }) as UseFormReturn<TaskFormData>;
 
+   // Restore task creation context from sessionStorage if not in query params
+   useEffect(() => {
+      if (!initialCategoryFromQuery && typeof window !== "undefined") {
+         const context = sessionStorage.getItem("taskCreationContext");
+         if (context) {
+            try {
+               const { category, location } = JSON.parse(context);
+               if (category) {
+                  form.setValue("category", category, {
+                     shouldValidate: false,
+                     shouldDirty: false,
+                  });
+               }
+               if (location) {
+                  form.setValue("location.city", location, {
+                     shouldValidate: false,
+                     shouldDirty: false,
+                  });
+               }
+               // Clear the context after using it
+               sessionStorage.removeItem("taskCreationContext");
+            } catch (e) {
+               console.error("Failed to restore task creation context", e);
+            }
+         }
+      }
+   }, [form, initialCategoryFromQuery]);
+
    const scrollToTop = useCallback(() => {
       requestAnimationFrame(() => {
          window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -780,12 +808,32 @@ export function TaskCreationFlow() {
 
    const handleAuthLogin = () => {
       setShowAuthModal(false);
-      window.location.href = "/login?next=/tasks/new";
+      // Store task creation context in sessionStorage to preserve after login
+      const category = searchParams.get("category");
+      const location = searchParams.get("location");
+      if (category || location) {
+         sessionStorage.setItem(
+            "taskCreationContext",
+            JSON.stringify({ category, location })
+         );
+      }
+      sessionStorage.setItem("postAuthRedirectTo", "/tasks/new");
+      window.location.href = "/login";
    };
 
    const handleAuthSignup = () => {
       setShowAuthModal(false);
-      window.location.href = "/signup?next=/tasks/new";
+      // Store task creation context in sessionStorage to preserve after signup
+      const category = searchParams.get("category");
+      const location = searchParams.get("location");
+      if (category || location) {
+         sessionStorage.setItem(
+            "taskCreationContext",
+            JSON.stringify({ category, location })
+         );
+      }
+      sessionStorage.setItem("postAuthRedirectTo", "/tasks/new");
+      window.location.href = "/signup";
    };
 
    return (

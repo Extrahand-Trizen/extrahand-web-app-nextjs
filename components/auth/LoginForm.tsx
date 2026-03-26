@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,9 +39,46 @@ interface LoginFormProps {
 
 export function LoginForm({ onSuccess }: LoginFormProps) {
    const router = useRouter();
-   const searchParams = useSearchParams();
-   const redirectTo = searchParams.get("next") || "/home";
+   const [redirectTo, setRedirectTo] = useState("/home");
    const [isSubmitting, setIsSubmitting] = useState(false);
+
+   // Resolve post-login redirect from cookie or session storage (no query params).
+   React.useEffect(() => {
+      if (typeof window !== "undefined") {
+         const cookieMatch = document.cookie
+            .split("; ")
+            .find((cookie) => cookie.startsWith("extrahand_redirect_to="));
+         const cookieRedirect = cookieMatch
+            ? decodeURIComponent(cookieMatch.split("=")[1])
+            : "";
+         const sessionRedirect = sessionStorage.getItem("postAuthRedirectTo") || "";
+
+         const baseRedirect = cookieRedirect || sessionRedirect || "/home";
+
+         const context = sessionStorage.getItem("taskCreationContext");
+         if (context && baseRedirect === "/tasks/new") {
+            try {
+               const { category, location } = JSON.parse(context);
+               const params = new URLSearchParams();
+               if (category) params.append("category", category);
+               if (location) params.append("location", location);
+               if (params.toString()) {
+                  setRedirectTo(`/tasks/new?${params.toString()}`);
+               }
+               // Clear the context after using it
+               sessionStorage.removeItem("taskCreationContext");
+            } catch (e) {
+               console.error("Failed to parse task creation context", e);
+            }
+         } else {
+            setRedirectTo(baseRedirect);
+         }
+
+         // Cleanup redirect hints after reading.
+         sessionStorage.removeItem("postAuthRedirectTo");
+         document.cookie = "extrahand_redirect_to=; Max-Age=0; Path=/; SameSite=Lax";
+      }
+   }, []);
 
    const form = useForm<PhoneLoginFormData>({
       resolver: zodResolver(phoneLoginSchema),
@@ -85,9 +122,9 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
          if (onSuccess) {
             onSuccess(formattedPhone);
          } else {
-            const otpUrl = `/otp-verification?phone=${encodeURIComponent(
-               formattedPhone
-            )}&type=login&next=${encodeURIComponent(redirectTo)}`;
+            // Store redirect destination in cookie so OTP URL stays clean (no ?next= param)
+            document.cookie = `extrahand_redirect_to=${encodeURIComponent(redirectTo)}; Path=/; SameSite=Lax`;
+            const otpUrl = `/otp-verification?phone=${encodeURIComponent(formattedPhone)}&type=login`;
             router.push(otpUrl);
          }
       } catch {

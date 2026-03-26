@@ -89,6 +89,19 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
             description: `You'll earn rewards when you complete your first task.`,
          });
       }
+
+      // Preserve task creation context if coming from task creation flow
+      const context = sessionStorage.getItem("taskCreationContext");
+      if (!context) {
+         const category = searchParams.get("category");
+         const location = searchParams.get("location");
+         if (category || location) {
+            sessionStorage.setItem(
+               "taskCreationContext",
+               JSON.stringify({ category, location })
+            );
+         }
+      }
    }, [form, searchParams]);
 
    const onSubmit = async (data: PhoneAuthFormData) => {
