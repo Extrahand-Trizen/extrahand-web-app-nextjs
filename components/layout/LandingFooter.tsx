@@ -250,7 +250,7 @@ export const LandingFooter: React.FC = () => {
             <div className="flex gap-4">
               {/* App Store */}
               <a
-                href="/coming-soon?type=info&label=Mobile%20App"
+                href="/coming-soon"
                 className="flex items-center gap-3 bg-white rounded-xl px-3 py-2 md:px-4 md:py-2.5 hover:bg-secondary-100 transition-colors"
               >
                 <svg
@@ -275,7 +275,7 @@ export const LandingFooter: React.FC = () => {
 
               {/* Google Play */}
               <a
-                href="/coming-soon?type=info&label=Mobile%20App"
+                href="/coming-soon"
                 className="flex items-center gap-3 bg-white rounded-xl px-3 py-2 md:px-4 md:py-2.5 hover:bg-secondary-100 transition-colors"
               >
                 <svg
