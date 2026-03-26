@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { Landmark, ShieldCheck, ArrowRight } from "lucide-react";
+import { Landmark, ShieldCheck, ArrowRight, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserProfile } from "@/types/user";
 import { useRouter } from "next/navigation";
 import { AddBankAccountModal } from "./AddBankAccountModal";
+import { useBankAccounts } from "@/lib/hooks/usePayments";
+import { toast } from "sonner";
 
 interface BankAccountSectionProps {
   user: UserProfile;
@@ -16,10 +18,39 @@ export function BankAccountSection({ user }: BankAccountSectionProps) {
   const [showBankModal, setShowBankModal] = useState(false);
   const [latestMaskedAccount, setLatestMaskedAccount] = useState<string | null>(null);
   const [hasLocalBankAccount, setHasLocalBankAccount] = useState(false);
+  const { bankAccounts, hasBankAccount, deleteBankAccount, setDefaultBankAccount, loading } = useBankAccounts();
 
-  const isVerified = hasLocalBankAccount || Boolean(user.isBankVerified);
+  const isVerified = hasLocalBankAccount || hasBankAccount || Boolean(user.isBankVerified);
   const accountDisplay =
-    latestMaskedAccount || user.maskedBankAccount || user.bankAccount?.maskedAccountNumber;
+    latestMaskedAccount ||
+    bankAccounts[0]?.accountNumber ||
+    user.maskedBankAccount ||
+    user.bankAccount?.maskedAccountNumber;
+
+  const handleDelete = async (bankAccountId: string) => {
+    const ok = window.confirm("Delete this bank account? Pending payouts will require adding a bank account again.");
+    if (!ok) return;
+
+    try {
+      await deleteBankAccount(bankAccountId);
+      setHasLocalBankAccount(false);
+      setLatestMaskedAccount(null);
+      toast.success("Bank account deleted");
+      router.refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete bank account");
+    }
+  };
+
+  const handleSelectForPayout = async (bankAccountId: string) => {
+    try {
+      await setDefaultBankAccount(bankAccountId);
+      toast.success("Payout bank account updated");
+      router.refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update payout bank account");
+    }
+  };
 
   return (
     <div className="max-w-4xl space-y-4">
@@ -59,10 +90,48 @@ export function BankAccountSection({ user }: BankAccountSectionProps) {
         <Button
           onClick={() => setShowBankModal(true)}
           className="w-full sm:w-auto h-9 text-xs sm:text-sm"
+          disabled={loading}
         >
           {isVerified ? "Update Bank Account" : "Add Bank Account"}
           <ArrowRight className="w-4 h-4 ml-2" />
         </Button>
+
+        {bankAccounts.length > 0 ? (
+          <div className="space-y-2 border-t border-gray-100 pt-3">
+            {bankAccounts.map((account) => (
+              <div key={account.id} className="flex items-center justify-between gap-3 rounded-md border border-gray-200 p-3">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{account.accountNumber}</p>
+                  <p className="text-xs text-gray-500">{account.ifscCode}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {!account.isDefault ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSelectForPayout(account.id)}
+                    >
+                      Use For Payouts
+                    </Button>
+                  ) : (
+                    <span className="text-xs font-medium text-green-700 bg-green-50 border border-green-200 px-2 py-1 rounded">
+                      Selected For Payouts
+                    </span>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDelete(account.id)}
+                    className="text-red-600 border-red-200 hover:bg-red-50"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
 
         <AddBankAccountModal
           open={showBankModal}

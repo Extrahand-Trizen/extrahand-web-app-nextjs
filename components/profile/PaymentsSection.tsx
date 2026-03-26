@@ -66,6 +66,7 @@ import {
 import { AddBankAccountModal } from "./AddBankAccountModal";
 import { BankAccountBanner } from "./BankAccountBanner";
 import { PayoutHistory } from "./PayoutHistory";
+import { useBankAccounts } from "@/lib/hooks/usePayments";
 
 interface PaymentsSectionProps {
    paymentMethods?: PaymentMethod[];
@@ -93,6 +94,14 @@ export function PaymentsSection({
    onSavePayoutMethod,
 }: PaymentsSectionProps) {
    const { currentUser } = useAuth();
+   const {
+      bankAccounts,
+      hasBankAccount,
+      loading: bankLoading,
+      refetch: refetchBankAccounts,
+      setDefaultBankAccount,
+      deleteBankAccount,
+   } = useBankAccounts();
    const [activeTab, setActiveTab] = useState("methods");
    const [transactionFilter, setTransactionFilter] = useState<
       "all" | "outgoing" | "earnings"
@@ -338,21 +347,94 @@ export function PaymentsSection({
             <TabsContent value="bank" className="space-y-4 mt-4">
                <div className="bg-white rounded-lg border border-gray-200 p-4">
                   <h3 className="text-sm font-medium text-gray-900 mb-4">Bank Account for Payouts</h3>
-                  <div className="space-y-3">
-                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <p className="text-sm text-blue-900">
-                           Add your bank account to receive payments for completed tasks via RazorpayX
-                        </p>
+                  {!hasBankAccount ? (
+                     <div className="space-y-3">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                           <p className="text-sm text-blue-900">
+                              Add your bank account to receive payments for completed tasks via RazorpayX
+                           </p>
+                           <Button
+                              onClick={() => setShowBankAccountModal(true)}
+                              className="mt-3 bg-blue-600 hover:bg-blue-700"
+                              size="sm"
+                           >
+                              <Plus className="w-4 h-4 mr-2" />
+                              Add Bank Account
+                           </Button>
+                        </div>
+                     </div>
+                  ) : (
+                     <div className="space-y-3">
+                        {bankAccounts.map((account) => (
+                           <div
+                              key={account.id}
+                              className="rounded-lg border border-gray-200 p-3 flex items-center justify-between gap-3"
+                           >
+                              <div>
+                                 <p className="text-sm font-medium text-gray-900">{account.accountNumber}</p>
+                                 <p className="text-xs text-gray-500">{account.ifscCode}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                 {!account.isDefault ? (
+                                    <Button
+                                       variant="outline"
+                                       size="sm"
+                                       onClick={async () => {
+                                          try {
+                                             await setDefaultBankAccount(account.id);
+                                             toast.success("Payout bank account updated");
+                                          } catch (error) {
+                                             toast.error(
+                                                error instanceof Error
+                                                   ? error.message
+                                                   : "Failed to update payout bank account"
+                                             );
+                                          }
+                                       }}
+                                       disabled={bankLoading}
+                                    >
+                                       Use For Payouts
+                                    </Button>
+                                 ) : (
+                                    <Badge className="bg-green-100 text-green-800 border-green-200">
+                                       Selected For Payouts
+                                    </Badge>
+                                 )}
+                                 <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={async () => {
+                                       try {
+                                          await deleteBankAccount(account.id);
+                                          toast.success("Bank account deleted");
+                                       } catch (error) {
+                                          toast.error(
+                                             error instanceof Error
+                                                ? error.message
+                                                : "Failed to delete bank account"
+                                          );
+                                       }
+                                    }}
+                                    disabled={bankLoading}
+                                    className="text-red-600 border-red-200 hover:bg-red-50"
+                                 >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete
+                                 </Button>
+                              </div>
+                           </div>
+                        ))}
+
                         <Button
                            onClick={() => setShowBankAccountModal(true)}
-                           className="mt-3 bg-blue-600 hover:bg-blue-700"
+                           className="bg-blue-600 hover:bg-blue-700"
                            size="sm"
                         >
                            <Plus className="w-4 h-4 mr-2" />
-                           Add Bank Account
+                           Add Another Bank Account
                         </Button>
                      </div>
-                  </div>
+                  )}
                </div>
             </TabsContent>
 
@@ -707,6 +789,7 @@ export function PaymentsSection({
             open={showBankAccountModal}
             onOpenChange={setShowBankAccountModal}
             onSuccess={() => {
+               refetchBankAccounts();
                // Refetch payments to update bank account status
                if (effectiveUserId) {
                   fetchPayments(effectiveUserId).catch((error) => {

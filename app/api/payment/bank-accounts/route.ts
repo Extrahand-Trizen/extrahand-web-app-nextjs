@@ -87,6 +87,50 @@ function getGatewayBankAccountGetCandidates(baseUrl: string): string[] {
   ];
 }
 
+function getBankAccountDeleteCandidates(baseUrl: string, bankAccountId: string): string[] {
+  const base = normalizeBaseUrl(baseUrl);
+  const hasApiV1 = /\/api\/v1$/i.test(base);
+  if (hasApiV1) {
+    return [`${base}/bank-accounts/${bankAccountId}`];
+  }
+
+  return [
+    `${base}/api/v1/bank-accounts/${bankAccountId}`,
+    `${base}/bank-accounts/${bankAccountId}`,
+    `${base}/api/bank-accounts/${bankAccountId}`,
+  ];
+}
+
+function getGatewayBankAccountDeleteCandidates(baseUrl: string, bankAccountId: string): string[] {
+  const base = normalizeBaseUrl(baseUrl);
+  return [
+    `${base}/api/v1/payment/bank-accounts/${bankAccountId}`,
+    `${base}/payment/bank-accounts/${bankAccountId}`,
+  ];
+}
+
+function getBankAccountSetDefaultCandidates(baseUrl: string, bankAccountId: string): string[] {
+  const base = normalizeBaseUrl(baseUrl);
+  const hasApiV1 = /\/api\/v1$/i.test(base);
+  if (hasApiV1) {
+    return [`${base}/bank-accounts/${bankAccountId}/default`];
+  }
+
+  return [
+    `${base}/api/v1/bank-accounts/${bankAccountId}/default`,
+    `${base}/bank-accounts/${bankAccountId}/default`,
+    `${base}/api/bank-accounts/${bankAccountId}/default`,
+  ];
+}
+
+function getGatewayBankAccountSetDefaultCandidates(baseUrl: string, bankAccountId: string): string[] {
+  const base = normalizeBaseUrl(baseUrl);
+  return [
+    `${base}/api/v1/payment/bank-accounts/${bankAccountId}/default`,
+    `${base}/payment/bank-accounts/${bankAccountId}/default`,
+  ];
+}
+
 async function fetchFirstNon404(urls: string[], init: RequestInit): Promise<Response> {
   let lastResponse: Response | null = null;
 
@@ -213,6 +257,122 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data);
   } catch (error) {
     console.error("Bank account fetch error:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const body = await request.json().catch(() => ({}));
+    const bankAccountId =
+      (typeof body?.bankAccountId === "string" && body.bankAccountId) ||
+      request.nextUrl.searchParams.get("bankAccountId") ||
+      "";
+
+    if (!bankAccountId) {
+      return NextResponse.json({ error: "bankAccountId is required" }, { status: 400 });
+    }
+
+    const uid = getUidFromRequest(request, typeof body?.userId === "string" ? body.userId : undefined);
+    if (!uid) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const paymentServiceUrl = process.env.PAYMENT_SERVICE_URL || "http://localhost:4003";
+    const apiGatewayUrl = process.env.API_GATEWAY_URL;
+    const candidates = [
+      ...getBankAccountDeleteCandidates(paymentServiceUrl, bankAccountId),
+      ...(apiGatewayUrl ? getGatewayBankAccountDeleteCandidates(apiGatewayUrl, bankAccountId) : []),
+    ];
+    const authHeader = request.headers.get("authorization");
+    const response = await fetchFirstNon404(candidates, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Service-Auth": process.env.SERVICE_AUTH_TOKEN || "",
+        "X-Service-Name": "api-gateway",
+        "X-User-Id": uid,
+        ...(authHeader ? { Authorization: authHeader } : {}),
+      },
+      body: JSON.stringify({ userId: uid }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return NextResponse.json(
+        {
+          error: data.error || "Failed to delete bank account",
+          upstreamMessage: data.message || null,
+          upstreamStatus: response.status,
+        },
+        { status: response.status }
+      );
+    }
+
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("Bank account delete error:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json().catch(() => ({}));
+    const bankAccountId =
+      (typeof body?.bankAccountId === "string" && body.bankAccountId) ||
+      request.nextUrl.searchParams.get("bankAccountId") ||
+      "";
+
+    if (!bankAccountId) {
+      return NextResponse.json({ error: "bankAccountId is required" }, { status: 400 });
+    }
+
+    const uid = getUidFromRequest(request, typeof body?.userId === "string" ? body.userId : undefined);
+    if (!uid) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const paymentServiceUrl = process.env.PAYMENT_SERVICE_URL || "http://localhost:4003";
+    const apiGatewayUrl = process.env.API_GATEWAY_URL;
+    const candidates = [
+      ...getBankAccountSetDefaultCandidates(paymentServiceUrl, bankAccountId),
+      ...(apiGatewayUrl ? getGatewayBankAccountSetDefaultCandidates(apiGatewayUrl, bankAccountId) : []),
+    ];
+    const authHeader = request.headers.get("authorization");
+    const response = await fetchFirstNon404(candidates, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Service-Auth": process.env.SERVICE_AUTH_TOKEN || "",
+        "X-Service-Name": "api-gateway",
+        "X-User-Id": uid,
+        ...(authHeader ? { Authorization: authHeader } : {}),
+      },
+      body: JSON.stringify({ userId: uid }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return NextResponse.json(
+        {
+          error: data.error || "Failed to set default bank account",
+          upstreamMessage: data.message || null,
+          upstreamStatus: response.status,
+        },
+        { status: response.status }
+      );
+    }
+
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("Set default bank account error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Internal server error" },
       { status: 500 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth/context";
 
 export interface BankAccount {
@@ -13,20 +13,116 @@ export interface BankAccount {
 }
 
 export function useBankAccounts() {
-  const { userData } = useAuth();
+  const { currentUser, userData } = useAuth();
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
-  const loading = false;
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const hasBankAccount = Boolean(
-    userData?.isBankVerified ||
-      userData?.maskedBankAccount ||
-      userData?.bankAccount?.maskedAccountNumber
+  const hasBankAccount = bankAccounts.length > 0;
+
+  const fetchBankAccounts = useCallback(async () => {
+    const uid = currentUser?.uid || userData?.uid || userData?._id;
+    if (!uid) {
+      setBankAccounts([]);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const token = currentUser ? await currentUser.getIdToken().catch(() => null) : null;
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+        "X-User-Id": uid,
+      };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const response = await fetch("/api/payment/bank-accounts", { headers });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch bank accounts");
+      }
+
+      setBankAccounts(Array.isArray(data.data) ? data.data : []);
+    } catch (err) {
+      setBankAccounts([]);
+      setError(err instanceof Error ? err.message : "Error fetching bank accounts");
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser, userData]);
+
+  const deleteBankAccount = useCallback(
+    async (bankAccountId: string) => {
+      const uid = currentUser?.uid || userData?.uid || userData?._id;
+      if (!uid) {
+        throw new Error("Please log in to delete bank account");
+      }
+
+      const token = currentUser ? await currentUser.getIdToken().catch(() => null) : null;
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+        "X-User-Id": uid,
+      };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const response = await fetch("/api/payment/bank-accounts", {
+        method: "DELETE",
+        headers,
+        body: JSON.stringify({ bankAccountId, userId: uid }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to delete bank account");
+      }
+
+      await fetchBankAccounts();
+      return data;
+    },
+    [currentUser, userData, fetchBankAccounts]
   );
 
-  const fetchBankAccounts = async () => {
-    setError(null);
-    setBankAccounts([]);
-  };
+  const setDefaultBankAccount = useCallback(
+    async (bankAccountId: string) => {
+      const uid = currentUser?.uid || userData?.uid || userData?._id;
+      if (!uid) {
+        throw new Error("Please log in to set default bank account");
+      }
+
+      const token = currentUser ? await currentUser.getIdToken().catch(() => null) : null;
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+        "X-User-Id": uid,
+      };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const response = await fetch("/api/payment/bank-accounts", {
+        method: "PUT",
+        headers,
+        body: JSON.stringify({ bankAccountId, userId: uid }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to set default bank account");
+      }
+
+      await fetchBankAccounts();
+      return data;
+    },
+    [currentUser, userData, fetchBankAccounts]
+  );
+
+  useEffect(() => {
+    fetchBankAccounts();
+  }, [fetchBankAccounts]);
 
   return {
     bankAccounts,
@@ -34,6 +130,8 @@ export function useBankAccounts() {
     error,
     hasBankAccount,
     refetch: fetchBankAccounts,
+    deleteBankAccount,
+    setDefaultBankAccount,
   };
 }
 
