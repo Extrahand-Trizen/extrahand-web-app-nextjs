@@ -19,7 +19,7 @@ import { useAuth } from "@/lib/auth/context";
 interface AddBankAccountModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess?: () => void;
+  onSuccess?: (data?: { maskedAccountNumber?: string }) => void;
 }
 
 export function AddBankAccountModal({
@@ -113,7 +113,7 @@ export function AddBankAccountModal({
         throw new Error(errorData.error || "Failed to save bank account");
       }
 
-      await response.json();
+      const data = await response.json();
       toast.success("Bank account added successfully!");
       setFormData({
         accountNumber: "",
@@ -123,7 +123,7 @@ export function AddBankAccountModal({
         bankName: "",
       });
       onOpenChange(false);
-      onSuccess?.();
+      onSuccess?.({ maskedAccountNumber: data?.data?.maskedAccountNumber });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to add bank account";
       setError(message);

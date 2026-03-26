@@ -14,9 +14,12 @@ interface BankAccountSectionProps {
 export function BankAccountSection({ user }: BankAccountSectionProps) {
   const router = useRouter();
   const [showBankModal, setShowBankModal] = useState(false);
+  const [latestMaskedAccount, setLatestMaskedAccount] = useState<string | null>(null);
+  const [hasLocalBankAccount, setHasLocalBankAccount] = useState(false);
 
-  const isVerified = Boolean(user.isBankVerified);
-  const accountDisplay = user.maskedBankAccount || user.bankAccount?.maskedAccountNumber;
+  const isVerified = hasLocalBankAccount || Boolean(user.isBankVerified);
+  const accountDisplay =
+    latestMaskedAccount || user.maskedBankAccount || user.bankAccount?.maskedAccountNumber;
 
   return (
     <div className="max-w-4xl space-y-4">
@@ -64,7 +67,11 @@ export function BankAccountSection({ user }: BankAccountSectionProps) {
         <AddBankAccountModal
           open={showBankModal}
           onOpenChange={setShowBankModal}
-          onSuccess={() => {
+          onSuccess={(data) => {
+            setHasLocalBankAccount(true);
+            if (data?.maskedAccountNumber) {
+              setLatestMaskedAccount(data.maskedAccountNumber);
+            }
             router.refresh();
           }}
         />
