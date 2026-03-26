@@ -37,6 +37,8 @@ export function PayoutHistory({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+
     const fetchPayoutDetails = async () => {
       try {
         setLoading(true);
@@ -63,6 +65,12 @@ export function PayoutHistory({
 
         setPayoutDetails(payouts);
         setError(null);
+
+        // If no payouts remain in "processing", stop polling.
+        if (payouts.every((p) => p.status !== "processing") && intervalId) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to load payouts"
@@ -74,9 +82,14 @@ export function PayoutHistory({
 
     if (payoutIds.length > 0) {
       fetchPayoutDetails();
+      intervalId = setInterval(fetchPayoutDetails, 10_000);
     } else {
       setLoading(false);
     }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [payoutIds, maxItems]);
 
   if (loading) {
