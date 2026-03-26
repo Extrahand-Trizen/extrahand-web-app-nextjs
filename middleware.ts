@@ -24,6 +24,9 @@ const protectedRoutes = [
    "/applications",
    "/payments",
    "/dashboard",
+   "/notifications",
+   "/onboarding",
+   "/poster",
 ];
 
 function isPublicPath(pathname: string) {
