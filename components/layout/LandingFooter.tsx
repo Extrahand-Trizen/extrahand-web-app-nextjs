@@ -29,7 +29,7 @@ const footerLinks = {
     title: "For Taskers",
     links: [
       { label: "Become a Tasker", href: "/earn-money#how-to-become-tasker" },
-      { label: "How to Earn", href: "/coming-soon?type=info&label=How%20to%20Earn" },
+      { label: "How to Earn", href: "/earn-money#how-to-earn" },
       { label: "Tasker Guidelines", href: "/tasker-guidelines" },
       { label: "Success Stories", href: "/success-stories" },
       { label: "Resources", href: "/resources" },
