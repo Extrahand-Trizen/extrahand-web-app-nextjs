@@ -204,7 +204,7 @@ export function VerificationSection({ user }: VerificationSectionProps) {
       verifiedAt: user.bankVerifiedAt,
       verifiedText: user.maskedBankAccount ? `Verified ${user.maskedBankAccount}` : "Verified",
       defaultText: "Verify your bank account",
-      route: "/profile/verify/bank",
+      route: "/profile?section=bank-account",
     }),
     createVerificationItem({
       id: "pan",

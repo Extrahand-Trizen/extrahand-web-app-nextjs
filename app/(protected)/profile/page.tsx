@@ -494,7 +494,7 @@ function ProfilePageContent() {
                phone: "/profile/verify/phone",
                email: "/profile/verify/email",
                aadhaar: "/profile/verify/aadhaar",
-               bank: "/profile/verify/bank",
+               bank: "/profile?section=bank-account",
             }[t] || "/profile/verify"
          );
       },

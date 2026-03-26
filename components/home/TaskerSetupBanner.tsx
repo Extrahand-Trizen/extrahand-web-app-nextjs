@@ -287,7 +287,7 @@ export function TaskerSetupBanner({ user }: TaskerSetupBannerProps) {
                      </p>
                      <Button
                         className="mt-3 h-9 w-full"
-                        onClick={() => router.push("/profile/verify/bank")}
+                        onClick={() => router.push("/profile?section=bank-account")}
                         style={{
                            backgroundColor: "#f9b233",
                            color: "#222",

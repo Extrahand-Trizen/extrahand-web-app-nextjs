@@ -188,7 +188,7 @@ function VerificationPendingCard({ user }: { user: UserProfile }) {
       verificationItems = [
          { key: "pan", verified: !!biz?.pan?.isPANVerified, label: "PAN", route: "/profile/verify/pan" },
          { key: "gst", verified: !!biz?.isGSTVerified, label: "GST", route: "/profile/verify/gst" },
-         { key: "bank", verified: !!biz?.bankAccount?.isVerified, label: "Bank", route: "/profile/verify/bank" },
+         { key: "bank", verified: !!biz?.bankAccount?.isVerified, label: "Bank", route: "/profile?section=bank-account" },
       ];
       
       const pendingItem = verificationItems.find(item => !item.verified);
@@ -198,7 +198,7 @@ function VerificationPendingCard({ user }: { user: UserProfile }) {
    } else {
       verificationItems = [
          { key: "aadhaar", verified: !!user.isAadhaarVerified, label: "Identity", route: "/profile/verify/aadhaar" },
-         { key: "bank", verified: !!user.isBankVerified, label: "Bank", route: "/profile/verify/bank" },
+         { key: "bank", verified: !!user.isBankVerified, label: "Bank", route: "/profile?section=bank-account" },
       ];
       
       const pendingItem = verificationItems.find(item => !item.verified);

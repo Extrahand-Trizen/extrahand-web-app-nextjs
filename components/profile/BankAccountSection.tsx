@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Landmark, ShieldCheck, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserProfile } from "@/types/user";
 import { useRouter } from "next/navigation";
+import { AddBankAccountModal } from "./AddBankAccountModal";
 
 interface BankAccountSectionProps {
   user: UserProfile;
@@ -12,6 +13,7 @@ interface BankAccountSectionProps {
 
 export function BankAccountSection({ user }: BankAccountSectionProps) {
   const router = useRouter();
+  const [showBankModal, setShowBankModal] = useState(false);
 
   const isVerified = Boolean(user.isBankVerified);
   const accountDisplay = user.maskedBankAccount || user.bankAccount?.maskedAccountNumber;
@@ -45,19 +47,27 @@ export function BankAccountSection({ user }: BankAccountSectionProps) {
               </div>
             ) : (
               <p className="text-sm text-amber-700 mt-1">
-                Add and verify your bank account to receive payouts.
+                Add your bank account to receive payouts.
               </p>
             )}
           </div>
         </div>
 
         <Button
-          onClick={() => router.push("/profile/verify/bank")}
+          onClick={() => setShowBankModal(true)}
           className="w-full sm:w-auto h-9 text-xs sm:text-sm"
         >
           {isVerified ? "Update Bank Account" : "Add Bank Account"}
           <ArrowRight className="w-4 h-4 ml-2" />
         </Button>
+
+        <AddBankAccountModal
+          open={showBankModal}
+          onOpenChange={setShowBankModal}
+          onSuccess={() => {
+            router.refresh();
+          }}
+        />
       </div>
     </div>
   );

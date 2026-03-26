@@ -300,7 +300,7 @@ const mockNudges: ContextualNudge[] = [
       description:
          "Add your bank account to receive payments for completed tasks.",
       actionLabel: "Add Bank Account",
-      actionRoute: "/profile/verify/bank",
+      actionRoute: "/profile?section=bank-account",
       priority: "medium",
       dismissible: true,
    },
