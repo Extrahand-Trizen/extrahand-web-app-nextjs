@@ -15,6 +15,7 @@ import {
    VerificationSection,
    PaymentsSection,
    AddressesSection,
+   BankAccountSection,
    NotificationsSection,
    SecuritySection,
    PreferencesSection,
@@ -53,6 +54,7 @@ const VALID_SECTIONS: ProfileSection[] = [
    "verifications",
    "payments",
    "addresses",
+   "bank-account",
    "notifications",
    "security",
    "privacy",
@@ -67,6 +69,7 @@ const SECTION_TITLES: Record<ProfileSection, string> = {
    verifications: "Verifications",
    payments: "Payments",
    addresses: "Addresses",
+   "bank-account": "Bank Account",
    notifications: "Notifications",
    security: "Security",
    privacy: "Privacy",
@@ -774,6 +777,8 @@ function renderSection(s: ProfileSection, p: Props) {
          );
       case "addresses":
          return <AddressesSection />;
+      case "bank-account":
+         return <BankAccountSection user={p.user} />;
       case "notifications":
          return (
             <NotificationsSection

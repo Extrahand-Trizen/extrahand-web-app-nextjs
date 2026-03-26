@@ -63,6 +63,9 @@ import {
    exportTransactionsToPdf,
    exportTransactionsToExcel,
 } from "@/lib/exportTransactions";
+import { AddBankAccountModal } from "./AddBankAccountModal";
+import { BankAccountBanner } from "./BankAccountBanner";
+import { PayoutHistory } from "./PayoutHistory";
 
 interface PaymentsSectionProps {
    paymentMethods?: PaymentMethod[];
@@ -112,6 +115,7 @@ export function PaymentsSection({
    // Internal modal state
    const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false);
    const [showPayoutMethodModal, setShowPayoutMethodModal] = useState(false);
+   const [showBankAccountModal, setShowBankAccountModal] = useState(false);
    const [selectedTransaction, setSelectedTransaction] =
       useState<Transaction | null>(null);
 
@@ -231,9 +235,12 @@ export function PaymentsSection({
          </div>
 
          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3 bg-gray-100">
+            <TabsList className="grid w-full grid-cols-4 bg-gray-100">
                <TabsTrigger value="methods" className="text-xs sm:text-sm">
                   Payment Methods
+               </TabsTrigger>
+               <TabsTrigger value="bank" className="text-xs sm:text-sm">
+                  Bank Accounts
                </TabsTrigger>
                <TabsTrigger value="payouts" className="text-xs sm:text-sm">
                   Payouts
@@ -297,63 +304,55 @@ export function PaymentsSection({
                </div>
             </TabsContent>
 
-            {/* Payout Methods Tab */}
+            {/* Payouts History Tab */}
             <TabsContent value="payouts" className="space-y-4 mt-4">
-               <div className="bg-white rounded-lg border border-gray-200">
-                  {payoutMethods.length > 0 ? (
-                     <div className="divide-y divide-gray-100">
-                        {payoutMethods.map((method) => (
-                           <PayoutMethodRow
-                              key={method.id}
-                              method={method}
-                              onRemove={() => onRemovePayoutMethod(method.id)}
-                              onSetDefault={() => onSetDefaultPayout(method.id)}
-                           />
-                        ))}
+               <div className="space-y-4">
+                  <div className="bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg p-4 border border-primary-200">
+                     <div className="flex items-start gap-3">
+                        <div className="text-primary-600">
+                           <Wallet className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1">
+                           <h3 className="text-sm font-medium text-primary-900 mb-1">
+                              Payout Status Tracking
+                           </h3>
+                           <p className="text-xs text-primary-700">
+                              Your tasks are automatically paid out to your registered bank account within 1-2 business days after completion approval. Use this tab to track the status of your transfers.
+                           </p>
+                        </div>
                      </div>
-                  ) : (
-                     <div className="px-4 py-6 sm:px-5 sm:py-8 text-center">
-                        <Building2 className="w-8 h-8 sm:w-10 sm:h-10 text-gray-300 mx-auto mb-3" />
-                        <p className="text-xs sm:text-sm text-gray-500 mb-2">
-                           No payout method added yet
-                        </p>
-                        <p className="text-[10px] sm:text-xs text-gray-400 mb-4">
-                           Add a bank account or UPI to receive payments for
-                           completed tasks
+                  </div>
+
+                  <PayoutHistory
+                     payoutIds={transactions
+                        ?.filter(t => t.type === "payout" || t.type === "payout_processing")
+                        .map(t => t.id) || []}
+                     maxItems={20}
+                     showPending={true}
+                     showCompleted={true}
+                  />
+               </div>
+            </TabsContent>
+
+            {/* Bank Accounts Tab */}
+            <TabsContent value="bank" className="space-y-4 mt-4">
+               <div className="bg-white rounded-lg border border-gray-200 p-4">
+                  <h3 className="text-sm font-medium text-gray-900 mb-4">Bank Account for Payouts</h3>
+                  <div className="space-y-3">
+                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <p className="text-sm text-blue-900">
+                           Add your bank account to receive payments for completed tasks via RazorpayX
                         </p>
                         <Button
-                           onClick={() => setShowPayoutMethodModal(true)}
+                           onClick={() => setShowBankAccountModal(true)}
+                           className="mt-3 bg-blue-600 hover:bg-blue-700"
                            size="sm"
-                           className="text-xs h-8 px-3 bg-primary-600 hover:bg-primary-700"
                         >
-                           <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                           Add Payout Method
+                           <Plus className="w-4 h-4 mr-2" />
+                           Add Bank Account
                         </Button>
                      </div>
-                  )}
-               </div>
-
-               {payoutMethods.length > 0 && (
-                  <Button
-                     variant="outline"
-                     onClick={() => setShowPayoutMethodModal(true)}
-                     size="sm"
-                     className="w-full sm:w-auto text-xs h-9"
-                  >
-                     <Plus className="w-4 h-4 mr-2" />
-                     Add Payout Method
-                  </Button>
-               )}
-
-               <div className="bg-gray-50 rounded-lg p-3 sm:p-4 space-y-2">
-                  <h4 className="text-xs sm:text-sm font-medium text-gray-900">
-                     Payout Schedule
-                  </h4>
-                  <p className="text-[10px] sm:text-xs text-gray-500">
-                     Payouts are processed within 1-2 business days after task
-                     completion. Bank transfers may take an additional 1-3
-                     business days.
-                  </p>
+                  </div>
                </div>
             </TabsContent>
 
@@ -702,6 +701,19 @@ export function PaymentsSection({
             isOpen={showPayoutMethodModal}
             onClose={() => setShowPayoutMethodModal(false)}
             onSave={handleSavePayoutMethod}
+         />
+
+         <AddBankAccountModal
+            open={showBankAccountModal}
+            onOpenChange={setShowBankAccountModal}
+            onSuccess={() => {
+               // Refetch payments to update bank account status
+               if (effectiveUserId) {
+                  fetchPayments(effectiveUserId).catch((error) => {
+                     console.error("Failed to reload payments:", error);
+                  });
+               }
+            }}
          />
 
          <TransactionDetailsModal

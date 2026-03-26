@@ -116,4 +116,63 @@ export const paymentApi = {
     if (taskCategory?.trim()) params.set('taskCategory', taskCategory.trim());
     return fetchWithAuth(`/payment/fees/calculate?${params.toString()}`);
   },
+
+  async upsertBankAccount(data: {
+    accountNumber: string;
+    ifscCode: string;
+    accountHolderName: string;
+    bankName?: string;
+    email?: string;
+    phone?: string;
+    setAsDefault?: boolean;
+  }): Promise<{
+    success: boolean;
+    data?: {
+      bankAccountId: string;
+      maskedAccountNumber: string;
+      fundAccountId: string;
+    };
+    message?: string;
+    error?: string;
+  }> {
+    return fetchWithAuth('/payment/bank-accounts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getMyBankAccounts(): Promise<{
+    success: boolean;
+    data?: Array<{
+      id: string;
+      bankName: string;
+      accountHolderName: string;
+      accountNumber: string;
+      ifscCode: string;
+      isVerified: boolean;
+      isDefault: boolean;
+      createdAt: string;
+    }>;
+    error?: string;
+  }> {
+    return fetchWithAuth('/payment/bank-accounts/me');
+  },
+
+  async processTaskCompletionPayout(data: {
+    taskId: string;
+    performerUid: string;
+    amount: number;
+    taskTitle?: string;
+  }): Promise<{
+    success: boolean;
+    payout?: any;
+    requiresBankAccount?: boolean;
+    message?: string;
+    error?: string;
+  }> {
+    return fetchWithAuth('/payment/payout/task-completion', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
 };

@@ -19,6 +19,7 @@ import {
    Lock,
    ChevronRight,
    MapPin,
+   Landmark,
    BriefcaseBusiness,
    TrendingUp,
    Award,
@@ -74,6 +75,12 @@ const navItems: ProfileNavItem[] = [
       label: "Addresses",
       icon: <MapPin className="w-5 h-5" />,
       description: "Saved locations",
+   },
+   {
+      id: "bank-account",
+      label: "Bank Account",
+      icon: <Landmark className="w-5 h-5" />,
+      description: "Payout account",
    },
    {
       id: "notifications",

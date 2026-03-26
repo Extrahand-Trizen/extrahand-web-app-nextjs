@@ -299,6 +299,7 @@ export type ProfileSection =
    | "verifications"
    | "payments"
    | "addresses"
+   | "bank-account"
    | "notifications"
    | "security"
    | "privacy"

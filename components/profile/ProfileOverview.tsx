@@ -28,6 +28,7 @@ import {
    Briefcase,
    MapPin,
    Award,
+   Landmark,
    Share2,
    Plus,
 } from "lucide-react";
@@ -135,8 +136,9 @@ export function ProfileOverview({ user, onNavigate, loading }: ProfileOverviewPr
    const hasSkills = selectedSkills.length > 0;
    const hasAbout = aboutInput.trim().length > 0;
    const aadhaarDone = Boolean(user.isAadhaarVerified);
+   const bankDone = Boolean(user.isBankVerified);
    const hasPhoto = Boolean(user.photoURL);
-   const hasPendingSetup = !hasSkills || !hasAbout || !aadhaarDone || !hasPhoto;
+   const hasPendingSetup = !hasSkills || !hasAbout || !aadhaarDone || !bankDone || !hasPhoto;
 
    const addSkill = (skillName: string) => {
       const clean = skillName.trim();
@@ -326,6 +328,15 @@ export function ProfileOverview({ user, onNavigate, loading }: ProfileOverviewPr
                   />
                )}
 
+               {!bankDone && (
+                  <SetupItem
+                     title="Bank Account"
+                     description="Add your bank account to receive payouts after task completion"
+                     cta="Add bank account"
+                     onClick={() => onNavigate("bank-account")}
+                  />
+               )}
+
                {!hasPhoto && (
                   <SetupItem
                      title="Profile Photo"
@@ -418,6 +429,13 @@ export function ProfileOverview({ user, onNavigate, loading }: ProfileOverviewPr
                   title="Review Notifications"
                   description="Manage your communication settings"
                   onClick={() => onNavigate("notifications")}
+               />
+               <QuickActionItem
+                  icon={<Landmark className="w-4 h-4 sm:w-5 sm:h-5" />}
+                  title="Add bank account"
+                  description={bankDone ? "Bank account verified" : "Required to receive payouts"}
+                  status={bankDone ? "complete" : "pending"}
+                  onClick={() => onNavigate("bank-account")}
                />
             </div>
          </div>
