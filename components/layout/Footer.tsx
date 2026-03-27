@@ -8,6 +8,8 @@ const footerColumns = [
     title: 'Discover',
     links: [
       { label: 'How it works', href: '/how-it-works#how-it-works' },
+      { label: 'Services', href: '/services' },
+      { label: 'Jobs', href: '/jobs' },
       { label: 'Earn money', href: '/earn-money#how-to-earn' },
       { label: 'Cost Guides', href: '/cost-guides' },
       { label: 'Service Guides', href: '/service-guides' },

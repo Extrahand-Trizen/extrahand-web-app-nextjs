@@ -20,6 +20,8 @@ const footerLinks = {
     title: "Discover",
     links: [
       { label: "How it Works", href: "/how-it-works#how-it-works" },
+      { label: "Services", href: "/services" },
+      { label: "Jobs", href: "/jobs" },
       { label: "Browse Categories", href: "https://extrahand.in/discover" },
       { label: "Trust & Safety", href: "/trust-safety" },
       { label: "Pricing", href: "/pricing" },
