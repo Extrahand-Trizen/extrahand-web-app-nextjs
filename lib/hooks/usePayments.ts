@@ -15,7 +15,7 @@ export interface BankAccount {
 export function useBankAccounts() {
   const { currentUser, userData } = useAuth();
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const hasBankAccount = bankAccounts.length > 0;
 
@@ -23,6 +23,7 @@ export function useBankAccounts() {
     const uid = currentUser?.uid || userData?.uid || userData?._id;
     if (!uid) {
       setBankAccounts([]);
+      setLoading(false);
       return;
     }
 

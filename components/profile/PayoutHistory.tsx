@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { usePayoutStatus } from "@/lib/hooks/usePayments";
+import { useAuth } from "@/lib/auth/context";
 import { PayoutStatusCard } from "./PayoutStatusCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -32,6 +32,7 @@ export function PayoutHistory({
   showPending = true,
   showCompleted = true,
 }: PayoutHistoryProps) {
+  const { currentUser } = useAuth();
   const [payoutDetails, setPayoutDetails] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +43,7 @@ export function PayoutHistory({
     const fetchPayoutDetails = async () => {
       try {
         setLoading(true);
-        const token = await (window as any).auth?.currentUser?.getIdToken();
+        const token = await currentUser?.getIdToken();
         if (!token) {
           setError("Not authenticated");
           return;
@@ -90,7 +91,7 @@ export function PayoutHistory({
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [payoutIds, maxItems]);
+  }, [payoutIds, maxItems, currentUser]);
 
   if (loading) {
     return (
