@@ -42,13 +42,13 @@ const footerColumns = [
   {
     title: 'Popular Categories',
     links: [
-      { label: 'Electricians', href: '/coming-soon' },
-      { label: 'Plumbers', href: '/coming-soon' },
-      { label: 'Home Cleaning', href: '/coming-soon' },
-      { label: 'Packers & Movers', href: '/coming-soon' },
-      { label: 'Carpenters', href: '/coming-soon' },
-      { label: 'AC Services', href: '/coming-soon' },
-      { label: 'Appliance Repair', href: '/coming-soon' },
+      { label: 'Electricians', href: '/services/electricians-services' },
+      { label: 'Plumbers', href: '/services/plumbing-services' },
+      { label: 'Home Cleaning', href: '/services/cleaning-services' },
+      { label: 'Delivery & Pickup', href: '/services/delivery-services' },
+      { label: 'Flooring Services', href: '/services/flooring-services' },
+      { label: 'Carpenters', href: '/services/carpentry-services' },
+      { label: 'Pet Care Services', href: '/services/pet-care-services' },
     ],
   },
   {
@@ -168,7 +168,7 @@ export const Footer: React.FC = () => {
           
           {/* App Download Buttons */}
           <div className="flex flex-col md:flex-row gap-3 md:gap-6.5 items-center">
-            <a
+            <Link
               href="/coming-soon"
               aria-label="Download on the App Store"
               className="inline-block no-underline"
@@ -182,8 +182,8 @@ export const Footer: React.FC = () => {
                   <span className="text-xs md:text-base text-secondary-900 font-semibold leading-none no-underline">App Store</span>
                 </div>
               </div>
-            </a>
-            <a
+            </Link>
+            <Link
               href="/coming-soon"
               aria-label="Get it on Google Play"
               className="inline-block no-underline"
@@ -199,7 +199,7 @@ export const Footer: React.FC = () => {
                   <span className="text-xs md:text-base text-secondary-900 font-semibold leading-none no-underline">Google Play</span>
                 </div>
               </div>
-            </a>
+            </Link>
           </div>
         </div>
         

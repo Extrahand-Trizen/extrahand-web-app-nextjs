@@ -55,13 +55,13 @@ const footerLinks = {
   categories: {
     title: "Popular Categories",
     links: [
-      { label: "Electricians", href: "/coming-soon" },
-      { label: "Plumbers", href: "/coming-soon" },
-      { label: "Home Cleaning", href: "/coming-soon" },
-      { label: "Packers & Movers", href: "/coming-soon" },
-      { label: "Carpenters", href: "/coming-soon" },
-      { label: "AC Services", href: "/coming-soon" },
-      { label: "Appliance Repair", href: "/coming-soon" },
+      { label: "Electricians", href: "/services/electricians-services" },
+      { label: "Plumbers", href: "/services/plumbing-services" },
+      { label: "Home Cleaning", href: "/services/cleaning-services" },
+      { label: "Delivery & Pickup", href: "/services/delivery-services" },
+      { label: "Flooring Services", href: "/services/flooring-services" },
+      { label: "Carpenters", href: "/services/carpentry-services" },
+      { label: "Pet Care Services", href: "/services/pet-care-services" },
     ],
   },
   cities: {
@@ -249,7 +249,7 @@ export const LandingFooter: React.FC = () => {
             </div>
             <div className="flex gap-4">
               {/* App Store */}
-              <a
+              <Link
               href="/coming-soon/mobile-app"
                 className="flex items-center gap-3 bg-white rounded-xl px-3 py-2 md:px-4 md:py-2.5 hover:bg-secondary-100 transition-colors"
               >
@@ -271,10 +271,10 @@ export const LandingFooter: React.FC = () => {
                     App Store
                   </p>
                 </div>
-              </a>
+              </Link>
 
               {/* Google Play */}
-              <a
+              <Link
                 href="/coming-soon"
                 className="flex items-center gap-3 bg-white rounded-xl px-3 py-2 md:px-4 md:py-2.5 hover:bg-secondary-100 transition-colors"
               >
@@ -308,7 +308,7 @@ export const LandingFooter: React.FC = () => {
                     Google Play
                   </p>
                 </div>
-              </a>
+              </Link>
             </div>
           </div>
         </div>

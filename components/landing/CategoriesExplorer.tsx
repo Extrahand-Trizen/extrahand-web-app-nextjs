@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 type Subcategory = {
    _id?: string;
@@ -44,11 +45,11 @@ const curatedCategories: Category[] = [
       description: "Book trusted cleaners for regular, deep, or move-in cleaning.",
       image: "/assets/mobilescreens/cleaning.png",
       color: colorPalette[0],
-      slug: "home-cleaning",
+         slug: "cleaning-services",
       subcategories: [
-         { name: "Deep Cleaning", slug: "home-cleaning/deep-cleaning" },
-         { name: "Sofa Cleaning", slug: "home-cleaning/sofa-cleaning" },
-         { name: "Kitchen Cleaning", slug: "home-cleaning/kitchen-cleaning" },
+            { name: "Deep Cleaning", slug: "cleaning-services/deep-cleaning" },
+            { name: "Sofa Cleaning", slug: "cleaning-services/sofa-cleaning" },
+            { name: "Kitchen Cleaning", slug: "cleaning-services/kitchen-cleaning" },
       ],
    },
    {
@@ -68,11 +69,11 @@ const curatedCategories: Category[] = [
       description: "Same-day local pickup and drop for parcels, groceries, and items.",
       image: "/assets/mobilescreens/delivery.png",
       color: colorPalette[2],
-      slug: "delivery-pickup-services",
+         slug: "delivery-services",
       subcategories: [
-         { name: "Parcel Pickup", slug: "delivery-pickup-services/parcel-pickup" },
-         { name: "Grocery Delivery", slug: "delivery-pickup-services/grocery-delivery" },
-         { name: "Document Drop", slug: "delivery-pickup-services/document-drop" },
+            { name: "Parcel Pickup", slug: "delivery-services/parcel-pickup" },
+            { name: "Grocery Delivery", slug: "delivery-services/grocery-delivery" },
+            { name: "Document Drop", slug: "delivery-services/document-drop" },
       ],
    },
    {
@@ -92,11 +93,11 @@ const curatedCategories: Category[] = [
       description: "Electricians for wiring, switch boards, fittings, and fault fixes.",
       image: "/assets/mobilescreens/electrical.png",
       color: colorPalette[4],
-      slug: "electrical",
+         slug: "electricians-services",
       subcategories: [
-         { name: "Wiring", slug: "electrical/wiring" },
-         { name: "Fan Installation", slug: "electrical/fan-installation" },
-         { name: "Light Fixtures", slug: "electrical/light-fixtures" },
+            { name: "Wiring", slug: "electricians-services/wiring" },
+            { name: "Fan Installation", slug: "electricians-services/fan-installation" },
+            { name: "Light Fixtures", slug: "electricians-services/light-fixtures" },
       ],
    },
    {
@@ -104,11 +105,11 @@ const curatedCategories: Category[] = [
       description: "Resolve leaks, clogs, pipe issues, and bathroom fitting jobs.",
       image: "/assets/mobilescreens/plumbing.png",
       color: colorPalette[5],
-      slug: "plumbing",
+         slug: "plumbing-services",
       subcategories: [
-         { name: "Leak Repair", slug: "plumbing/leak-repair" },
-         { name: "Tap Installation", slug: "plumbing/tap-installation" },
-         { name: "Drain Cleaning", slug: "plumbing/drain-cleaning" },
+            { name: "Leak Repair", slug: "plumbing-services/leak-repair" },
+            { name: "Tap Installation", slug: "plumbing-services/tap-installation" },
+            { name: "Drain Cleaning", slug: "plumbing-services/drain-cleaning" },
       ],
    },
    {
@@ -162,9 +163,15 @@ const curatedCategories: Category[] = [
 ];
 
 export const CategoriesExplorer = () => {
+   const router = useRouter();
    const categories = curatedCategories;
 
    const marqueeItems = [...categories, ...categories];
+
+   const getServiceHref = (slug?: string) => {
+      if (!slug) return "/services";
+      return `/services/${encodeURIComponent(slug)}`;
+   };
 
    return (
       <section className="py-12 md:py-20 bg-linear-to-b from-primary-50/30 via-white to-primary-50/30 relative overflow-hidden">
@@ -214,6 +221,15 @@ export const CategoriesExplorer = () => {
                            className="group flex min-w-[260px] sm:min-w-[320px] lg:min-w-[340px] items-center gap-5 rounded-2xl bg-white p-3 md:p-5 shadow-sm md:shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-primary-200 cursor-pointer"
                            whileHover={{ scale: 1.02, y: -4 }}
                            transition={{ duration: 0.2 }}
+                           onClick={() => router.push(getServiceHref(item.slug))}
+                           onKeyDown={(event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                 event.preventDefault();
+                                 router.push(getServiceHref(item.slug));
+                              }
+                           }}
+                           role="link"
+                           tabIndex={0}
                         >
                            <div
                               className={`relative h-16 w-16 md:h-24 md:w-24 shrink-0 overflow-hidden rounded-xl bg-linear-to-br ${item.color}`}
@@ -241,12 +257,14 @@ export const CategoriesExplorer = () => {
                               {item.subcategories && item.subcategories.length > 0 && (
                                  <div className="mt-3 flex flex-wrap gap-1.5">
                                     {item.subcategories.slice(0, 3).map((sub) => (
-                                       <span
+                                       <Link
                                           key={sub.slug}
+                                          href={getServiceHref(sub.slug)}
                                           className="inline-block px-2 py-0.5 text-xs bg-primary-50 text-primary-700 rounded-md border border-primary-100"
+                                          onClick={(event) => event.stopPropagation()}
                                        >
                                           {sub.name}
-                                       </span>
+                                       </Link>
                                     ))}
                                     {item.subcategories.length > 3 && (
                                        <span className="inline-block px-2 py-0.5 text-xs bg-gray-50 text-gray-600 rounded-md">
