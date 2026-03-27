@@ -33,7 +33,7 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
    categories = [],
    viewType = "jobs",
 }) => {
-   const isServicesView = viewType === "services";
+   const isServicesView = viewType === "services" || viewType === "jobs";
 
    return (
       <main
