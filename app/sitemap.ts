@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 import { cities } from "@/lib/data/cities";
 import { categoriesApi } from "@/lib/api/endpoints/categories";
+import type { CategoriesListItem } from "@/lib/api/endpoints/categories";
+import type { Subcategory } from "@/types/category";
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://extrahand.in";
 
@@ -8,6 +10,59 @@ function joinUrl(base: string, path: string) {
    const baseClean = base.replace(/\/+$/, "");
    const pathClean = path.startsWith("/") ? path : `/${path}`;
    return `${baseClean}${pathClean}`;
+}
+
+function normalizeSlugPath(slug: string, parentSlug: string) {
+   const cleanSlug = slug.trim().replace(/^\/+|\/+$/g, "");
+   const cleanParent = parentSlug.trim().replace(/^\/+|\/+$/g, "");
+
+   if (!cleanSlug) return "";
+   if (cleanSlug.includes("/")) return cleanSlug;
+   return cleanParent ? `${cleanParent}/${cleanSlug}` : cleanSlug;
+}
+
+function shouldIncludeServices(type: string) {
+   return type.includes("poster") || type.includes("both") || !type;
+}
+
+function shouldIncludeJobs(type: string) {
+   return type.includes("tasker") || type.includes("both") || !type;
+}
+
+function collectPublishedSubcategorySlugs(
+   categorySlug: string,
+   subcategories: Subcategory[]
+) {
+   return subcategories
+      .filter(
+         (sub) =>
+            (sub.isPublished === true ||
+               sub.status === "PUBLISHED" ||
+               sub.status === "APPROVED") &&
+            Boolean(sub.slug)
+      )
+      .map((sub) => normalizeSlugPath(sub.slug, categorySlug))
+      .filter(Boolean);
+}
+
+async function getAllPublishedSubcategorySlugs(
+   category: CategoriesListItem
+): Promise<string[]> {
+   const fallbackFromCategory = collectPublishedSubcategorySlugs(
+      category.slug,
+      category.subcategories ?? []
+   );
+
+   const fetchedSubcategories = await categoriesApi
+      .getSubcategories(category.slug)
+      .catch(() => []);
+
+   const fromApi = collectPublishedSubcategorySlugs(
+      category.slug,
+      fetchedSubcategories
+   );
+
+   return [...new Set([...fallbackFromCategory, ...fromApi])];
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -53,83 +108,66 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
    }));
 
-   // Add dynamic service pages from content-admin categories.
-   // Routes:
-   // - /services/[slug]                 -> app/(public)/services/[slug]/page.tsx
-   // - /services/[slug]/[subcategory] -> app/(public)/services/[slug]/[subcategory]/page.tsx
-   const serviceEntries: MetadataRoute.Sitemap = [];
-
-   // Routes:
-   // - /jobs/[slug]                 -> app/(public)/jobs/[slug]/page.tsx
-   // - /jobs/[slug]/[subcategory] -> app/(public)/jobs/[slug]/[subcategory]/page.tsx
-   const jobEntries: MetadataRoute.Sitemap = [];
-
    const allCategories = await categoriesApi.getCategories({
       includeUnpublished: false,
    });
 
-   for (const cat of allCategories) {
+   const dynamicPathPriority = new Map<string, number>();
+
+   const addPath = (path: string, priority: number) => {
+      if (!path) return;
+      const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+      const existingPriority = dynamicPathPriority.get(normalizedPath);
+      if (existingPriority === undefined || priority > existingPriority) {
+         dynamicPathPriority.set(normalizedPath, priority);
+      }
+   };
+
+   const categoriesWithSubcategorySlugs = await Promise.all(
+      allCategories
+         .filter((cat) => Boolean(cat.slug))
+         .map(async (cat) => ({
+            category: cat,
+            subcategorySlugs: await getAllPublishedSubcategorySlugs(cat),
+         }))
+   );
+
+   for (const { category: cat, subcategorySlugs } of categoriesWithSubcategorySlugs) {
       const type = (cat.categoryType || "").toLowerCase();
 
-      // Match the same filter logic used in app/(public)/services/page.tsx
-      const includeInServices =
-         type.includes("poster") || type.includes("both") || !type;
-
-      // Match the same filter logic used in app/(public)/jobs/page.tsx
-      const includeInJobs =
-         type.includes("tasker") || type.includes("both") || !type;
+      const includeInServices = shouldIncludeServices(type);
+      const includeInJobs = shouldIncludeJobs(type);
 
       if (!includeInServices && !includeInJobs) continue;
-      if (!cat.slug) continue;
 
       if (includeInServices) {
-         serviceEntries.push({
-            url: joinUrl(baseUrl, `/services/${cat.slug}`),
-            lastModified: now,
-            priority: 0.7,
-         });
+         addPath(`/services/${cat.slug}`, 0.7);
       }
 
       if (includeInJobs) {
-         jobEntries.push({
-            url: joinUrl(baseUrl, `/jobs/${cat.slug}`),
-            lastModified: now,
-            priority: 0.7,
-         });
+         addPath(`/jobs/${cat.slug}`, 0.7);
       }
 
-      const subcategories = await categoriesApi.getSubcategories(cat.slug);
-      for (const sub of subcategories) {
-         if (!sub.slug) continue;
-
+      for (const slugPath of subcategorySlugs) {
          if (includeInServices) {
-            // `getSubcategories(cat.slug)` sometimes returns `sub.slug` as a full path
-            // like "{categorySlug}/{subcategorySlug}". In that case, we should not
-            // prefix with `cat.slug` again (otherwise we generate duplicate URLs).
-            const servicePath = sub.slug.includes("/")
-               ? `/services/${sub.slug}`
-               : `/services/${cat.slug}/${sub.slug}`;
-            serviceEntries.push({
-               url: joinUrl(baseUrl, servicePath),
-               lastModified: now,
-               priority: 0.6,
-            });
+            addPath(`/services/${slugPath}`, 0.6);
          }
 
          if (includeInJobs) {
-            const jobPath = sub.slug.includes("/")
-               ? `/jobs/${sub.slug}`
-               : `/jobs/${cat.slug}/${sub.slug}`;
-            jobEntries.push({
-               url: joinUrl(baseUrl, jobPath),
-               lastModified: now,
-               priority: 0.6,
-            });
+            addPath(`/jobs/${slugPath}`, 0.6);
          }
       }
    }
 
+   const dynamicEntries: MetadataRoute.Sitemap = Array.from(
+      dynamicPathPriority.entries()
+   ).map(([path, priority]) => ({
+      url: joinUrl(baseUrl, path),
+      lastModified: now,
+      priority,
+   }));
+
    // Put dynamic routes earlier so tools that show only the first N URLs
    // still display /services and /jobs.
-   return [...entries, ...serviceEntries, ...jobEntries, ...locationEntries];
+   return [...entries, ...dynamicEntries, ...locationEntries];
 }
