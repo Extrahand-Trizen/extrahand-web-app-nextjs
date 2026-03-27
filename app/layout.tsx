@@ -42,6 +42,9 @@ export const metadata: Metadata = {
          },
       ],
    },
+   verification: {
+      google: "kJdq2hpjEv7FM_ffiqCPPLdzi2bcOFZGVIUXouVi3Jk",
+   },
    twitter: {
       card: "summary_large_image",
       title: "ExtraHand - Task Marketplace | Hire & Post Services",
