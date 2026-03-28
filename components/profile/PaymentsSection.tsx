@@ -49,8 +49,14 @@ import {
    FileText,
    FileSpreadsheet,
    AlertTriangle,
+   AlertCircle,
 } from "lucide-react";
-import { PaymentMethod, PayoutMethod, Transaction } from "@/types/profile";
+import {
+   PaymentMethod,
+   PayoutMethod,
+   Transaction,
+   PendingCancellationPenaltyItem,
+} from "@/types/profile";
 import { mockTransactions } from "@/lib/data/payments";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
@@ -68,6 +74,64 @@ import { AddBankAccountModal } from "./AddBankAccountModal";
 import { BankAccountBanner } from "./BankAccountBanner";
 import { PayoutHistory } from "./PayoutHistory";
 import { useBankAccounts } from "@/lib/hooks/usePayments";
+
+function CancellationPenaltyBanner({
+   total,
+   items,
+}: {
+   total: number;
+   items: PendingCancellationPenaltyItem[];
+}) {
+   const first = items[0];
+   const penaltyDisplay = first ? Number.parseFloat(first.amount) : total;
+   const amountNum = Number.isFinite(penaltyDisplay) ? Math.round(penaltyDisplay) : Math.round(total);
+
+   const taskLabel = (() => {
+      if (first?.taskTitle?.trim()) return `“${first.taskTitle.trim()}”`;
+      if (first?.taskId) {
+         const id = first.taskId;
+         const short = id.length > 6 ? id.slice(-6) : id;
+         return `task #${short}`;
+      }
+      return "a task";
+   })();
+
+   let dateStr = "";
+   if (first?.cancelledAt) {
+      const d = new Date(first.cancelledAt);
+      if (!Number.isNaN(d.getTime())) {
+         dateStr = format(d, "MMM d, yyyy");
+      }
+   }
+
+   return (
+      <div className="rounded-xl border border-rose-200 bg-gradient-to-r from-rose-50 to-rose-100/80 px-3 py-3 sm:px-4 sm:py-3.5 flex flex-col sm:flex-row sm:items-center gap-3 shadow-sm">
+         <div className="flex items-start gap-3 flex-1 min-w-0">
+            <div
+               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-600 text-white shadow-inner"
+               aria-hidden
+            >
+               <AlertCircle className="h-5 w-5" strokeWidth={2.5} />
+            </div>
+            <div className="min-w-0 pt-0.5">
+               <p className="font-semibold text-rose-950 text-sm sm:text-base">
+                  Cancellation penalty applied
+               </p>
+               <p className="text-xs sm:text-sm text-rose-900/90 mt-1 leading-relaxed">
+                  You cancelled {taskLabel}
+                  {dateStr ? ` on ${dateStr}` : ""}. A penalty of ₹{amountNum.toLocaleString()}{" "}
+                  will be deducted from your next earning. See the{" "}
+                  <span className="font-medium text-rose-950">Transactions</span> tab for the
+                  penalty line item.
+               </p>
+            </div>
+         </div>
+         <p className="text-base sm:text-lg font-bold text-rose-900 shrink-0 sm:text-right tabular-nums">
+            −₹{Math.round(total).toLocaleString()}
+         </p>
+      </div>
+   );
+}
 
 interface PaymentsSectionProps {
    paymentMethods?: PaymentMethod[];
@@ -309,31 +373,21 @@ export function PaymentsSection({
                      </span>
                   </div>
                   <p className="text-lg sm:text-xl font-bold text-rose-800">
-                     ₹
+                     −₹
                      {Math.round(pendingCancellationPenaltyTotal).toLocaleString()}
                   </p>
                   <p className="text-[10px] text-rose-700/90 mt-1 leading-snug">
-                     Deducted from your next payouts until cleared
+                     Deducted from next payout
                   </p>
                </div>
             )}
          </div>
 
          {pendingCancellationPenaltyTotal > 0 && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm text-amber-950">
-               <p className="font-medium text-amber-950">Cancellation penalty</p>
-               <p className="text-amber-900/90 mt-1 leading-relaxed">
-                  You have a pending cancellation penalty of ₹
-                  {Math.round(pendingCancellationPenaltyTotal).toLocaleString()}.
-                  It will be recovered automatically from your future task payouts.
-                  {pendingCancellationPenaltyItems.length > 0 && (
-                     <>
-                        {" "}
-                        Open a transaction below for task details.
-                     </>
-                  )}
-               </p>
-            </div>
+            <CancellationPenaltyBanner
+               total={pendingCancellationPenaltyTotal}
+               items={pendingCancellationPenaltyItems}
+            />
          )}
 
          <Tabs value={activeTab} onValueChange={setActiveTab}>

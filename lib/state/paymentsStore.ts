@@ -43,15 +43,19 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
     try {
       set({ loading: true, error: null });
 
-      const [txRes, penRes] = await Promise.all([
-        paymentApi.getUserTransactions(userId, { limit: 100 }),
-        paymentApi.getPendingCancellationPenalties(userId),
-      ]);
+      const txRes = await paymentApi.getUserTransactions(userId, { limit: 100 });
+
+      let penRes: Awaited<ReturnType<typeof paymentApi.getPendingCancellationPenalties>>;
+      try {
+         penRes = await paymentApi.getPendingCancellationPenalties(userId);
+      } catch {
+         penRes = { success: false, items: [] };
+      }
 
       let mapped: Transaction[] = [];
 
       const penaltyItems: PendingCancellationPenaltyItem[] =
-        penRes?.success && Array.isArray(penRes.items) ? penRes.items : [];
+         penRes?.success && Array.isArray(penRes.items) ? penRes.items : [];
       let pendingPenaltyTotal = 0;
       if (penRes?.success && typeof penRes.totalRemaining === "string") {
         const parsed = Number.parseFloat(penRes.totalRemaining);
@@ -63,8 +67,15 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
         }
       }
 
-      if (txRes && Array.isArray(txRes.transactions)) {
-        mapped = txRes.transactions.map((tx: any) => {
+      const txNormalized =
+         txRes && typeof txRes === "object" && txRes !== null && "data" in txRes
+            ? (txRes as { data?: Record<string, unknown> }).data ?? txRes
+            : txRes;
+      const txList = Array.isArray((txNormalized as { transactions?: unknown })?.transactions)
+         ? (txNormalized as { transactions: any[] }).transactions
+         : [];
+
+      mapped = txList.map((tx: any) => {
           let mappedType: Transaction["type"] = "payment";
           if (tx.type === "payout" || tx.type === "earning") {
             mappedType = "payout";
@@ -221,7 +232,6 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
               : {}),
           };
         });
-      }
 
       // Backfill missing task titles so payment rows can show task names instead of generic labels.
       const missingTitleTaskIds = Array.from(
