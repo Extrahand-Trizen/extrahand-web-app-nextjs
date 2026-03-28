@@ -172,6 +172,32 @@ export const paymentApi = {
   },
 
   /**
+   * Get transaction summary totals
+   * GET /api/v1/payment/transactions/user/:userId/summary
+   */
+  async getTransactionSummary(
+    userId: string,
+    params?: { linkedUserIds?: string }
+  ): Promise<{
+    success: boolean;
+    summary?: {
+      totalPayments: string;
+      totalPayouts: string;
+      totalRefunds: string;
+      totalCompensation: string;
+      totalFees: string;
+      netEarnings: string;
+      transactionCount: number;
+    };
+    error?: string;
+  }> {
+    const search = new URLSearchParams();
+    if (params?.linkedUserIds?.trim()) search.set('linkedUserIds', params.linkedUserIds.trim());
+    const queryString = search.toString() ? `?${search.toString()}` : '';
+    return fetchWithAuth(`/payment/transactions/user/${userId}/summary${queryString}`);
+  },
+
+  /**
    * Calculate fees for an amount (category-aware when taskCategory provided)
    * GET /api/v1/payment/fees/calculate?amount=:amount&taskCategory=:taskCategory
    */
