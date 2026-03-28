@@ -101,8 +101,14 @@ export const paymentApi = {
    * Get user earnings summary
    * GET /api/v1/payment/earnings/:userId
    */
-  async getUserEarnings(userId: string): Promise<{ success: boolean; data?: UserEarnings; error?: string }> {
-    return fetchWithAuth(`/payment/earnings/${userId}`);
+  async getUserEarnings(
+    userId: string,
+    linkedUserIds?: string
+  ): Promise<{ success: boolean; data?: UserEarnings; error?: string }> {
+    const q = new URLSearchParams();
+    if (linkedUserIds?.trim()) q.set('linkedUserIds', linkedUserIds.trim());
+    const suffix = q.toString() ? `?${q.toString()}` : '';
+    return fetchWithAuth(`/payment/earnings/${userId}${suffix}`);
   },
 
   /**
