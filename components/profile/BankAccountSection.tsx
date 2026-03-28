@@ -18,6 +18,8 @@ export function BankAccountSection({ user }: BankAccountSectionProps) {
   const [showBankModal, setShowBankModal] = useState(false);
   const [latestMaskedAccount, setLatestMaskedAccount] = useState<string | null>(null);
   const [hasLocalBankAccount, setHasLocalBankAccount] = useState(false);
+  const [settingDefaultAccountId, setSettingDefaultAccountId] = useState<string | null>(null);
+  const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null);
   const { bankAccounts, hasBankAccount, deleteBankAccount, setDefaultBankAccount, loading } = useBankAccounts();
 
   const isVerified = hasLocalBankAccount || hasBankAccount || Boolean(user.isBankVerified);
@@ -28,27 +30,43 @@ export function BankAccountSection({ user }: BankAccountSectionProps) {
     user.bankAccount?.maskedAccountNumber;
 
   const handleDelete = async (bankAccountId: string) => {
+    if (deletingAccountId || settingDefaultAccountId) return;
+
     const ok = window.confirm("Delete this bank account? Pending payouts will require adding a bank account again.");
     if (!ok) return;
 
     try {
+      setDeletingAccountId(bankAccountId);
       await deleteBankAccount(bankAccountId);
       setHasLocalBankAccount(false);
       setLatestMaskedAccount(null);
-      toast.success("Bank account deleted");
+      toast.success("Bank account deleted", { id: "delete-payout-bank-account" });
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete bank account");
+      toast.error(error instanceof Error ? error.message : "Failed to delete bank account", {
+        id: "delete-payout-bank-account",
+      });
+    } finally {
+      setDeletingAccountId(null);
     }
   };
 
   const handleSelectForPayout = async (bankAccountId: string) => {
+    if (settingDefaultAccountId || deletingAccountId) return;
+
     try {
+      setSettingDefaultAccountId(bankAccountId);
       await setDefaultBankAccount(bankAccountId);
-      toast.success("Payout bank account updated");
+      toast.success("Default payout bank account updated", {
+        id: "default-payout-bank-account",
+      });
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to update payout bank account");
+      toast.error(error instanceof Error ? error.message : "Failed to update payout bank account", {
+        id: "default-payout-bank-account",
+      });
+    } finally {
+      setSettingDefaultAccountId(null);
     }
   };
 
@@ -110,22 +128,24 @@ export function BankAccountSection({ user }: BankAccountSectionProps) {
                       variant="outline"
                       size="sm"
                       onClick={() => handleSelectForPayout(account.id)}
+                      disabled={loading || settingDefaultAccountId === account.id || deletingAccountId === account.id}
                     >
-                      Use For Payouts
+                      {settingDefaultAccountId === account.id ? "Setting..." : "Set default"}
                     </Button>
                   ) : (
                     <span className="text-xs font-medium text-green-700 bg-green-50 border border-green-200 px-2 py-1 rounded">
-                      Selected For Payouts
+                      Default
                     </span>
                   )}
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleDelete(account.id)}
+                    disabled={loading || deletingAccountId === account.id || settingDefaultAccountId === account.id}
                     className="text-red-600 border-red-200 hover:bg-red-50"
                   >
                     <Trash2 className="w-4 h-4 mr-1" />
-                    Delete
+                    {deletingAccountId === account.id ? "Deleting..." : "Delete"}
                   </Button>
                 </div>
               </div>

@@ -127,6 +127,15 @@ export function PaymentsSection({
    const [showBankAccountModal, setShowBankAccountModal] = useState(false);
    const [selectedTransaction, setSelectedTransaction] =
       useState<Transaction | null>(null);
+   const [settingPaymentMethodId, setSettingPaymentMethodId] = useState<
+      string | null
+   >(null);
+   const [settingPayoutBankId, setSettingPayoutBankId] = useState<
+      string | null
+   >(null);
+   const [deletingPayoutBankId, setDeletingPayoutBankId] = useState<
+      string | null
+   >(null);
 
    // Fetch earnings + transactions as soon as Payments section is shown (use userId
    // from parent so Total Earnings/Total Spent load without waiting for auth or tab).
@@ -167,6 +176,16 @@ export function PaymentsSection({
          console.log("Payout method saved:", data);
       }
       setShowPayoutMethodModal(false);
+   };
+
+   const handleSetDefaultPaymentMethod = async (methodId: string) => {
+      if (!onSetDefaultPayment || settingPaymentMethodId) return;
+      setSettingPaymentMethodId(methodId);
+      try {
+         await Promise.resolve(onSetDefaultPayment(methodId));
+      } finally {
+         setSettingPaymentMethodId(null);
+      }
    };
 
    // Filter transactions based on selected filter + range filters
@@ -270,7 +289,10 @@ export function PaymentsSection({
                               method={method}
                               onRemove={() => onRemovePaymentMethod(method.id)}
                               onSetDefault={() =>
-                                 onSetDefaultPayment(method.id)
+                                 handleSetDefaultPaymentMethod(method.id)
+                              }
+                              isSettingDefault={
+                                 settingPaymentMethodId === method.id
                               }
                            />
                         ))}
@@ -380,46 +402,84 @@ export function PaymentsSection({
                                        variant="outline"
                                        size="sm"
                                        onClick={async () => {
+                                          if (
+                                             settingPayoutBankId ||
+                                             account.isDefault
+                                          ) {
+                                             return;
+                                          }
                                           try {
+                                             setSettingPayoutBankId(account.id);
                                              await setDefaultBankAccount(account.id);
-                                             toast.success("Payout bank account updated");
+                                             toast.success(
+                                                "Default payout bank account updated",
+                                                {
+                                                   id: "default-payout-bank-account",
+                                                }
+                                             );
                                           } catch (error) {
                                              toast.error(
                                                 error instanceof Error
                                                    ? error.message
-                                                   : "Failed to update payout bank account"
+                                                   : "Failed to update payout bank account",
+                                                {
+                                                   id: "default-payout-bank-account",
+                                                }
                                              );
+                                          } finally {
+                                             setSettingPayoutBankId(null);
                                           }
                                        }}
-                                       disabled={bankLoading}
+                                       disabled={
+                                          bankLoading ||
+                                          settingPayoutBankId === account.id ||
+                                          deletingPayoutBankId === account.id
+                                       }
                                     >
-                                       Use For Payouts
+                                       {settingPayoutBankId === account.id
+                                          ? "Setting..."
+                                          : "Set default"}
                                     </Button>
                                  ) : (
                                     <Badge className="bg-green-100 text-green-800 border-green-200">
-                                       Selected For Payouts
+                                       Default
                                     </Badge>
                                  )}
                                  <Button
                                     variant="outline"
                                     size="sm"
                                     onClick={async () => {
+                                       if (deletingPayoutBankId) return;
                                        try {
+                                          setDeletingPayoutBankId(account.id);
                                           await deleteBankAccount(account.id);
-                                          toast.success("Bank account deleted");
+                                          toast.success("Bank account deleted", {
+                                             id: "delete-payout-bank-account",
+                                          });
                                        } catch (error) {
                                           toast.error(
                                              error instanceof Error
                                                 ? error.message
-                                                : "Failed to delete bank account"
+                                                : "Failed to delete bank account",
+                                             {
+                                                id: "delete-payout-bank-account",
+                                             }
                                           );
+                                       } finally {
+                                          setDeletingPayoutBankId(null);
                                        }
                                     }}
-                                    disabled={bankLoading}
+                                    disabled={
+                                       bankLoading ||
+                                       deletingPayoutBankId === account.id ||
+                                       settingPayoutBankId === account.id
+                                    }
                                     className="text-red-600 border-red-200 hover:bg-red-50"
                                  >
                                     <Trash2 className="w-4 h-4 mr-2" />
-                                    Delete
+                                    {deletingPayoutBankId === account.id
+                                       ? "Deleting..."
+                                       : "Delete"}
                                  </Button>
                               </div>
                            </div>
@@ -815,12 +875,14 @@ interface PaymentMethodRowProps {
    method: PaymentMethod;
    onRemove: () => void;
    onSetDefault: () => void;
+   isSettingDefault?: boolean;
 }
 
 function PaymentMethodRow({
    method,
    onRemove,
    onSetDefault,
+   isSettingDefault = false,
 }: PaymentMethodRowProps) {
    const [showConfirm, setShowConfirm] = useState(false);
 
@@ -870,9 +932,10 @@ function PaymentMethodRow({
                      variant="ghost"
                      size="sm"
                      onClick={onSetDefault}
+                     disabled={isSettingDefault}
                      className="text-xs h-8 px-2 text-gray-600 hover:text-primary-600"
                   >
-                     Set default
+                     {isSettingDefault ? "Setting..." : "Set default"}
                   </Button>
                )}
                {showConfirm ? (
@@ -1077,7 +1140,6 @@ function TransactionRow({ transaction, onOpenDetails }: TransactionRowProps) {
                </p>
                <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 truncate">
                   {formatDate(transaction.createdAt)}
-                  {safeTaskId && !transaction.taskTitle && " • Task linked"}
                </p>
             </div>
 
@@ -1197,15 +1259,23 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
 
    if (!transaction) return null;
 
+   const isIncoming =
+      transaction.type === "payout" || transaction.type === "refund";
    const statusMessage = getEscrowStatusMessage(escrowStatus, transaction.status);
    const breakdown = buildPaymentBreakdown(transaction);
    const timeline = buildPaymentTimeline(taskStatus, escrowStatus);
+   const counterpartyLabel = isIncoming ? "Received from" : "Paid to";
+   const counterpartyValue = isIncoming
+      ? paidToName || transaction.assignedToName || "ExtraHand"
+      : paidToName || "Will be assigned";
 
    return (
       <Dialog open={Boolean(transaction)} onOpenChange={(open) => !open && onClose()}>
          <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-               <DialogTitle className="text-base font-semibold">Payment Successful</DialogTitle>
+               <DialogTitle className="text-base font-semibold">
+                  {isIncoming ? "Payout Details" : "Payment Details"}
+               </DialogTitle>
             </DialogHeader>
 
             <div className="space-y-4">
@@ -1228,7 +1298,11 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
                   <DetailRow label="Platform Fee" value={breakdown.platformFee} />
                   <DetailRow label="GST" value={breakdown.gstAmount} />
                   <div className="pt-2 mt-2 border-t border-gray-200">
-                     <DetailRow label="Total Paid" value={breakdown.totalPaid} strong />
+                     <DetailRow
+                        label={isIncoming ? "Amount Received" : "Total Paid"}
+                        value={breakdown.totalPaid}
+                        strong
+                     />
                   </div>
                </div>
 
@@ -1248,8 +1322,8 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
                </div>
 
                <div>
-                  <h4 className="text-sm font-semibold text-gray-900">Paid to</h4>
-                  <p className="text-sm text-gray-700 mt-1">{paidToName || "Will be assigned"}</p>
+                  <h4 className="text-sm font-semibold text-gray-900">{counterpartyLabel}</h4>
+                  <p className="text-sm text-gray-700 mt-1">{counterpartyValue}</p>
                </div>
 
                {isRefreshing && (

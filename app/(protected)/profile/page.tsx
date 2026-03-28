@@ -452,18 +452,38 @@ function ProfilePageContent() {
          toast.success("Payout method removed successfully");
       },
       onSetDefaultPayment: (id: string) => {
-         setPaymentMethods(prev => prev.map(pm => ({
-            ...pm,
-            isDefault: pm.id === id
-         })));
-         toast.success("Default payment method updated");
+         let updated = false;
+         setPaymentMethods(prev => prev.map(pm => {
+            if (pm.id === id && !pm.isDefault) {
+               updated = true;
+            }
+            return {
+               ...pm,
+               isDefault: pm.id === id,
+            };
+         }));
+         if (updated) {
+            toast.success("Default payment method updated", {
+               id: "default-payment-method-updated",
+            });
+         }
       },
       onSetDefaultPayout: (id: string) => {
-         setPayoutMethods(prev => prev.map(pm => ({
-            ...pm,
-            isDefault: pm.id === id
-         })));
-         toast.success("Default payout method updated");
+         let updated = false;
+         setPayoutMethods(prev => prev.map(pm => {
+            if (pm.id === id && !pm.isDefault) {
+               updated = true;
+            }
+            return {
+               ...pm,
+               isDefault: pm.id === id,
+            };
+         }));
+         if (updated) {
+            toast.success("Default payout method updated", {
+               id: "default-payout-method-updated",
+            });
+         }
       },
       onSavePaymentMethod: (data: Partial<PaymentMethod>) => {
          const newMethod: PaymentMethod = {

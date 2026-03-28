@@ -53,6 +53,11 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
           const amount = Number.parseFloat(tx.amount);
 
           const metadata = tx.metadata || {};
+          const descriptionText =
+            typeof tx.description === "string" ? tx.description.trim() : "";
+          const taskIdFromDescription =
+            descriptionText.match(/\b[a-f0-9]{24}\b/i)?.[0] || undefined;
+
           const toNumber = (value: unknown): number | undefined => {
             if (typeof value === "number" && Number.isFinite(value)) return value;
             if (typeof value === "string") {
@@ -67,7 +72,8 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
             metadata.taskId ||
             metadata.task?._id ||
             metadata.task?.id ||
-            tx.relatedTaskId;
+            tx.relatedTaskId ||
+            taskIdFromDescription;
           const taskTitle =
             tx.taskTitle ||
             metadata.taskTitle ||

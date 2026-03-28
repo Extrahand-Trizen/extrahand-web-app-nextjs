@@ -62,28 +62,38 @@ export function useBankAccounts() {
         throw new Error("Please log in to delete bank account");
       }
 
-      const token = currentUser ? await currentUser.getIdToken().catch(() => null) : null;
-      const headers: HeadersInit = {
-        "Content-Type": "application/json",
-        "X-User-Id": uid,
-      };
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
+      setLoading(true);
+      setError(null);
+
+      try {
+        const token = currentUser ? await currentUser.getIdToken().catch(() => null) : null;
+        const headers: HeadersInit = {
+          "Content-Type": "application/json",
+          "X-User-Id": uid,
+        };
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+
+        const response = await fetch("/api/payment/bank-accounts", {
+          method: "DELETE",
+          headers,
+          body: JSON.stringify({ bankAccountId, userId: uid }),
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to delete bank account");
+        }
+
+        await fetchBankAccounts();
+        return data;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Error deleting bank account");
+        throw err;
+      } finally {
+        setLoading(false);
       }
-
-      const response = await fetch("/api/payment/bank-accounts", {
-        method: "DELETE",
-        headers,
-        body: JSON.stringify({ bankAccountId, userId: uid }),
-      });
-
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to delete bank account");
-      }
-
-      await fetchBankAccounts();
-      return data;
     },
     [currentUser, userData, fetchBankAccounts]
   );
@@ -95,28 +105,38 @@ export function useBankAccounts() {
         throw new Error("Please log in to set default bank account");
       }
 
-      const token = currentUser ? await currentUser.getIdToken().catch(() => null) : null;
-      const headers: HeadersInit = {
-        "Content-Type": "application/json",
-        "X-User-Id": uid,
-      };
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
+      setLoading(true);
+      setError(null);
+
+      try {
+        const token = currentUser ? await currentUser.getIdToken().catch(() => null) : null;
+        const headers: HeadersInit = {
+          "Content-Type": "application/json",
+          "X-User-Id": uid,
+        };
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+
+        const response = await fetch("/api/payment/bank-accounts", {
+          method: "PUT",
+          headers,
+          body: JSON.stringify({ bankAccountId, userId: uid }),
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to set default bank account");
+        }
+
+        await fetchBankAccounts();
+        return data;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Error updating bank account");
+        throw err;
+      } finally {
+        setLoading(false);
       }
-
-      const response = await fetch("/api/payment/bank-accounts", {
-        method: "PUT",
-        headers,
-        body: JSON.stringify({ bankAccountId, userId: uid }),
-      });
-
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to set default bank account");
-      }
-
-      await fetchBankAccounts();
-      return data;
     },
     [currentUser, userData, fetchBankAccounts]
   );
