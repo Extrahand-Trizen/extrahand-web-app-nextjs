@@ -40,6 +40,33 @@ export const paymentApi = {
   },
 
   /**
+   * Cancel escrow and trigger Razorpay refund when applicable
+   * POST /api/v1/payment/cancel
+   */
+  async cancelPayment(body: {
+    taskId?: string;
+    escrowId?: string;
+    razorpayOrderId?: string;
+    reason?: string;
+    userId?: string;
+    cancelledBy?: 'poster' | 'performer';
+    taskStartDate?: string;
+    assignedAt?: string;
+    feeBaseAmount?: number;
+  }): Promise<{
+    success: boolean;
+    cancelled?: boolean;
+    refundRequired?: boolean;
+    refund?: unknown;
+    error?: string;
+  }> {
+    return fetchWithAuth('/payment/cancel', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  },
+
+  /**
    * Get escrow status
    * GET /api/v1/payment/escrow/status/:escrowId
    */

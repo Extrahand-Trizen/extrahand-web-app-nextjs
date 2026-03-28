@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Bell, X, Check, CheckCheck } from "lucide-react";
 import { useNotificationStore } from "@/lib/state/notificationStore";
 import { useAuth } from "@/lib/auth/context";
@@ -46,8 +46,10 @@ function resolveNotificationRoute(notif: InAppNotification): string | null {
 
 export function NotificationCenter() {
   const router = useRouter();
+  const pathname = usePathname();
   const { currentUser, userData } = useAuth();
   const userId = currentUser?.uid || userData?.uid;
+  const isNotificationsPage = pathname === "/notifications";
 
   const {
     notifications,
@@ -119,10 +121,10 @@ export function NotificationCenter() {
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 text-secondary-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
         title="Notifications"
-        aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
+        aria-label={`Notifications${!isNotificationsPage && unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
       >
         <Bell className="w-5 h-5" />
-        {unreadCount > 0 && (
+        {!isNotificationsPage && unreadCount > 0 && (
           <span className="absolute top-1 right-1 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[16px] h-4 px-0.5 leading-none">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
@@ -256,6 +258,8 @@ export function NotificationCenter() {
               <button
                 id="view-all-notifications-btn"
                 onClick={() => {
+                  markAllAsReadOptimistic();
+                  markAllAsRead();
                   router.push("/notifications");
                   setIsOpen(false);
                 }}

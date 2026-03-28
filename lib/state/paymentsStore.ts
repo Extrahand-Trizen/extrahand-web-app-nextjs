@@ -48,6 +48,10 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
           let mappedType: Transaction["type"] = "payment";
           if (tx.type === "payout" || tx.type === "earning") {
             mappedType = "payout";
+          } else if (tx.type === "refund") {
+            mappedType = "refund";
+          } else if (tx.type === "escrow" || tx.type === "payment") {
+            mappedType = "payment";
           }
 
           const amount = Number.parseFloat(tx.amount);
@@ -74,6 +78,17 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
             metadata.task?.id ||
             tx.relatedTaskId ||
             taskIdFromDescription;
+          const payoutIdCandidate =
+            tx.transactionId ||
+            tx.relatedEntityId ||
+            metadata.payoutId ||
+            tx.id;
+          const payoutId = mappedType === "payout" ? String(payoutIdCandidate) : undefined;
+
+          const escrowStatusFromMeta =
+            typeof metadata.escrowStatus === "string"
+              ? (metadata.escrowStatus as Transaction["escrowStatus"])
+              : undefined;
           const taskTitle =
             tx.taskTitle ||
             metadata.taskTitle ||
@@ -109,6 +124,8 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
               ? "Payment"
               : mappedType === "payout"
               ? "Earnings"
+              : mappedType === "refund"
+              ? "Refund"
               : "Transaction";
 
           const rawStatus = String(tx.status || "").toLowerCase();
@@ -123,10 +140,13 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
               ? "failed"
               : rawStatus === "cancelled"
               ? "cancelled"
+              : rawStatus === "refunded"
+              ? "cancelled"
               : "completed";
 
           return {
             id: tx.transactionId || tx.id,
+            payoutId,
             type: mappedType,
             amount,
             currency: "INR",
@@ -144,7 +164,9 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
               metadata.assignedToName || metadata.task?.assignedToName,
             paidToName:
               metadata.paidToName || metadata.performerName || metadata.taskerName,
-            escrowStatus: metadata.escrowStatus || metadata.escrow?.status,
+            escrowStatus:
+              escrowStatusFromMeta ||
+              (metadata.escrow?.status as Transaction["escrowStatus"] | undefined),
             taskAmount,
             platformFee,
             gstAmount,
@@ -195,11 +217,14 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
           ? earningsRes.data.totalEarnings || 0
           : 0;
 
-      // Sum all outgoing payments (type === "payment") regardless of status;
-      // use absolute value so Total Spent displays as a positive number.
-      const totalSpent = mapped
+      // Net spend: money paid for tasks minus refunds returned (Razorpay refunds).
+      const paymentTotal = mapped
         .filter((t) => t.type === "payment")
         .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
+      const refundTotal = mapped
+        .filter((t) => t.type === "refund")
+        .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
+      const totalSpent = Math.max(0, paymentTotal - refundTotal);
 
       set({
         transactions: mapped,

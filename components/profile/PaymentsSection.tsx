@@ -191,14 +191,13 @@ export function PaymentsSection({
    // Filter transactions based on selected filter + range filters
    const filteredTransactions = transactions.filter((t) => {
       // Type filter
-      if (transactionFilter === "outgoing" && t.type !== "payment")
-         return false;
       if (
-         transactionFilter === "earnings" &&
-         t.type !== "payout" &&
+         transactionFilter === "outgoing" &&
+         t.type !== "payment" &&
          t.type !== "refund"
       )
          return false;
+      if (transactionFilter === "earnings" && t.type !== "payout") return false;
 
       // Date range filter
       if (dateRange?.from) {
@@ -222,6 +221,36 @@ export function PaymentsSection({
 
       return true;
    });
+
+   const payoutTransactions = useMemo(
+      () => transactions.filter((t) => t.type === "payout"),
+      [transactions]
+   );
+
+   const payoutIds = useMemo(() => {
+      const ids = payoutTransactions
+         .map((transaction) => {
+            if (transaction.payoutId) return transaction.payoutId;
+            const metadata =
+               transaction.metadata &&
+               typeof transaction.metadata === "object" &&
+               !Array.isArray(transaction.metadata)
+                  ? (transaction.metadata as Record<string, unknown>)
+                  : undefined;
+
+            const fromMetadata =
+               (typeof metadata?.payoutId === "string" && metadata.payoutId) ||
+               (typeof metadata?.relatedEntityId === "string" &&
+                  metadata.relatedEntityId) ||
+               (typeof metadata?.transactionId === "string" &&
+                  metadata.transactionId);
+
+            return fromMetadata || transaction.id;
+         })
+         .filter(Boolean);
+
+      return Array.from(new Set(ids));
+   }, [payoutTransactions]);
 
    return (
       <div className="max-w-4xl space-y-4 sm:space-y-6">
@@ -355,9 +384,8 @@ export function PaymentsSection({
                   </div>
 
                   <PayoutHistory
-                     payoutIds={transactions
-                        ?.filter(t => t.type === "payout" || t.type === "payout_processing")
-                        .map(t => t.id) || []}
+                     payoutIds={payoutIds}
+                     fallbackPayouts={payoutTransactions}
                      maxItems={20}
                      showPending={true}
                      showCompleted={true}
@@ -377,7 +405,7 @@ export function PaymentsSection({
                            </p>
                            <Button
                               onClick={() => setShowBankAccountModal(true)}
-                              className="mt-3 bg-blue-600 hover:bg-blue-700"
+                              className="mt-3 bg-primary-600 hover:bg-primary-700 text-white"
                               size="sm"
                            >
                               <Plus className="w-4 h-4 mr-2" />
@@ -487,7 +515,7 @@ export function PaymentsSection({
 
                         <Button
                            onClick={() => setShowBankAccountModal(true)}
-                           className="bg-blue-600 hover:bg-blue-700"
+                           className="bg-primary-600 hover:bg-primary-700 text-white"
                            size="sm"
                         >
                            <Plus className="w-4 h-4 mr-2" />
@@ -1083,6 +1111,22 @@ interface TransactionRowProps {
    onOpenDetails: () => void;
 }
 
+function transactionRowBadgeStatus(
+   transaction: Transaction
+): Transaction["status"] | "refunded" {
+   if (transaction.type === "refund" && transaction.status === "completed") {
+      return "refunded";
+   }
+   if (
+      transaction.type === "payment" &&
+      (transaction.escrowStatus === "refunded" ||
+         transaction.escrowStatus === "cancelled")
+   ) {
+      return "cancelled";
+   }
+   return transaction.status;
+}
+
 function TransactionRow({ transaction, onOpenDetails }: TransactionRowProps) {
    const isCredit =
       transaction.type === "payout" || transaction.type === "refund";
@@ -1152,7 +1196,7 @@ function TransactionRow({ transaction, onOpenDetails }: TransactionRowProps) {
                >
                   {isCredit ? "+" : "-"}₹{transaction.amount.toLocaleString()}
                </p>
-               <TransactionStatusBadge status={transaction.status} />
+               <TransactionStatusBadge status={transactionRowBadgeStatus(transaction)} />
             </div>
          </div>
       </div>
@@ -1411,8 +1455,15 @@ function DetailRow({ label, value, strong = false }: { label: string; value: num
    );
 }
 
-function TransactionStatusBadge({ status }: { status: Transaction["status"] }) {
-   const config = {
+function TransactionStatusBadge({
+   status,
+}: {
+   status: Transaction["status"] | "refunded";
+}) {
+   const config: Record<
+      Transaction["status"] | "refunded",
+      { label: string; className: string }
+   > = {
       completed: {
          label: "Completed",
          className: "bg-green-100 text-green-700",
@@ -1420,6 +1471,7 @@ function TransactionStatusBadge({ status }: { status: Transaction["status"] }) {
       pending: { label: "In Progress", className: "bg-amber-100 text-amber-700" },
       failed: { label: "Failed", className: "bg-red-100 text-red-700" },
       cancelled: { label: "Cancelled", className: "bg-gray-100 text-gray-600" },
+      refunded: { label: "Refunded", className: "bg-green-100 text-green-700" },
    };
 
    const { label, className } = config[status];

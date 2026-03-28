@@ -125,6 +125,7 @@ export interface PayoutMethod {
 // Transaction history
 export interface Transaction {
    id: string;
+   payoutId?: string;
    type: "payment" | "payout" | "refund" | "fee";
    amount: number;
    currency: string;

@@ -3,7 +3,7 @@
 import { useEffect, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Bell, ArrowLeft, Check, CheckCheck, Trash2 } from "lucide-react";
+import { Bell, ArrowLeft, Check, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNotificationStore } from "@/lib/state/notificationStore";
 import { useAuth } from "@/lib/auth/context";
@@ -84,7 +84,6 @@ export default function NotificationsPage() {
 
   const {
     notifications,
-    unreadCount,
     isLoading,
     fetchNotifications,
     markAsRead,
@@ -103,9 +102,10 @@ export default function NotificationsPage() {
     fetchNotifications(30, 0);
   }, [userId, fetchNotifications]);
 
-  const handleMarkAllRead = useCallback(async () => {
+  useEffect(() => {
+    // Opening full notifications should clear unread indicators.
     markAllAsReadOptimistic();
-    await markAllAsRead();
+    markAllAsRead();
   }, [markAllAsRead, markAllAsReadOptimistic]);
 
   const handleDelete = useCallback(
@@ -159,30 +159,14 @@ export default function NotificationsPage() {
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-secondary-900 flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-secondary-900">
                 Notifications
-                {unreadCount > 0 && (
-                  <span className="bg-red-100 text-red-600 text-xs font-bold rounded-full px-2 py-0.5">
-                    {unreadCount} unread
-                  </span>
-                )}
               </h1>
               <p className="text-sm text-secondary-500 mt-0.5">
                 Stay updated on your tasks, offers, and payments.
               </p>
             </div>
           </div>
-
-          {unreadCount > 0 && (
-            <button
-              id="mark-all-read-btn"
-              onClick={handleMarkAllRead}
-              className="flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 px-3 py-2 rounded-lg transition-colors"
-            >
-              <CheckCheck className="w-4 h-4" />
-              Mark all read
-            </button>
-          )}
         </div>
 
         {/* Content */}

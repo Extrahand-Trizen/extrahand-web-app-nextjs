@@ -6,6 +6,7 @@ import { PayoutStatusCard } from "./PayoutStatusCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import type { Transaction } from "@/types/profile";
 
 interface Payout {
   payoutId: string;
@@ -21,6 +22,7 @@ interface Payout {
 
 interface PayoutHistoryProps {
   payoutIds?: string[];
+  fallbackPayouts?: Transaction[];
   maxItems?: number;
   showPending?: boolean;
   showCompleted?: boolean;
@@ -28,6 +30,7 @@ interface PayoutHistoryProps {
 
 export function PayoutHistory({
   payoutIds = [],
+  fallbackPayouts = [],
   maxItems = 10,
   showPending = true,
   showCompleted = true,
@@ -51,18 +54,101 @@ export function PayoutHistory({
 
         const responses = await Promise.allSettled(
           payoutIds.slice(0, maxItems).map((id) =>
-            fetch(`/api/payment/payout/${id}`, {
+            fetch(`/api/payment/payout/${encodeURIComponent(id)}`, {
               headers: { Authorization: `Bearer ${token}` },
-            }).then((r) => r.json())
+            }).then(async (response) => {
+              const payload = await response.json().catch(() => ({}));
+              return {
+                ok: response.ok,
+                payoutId: id,
+                payload,
+              };
+            })
           )
         );
 
-        const payouts = responses
+        const normalizedFromApi = responses
           .filter(
-            (r): r is PromiseFulfilledResult<any> => r.status === "fulfilled"
+            (
+              r
+            ): r is PromiseFulfilledResult<{
+              ok: boolean;
+              payoutId: string;
+              payload: { payout?: Record<string, unknown> };
+            }> => r.status === "fulfilled"
           )
-          .map((r) => r.value.payout)
-          .filter(Boolean);
+          .filter((r) => r.value.ok && r.value.payload?.payout)
+          .map((r) => {
+            const payout = r.value.payload.payout;
+            const amount = Number.parseFloat(String(payout.amount ?? 0));
+            const netAmount = Number.parseFloat(String(payout.netAmount ?? amount));
+
+            return {
+              payoutId: payout.payoutId || r.value.payoutId,
+              status: payout.status || "processing",
+              amount: Number.isFinite(amount) ? amount : 0,
+              netAmount: Number.isFinite(netAmount) ? netAmount : 0,
+              grossAmount: Number.isFinite(amount) ? amount : 0,
+              taskTitle: payout.taskTitle,
+              taskId: payout.taskId,
+              createdAt: payout.createdAt || new Date().toISOString(),
+              completedAt: payout.completedAt,
+            } as Payout;
+          });
+
+        const apiPayoutIds = new Set(
+          normalizedFromApi.map((payout) => payout.payoutId)
+        );
+
+        const fallbackRows = fallbackPayouts
+          .slice(0, maxItems)
+          .map((transaction) => {
+            const metadata =
+              transaction.metadata &&
+              typeof transaction.metadata === "object" &&
+              !Array.isArray(transaction.metadata)
+                ? (transaction.metadata as Record<string, unknown>)
+                : undefined;
+
+            const payoutId =
+              transaction.payoutId ||
+              (typeof metadata?.payoutId === "string" && metadata.payoutId) ||
+              (typeof metadata?.relatedEntityId === "string" &&
+                metadata.relatedEntityId) ||
+              (typeof metadata?.transactionId === "string" &&
+                metadata.transactionId) ||
+              transaction.id;
+
+            const normalizedStatus =
+              transaction.status === "pending"
+                ? "processing"
+                : transaction.status === "cancelled"
+                ? "reversed"
+                : transaction.status;
+
+            return {
+              payoutId,
+              status: (normalizedStatus || "processing") as Payout["status"],
+              amount: transaction.totalPaid || transaction.amount,
+              netAmount: transaction.amount,
+              grossAmount: transaction.totalPaid || transaction.amount,
+              taskTitle: transaction.taskTitle || transaction.description,
+              taskId:
+                typeof transaction.taskId === "string"
+                  ? transaction.taskId
+                  : undefined,
+              createdAt: new Date(transaction.createdAt).toISOString(),
+              completedAt:
+                transaction.completedAt instanceof Date
+                  ? transaction.completedAt.toISOString()
+                  : typeof transaction.completedAt === "string"
+                  ? transaction.completedAt
+                  : undefined,
+            } as Payout;
+          })
+          .filter((payout) => !apiPayoutIds.has(payout.payoutId));
+
+        const payouts = [...normalizedFromApi, ...fallbackRows];
 
         setPayoutDetails(payouts);
         setError(null);
@@ -81,7 +167,7 @@ export function PayoutHistory({
       }
     };
 
-    if (payoutIds.length > 0) {
+    if (payoutIds.length > 0 || fallbackPayouts.length > 0) {
       fetchPayoutDetails();
       intervalId = setInterval(fetchPayoutDetails, 10_000);
     } else {
@@ -91,7 +177,7 @@ export function PayoutHistory({
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [payoutIds, maxItems, currentUser]);
+  }, [payoutIds, fallbackPayouts, maxItems, currentUser]);
 
   if (loading) {
     return (
