@@ -106,6 +106,27 @@ export const paymentApi = {
   },
 
   /**
+   * Pending tasker cancellation penalties (deducted from future payouts).
+   * GET /api/v1/payment/earnings/:userId/pending-cancellation-penalties
+   */
+  async getPendingCancellationPenalties(userId: string): Promise<{
+    success: boolean;
+    totalRemaining?: string;
+    items?: Array<{
+      penaltyId: string;
+      taskId: string;
+      taskTitle: string | null;
+      amount: string;
+      remainingAmount: string;
+      cancelledAt: string;
+      reason: string | null;
+    }>;
+    error?: string;
+  }> {
+    return fetchWithAuth(`/payment/earnings/${userId}/pending-cancellation-penalties`);
+  },
+
+  /**
    * Get current user earnings
    * GET /api/v1/payment/earnings/me
    */

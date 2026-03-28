@@ -48,6 +48,7 @@ import {
    IndianRupee,
    FileText,
    FileSpreadsheet,
+   AlertTriangle,
 } from "lucide-react";
 import { PaymentMethod, PayoutMethod, Transaction } from "@/types/profile";
 import { mockTransactions } from "@/lib/data/payments";
@@ -111,6 +112,8 @@ export function PaymentsSection({
       transactions,
       totalEarnings,
       totalSpent,
+      pendingCancellationPenaltyTotal,
+      pendingCancellationPenaltyItems,
       loading,
       fetchPayments,
    } = usePaymentsStore();
@@ -194,7 +197,8 @@ export function PaymentsSection({
       if (
          transactionFilter === "outgoing" &&
          t.type !== "payment" &&
-         t.type !== "refund"
+         t.type !== "refund" &&
+         t.type !== "penalty"
       )
          return false;
       if (transactionFilter === "earnings" && t.type !== "payout") return false;
@@ -266,7 +270,14 @@ export function PaymentsSection({
          </div>
 
          {/* Quick Stats */}
-         <div className="grid grid-cols-2 gap-3">
+         <div
+            className={cn(
+               "grid gap-3",
+               pendingCancellationPenaltyTotal > 0
+                  ? "grid-cols-2 sm:grid-cols-3"
+                  : "grid-cols-2"
+            )}
+         >
             <div className="bg-primary-50 rounded-lg p-3 sm:p-4 border border-primary-100">
                <div className="flex items-center gap-2 mb-1">
                   <TrendingUp className="w-4 h-4 text-primary-600" />
@@ -289,7 +300,41 @@ export function PaymentsSection({
                   ₹{totalSpent.toLocaleString()}
                </p>
             </div>
+            {pendingCancellationPenaltyTotal > 0 && (
+               <div className="col-span-2 sm:col-span-1 bg-rose-50 rounded-lg p-3 sm:p-4 border border-rose-100">
+                  <div className="flex items-center gap-2 mb-1">
+                     <AlertTriangle className="w-4 h-4 text-rose-600" />
+                     <span className="text-xs text-rose-800 font-medium">
+                        Pending penalty
+                     </span>
+                  </div>
+                  <p className="text-lg sm:text-xl font-bold text-rose-800">
+                     ₹
+                     {Math.round(pendingCancellationPenaltyTotal).toLocaleString()}
+                  </p>
+                  <p className="text-[10px] text-rose-700/90 mt-1 leading-snug">
+                     Deducted from your next payouts until cleared
+                  </p>
+               </div>
+            )}
          </div>
+
+         {pendingCancellationPenaltyTotal > 0 && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm text-amber-950">
+               <p className="font-medium text-amber-950">Cancellation penalty</p>
+               <p className="text-amber-900/90 mt-1 leading-relaxed">
+                  You have a pending cancellation penalty of ₹
+                  {Math.round(pendingCancellationPenaltyTotal).toLocaleString()}.
+                  It will be recovered automatically from your future task payouts.
+                  {pendingCancellationPenaltyItems.length > 0 && (
+                     <>
+                        {" "}
+                        Open a transaction below for task details.
+                     </>
+                  )}
+               </p>
+            </div>
+         )}
 
          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-4 bg-gray-100">
@@ -1113,7 +1158,10 @@ interface TransactionRowProps {
 
 function transactionRowBadgeStatus(
    transaction: Transaction
-): Transaction["status"] | "refunded" {
+): Transaction["status"] | "refunded" | "pending_penalty" {
+   if (transaction.type === "penalty") {
+      return "pending_penalty";
+   }
    if (transaction.type === "refund" && transaction.status === "completed") {
       return "refunded";
    }
@@ -1128,6 +1176,7 @@ function transactionRowBadgeStatus(
 }
 
 function TransactionRow({ transaction, onOpenDetails }: TransactionRowProps) {
+   const isPenalty = transaction.type === "penalty";
    const isCredit =
       transaction.type === "payout" || transaction.type === "refund";
    const safeTaskId =
@@ -1142,6 +1191,7 @@ function TransactionRow({ transaction, onOpenDetails }: TransactionRowProps) {
       <div
          className={cn(
             "px-4 py-3 sm:px-5 sm:py-4 hover:bg-gray-50 transition-colors",
+            isPenalty && "bg-rose-50/40",
             canOpenDetails && "cursor-pointer"
          )}
          onClick={canOpenDetails ? onOpenDetails : undefined}
@@ -1162,10 +1212,16 @@ function TransactionRow({ transaction, onOpenDetails }: TransactionRowProps) {
             <div
                className={cn(
                   "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0",
-                  isCredit ? "bg-primary-100" : "bg-secondary-100"
+                  isPenalty
+                     ? "bg-rose-100"
+                     : isCredit
+                     ? "bg-primary-100"
+                     : "bg-secondary-100"
                )}
             >
-               {isCredit ? (
+               {isPenalty ? (
+                  <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600" />
+               ) : isCredit ? (
                   <ArrowDownLeft className="w-4 h-4 sm:w-5 sm:h-5 text-primary-600" />
                ) : (
                   <ArrowUpRight className="w-4 h-4 sm:w-5 sm:h-5 text-secondary-600" />
@@ -1191,7 +1247,11 @@ function TransactionRow({ transaction, onOpenDetails }: TransactionRowProps) {
                <p
                   className={cn(
                      "text-xs sm:text-sm font-semibold",
-                     isCredit ? "text-green-600" : "text-gray-900"
+                     isPenalty
+                        ? "text-rose-700"
+                        : isCredit
+                        ? "text-green-600"
+                        : "text-gray-900"
                   )}
                >
                   {isCredit ? "+" : "-"}₹{transaction.amount.toLocaleString()}
@@ -1303,6 +1363,75 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
 
    if (!transaction) return null;
 
+   if (transaction.type === "penalty") {
+      const original = safeNumber(transaction.originalPenaltyAmount);
+      const remaining = safeNumber(
+         transaction.remainingPenaltyAmount ?? transaction.amount
+      );
+      const meta =
+         transaction.metadata && typeof transaction.metadata === "object"
+            ? (transaction.metadata as Record<string, unknown>)
+            : {};
+      const reason =
+         typeof meta.reason === "string" && meta.reason.trim()
+            ? meta.reason.trim()
+            : null;
+
+      return (
+         <Dialog open={Boolean(transaction)} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent className="sm:max-w-lg">
+               <DialogHeader>
+                  <DialogTitle className="text-base font-semibold">
+                     Cancellation penalty
+                  </DialogTitle>
+               </DialogHeader>
+
+               <div className="space-y-4">
+                  <div className="border-b border-dashed border-gray-200 pb-4">
+                     <p className="text-2xl font-bold text-rose-800">
+                        ₹{safeCurrency(remaining)}
+                     </p>
+                     <p className="text-xs text-gray-500 mt-1">Remaining to recover</p>
+                     <p className="text-xs text-gray-500 mt-2">
+                        {formatDateTime(transaction.createdAt)}
+                     </p>
+                     <p className="text-sm font-medium text-gray-900 mt-3">
+                        {transaction.taskTitle || transaction.description}
+                     </p>
+                  </div>
+
+                  <div className="space-y-2 border-b border-dashed border-gray-200 pb-4">
+                     <h4 className="text-sm font-semibold text-gray-900">Breakdown</h4>
+                     <DetailRow label="Original penalty" value={original || remaining} />
+                     <div className="pt-2 mt-2 border-t border-gray-200">
+                        <DetailRow
+                           label="Remaining (from payouts)"
+                           value={remaining}
+                           strong
+                        />
+                     </div>
+                  </div>
+
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                     This amount is deducted automatically from your future task payouts
+                     until it is fully recovered. You do not need to pay separately.
+                  </p>
+
+                  {reason && (
+                     <p className="text-xs text-gray-500">
+                        <span className="font-medium text-gray-700">Note:</span> {reason}
+                     </p>
+                  )}
+
+                  {isRefreshing && (
+                     <p className="text-[11px] text-gray-500">Refreshing…</p>
+                  )}
+               </div>
+            </DialogContent>
+         </Dialog>
+      );
+   }
+
    const isIncoming =
       transaction.type === "payout" || transaction.type === "refund";
    const statusMessage = getEscrowStatusMessage(escrowStatus, transaction.status);
@@ -1336,19 +1465,42 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
                   <p className="text-xs text-gray-500 mt-1">{taskCategory || "General"}</p>
                </div>
 
-               <div className="space-y-2 border-b border-dashed border-gray-200 pb-4">
-                  <h4 className="text-sm font-semibold text-gray-900">Payment Details</h4>
-                  <DetailRow label="Task Amount" value={breakdown.taskAmount} />
-                  <DetailRow label="Platform Fee" value={breakdown.platformFee} />
-                  <DetailRow label="GST" value={breakdown.gstAmount} />
-                  <div className="pt-2 mt-2 border-t border-gray-200">
+               {breakdown.payoutPenalty ? (
+                  <div className="space-y-2 border-b border-dashed border-gray-200 pb-4">
+                     <h4 className="text-sm font-semibold text-gray-900">
+                        Payout after penalties
+                     </h4>
                      <DetailRow
-                        label={isIncoming ? "Amount Received" : "Total Paid"}
-                        value={breakdown.totalPaid}
-                        strong
+                        label="Gross before penalties"
+                        value={breakdown.payoutPenalty.grossBeforePenalties}
                      />
+                     <DetailRow
+                        label="Cancellation penalty"
+                        value={breakdown.payoutPenalty.penaltyDeducted}
+                     />
+                     <div className="pt-2 mt-2 border-t border-gray-200">
+                        <DetailRow
+                           label="Amount credited"
+                           value={breakdown.payoutPenalty.netReceived}
+                           strong
+                        />
+                     </div>
                   </div>
-               </div>
+               ) : (
+                  <div className="space-y-2 border-b border-dashed border-gray-200 pb-4">
+                     <h4 className="text-sm font-semibold text-gray-900">Payment Details</h4>
+                     <DetailRow label="Task Amount" value={breakdown.taskAmount} />
+                     <DetailRow label="Platform Fee" value={breakdown.platformFee} />
+                     <DetailRow label="GST" value={breakdown.gstAmount} />
+                     <div className="pt-2 mt-2 border-t border-gray-200">
+                        <DetailRow
+                           label={isIncoming ? "Amount Received" : "Total Paid"}
+                           value={breakdown.totalPaid}
+                           strong
+                        />
+                     </div>
+                  </div>
+               )}
 
                <div className="space-y-2 border-b border-dashed border-gray-200 pb-4">
                   <p className="text-sm font-medium text-gray-900">
@@ -1392,11 +1544,46 @@ function buildPaymentBreakdown(transaction: Transaction) {
          Math.max(totalPaid - taskAmount - platformFee, 0)
    );
 
+   const meta =
+      transaction.metadata && typeof transaction.metadata === "object"
+         ? (transaction.metadata as Record<string, unknown>)
+         : {};
+
+   const grossFromTx = safeNumber(transaction.grossPayoutBeforePenalties);
+   const grossFromMeta = safeNumber(meta.grossPayoutBeforePenalties);
+   const penFromTx = safeNumber(transaction.cancellationPenaltyDeducted);
+   const penFromMeta = safeNumber(meta.cancellationPenaltyDeducted);
+   const grossBeforePenalties = grossFromTx || grossFromMeta;
+   const penaltyDeducted = penFromTx || penFromMeta;
+
+   let payoutPenalty:
+      | {
+           grossBeforePenalties: number;
+           penaltyDeducted: number;
+           netReceived: number;
+        }
+      | undefined;
+
+   if (
+      transaction.type === "payout" &&
+      (penaltyDeducted > 0 || grossBeforePenalties > 0)
+   ) {
+      const netReceived = totalPaid;
+      const gross =
+         grossBeforePenalties > 0 ? grossBeforePenalties : netReceived + penaltyDeducted;
+      payoutPenalty = {
+         grossBeforePenalties: gross,
+         penaltyDeducted,
+         netReceived,
+      };
+   }
+
    return {
       taskAmount,
       platformFee,
       gstAmount,
       totalPaid,
+      payoutPenalty,
    };
 }
 
@@ -1458,10 +1645,10 @@ function DetailRow({ label, value, strong = false }: { label: string; value: num
 function TransactionStatusBadge({
    status,
 }: {
-   status: Transaction["status"] | "refunded";
+   status: Transaction["status"] | "refunded" | "pending_penalty";
 }) {
    const config: Record<
-      Transaction["status"] | "refunded",
+      Transaction["status"] | "refunded" | "pending_penalty",
       { label: string; className: string }
    > = {
       completed: {
@@ -1472,6 +1659,10 @@ function TransactionStatusBadge({
       failed: { label: "Failed", className: "bg-red-100 text-red-700" },
       cancelled: { label: "Cancelled", className: "bg-gray-100 text-gray-600" },
       refunded: { label: "Refunded", className: "bg-green-100 text-green-700" },
+      pending_penalty: {
+         label: "Pending penalty",
+         className: "bg-rose-100 text-rose-800",
+      },
    };
 
    const { label, className } = config[status];

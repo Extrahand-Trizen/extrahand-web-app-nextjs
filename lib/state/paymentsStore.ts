@@ -3,12 +3,14 @@
 import { create } from "zustand";
 import { paymentApi } from "@/lib/api/endpoints/payment";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
-import type { Transaction } from "@/types/profile";
+import type { PendingCancellationPenaltyItem, Transaction } from "@/types/profile";
 
 type PaymentsState = {
   transactions: Transaction[];
   totalEarnings: number;
   totalSpent: number;
+  pendingCancellationPenaltyTotal: number;
+  pendingCancellationPenaltyItems: PendingCancellationPenaltyItem[];
   loading: boolean;
   error: string | null;
   lastFetchedAt: number | null;
@@ -19,6 +21,8 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
   transactions: [],
   totalEarnings: 0,
   totalSpent: 0,
+  pendingCancellationPenaltyTotal: 0,
+  pendingCancellationPenaltyItems: [],
   loading: false,
   error: null,
   lastFetchedAt: null,
@@ -39,9 +43,25 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
     try {
       set({ loading: true, error: null });
 
-      // Fetch transaction history
-      const txRes = await paymentApi.getUserTransactions(userId, { limit: 100 });
+      const [txRes, penRes] = await Promise.all([
+        paymentApi.getUserTransactions(userId, { limit: 100 }),
+        paymentApi.getPendingCancellationPenalties(userId),
+      ]);
+
       let mapped: Transaction[] = [];
+
+      const penaltyItems: PendingCancellationPenaltyItem[] =
+        penRes?.success && Array.isArray(penRes.items) ? penRes.items : [];
+      let pendingPenaltyTotal = 0;
+      if (penRes?.success && typeof penRes.totalRemaining === "string") {
+        const parsed = Number.parseFloat(penRes.totalRemaining);
+        if (Number.isFinite(parsed)) pendingPenaltyTotal = Math.max(0, parsed);
+      } else if (penaltyItems.length > 0) {
+        for (const it of penaltyItems) {
+          const r = Number.parseFloat(it.remainingAmount);
+          if (Number.isFinite(r)) pendingPenaltyTotal += r;
+        }
+      }
 
       if (txRes && Array.isArray(txRes.transactions)) {
         mapped = txRes.transactions.map((tx: any) => {
@@ -50,6 +70,8 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
             mappedType = "payout";
           } else if (tx.type === "refund") {
             mappedType = "refund";
+          } else if (tx.type === "cancellation_penalty") {
+            mappedType = "penalty";
           } else if (tx.type === "escrow" || tx.type === "payment") {
             mappedType = "payment";
           }
@@ -126,7 +148,17 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
               ? "Earnings"
               : mappedType === "refund"
               ? "Refund"
+              : mappedType === "penalty"
+              ? "Cancellation penalty"
               : "Transaction";
+
+          const originalPenaltyAmt = toNumber(metadata.originalPenaltyAmount);
+          const remainingPenaltyAmt =
+            mappedType === "penalty"
+              ? toNumber(metadata.remainingAmount) ?? amount
+              : undefined;
+          const grossBeforePenalties = toNumber(metadata.grossPayoutBeforePenalties);
+          const cancellationPenDeducted = toNumber(metadata.cancellationPenaltyDeducted);
 
           const rawStatus = String(tx.status || "").toLowerCase();
 
@@ -171,6 +203,22 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
             platformFee,
             gstAmount,
             totalPaid,
+            ...(mappedType === "penalty"
+              ? {
+                  originalPenaltyAmount: originalPenaltyAmt ?? amount,
+                  remainingPenaltyAmount: remainingPenaltyAmt ?? amount,
+                }
+              : {}),
+            ...(mappedType === "payout"
+              ? {
+                  ...(grossBeforePenalties !== undefined
+                    ? { grossPayoutBeforePenalties: grossBeforePenalties }
+                    : {}),
+                  ...(cancellationPenDeducted !== undefined && cancellationPenDeducted > 0
+                    ? { cancellationPenaltyDeducted: cancellationPenDeducted }
+                    : {}),
+                }
+              : {}),
           };
         });
       }
@@ -230,6 +278,8 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
         transactions: mapped,
         totalEarnings,
         totalSpent,
+        pendingCancellationPenaltyTotal: pendingPenaltyTotal,
+        pendingCancellationPenaltyItems: penaltyItems as PendingCancellationPenaltyItem[],
         loading: false,
         error: null,
         lastFetchedAt: now,
@@ -238,6 +288,8 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
       set({
         loading: false,
         error: error?.message || "Failed to load payments",
+        pendingCancellationPenaltyTotal: 0,
+        pendingCancellationPenaltyItems: [],
       });
     }
   },
