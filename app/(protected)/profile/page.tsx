@@ -784,7 +784,10 @@ function renderSection(s: ProfileSection, p: Props) {
       case "payments":
          return (
             <PaymentsSection
-               userId={p.user.uid}
+               userId={p.user.uid || p.user._id}
+               linkedUserIds={[p.user.uid, p.user._id].filter(
+                  (id): id is string => typeof id === "string" && id.length > 0
+               )}
                paymentMethods={p.paymentMethods}
                payoutMethods={p.payoutMethods}
                onRemovePaymentMethod={p.onRemovePaymentMethod}

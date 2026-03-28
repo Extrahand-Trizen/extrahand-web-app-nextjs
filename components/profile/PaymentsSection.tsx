@@ -138,6 +138,8 @@ interface PaymentsSectionProps {
    payoutMethods?: PayoutMethod[];
    transactions?: Transaction[];
    userId?: string;
+   /** Other profile ids (e.g. Mongo _id) so payment history matches escrows stored under either id */
+   linkedUserIds?: string[];
    onRemovePaymentMethod?: (id: string) => void;
    onRemovePayoutMethod?: (id: string) => void;
    onSetDefaultPayment?: (id: string) => void;
@@ -151,6 +153,7 @@ export function PaymentsSection({
    payoutMethods = [],
    transactions: initialTransactions,
    userId,
+   linkedUserIds,
    onRemovePaymentMethod,
    onRemovePayoutMethod,
    onSetDefaultPayment,
@@ -207,12 +210,19 @@ export function PaymentsSection({
    // Fetch earnings + transactions as soon as Payments section is shown (use userId
    // from parent so Total Earnings/Total Spent load without waiting for auth or tab).
    const effectiveUserId = userId ?? currentUser?.uid;
+   const linkedForFetch = useMemo(() => {
+      const raw = (linkedUserIds ?? []).filter(
+         (id): id is string => typeof id === "string" && id.length > 0
+      );
+      return [...new Set(raw.filter((id) => id !== effectiveUserId))];
+   }, [linkedUserIds, effectiveUserId]);
+
    useEffect(() => {
       if (!effectiveUserId) return;
-      fetchPayments(effectiveUserId).catch((error) => {
+      fetchPayments(effectiveUserId, { linkedUserIds: linkedForFetch }).catch((error) => {
          console.error("Failed to load payments:", error);
       });
-   }, [effectiveUserId, fetchPayments]);
+   }, [effectiveUserId, linkedForFetch, fetchPayments]);
 
    // Check if any range filters are active
    const hasActiveRangeFilters = useMemo(() => {
@@ -979,9 +989,11 @@ export function PaymentsSection({
                refetchBankAccounts();
                // Refetch payments to update bank account status
                if (effectiveUserId) {
-                  fetchPayments(effectiveUserId).catch((error) => {
-                     console.error("Failed to reload payments:", error);
-                  });
+                  fetchPayments(effectiveUserId, { linkedUserIds: linkedForFetch }).catch(
+                     (error) => {
+                        console.error("Failed to reload payments:", error);
+                     }
+                  );
                }
             }}
          />

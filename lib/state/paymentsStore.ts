@@ -14,7 +14,10 @@ type PaymentsState = {
   loading: boolean;
   error: string | null;
   lastFetchedAt: number | null;
-  fetchPayments: (userId: string, opts?: { force?: boolean }) => Promise<void>;
+  fetchPayments: (
+    userId: string,
+    opts?: { force?: boolean; linkedUserIds?: string[] }
+  ) => Promise<void>;
 };
 
 export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
@@ -43,11 +46,22 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
     try {
       set({ loading: true, error: null });
 
-      const txRes = await paymentApi.getUserTransactions(userId, { limit: 100 });
+      const linkedExtras = (opts?.linkedUserIds ?? []).filter(
+        (id): id is string => typeof id === "string" && id.length > 0 && id !== userId
+      );
+      const linkedParam = [...new Set(linkedExtras)].join(",");
+
+      const txRes = await paymentApi.getUserTransactions(userId, {
+        limit: 100,
+        ...(linkedParam ? { linkedUserIds: linkedParam } : {}),
+      });
 
       let penRes: Awaited<ReturnType<typeof paymentApi.getPendingCancellationPenalties>>;
       try {
-         penRes = await paymentApi.getPendingCancellationPenalties(userId);
+         penRes = await paymentApi.getPendingCancellationPenalties(
+            userId,
+            linkedParam || undefined
+         );
       } catch {
          penRes = { success: false, items: [] };
       }
@@ -87,8 +101,6 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
             mappedType = "payment";
           }
 
-          const amount = Number.parseFloat(tx.amount);
-
           const metadata = tx.metadata || {};
           const descriptionText =
             typeof tx.description === "string" ? tx.description.trim() : "";
@@ -103,6 +115,15 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
             }
             return undefined;
           };
+
+          const parsedAmount = Number.parseFloat(String(tx.amount));
+          const amount = Number.isFinite(parsedAmount)
+            ? parsedAmount
+            : toNumber(metadata.totalPaid) ??
+              toNumber(metadata.refundAmount) ??
+              toNumber(metadata.amount) ??
+              toNumber(metadata.netAmount) ??
+              0;
 
           const taskId =
             tx.taskId ||
