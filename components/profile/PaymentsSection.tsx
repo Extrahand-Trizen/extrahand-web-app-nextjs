@@ -48,15 +48,8 @@ import {
    IndianRupee,
    FileText,
    FileSpreadsheet,
-   AlertTriangle,
-   AlertCircle,
 } from "lucide-react";
-import {
-   PaymentMethod,
-   PayoutMethod,
-   Transaction,
-   PendingCancellationPenaltyItem,
-} from "@/types/profile";
+import { PaymentMethod, PayoutMethod, Transaction } from "@/types/profile";
 import { mockTransactions } from "@/lib/data/payments";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
@@ -75,71 +68,11 @@ import { BankAccountBanner } from "./BankAccountBanner";
 import { PayoutHistory } from "./PayoutHistory";
 import { useBankAccounts } from "@/lib/hooks/usePayments";
 
-function CancellationPenaltyBanner({
-   total,
-   items,
-}: {
-   total: number;
-   items: PendingCancellationPenaltyItem[];
-}) {
-   const first = items[0];
-   const penaltyDisplay = first ? Number.parseFloat(first.amount) : total;
-   const amountNum = Number.isFinite(penaltyDisplay) ? Math.round(penaltyDisplay) : Math.round(total);
-
-   const taskLabel = (() => {
-      if (first?.taskTitle?.trim()) return `“${first.taskTitle.trim()}”`;
-      if (first?.taskId) {
-         const id = first.taskId;
-         const short = id.length > 6 ? id.slice(-6) : id;
-         return `task #${short}`;
-      }
-      return "a task";
-   })();
-
-   let dateStr = "";
-   if (first?.cancelledAt) {
-      const d = new Date(first.cancelledAt);
-      if (!Number.isNaN(d.getTime())) {
-         dateStr = format(d, "MMM d, yyyy");
-      }
-   }
-
-   return (
-      <div className="rounded-xl border border-rose-200 bg-gradient-to-r from-rose-50 to-rose-100/80 px-3 py-3 sm:px-4 sm:py-3.5 flex flex-col sm:flex-row sm:items-center gap-3 shadow-sm">
-         <div className="flex items-start gap-3 flex-1 min-w-0">
-            <div
-               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-600 text-white shadow-inner"
-               aria-hidden
-            >
-               <AlertCircle className="h-5 w-5" strokeWidth={2.5} />
-            </div>
-            <div className="min-w-0 pt-0.5">
-               <p className="font-semibold text-rose-950 text-sm sm:text-base">
-                  Cancellation penalty applied
-               </p>
-               <p className="text-xs sm:text-sm text-rose-900/90 mt-1 leading-relaxed">
-                  You cancelled {taskLabel}
-                  {dateStr ? ` on ${dateStr}` : ""}. A penalty of ₹{amountNum.toLocaleString()}{" "}
-                  will be deducted from your next earning. See the{" "}
-                  <span className="font-medium text-rose-950">Transactions</span> tab for the
-                  penalty line item.
-               </p>
-            </div>
-         </div>
-         <p className="text-base sm:text-lg font-bold text-rose-900 shrink-0 sm:text-right tabular-nums">
-            −₹{Math.round(total).toLocaleString()}
-         </p>
-      </div>
-   );
-}
-
 interface PaymentsSectionProps {
    paymentMethods?: PaymentMethod[];
    payoutMethods?: PayoutMethod[];
    transactions?: Transaction[];
    userId?: string;
-   /** Other profile ids (e.g. Mongo _id) so payment history matches escrows stored under either id */
-   linkedUserIds?: string[];
    onRemovePaymentMethod?: (id: string) => void;
    onRemovePayoutMethod?: (id: string) => void;
    onSetDefaultPayment?: (id: string) => void;
@@ -153,7 +86,6 @@ export function PaymentsSection({
    payoutMethods = [],
    transactions: initialTransactions,
    userId,
-   linkedUserIds,
    onRemovePaymentMethod,
    onRemovePayoutMethod,
    onSetDefaultPayment,
@@ -161,7 +93,7 @@ export function PaymentsSection({
    onSavePaymentMethod,
    onSavePayoutMethod,
 }: PaymentsSectionProps) {
-   const { currentUser } = useAuth();
+   const { currentUser, userData } = useAuth();
    const {
       bankAccounts,
       hasBankAccount,
@@ -179,8 +111,6 @@ export function PaymentsSection({
       transactions,
       totalEarnings,
       totalSpent,
-      pendingCancellationPenaltyTotal,
-      pendingCancellationPenaltyItems,
       loading,
       fetchPayments,
    } = usePaymentsStore();
@@ -190,6 +120,15 @@ export function PaymentsSection({
    const [dateRange, setDateRange] = useState<DateRange | undefined>();
    const [minAmount, setMinAmount] = useState<string>("");
    const [maxAmount, setMaxAmount] = useState<string>("");
+   const [pendingPenaltyTotal, setPendingPenaltyTotal] = useState<number>(0);
+   const [pendingPenaltyItems, setPendingPenaltyItems] = useState<
+      Array<{
+         penaltyId: string;
+         taskId: string;
+         taskTitle: string | null;
+         remainingAmount: string;
+      }>
+   >([]);
 
    // Internal modal state
    const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false);
@@ -210,19 +149,40 @@ export function PaymentsSection({
    // Fetch earnings + transactions as soon as Payments section is shown (use userId
    // from parent so Total Earnings/Total Spent load without waiting for auth or tab).
    const effectiveUserId = userId ?? currentUser?.uid;
-   const linkedForFetch = useMemo(() => {
-      const raw = (linkedUserIds ?? []).filter(
-         (id): id is string => typeof id === "string" && id.length > 0
-      );
-      return [...new Set(raw.filter((id) => id !== effectiveUserId))];
-   }, [linkedUserIds, effectiveUserId]);
+   const linkedUserIds = useMemo(
+      () =>
+         [currentUser?.uid, userData?.uid, userData?._id]
+            .filter((id): id is string => typeof id === "string" && id.trim().length > 0)
+            .map((id) => id.trim()),
+      [currentUser?.uid, userData?.uid, userData?._id]
+   );
+   useEffect(() => {
+      if (!effectiveUserId) return;
+      fetchPayments(effectiveUserId, { linkedUserIds }).catch((error) => {
+         console.error("Failed to load payments:", error);
+      });
+   }, [effectiveUserId, linkedUserIds, fetchPayments]);
 
    useEffect(() => {
       if (!effectiveUserId) return;
-      fetchPayments(effectiveUserId, { linkedUserIds: linkedForFetch }).catch((error) => {
-         console.error("Failed to load payments:", error);
-      });
-   }, [effectiveUserId, linkedForFetch, fetchPayments]);
+
+      const linkedCsv = linkedUserIds
+         .filter((id) => id !== effectiveUserId)
+         .join(",");
+
+      paymentApi
+         .getPendingCancellationPenalties(effectiveUserId, linkedCsv || undefined)
+         .then((res) => {
+            const total = Number.parseFloat(res?.totalRemaining || "0");
+            setPendingPenaltyTotal(Number.isFinite(total) ? total : 0);
+            setPendingPenaltyItems(Array.isArray(res?.items) ? res.items : []);
+         })
+         .catch((error) => {
+            console.error("Failed to load pending penalties:", error);
+            setPendingPenaltyTotal(0);
+            setPendingPenaltyItems([]);
+         });
+   }, [effectiveUserId, linkedUserIds]);
 
    // Check if any range filters are active
    const hasActiveRangeFilters = useMemo(() => {
@@ -268,14 +228,14 @@ export function PaymentsSection({
    // Filter transactions based on selected filter + range filters
    const filteredTransactions = transactions.filter((t) => {
       // Type filter
+      if (transactionFilter === "outgoing" && t.type !== "payment")
+         return false;
       if (
-         transactionFilter === "outgoing" &&
-         t.type !== "payment" &&
-         t.type !== "refund" &&
-         t.type !== "penalty"
+         transactionFilter === "earnings" &&
+         t.type !== "payout" &&
+         t.type !== "refund"
       )
          return false;
-      if (transactionFilter === "earnings" && t.type !== "payout") return false;
 
       // Date range filter
       if (dateRange?.from) {
@@ -344,14 +304,7 @@ export function PaymentsSection({
          </div>
 
          {/* Quick Stats */}
-         <div
-            className={cn(
-               "grid gap-3",
-               pendingCancellationPenaltyTotal > 0
-                  ? "grid-cols-2 sm:grid-cols-3"
-                  : "grid-cols-2"
-            )}
-         >
+         <div className="grid grid-cols-2 gap-3">
             <div className="bg-primary-50 rounded-lg p-3 sm:p-4 border border-primary-100">
                <div className="flex items-center gap-2 mb-1">
                   <TrendingUp className="w-4 h-4 text-primary-600" />
@@ -374,31 +327,7 @@ export function PaymentsSection({
                   ₹{totalSpent.toLocaleString()}
                </p>
             </div>
-            {pendingCancellationPenaltyTotal > 0 && (
-               <div className="col-span-2 sm:col-span-1 bg-rose-50 rounded-lg p-3 sm:p-4 border border-rose-100">
-                  <div className="flex items-center gap-2 mb-1">
-                     <AlertTriangle className="w-4 h-4 text-rose-600" />
-                     <span className="text-xs text-rose-800 font-medium">
-                        Pending penalty
-                     </span>
-                  </div>
-                  <p className="text-lg sm:text-xl font-bold text-rose-800">
-                     −₹
-                     {Math.round(pendingCancellationPenaltyTotal).toLocaleString()}
-                  </p>
-                  <p className="text-[10px] text-rose-700/90 mt-1 leading-snug">
-                     Deducted from next payout
-                  </p>
-               </div>
-            )}
          </div>
-
-         {pendingCancellationPenaltyTotal > 0 && (
-            <CancellationPenaltyBanner
-               total={pendingCancellationPenaltyTotal}
-               items={pendingCancellationPenaltyItems}
-            />
-         )}
 
          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-4 bg-gray-100">
@@ -491,6 +420,41 @@ export function PaymentsSection({
                         </div>
                      </div>
                   </div>
+
+                  {pendingPenaltyTotal > 0 && (
+                     <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+                        <div className="flex items-start gap-3">
+                           <div className="text-amber-700">
+                              <Wallet className="w-5 h-5" />
+                           </div>
+                           <div className="flex-1">
+                              <h3 className="text-sm font-medium text-amber-900 mb-1">
+                                 Pending Cancellation Penalty
+                              </h3>
+                              <p className="text-xs text-amber-800 mb-2">
+                                 ₹{pendingPenaltyTotal.toLocaleString()} will be adjusted from upcoming payouts.
+                              </p>
+                              {pendingPenaltyItems.length > 0 && (
+                                 <div className="space-y-1">
+                                    {pendingPenaltyItems.slice(0, 3).map((item) => (
+                                       <div
+                                          key={item.penaltyId}
+                                          className="text-xs text-amber-900 flex items-center justify-between"
+                                       >
+                                          <span className="truncate pr-2">
+                                             {item.taskTitle || `Task ${item.taskId}`}
+                                          </span>
+                                          <span className="font-medium">
+                                             ₹{Number.parseFloat(item.remainingAmount || "0").toLocaleString()}
+                                          </span>
+                                       </div>
+                                    ))}
+                                 </div>
+                              )}
+                           </div>
+                        </div>
+                     </div>
+                  )}
 
                   <PayoutHistory
                      payoutIds={payoutIds}
@@ -989,11 +953,9 @@ export function PaymentsSection({
                refetchBankAccounts();
                // Refetch payments to update bank account status
                if (effectiveUserId) {
-                  fetchPayments(effectiveUserId, { linkedUserIds: linkedForFetch }).catch(
-                     (error) => {
-                        console.error("Failed to reload payments:", error);
-                     }
-                  );
+                  fetchPayments(effectiveUserId, { linkedUserIds }).catch((error) => {
+                     console.error("Failed to reload payments:", error);
+                  });
                }
             }}
          />
@@ -1222,27 +1184,7 @@ interface TransactionRowProps {
    onOpenDetails: () => void;
 }
 
-function transactionRowBadgeStatus(
-   transaction: Transaction
-): Transaction["status"] | "refunded" | "pending_penalty" {
-   if (transaction.type === "penalty") {
-      return "pending_penalty";
-   }
-   if (transaction.type === "refund" && transaction.status === "completed") {
-      return "refunded";
-   }
-   if (
-      transaction.type === "payment" &&
-      (transaction.escrowStatus === "refunded" ||
-         transaction.escrowStatus === "cancelled")
-   ) {
-      return "cancelled";
-   }
-   return transaction.status;
-}
-
 function TransactionRow({ transaction, onOpenDetails }: TransactionRowProps) {
-   const isPenalty = transaction.type === "penalty";
    const isCredit =
       transaction.type === "payout" || transaction.type === "refund";
    const safeTaskId =
@@ -1257,7 +1199,6 @@ function TransactionRow({ transaction, onOpenDetails }: TransactionRowProps) {
       <div
          className={cn(
             "px-4 py-3 sm:px-5 sm:py-4 hover:bg-gray-50 transition-colors",
-            isPenalty && "bg-rose-50/40",
             canOpenDetails && "cursor-pointer"
          )}
          onClick={canOpenDetails ? onOpenDetails : undefined}
@@ -1278,16 +1219,10 @@ function TransactionRow({ transaction, onOpenDetails }: TransactionRowProps) {
             <div
                className={cn(
                   "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0",
-                  isPenalty
-                     ? "bg-rose-100"
-                     : isCredit
-                     ? "bg-primary-100"
-                     : "bg-secondary-100"
+                  isCredit ? "bg-primary-100" : "bg-secondary-100"
                )}
             >
-               {isPenalty ? (
-                  <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600" />
-               ) : isCredit ? (
+               {isCredit ? (
                   <ArrowDownLeft className="w-4 h-4 sm:w-5 sm:h-5 text-primary-600" />
                ) : (
                   <ArrowUpRight className="w-4 h-4 sm:w-5 sm:h-5 text-secondary-600" />
@@ -1313,16 +1248,12 @@ function TransactionRow({ transaction, onOpenDetails }: TransactionRowProps) {
                <p
                   className={cn(
                      "text-xs sm:text-sm font-semibold",
-                     isPenalty
-                        ? "text-rose-700"
-                        : isCredit
-                        ? "text-green-600"
-                        : "text-gray-900"
+                     isCredit ? "text-green-600" : "text-gray-900"
                   )}
                >
                   {isCredit ? "+" : "-"}₹{transaction.amount.toLocaleString()}
                </p>
-               <TransactionStatusBadge status={transactionRowBadgeStatus(transaction)} />
+               <TransactionStatusBadge status={transaction.status} />
             </div>
          </div>
       </div>
@@ -1429,75 +1360,6 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
 
    if (!transaction) return null;
 
-   if (transaction.type === "penalty") {
-      const original = safeNumber(transaction.originalPenaltyAmount);
-      const remaining = safeNumber(
-         transaction.remainingPenaltyAmount ?? transaction.amount
-      );
-      const meta =
-         transaction.metadata && typeof transaction.metadata === "object"
-            ? (transaction.metadata as Record<string, unknown>)
-            : {};
-      const reason =
-         typeof meta.reason === "string" && meta.reason.trim()
-            ? meta.reason.trim()
-            : null;
-
-      return (
-         <Dialog open={Boolean(transaction)} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="sm:max-w-lg">
-               <DialogHeader>
-                  <DialogTitle className="text-base font-semibold">
-                     Cancellation penalty
-                  </DialogTitle>
-               </DialogHeader>
-
-               <div className="space-y-4">
-                  <div className="border-b border-dashed border-gray-200 pb-4">
-                     <p className="text-2xl font-bold text-rose-800">
-                        ₹{safeCurrency(remaining)}
-                     </p>
-                     <p className="text-xs text-gray-500 mt-1">Remaining to recover</p>
-                     <p className="text-xs text-gray-500 mt-2">
-                        {formatDateTime(transaction.createdAt)}
-                     </p>
-                     <p className="text-sm font-medium text-gray-900 mt-3">
-                        {transaction.taskTitle || transaction.description}
-                     </p>
-                  </div>
-
-                  <div className="space-y-2 border-b border-dashed border-gray-200 pb-4">
-                     <h4 className="text-sm font-semibold text-gray-900">Breakdown</h4>
-                     <DetailRow label="Original penalty" value={original || remaining} />
-                     <div className="pt-2 mt-2 border-t border-gray-200">
-                        <DetailRow
-                           label="Remaining (from payouts)"
-                           value={remaining}
-                           strong
-                        />
-                     </div>
-                  </div>
-
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                     This amount is deducted automatically from your future task payouts
-                     until it is fully recovered. You do not need to pay separately.
-                  </p>
-
-                  {reason && (
-                     <p className="text-xs text-gray-500">
-                        <span className="font-medium text-gray-700">Note:</span> {reason}
-                     </p>
-                  )}
-
-                  {isRefreshing && (
-                     <p className="text-[11px] text-gray-500">Refreshing…</p>
-                  )}
-               </div>
-            </DialogContent>
-         </Dialog>
-      );
-   }
-
    const isIncoming =
       transaction.type === "payout" || transaction.type === "refund";
    const statusMessage = getEscrowStatusMessage(escrowStatus, transaction.status);
@@ -1531,42 +1393,19 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
                   <p className="text-xs text-gray-500 mt-1">{taskCategory || "General"}</p>
                </div>
 
-               {breakdown.payoutPenalty ? (
-                  <div className="space-y-2 border-b border-dashed border-gray-200 pb-4">
-                     <h4 className="text-sm font-semibold text-gray-900">
-                        Payout after penalties
-                     </h4>
+               <div className="space-y-2 border-b border-dashed border-gray-200 pb-4">
+                  <h4 className="text-sm font-semibold text-gray-900">Payment Details</h4>
+                  <DetailRow label="Task Amount" value={breakdown.taskAmount} />
+                  <DetailRow label="Platform Fee" value={breakdown.platformFee} />
+                  <DetailRow label="GST" value={breakdown.gstAmount} />
+                  <div className="pt-2 mt-2 border-t border-gray-200">
                      <DetailRow
-                        label="Gross before penalties"
-                        value={breakdown.payoutPenalty.grossBeforePenalties}
+                        label={isIncoming ? "Amount Received" : "Total Paid"}
+                        value={breakdown.totalPaid}
+                        strong
                      />
-                     <DetailRow
-                        label="Cancellation penalty"
-                        value={breakdown.payoutPenalty.penaltyDeducted}
-                     />
-                     <div className="pt-2 mt-2 border-t border-gray-200">
-                        <DetailRow
-                           label="Amount credited"
-                           value={breakdown.payoutPenalty.netReceived}
-                           strong
-                        />
-                     </div>
                   </div>
-               ) : (
-                  <div className="space-y-2 border-b border-dashed border-gray-200 pb-4">
-                     <h4 className="text-sm font-semibold text-gray-900">Payment Details</h4>
-                     <DetailRow label="Task Amount" value={breakdown.taskAmount} />
-                     <DetailRow label="Platform Fee" value={breakdown.platformFee} />
-                     <DetailRow label="GST" value={breakdown.gstAmount} />
-                     <div className="pt-2 mt-2 border-t border-gray-200">
-                        <DetailRow
-                           label={isIncoming ? "Amount Received" : "Total Paid"}
-                           value={breakdown.totalPaid}
-                           strong
-                        />
-                     </div>
-                  </div>
-               )}
+               </div>
 
                <div className="space-y-2 border-b border-dashed border-gray-200 pb-4">
                   <p className="text-sm font-medium text-gray-900">
@@ -1610,46 +1449,11 @@ function buildPaymentBreakdown(transaction: Transaction) {
          Math.max(totalPaid - taskAmount - platformFee, 0)
    );
 
-   const meta =
-      transaction.metadata && typeof transaction.metadata === "object"
-         ? (transaction.metadata as Record<string, unknown>)
-         : {};
-
-   const grossFromTx = safeNumber(transaction.grossPayoutBeforePenalties);
-   const grossFromMeta = safeNumber(meta.grossPayoutBeforePenalties);
-   const penFromTx = safeNumber(transaction.cancellationPenaltyDeducted);
-   const penFromMeta = safeNumber(meta.cancellationPenaltyDeducted);
-   const grossBeforePenalties = grossFromTx || grossFromMeta;
-   const penaltyDeducted = penFromTx || penFromMeta;
-
-   let payoutPenalty:
-      | {
-           grossBeforePenalties: number;
-           penaltyDeducted: number;
-           netReceived: number;
-        }
-      | undefined;
-
-   if (
-      transaction.type === "payout" &&
-      (penaltyDeducted > 0 || grossBeforePenalties > 0)
-   ) {
-      const netReceived = totalPaid;
-      const gross =
-         grossBeforePenalties > 0 ? grossBeforePenalties : netReceived + penaltyDeducted;
-      payoutPenalty = {
-         grossBeforePenalties: gross,
-         penaltyDeducted,
-         netReceived,
-      };
-   }
-
    return {
       taskAmount,
       platformFee,
       gstAmount,
       totalPaid,
-      payoutPenalty,
    };
 }
 
@@ -1708,15 +1512,8 @@ function DetailRow({ label, value, strong = false }: { label: string; value: num
    );
 }
 
-function TransactionStatusBadge({
-   status,
-}: {
-   status: Transaction["status"] | "refunded" | "pending_penalty";
-}) {
-   const config: Record<
-      Transaction["status"] | "refunded" | "pending_penalty",
-      { label: string; className: string }
-   > = {
+function TransactionStatusBadge({ status }: { status: Transaction["status"] }) {
+   const config = {
       completed: {
          label: "Completed",
          className: "bg-green-100 text-green-700",
@@ -1724,11 +1521,6 @@ function TransactionStatusBadge({
       pending: { label: "In Progress", className: "bg-amber-100 text-amber-700" },
       failed: { label: "Failed", className: "bg-red-100 text-red-700" },
       cancelled: { label: "Cancelled", className: "bg-gray-100 text-gray-600" },
-      refunded: { label: "Refunded", className: "bg-green-100 text-green-700" },
-      pending_penalty: {
-         label: "Pending penalty",
-         className: "bg-rose-100 text-rose-800",
-      },
    };
 
    const { label, className } = config[status];

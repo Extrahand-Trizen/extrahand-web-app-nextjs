@@ -3,14 +3,12 @@
 import { create } from "zustand";
 import { paymentApi } from "@/lib/api/endpoints/payment";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
-import type { PendingCancellationPenaltyItem, Transaction } from "@/types/profile";
+import type { Transaction } from "@/types/profile";
 
 type PaymentsState = {
   transactions: Transaction[];
   totalEarnings: number;
   totalSpent: number;
-  pendingCancellationPenaltyTotal: number;
-  pendingCancellationPenaltyItems: PendingCancellationPenaltyItem[];
   loading: boolean;
   error: string | null;
   lastFetchedAt: number | null;
@@ -24,8 +22,6 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
   transactions: [],
   totalEarnings: 0,
   totalSpent: 0,
-  pendingCancellationPenaltyTotal: 0,
-  pendingCancellationPenaltyItems: [],
   loading: false,
   error: null,
   lastFetchedAt: null,
@@ -46,60 +42,43 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
     try {
       set({ loading: true, error: null });
 
-      const linkedExtras = (opts?.linkedUserIds ?? []).filter(
-        (id): id is string => typeof id === "string" && id.length > 0 && id !== userId
+      // Fetch transaction history
+      const linkedUserIds = Array.from(
+        new Set(
+          (opts?.linkedUserIds || [])
+            .map((id) => (typeof id === "string" ? id.trim() : ""))
+            .filter((id) => id.length > 0 && id !== userId)
+        )
       );
-      const linkedParam = [...new Set(linkedExtras)].join(",");
-
-      const txRes = await paymentApi.getUserTransactions(userId, {
+      const txPromise = paymentApi.getUserTransactions(userId, {
         limit: 100,
-        ...(linkedParam ? { linkedUserIds: linkedParam } : {}),
+        linkedUserIds: linkedUserIds.length > 0 ? linkedUserIds.join(",") : undefined,
+      });
+      const earningsPromise = paymentApi.getUserEarnings(
+        userId,
+        linkedUserIds.length > 0 ? linkedUserIds.join(",") : undefined
+      );
+      const summaryPromise = paymentApi.getTransactionSummary(userId, {
+        linkedUserIds: linkedUserIds.length > 0 ? linkedUserIds.join(",") : undefined,
       });
 
-      let penRes: Awaited<ReturnType<typeof paymentApi.getPendingCancellationPenalties>>;
-      try {
-         penRes = await paymentApi.getPendingCancellationPenalties(
-            userId,
-            linkedParam || undefined
-         );
-      } catch {
-         penRes = { success: false, items: [] };
-      }
-
+      const txRes = await txPromise;
       let mapped: Transaction[] = [];
 
-      const penaltyItems: PendingCancellationPenaltyItem[] =
-         penRes?.success && Array.isArray(penRes.items) ? penRes.items : [];
-      let pendingPenaltyTotal = 0;
-      if (penRes?.success && typeof penRes.totalRemaining === "string") {
-        const parsed = Number.parseFloat(penRes.totalRemaining);
-        if (Number.isFinite(parsed)) pendingPenaltyTotal = Math.max(0, parsed);
-      } else if (penaltyItems.length > 0) {
-        for (const it of penaltyItems) {
-          const r = Number.parseFloat(it.remainingAmount);
-          if (Number.isFinite(r)) pendingPenaltyTotal += r;
-        }
-      }
-
-      const txNormalized =
-         txRes && typeof txRes === "object" && txRes !== null && "data" in txRes
-            ? (txRes as { data?: Record<string, unknown> }).data ?? txRes
-            : txRes;
-      const txList = Array.isArray((txNormalized as { transactions?: unknown })?.transactions)
-         ? (txNormalized as { transactions: any[] }).transactions
-         : [];
-
-      mapped = txList.map((tx: any) => {
+      if (txRes && Array.isArray(txRes.transactions)) {
+        mapped = txRes.transactions.map((tx: any) => {
           let mappedType: Transaction["type"] = "payment";
-          if (tx.type === "payout" || tx.type === "earning") {
-            mappedType = "payout";
-          } else if (tx.type === "refund") {
+          if (tx.type === "refund") {
             mappedType = "refund";
-          } else if (tx.type === "cancellation_penalty") {
-            mappedType = "penalty";
-          } else if (tx.type === "escrow" || tx.type === "payment") {
-            mappedType = "payment";
+          } else if (
+            tx.type === "payout" ||
+            tx.type === "earning" ||
+            tx.type === "compensation"
+          ) {
+            mappedType = "payout";
           }
+
+          const amount = Number.parseFloat(tx.amount);
 
           const metadata = tx.metadata || {};
           const descriptionText =
@@ -116,15 +95,6 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
             return undefined;
           };
 
-          const parsedAmount = Number.parseFloat(String(tx.amount));
-          const amount = Number.isFinite(parsedAmount)
-            ? parsedAmount
-            : toNumber(metadata.totalPaid) ??
-              toNumber(metadata.refundAmount) ??
-              toNumber(metadata.amount) ??
-              toNumber(metadata.netAmount) ??
-              0;
-
           const taskId =
             tx.taskId ||
             metadata.taskId ||
@@ -138,11 +108,6 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
             metadata.payoutId ||
             tx.id;
           const payoutId = mappedType === "payout" ? String(payoutIdCandidate) : undefined;
-
-          const escrowStatusFromMeta =
-            typeof metadata.escrowStatus === "string"
-              ? (metadata.escrowStatus as Transaction["escrowStatus"])
-              : undefined;
           const taskTitle =
             tx.taskTitle ||
             metadata.taskTitle ||
@@ -178,19 +143,7 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
               ? "Payment"
               : mappedType === "payout"
               ? "Earnings"
-              : mappedType === "refund"
-              ? "Refund"
-              : mappedType === "penalty"
-              ? "Cancellation penalty"
               : "Transaction";
-
-          const originalPenaltyAmt = toNumber(metadata.originalPenaltyAmount);
-          const remainingPenaltyAmt =
-            mappedType === "penalty"
-              ? toNumber(metadata.remainingAmount) ?? amount
-              : undefined;
-          const grossBeforePenalties = toNumber(metadata.grossPayoutBeforePenalties);
-          const cancellationPenDeducted = toNumber(metadata.cancellationPenaltyDeducted);
 
           const rawStatus = String(tx.status || "").toLowerCase();
 
@@ -203,8 +156,6 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
               : rawStatus === "failed"
               ? "failed"
               : rawStatus === "cancelled"
-              ? "cancelled"
-              : rawStatus === "refunded"
               ? "cancelled"
               : "completed";
 
@@ -228,31 +179,33 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
               metadata.assignedToName || metadata.task?.assignedToName,
             paidToName:
               metadata.paidToName || metadata.performerName || metadata.taskerName,
-            escrowStatus:
-              escrowStatusFromMeta ||
-              (metadata.escrow?.status as Transaction["escrowStatus"] | undefined),
+            escrowStatus: metadata.escrowStatus || metadata.escrow?.status,
             taskAmount,
             platformFee,
             gstAmount,
             totalPaid,
-            ...(mappedType === "penalty"
-              ? {
-                  originalPenaltyAmount: originalPenaltyAmt ?? amount,
-                  remainingPenaltyAmount: remainingPenaltyAmt ?? amount,
-                }
-              : {}),
-            ...(mappedType === "payout"
-              ? {
-                  ...(grossBeforePenalties !== undefined
-                    ? { grossPayoutBeforePenalties: grossBeforePenalties }
-                    : {}),
-                  ...(cancellationPenDeducted !== undefined && cancellationPenDeducted > 0
-                    ? { cancellationPenaltyDeducted: cancellationPenDeducted }
-                    : {}),
-                }
-              : {}),
           };
         });
+      }
+
+      const immediateSpent = Math.max(
+        0,
+        mapped
+          .filter((t) => t.type === "payment")
+          .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0) -
+          mapped
+            .filter((t) => t.type === "refund")
+            .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0)
+      );
+
+      // Show transaction rows as soon as they are available.
+      set({
+        transactions: mapped,
+        totalSpent: immediateSpent,
+        loading: false,
+        error: null,
+        lastFetchedAt: now,
+      });
 
       // Backfill missing task titles so payment rows can show task names instead of generic labels.
       const missingTitleTaskIds = Array.from(
@@ -281,46 +234,54 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
         );
 
         if (taskTitleMap.size > 0) {
-          mapped = mapped.map((t) => {
+          const enriched = mapped.map((t) => {
             if (!t.taskId || t.taskTitle) return t;
             const resolvedTitle = taskTitleMap.get(t.taskId);
             return resolvedTitle ? { ...t, taskTitle: resolvedTitle } : t;
           });
+
+          set((state) => {
+            if (!state.transactions.length) return state;
+            return { ...state, transactions: enriched };
+          });
         }
       }
 
-      // Fetch earnings summary
-      const earningsRes = await paymentApi.getUserEarnings(userId);
+      const [earningsSettled, summarySettled] = await Promise.allSettled([
+        earningsPromise,
+        summaryPromise,
+      ]);
+
       const totalEarnings =
-        earningsRes.success && earningsRes.data
-          ? earningsRes.data.totalEarnings || 0
+        earningsSettled.status === "fulfilled" && earningsSettled.value?.success && earningsSettled.value?.data
+          ? earningsSettled.value.data.totalEarnings || 0
           : 0;
 
-      // Net spend: money paid for tasks minus refunds returned (Razorpay refunds).
-      const paymentTotal = mapped
-        .filter((t) => t.type === "payment")
-        .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
-      const refundTotal = mapped
-        .filter((t) => t.type === "refund")
-        .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
-      const totalSpent = Math.max(0, paymentTotal - refundTotal);
+      const summaryTotalPayments =
+        summarySettled.status === "fulfilled"
+          ? Number.parseFloat(summarySettled.value?.summary?.totalPayments || "0")
+          : NaN;
+      const summaryTotalRefunds =
+        summarySettled.status === "fulfilled"
+          ? Number.parseFloat(summarySettled.value?.summary?.totalRefunds || "0")
+          : NaN;
 
-      set({
-        transactions: mapped,
+      const totalSpentFromSummary =
+        Number.isFinite(summaryTotalPayments) && Number.isFinite(summaryTotalRefunds)
+          ? Math.max(0, summaryTotalPayments - summaryTotalRefunds)
+          : immediateSpent;
+
+      set((state) => ({
+        ...state,
         totalEarnings,
-        totalSpent,
-        pendingCancellationPenaltyTotal: pendingPenaltyTotal,
-        pendingCancellationPenaltyItems: penaltyItems as PendingCancellationPenaltyItem[],
-        loading: false,
+        totalSpent: totalSpentFromSummary,
         error: null,
         lastFetchedAt: now,
-      });
+      }));
     } catch (error: any) {
       set({
         loading: false,
         error: error?.message || "Failed to load payments",
-        pendingCancellationPenaltyTotal: 0,
-        pendingCancellationPenaltyItems: [],
       });
     }
   },
