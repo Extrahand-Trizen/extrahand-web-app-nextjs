@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy | ExtraHand',
@@ -63,10 +64,21 @@ export default function PrivacyPolicy() {
           </p>
 
           <h2 className="text-2xl font-bold mt-8 mb-4 text-gray-900">Your Rights</h2>
-          <p className="mb-6 text-gray-700">
+          <p className="mb-4 text-gray-700">
             Users may request access, correction, or deletion of their personal data 
             by contacting us at support@extrahand.in.
           </p>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <p className="text-blue-900 font-medium mb-3">
+              Want to delete your account? You can request account deletion here:
+            </p>
+            <Link
+              href="/delete-account"
+              className="inline-block px-6 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Delete My Account
+            </Link>
+          </div>
 
           <h2 className="text-2xl font-bold mt-8 mb-4 text-gray-900">Contact Us</h2>
           <p className="mb-4 text-gray-700">
