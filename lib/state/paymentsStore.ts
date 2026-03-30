@@ -191,10 +191,10 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
       const mappedNetSpent = Math.max(
         0,
         mapped
-          .filter((t) => t.type === "payment" && t.status !== "cancelled")
+          .filter((t) => t.type === "payment" && t.status !== "failed")
           .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0) -
           mapped
-            .filter((t) => t.type === "refund" && t.status !== "failed")
+            .filter((t) => t.type === "refund" && t.status === "completed")
             .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0)
       );
 

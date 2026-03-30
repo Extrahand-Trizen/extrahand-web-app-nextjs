@@ -1364,6 +1364,11 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
       transaction.type === "payout" || transaction.type === "refund";
    const statusMessage = getEscrowStatusMessage(escrowStatus, transaction.status);
    const breakdown = buildPaymentBreakdown(transaction);
+   const showRefundBreakdown =
+      transaction.type === "refund" ||
+      transaction.status === "cancelled" ||
+      escrowStatus === "cancelled" ||
+      escrowStatus === "refunded";
    const timeline = buildPaymentTimeline(taskStatus, escrowStatus);
    const counterpartyLabel = isIncoming ? "Received from" : "Paid to";
    const counterpartyValue = isIncoming
@@ -1405,6 +1410,29 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
                         strong
                      />
                   </div>
+
+                  {showRefundBreakdown && (
+                     <div className="pt-3 mt-3 border-t border-gray-200 space-y-1.5">
+                        <h5 className="text-xs font-semibold text-gray-900">Refund Breakdown</h5>
+                        <DetailRow label="Refundable Base (Task Amount)" value={breakdown.taskAmount} />
+                        <DetailRow
+                           label="Cancelled > 24 hrs before start (100%)"
+                           value={breakdown.refundBefore24h}
+                        />
+                        <DetailRow
+                           label="Cancelled 1-24 hrs before start (90%)"
+                           value={breakdown.refundBefore1hTo24h}
+                        />
+                        <DetailRow
+                           label="Cancelled < 1 hr before start (80%)"
+                           value={breakdown.refundBefore1h}
+                        />
+                        <DetailRow label="Actual Refunded" value={breakdown.actualRefund} strong />
+                        <p className="text-[11px] text-amber-700 mt-1">
+                           Platform fee and GST are non-refundable.
+                        </p>
+                     </div>
+                  )}
                </div>
 
                <div className="space-y-2 border-b border-dashed border-gray-200 pb-4">
@@ -1437,23 +1465,49 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
 }
 
 function buildPaymentBreakdown(transaction: Transaction) {
-   const totalPaid = safeNumber(transaction.totalPaid ?? transaction.amount);
-   const taskAmount = Math.round(
-      safeNumber(transaction.taskAmount) || Math.max(totalPaid - 59, 0)
+   const metadata =
+      transaction.metadata &&
+      typeof transaction.metadata === "object" &&
+      !Array.isArray(transaction.metadata)
+         ? (transaction.metadata as Record<string, unknown>)
+         : {};
+   const amountBreakdown =
+      metadata.amountBreakdown &&
+      typeof metadata.amountBreakdown === "object" &&
+      !Array.isArray(metadata.amountBreakdown)
+         ? (metadata.amountBreakdown as Record<string, unknown>)
+         : {};
+
+   const totalPaid = safeNumber(
+      transaction.totalPaid ?? metadata.totalPaid ?? amountBreakdown.totalPaid ?? transaction.amount
    );
-   const platformFee = Math.round(
-      safeNumber(transaction.platformFee) || Math.round(taskAmount * 0.05)
+   const taskAmount = safeNumber(
+      transaction.taskAmount ?? metadata.taskAmount ?? amountBreakdown.taskAmount
    );
-   const gstAmount = Math.round(
-      safeNumber(transaction.gstAmount) ||
-         Math.max(totalPaid - taskAmount - platformFee, 0)
+   const platformFeeFromMeta = safeNumber(
+      transaction.platformFee ?? metadata.platformFee ?? amountBreakdown.platformFee
+   );
+   const gstAmountFromMeta = safeNumber(
+      transaction.gstAmount ?? metadata.gstAmount ?? metadata.platformFeeGst ?? amountBreakdown.gst
+   );
+
+   const normalizedTaskAmount = taskAmount > 0 ? taskAmount : totalPaid;
+   const inferredFees = Math.max(totalPaid - normalizedTaskAmount, 0);
+   const platformFee = platformFeeFromMeta > 0 ? platformFeeFromMeta : inferredFees;
+   const gstAmount = gstAmountFromMeta > 0 ? gstAmountFromMeta : Math.max(inferredFees - platformFee, 0);
+   const actualRefund = safeNumber(
+      metadata.refundAmount ?? metadata.refundedAmount ?? (transaction.type === "refund" ? transaction.amount : 0)
    );
 
    return {
-      taskAmount,
+      taskAmount: normalizedTaskAmount,
       platformFee,
       gstAmount,
       totalPaid,
+      refundBefore24h: Math.round(normalizedTaskAmount),
+      refundBefore1hTo24h: Math.round(normalizedTaskAmount * 0.9),
+      refundBefore1h: Math.round(normalizedTaskAmount * 0.8),
+      actualRefund,
    };
 }
 
@@ -1493,12 +1547,12 @@ function getEscrowStatusMessage(
    if (escrowStatus === "refunded") return "Payment refunded";
    if (escrowStatus === "cancelled") return "Payment cancelled";
    if (escrowStatus === "held" || escrowStatus === "pending") {
-      return "🟡 Payment secured in escrow";
+      return "Payment secured";
    }
-   if (paymentStatus === "completed") return "🟡 Payment secured in escrow";
-   if (paymentStatus === "pending") return "⏳ Payment is being processed";
+   if (paymentStatus === "completed") return "Payment secured";
+   if (paymentStatus === "pending") return "Payment is being processed";
    if (paymentStatus === "failed") return "Payment failed";
-   return "⏳ Status updating";
+   return "Status updating";
 }
 
 function DetailRow({ label, value, strong = false }: { label: string; value: number; strong?: boolean }) {
