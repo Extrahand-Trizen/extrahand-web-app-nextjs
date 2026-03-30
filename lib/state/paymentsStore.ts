@@ -144,7 +144,9 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
               ? toNumber(metadata.grossAmount) - toNumber(metadata.netAmount)
               : undefined);
           
-          const penaltyLines = Array.isArray(metadata.penaltyLines) ? metadata.penaltyLines : undefined;
+          // Only include penaltyDeducted if it's actually > 0
+          const effectivePenaltyDeducted = penaltyDeducted && toNumber(penaltyDeducted) > 0 ? penaltyDeducted : undefined;
+          const penaltyLines = Array.isArray(metadata.penaltyLines) && effectivePenaltyDeducted ? metadata.penaltyLines : undefined;
 
           const fallbackDescription =
             mappedType === "payment"
@@ -200,7 +202,7 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
             platformFee,
             gstAmount,
             totalPaid,
-            penaltyDeducted,
+            penaltyDeducted: effectivePenaltyDeducted,
             penaltyLines,
           };
         });
