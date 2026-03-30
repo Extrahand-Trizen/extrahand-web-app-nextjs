@@ -326,6 +326,11 @@ export function PaymentsSection({
                <p className="text-lg sm:text-xl font-bold text-secondary-700">
                   ₹{totalSpent.toLocaleString()}
                </p>
+               {pendingPenaltyTotal > 0 && (
+                  <p className="text-[11px] sm:text-xs text-amber-700 mt-1">
+                     Pending penalty: ₹{pendingPenaltyTotal.toLocaleString()} (adjusted from upcoming payouts)
+                  </p>
+               )}
             </div>
          </div>
 
@@ -1284,11 +1289,16 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
          setIsRefreshing(true);
          try {
             if (taskId) {
+               const shouldFetchEscrow =
+                  transaction.type === "payment" || transaction.type === "refund";
+
                const [task, escrowRes] = await Promise.all([
                   tasksApi.getTask(taskId).catch(() => null),
-                  paymentApi
-                     .getEscrowByTaskId(taskId)
-                     .catch(() => ({ success: false })),
+                  shouldFetchEscrow
+                     ? paymentApi
+                          .getEscrowByTaskId(taskId)
+                          .catch(() => ({ success: false }))
+                     : Promise.resolve({ success: false }),
                ]);
 
                if (cancelled) return;
@@ -1437,19 +1447,23 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
                   </p>
                </div>
 
-               <div className="space-y-2 border-b border-dashed border-gray-200 pb-4">
-                  <h4 className="text-sm font-semibold text-gray-900">Timeline</h4>
-                  {timeline.map((item) => (
-                     <p key={item.label} className="text-sm text-gray-700">
-                        {item.done ? "✔" : "⏳"} {item.label}
-                     </p>
-                  ))}
-               </div>
+               {!showRefundBreakdown && (
+                  <>
+                     <div className="space-y-2 border-b border-dashed border-gray-200 pb-4">
+                        <h4 className="text-sm font-semibold text-gray-900">Timeline</h4>
+                        {timeline.map((item) => (
+                           <p key={item.label} className="text-sm text-gray-700">
+                              {item.done ? "✔" : "⏳"} {item.label}
+                           </p>
+                        ))}
+                     </div>
 
-               <div>
-                  <h4 className="text-sm font-semibold text-gray-900">{counterpartyLabel}</h4>
-                  <p className="text-sm text-gray-700 mt-1">{counterpartyValue}</p>
-               </div>
+                     <div>
+                        <h4 className="text-sm font-semibold text-gray-900">{counterpartyLabel}</h4>
+                        <p className="text-sm text-gray-700 mt-1">{counterpartyValue}</p>
+                     </div>
+                  </>
+               )}
 
                {isRefreshing && (
                   <p className="text-[11px] text-gray-500">Refreshing payment status...</p>
@@ -1494,13 +1508,21 @@ function buildPaymentBreakdown(transaction: Transaction) {
    const actualRefund = safeNumber(
       metadata.refundAmount ?? metadata.refundedAmount ?? (transaction.type === "refund" ? transaction.amount : 0)
    );
+   const latestCancelledBy = String(metadata.latestCancelledBy || metadata.cancelledBy || "").toLowerCase();
    const latestRefundAmount = safeNumber(metadata.latestRefundAmount);
-   const expectedRefund = actualRefund > 0 ? actualRefund : latestRefundAmount;
+   const expectedRefund =
+      latestCancelledBy === "performer"
+         ? totalPaid
+         : actualRefund > 0
+         ? actualRefund
+         : latestRefundAmount;
 
    const refundRatio = normalizedTaskAmount > 0 ? expectedRefund / normalizedTaskAmount : 0;
    const normalizedRatio = Math.round(refundRatio * 100) / 100;
    const appliedRuleLabel =
-      normalizedRatio >= 0.99
+      latestCancelledBy === "performer"
+         ? "Applied: Cancelled by tasker (full refund)"
+         : normalizedRatio >= 0.99
          ? "Applied: Cancelled within 15 mins or > 24 hrs before start (100%)"
          : normalizedRatio >= 0.89
          ? "Applied: Cancelled between 1 and 24 hrs before start (90%)"
