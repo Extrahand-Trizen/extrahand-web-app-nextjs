@@ -1416,18 +1416,14 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
                         <h5 className="text-xs font-semibold text-gray-900">Refund Breakdown</h5>
                         <DetailRow label="Refundable Base (Task Amount)" value={breakdown.taskAmount} />
                         <DetailRow
-                           label="Cancelled > 24 hrs before start (100%)"
-                           value={breakdown.refundBefore24h}
+                           label={breakdown.appliedRuleLabel}
+                           value={breakdown.appliedRuleAmount}
                         />
-                        <DetailRow
-                           label="Cancelled 1-24 hrs before start (90%)"
-                           value={breakdown.refundBefore1hTo24h}
-                        />
-                        <DetailRow
-                           label="Cancelled < 1 hr before start (80%)"
-                           value={breakdown.refundBefore1h}
-                        />
-                        <DetailRow label="Actual Refunded" value={breakdown.actualRefund} strong />
+                        {breakdown.actualRefund > 0 ? (
+                           <DetailRow label="Actual Refunded" value={breakdown.actualRefund} strong />
+                        ) : (
+                           <DetailRow label="Refund in Progress" value={breakdown.expectedRefund} strong />
+                        )}
                         <p className="text-[11px] text-amber-700 mt-1">
                            Platform fee and GST are non-refundable.
                         </p>
@@ -1498,6 +1494,20 @@ function buildPaymentBreakdown(transaction: Transaction) {
    const actualRefund = safeNumber(
       metadata.refundAmount ?? metadata.refundedAmount ?? (transaction.type === "refund" ? transaction.amount : 0)
    );
+   const latestRefundAmount = safeNumber(metadata.latestRefundAmount);
+   const expectedRefund = actualRefund > 0 ? actualRefund : latestRefundAmount;
+
+   const refundRatio = normalizedTaskAmount > 0 ? expectedRefund / normalizedTaskAmount : 0;
+   const normalizedRatio = Math.round(refundRatio * 100) / 100;
+   const appliedRuleLabel =
+      normalizedRatio >= 0.99
+         ? "Applied: Cancelled within 15 mins or > 24 hrs before start (100%)"
+         : normalizedRatio >= 0.89
+         ? "Applied: Cancelled between 1 and 24 hrs before start (90%)"
+         : normalizedRatio >= 0.79
+         ? "Applied: Cancelled < 1 hr before start (80%)"
+         : "Applied: Refund policy pending calculation";
+   const appliedRuleAmount = expectedRefund;
 
    return {
       taskAmount: normalizedTaskAmount,
@@ -1508,6 +1518,9 @@ function buildPaymentBreakdown(transaction: Transaction) {
       refundBefore1hTo24h: Math.round(normalizedTaskAmount * 0.9),
       refundBefore1h: Math.round(normalizedTaskAmount * 0.8),
       actualRefund,
+      expectedRefund,
+      appliedRuleLabel,
+      appliedRuleAmount,
    };
 }
 
