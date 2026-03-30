@@ -1421,6 +1421,19 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
                      />
                   </div>
 
+                  {isIncoming && transaction.penaltyDeducted && (
+                     <div className="pt-2 mt-2 border-t border-gray-200">
+                        <DetailRow 
+                           label="Penalty Deducted"
+                           value={`₹${(typeof transaction.penaltyDeducted === 'string' ? parseFloat(transaction.penaltyDeducted) : transaction.penaltyDeducted).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                           strong={false}
+                        />
+                        <p className="text-[11px] text-red-600 mt-1">
+                           Penalty for cancellation adjusted from payout
+                        </p>
+                     </div>
+                  )}
+
                   {showRefundBreakdown && (
                      <div className="pt-3 mt-3 border-t border-gray-200 space-y-1.5">
                         <h5 className="text-xs font-semibold text-gray-900">Refund Breakdown</h5>

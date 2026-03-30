@@ -155,6 +155,13 @@ export interface Transaction {
    platformFee?: number;
    gstAmount?: number;
    totalPaid?: number;
+   penaltyDeducted?: number | string;
+   penaltyLines?: Array<{
+      penaltyId: string;
+      taskId: string;
+      applied: string;
+      remainingAfter: string;
+   }>;
 }
 
 // Address types
