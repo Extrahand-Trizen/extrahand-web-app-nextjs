@@ -290,6 +290,20 @@ export function PaymentsSection({
       return Array.from(new Set(ids));
    }, [payoutTransactions]);
 
+   const appliedPenaltyTotalFromPayouts = useMemo(
+      () =>
+         payoutTransactions.reduce((sum, transaction) => {
+            const penalty = safeNumber(transaction.penaltyDeducted);
+            return sum + (penalty > 0 ? penalty : 0);
+         }, 0),
+      [payoutTransactions]
+   );
+
+   const effectivePendingPenaltyTotal = Math.max(
+      0,
+      pendingPenaltyTotal - appliedPenaltyTotalFromPayouts
+   );
+
    return (
       <div className="max-w-4xl space-y-4 sm:space-y-6">
          {/* Header */}
@@ -326,9 +340,9 @@ export function PaymentsSection({
                <p className="text-lg sm:text-xl font-bold text-secondary-700">
                   ₹{totalSpent.toLocaleString()}
                </p>
-               {pendingPenaltyTotal > 0 && (
+               {effectivePendingPenaltyTotal > 0 && (
                   <p className="text-[11px] sm:text-xs text-amber-700 mt-1">
-                     Pending penalty: ₹{pendingPenaltyTotal.toLocaleString()} (adjusted from upcoming payouts)
+                     Pending penalty: ₹{effectivePendingPenaltyTotal.toLocaleString()} (adjusted from upcoming payouts)
                   </p>
                )}
             </div>
@@ -426,7 +440,7 @@ export function PaymentsSection({
                      </div>
                   </div>
 
-                  {pendingPenaltyTotal > 0 && (
+                  {effectivePendingPenaltyTotal > 0 && (
                      <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
                         <div className="flex items-start gap-3">
                            <div className="text-amber-700">
@@ -437,7 +451,7 @@ export function PaymentsSection({
                                  Pending Cancellation Penalty
                               </h3>
                               <p className="text-xs text-amber-800 mb-2">
-                                 ₹{pendingPenaltyTotal.toLocaleString()} will be adjusted from upcoming payouts.
+                                 ₹{effectivePendingPenaltyTotal.toLocaleString()} will be adjusted from upcoming payouts.
                               </p>
                               {pendingPenaltyItems.length > 0 && (
                                  <div className="space-y-1">
@@ -1421,7 +1435,7 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
                      />
                   </div>
 
-                  {isIncoming && transaction.penaltyDeducted && (
+                  {isIncoming && safeNumber(transaction.penaltyDeducted) > 0 && (
                      <div className="pt-2 mt-2 border-t border-gray-200">
                         <DetailRow 
                            label="Penalty Deducted"
@@ -1501,6 +1515,8 @@ function buildPaymentBreakdown(transaction: Transaction) {
          ? (metadata.amountBreakdown as Record<string, unknown>)
          : {};
 
+   const penaltyDeducted = safeNumber(transaction.penaltyDeducted ?? metadata.penaltyDeducted);
+   const inferredNetAmount = safeNumber(transaction.amount ?? metadata.netAmount);
    const totalPaid = safeNumber(
       transaction.totalPaid ?? metadata.totalPaid ?? amountBreakdown.totalPaid ?? transaction.amount
    );
@@ -1514,7 +1530,21 @@ function buildPaymentBreakdown(transaction: Transaction) {
       transaction.gstAmount ?? metadata.gstAmount ?? metadata.platformFeeGst ?? amountBreakdown.gst
    );
 
-   const normalizedTaskAmount = taskAmount > 0 ? taskAmount : totalPaid;
+   const isIncomingPayout = transaction.type === "payout";
+   const netReceived =
+      isIncomingPayout && inferredNetAmount > 0
+         ? inferredNetAmount
+         : totalPaid;
+   const grossFromPenalty =
+      isIncomingPayout && penaltyDeducted > 0 && netReceived > 0
+         ? netReceived + penaltyDeducted
+         : 0;
+   const normalizedTaskAmount =
+      taskAmount > 0
+         ? Math.max(taskAmount, grossFromPenalty)
+         : grossFromPenalty > 0
+         ? grossFromPenalty
+         : totalPaid;
    const inferredFees = Math.max(totalPaid - normalizedTaskAmount, 0);
    const platformFee = platformFeeFromMeta > 0 ? platformFeeFromMeta : inferredFees;
    const gstAmount = gstAmountFromMeta > 0 ? gstAmountFromMeta : Math.max(inferredFees - platformFee, 0);
@@ -1548,7 +1578,7 @@ function buildPaymentBreakdown(transaction: Transaction) {
       taskAmount: normalizedTaskAmount,
       platformFee,
       gstAmount,
-      totalPaid,
+      totalPaid: isIncomingPayout ? netReceived : totalPaid,
       refundBefore24h: Math.round(normalizedTaskAmount),
       refundBefore1hTo24h: Math.round(normalizedTaskAmount * 0.9),
       refundBefore1h: Math.round(normalizedTaskAmount * 0.8),

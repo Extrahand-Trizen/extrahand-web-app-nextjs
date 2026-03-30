@@ -95,6 +95,8 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
             return undefined;
           };
 
+          const penaltyFromMetadata = toNumber(metadata.penaltyDeducted);
+
           const taskId =
             tx.taskId ||
             metadata.taskId ||
@@ -119,8 +121,12 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
 
           const taskAmount =
             toNumber(metadata.taskAmount) ||
+            toNumber(metadata.grossAmount) ||
             toNumber(metadata.amountBreakdown?.taskAmount) ||
-            toNumber(metadata.fees?.taskAmount);
+            toNumber(metadata.fees?.taskAmount) ||
+            (mappedType === "payout" && penaltyFromMetadata && penaltyFromMetadata > 0
+              ? amount + penaltyFromMetadata
+              : undefined);
           const platformFee =
             toNumber(metadata.platformFee) ||
             toNumber(metadata.platformFeeAmount) ||
@@ -133,10 +139,13 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
             toNumber(metadata.amountBreakdown?.gst) ||
             toNumber(metadata.fees?.gst);
           const totalPaid =
-            toNumber(metadata.totalPaid) ||
-            toNumber(metadata.totalAmount) ||
-            toNumber(metadata.amountBreakdown?.totalAmount) ||
-            amount;
+            mappedType === "payout"
+              ? amount
+              : toNumber(metadata.totalPaid) ||
+                toNumber(metadata.grossAmount) ||
+                toNumber(metadata.totalAmount) ||
+                toNumber(metadata.amountBreakdown?.totalAmount) ||
+                amount;
 
           const penaltyDeducted =
             metadata.penaltyDeducted ||
