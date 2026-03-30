@@ -188,20 +188,20 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
         });
       }
 
-      const immediateSpent = Math.max(
+      const mappedNetSpent = Math.max(
         0,
         mapped
-          .filter((t) => t.type === "payment")
+          .filter((t) => t.type === "payment" && t.status !== "cancelled")
           .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0) -
           mapped
-            .filter((t) => t.type === "refund")
+            .filter((t) => t.type === "refund" && t.status !== "failed")
             .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0)
       );
 
       // Show transaction rows as soon as they are available.
       set({
         transactions: mapped,
-        totalSpent: immediateSpent,
+        totalSpent: mappedNetSpent,
         loading: false,
         error: null,
         lastFetchedAt: now,
@@ -269,12 +269,16 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
       const totalSpentFromSummary =
         Number.isFinite(summaryTotalPayments) && Number.isFinite(summaryTotalRefunds)
           ? Math.max(0, summaryTotalPayments - summaryTotalRefunds)
-          : immediateSpent;
+          : mappedNetSpent;
+
+      // Keep UI-consistent behavior: cancelled outgoing payments should not contribute
+      // to Total Spent even before/without a refund row.
+      const totalSpent = mapped.length > 0 ? mappedNetSpent : totalSpentFromSummary;
 
       set((state) => ({
         ...state,
         totalEarnings,
-        totalSpent: totalSpentFromSummary,
+        totalSpent,
         error: null,
         lastFetchedAt: now,
       }));

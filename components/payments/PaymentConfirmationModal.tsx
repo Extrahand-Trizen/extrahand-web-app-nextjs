@@ -235,6 +235,7 @@ export function PaymentConfirmationModal({
         posterUid: posterUid,
         performerUid: application.applicantId,
         amount: fees.totalAmount,
+        taskAmount: task.amount, // Base task amount for refund calculation
         autoReleaseAfterDays: 5 / (24 * 60), // 5 minutes for testing
         taskCategory: task.category ?? undefined,
       });

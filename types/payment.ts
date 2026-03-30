@@ -57,7 +57,8 @@ export interface CreateEscrowRequest {
   applicationId?: string;
   posterUid: string;
   performerUid: string;
-  amount: number; // Amount in rupees
+  amount: number; // Amount in rupees (full charge including fees)
+  taskAmount?: number; // Base task amount for refund calculation
   currency?: string;
   autoReleaseAfterDays?: number;
   taskCategory?: string;
