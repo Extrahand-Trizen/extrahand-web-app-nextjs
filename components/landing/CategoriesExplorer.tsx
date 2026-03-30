@@ -1,10 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 type Subcategory = {
    _id?: string;
@@ -163,15 +161,9 @@ const curatedCategories: Category[] = [
 ];
 
 export const CategoriesExplorer = () => {
-   const router = useRouter();
    const categories = curatedCategories;
 
    const marqueeItems = [...categories, ...categories];
-
-   const getServiceHref = (slug?: string) => {
-      if (!slug) return "/services";
-      return `/services/${encodeURIComponent(slug)}`;
-   };
 
    return (
       <section className="py-12 md:py-20 bg-linear-to-b from-primary-50/30 via-white to-primary-50/30 relative overflow-hidden">
@@ -218,18 +210,9 @@ export const CategoriesExplorer = () => {
                      {marqueeItems.map((item, index) => (
                         <motion.div
                            key={`${item.title}-${index}`}
-                           className="group flex min-w-[260px] sm:min-w-[320px] lg:min-w-[340px] items-center gap-5 rounded-2xl bg-white p-3 md:p-5 shadow-sm md:shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-primary-200 cursor-pointer"
+                           className="group flex min-w-[260px] sm:min-w-[320px] lg:min-w-[340px] items-center gap-5 rounded-2xl bg-white p-3 md:p-5 shadow-sm md:shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-primary-200"
                            whileHover={{ scale: 1.02, y: -4 }}
                            transition={{ duration: 0.2 }}
-                           onClick={() => router.push(getServiceHref(item.slug))}
-                           onKeyDown={(event) => {
-                              if (event.key === "Enter" || event.key === " ") {
-                                 event.preventDefault();
-                                 router.push(getServiceHref(item.slug));
-                              }
-                           }}
-                           role="link"
-                           tabIndex={0}
                         >
                            <div
                               className={`relative h-16 w-16 md:h-24 md:w-24 shrink-0 overflow-hidden rounded-xl bg-linear-to-br ${item.color}`}
@@ -257,14 +240,12 @@ export const CategoriesExplorer = () => {
                               {item.subcategories && item.subcategories.length > 0 && (
                                  <div className="mt-3 flex flex-wrap gap-1.5">
                                     {item.subcategories.slice(0, 3).map((sub) => (
-                                       <Link
+                                       <span
                                           key={sub.slug}
-                                          href={getServiceHref(sub.slug)}
                                           className="inline-block px-2 py-0.5 text-xs bg-primary-50 text-primary-700 rounded-md border border-primary-100"
-                                          onClick={(event) => event.stopPropagation()}
                                        >
                                           {sub.name}
-                                       </Link>
+                                       </span>
                                     ))}
                                     {item.subcategories.length > 3 && (
                                        <span className="inline-block px-2 py-0.5 text-xs bg-gray-50 text-gray-600 rounded-md">
@@ -282,12 +263,10 @@ export const CategoriesExplorer = () => {
 
             {/* View all button */}
             <div className="text-center mt-6 md:mt-12">
-               <Link href="/services">
-                  <button className="inline-flex items-center gap-2 px-5 py-3 md:px-6 bg-primary-500 hover:bg-primary-600 font-semibold rounded-xl text-sm md:text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 text-white">
-                     View all categories
-                     <ArrowRight className="h-5 w-5" />
-                  </button>
-               </Link>
+               <div className="inline-flex items-center gap-2 px-5 py-3 md:px-6 bg-primary-500 font-semibold rounded-xl text-sm md:text-lg shadow-lg text-white opacity-90 cursor-default">
+                  View all categories
+                  <ArrowRight className="h-5 w-5" />
+               </div>
             </div>
          </div>
       </section>

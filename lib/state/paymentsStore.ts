@@ -146,9 +146,17 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
               : "Transaction";
 
           const rawStatus = String(tx.status || "").toLowerCase();
+          const escrowStatusRaw = String(
+            metadata.escrowStatus || metadata.escrow?.status || ""
+          ).toLowerCase();
+          const isCancelledFlow =
+            (escrowStatusRaw === "cancelled" || escrowStatusRaw === "refunded") &&
+            (mappedType === "payment" || mappedType === "refund");
 
           const normalizedStatus: Transaction["status"] =
-            rawStatus === "held" ||
+            isCancelledFlow
+              ? "cancelled"
+              : rawStatus === "held" ||
             rawStatus === "pending" ||
             rawStatus === "processing" ||
             rawStatus === "authorized"
