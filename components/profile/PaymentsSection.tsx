@@ -226,26 +226,25 @@ export function PaymentsSection({
    };
 
    const isPenaltyTransaction = (t: Transaction) => {
+      // Only hide standalone penalty adjustments/fees. Keep payouts even if they include penalty deductions.
+      if (t.type === "fee") return true;
+
       const desc = (t.description || "").toLowerCase();
       const meta =
          t.metadata && typeof t.metadata === "object" && !Array.isArray(t.metadata)
             ? (t.metadata as Record<string, unknown>)
             : {};
       const metaTag = String(meta.reason || meta.type || meta.category || meta.label || "").toLowerCase();
-      const hasPenaltyFlag = Boolean(
+      const explicitPenalty = Boolean(
          (meta as { isPenalty?: boolean }).isPenalty ||
             (meta as { penalty?: boolean }).penalty ||
-            (meta as { penaltyAmount?: unknown }).penaltyAmount ||
-            t.penaltyDeducted ||
-            (t.penaltyLines && t.penaltyLines.length > 0)
+            (meta as { penaltyAmount?: unknown }).penaltyAmount
       );
 
-      return (
-         desc.includes("penalty") ||
-         metaTag.includes("penalty") ||
-         hasPenaltyFlag ||
-         t.type === "fee"
-      );
+      // If marked as penalty AND not a payout/refund/payment amount, treat as penalty.
+      const isStandalonePenalty = explicitPenalty && t.type !== "payout" && t.type !== "refund";
+
+      return isStandalonePenalty || (desc.includes("penalty") && t.type === "fee");
    };
 
    // Filter transactions based on selected filter + range filters
