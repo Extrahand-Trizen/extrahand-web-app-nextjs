@@ -70,6 +70,9 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
           let mappedType: Transaction["type"] = "payment";
           if (tx.type === "refund") {
             mappedType = "refund";
+          } else if (tx.type === "cancellation_penalty") {
+            // Keep penalty rows visible in history but out of customer spend totals.
+            mappedType = "fee";
           } else if (
             tx.type === "payout" ||
             tx.type === "earning" ||

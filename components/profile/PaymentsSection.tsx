@@ -293,7 +293,7 @@ export function PaymentsSection({
    const appliedPenaltyTotalFromPayouts = useMemo(
       () =>
          payoutTransactions.reduce((sum, transaction) => {
-            const penalty = safeNumber(transaction.penaltyDeducted);
+            const penalty = getPenaltyDeductedValue(transaction);
             return sum + (penalty > 0 ? penalty : 0);
          }, 0),
       [payoutTransactions]
@@ -318,7 +318,7 @@ export function PaymentsSection({
          </div>
 
          {/* Quick Stats */}
-         <div className="grid grid-cols-2 gap-3">
+         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div className="bg-primary-50 rounded-lg p-3 sm:p-4 border border-primary-100">
                <div className="flex items-center gap-2 mb-1">
                   <TrendingUp className="w-4 h-4 text-primary-600" />
@@ -340,12 +340,23 @@ export function PaymentsSection({
                <p className="text-lg sm:text-xl font-bold text-secondary-700">
                   ₹{totalSpent.toLocaleString()}
                </p>
-               {effectivePendingPenaltyTotal > 0 && (
-                  <p className="text-[11px] sm:text-xs text-amber-700 mt-1">
-                     Pending penalty: ₹{effectivePendingPenaltyTotal.toLocaleString()} (adjusted from upcoming payouts)
-                  </p>
-               )}
             </div>
+            {effectivePendingPenaltyTotal > 0 && (
+               <div className="bg-rose-50 rounded-lg p-3 sm:p-4 border border-rose-200">
+                  <div className="flex items-center gap-2 mb-1">
+                     <Wallet className="w-4 h-4 text-rose-700" />
+                     <span className="text-xs text-rose-800 font-medium">
+                        Pending Penalty
+                     </span>
+                  </div>
+                  <p className="text-lg sm:text-xl font-bold text-rose-800">
+                     -₹{effectivePendingPenaltyTotal.toLocaleString()}
+                  </p>
+                  <p className="text-[11px] sm:text-xs text-rose-700 mt-1">
+                     Deducted from next payout
+                  </p>
+               </div>
+            )}
          </div>
 
          <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -1427,19 +1438,11 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
                   <DetailRow label="Task Amount" value={breakdown.taskAmount} />
                   <DetailRow label="Platform Fee" value={breakdown.platformFee} />
                   <DetailRow label="GST" value={breakdown.gstAmount} />
-                  <div className="pt-2 mt-2 border-t border-gray-200">
-                     <DetailRow
-                        label={isIncoming ? "Amount Received" : "Total Paid"}
-                        value={breakdown.totalPaid}
-                        strong
-                     />
-                  </div>
-
-                  {isIncoming && safeNumber(transaction.penaltyDeducted) > 0 && (
+                  {isIncoming && breakdown.penaltyDeducted > 0 && (
                      <div className="pt-2 mt-2 border-t border-gray-200">
-                        <DetailRow 
+                        <DetailRow
                            label="Penalty Deducted"
-                           value={`₹${(typeof transaction.penaltyDeducted === 'string' ? parseFloat(transaction.penaltyDeducted) : transaction.penaltyDeducted).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                           value={breakdown.penaltyDeducted}
                            strong={false}
                         />
                         <p className="text-[11px] text-red-600 mt-1">
@@ -1447,6 +1450,13 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
                         </p>
                      </div>
                   )}
+                  <div className="pt-2 mt-2 border-t border-gray-200">
+                     <DetailRow
+                        label={isIncoming ? "Amount Received" : "Total Paid"}
+                        value={breakdown.totalPaid}
+                        strong
+                     />
+                  </div>
 
                   {showRefundBreakdown && (
                      <div className="pt-3 mt-3 border-t border-gray-200 space-y-1.5">
@@ -1515,7 +1525,7 @@ function buildPaymentBreakdown(transaction: Transaction) {
          ? (metadata.amountBreakdown as Record<string, unknown>)
          : {};
 
-   const penaltyDeducted = safeNumber(transaction.penaltyDeducted ?? metadata.penaltyDeducted);
+   const penaltyDeducted = getPenaltyDeductedValue(transaction);
    const inferredNetAmount = safeNumber(transaction.amount ?? metadata.netAmount);
    const totalPaid = safeNumber(
       transaction.totalPaid ?? metadata.totalPaid ?? amountBreakdown.totalPaid ?? transaction.amount
@@ -1579,6 +1589,7 @@ function buildPaymentBreakdown(transaction: Transaction) {
       platformFee,
       gstAmount,
       totalPaid: isIncomingPayout ? netReceived : totalPaid,
+      penaltyDeducted,
       refundBefore24h: Math.round(normalizedTaskAmount),
       refundBefore1hTo24h: Math.round(normalizedTaskAmount * 0.9),
       refundBefore1h: Math.round(normalizedTaskAmount * 0.8),
@@ -1587,6 +1598,56 @@ function buildPaymentBreakdown(transaction: Transaction) {
       appliedRuleLabel,
       appliedRuleAmount,
    };
+}
+
+function getPenaltyDeductedValue(transaction: Transaction): number {
+   const metadata =
+      transaction.metadata &&
+      typeof transaction.metadata === "object" &&
+      !Array.isArray(transaction.metadata)
+         ? (transaction.metadata as Record<string, unknown>)
+         : {};
+
+   const explicitPenalty = safeNumber(
+      transaction.penaltyDeducted ?? metadata.penaltyDeducted
+   );
+   if (explicitPenalty > 0) return explicitPenalty;
+
+   if (transaction.type !== "payout") return 0;
+
+   const amountBreakdown =
+      metadata.amountBreakdown &&
+      typeof metadata.amountBreakdown === "object" &&
+      !Array.isArray(metadata.amountBreakdown)
+         ? (metadata.amountBreakdown as Record<string, unknown>)
+         : {};
+
+   const netReceived = safeNumber(
+      transaction.amount ?? metadata.netAmount ?? metadata.totalPaid
+   );
+   const grossAmount = safeNumber(
+      transaction.taskAmount ??
+         metadata.taskAmount ??
+         metadata.grossAmount ??
+         amountBreakdown.taskAmount
+   );
+   if (grossAmount <= 0 || netReceived <= 0 || grossAmount <= netReceived) {
+      return 0;
+   }
+
+   const feeComponent = safeNumber(
+      transaction.platformFee ??
+         metadata.platformFee ??
+         amountBreakdown.platformFee
+   );
+   const gstComponent = safeNumber(
+      transaction.gstAmount ??
+         metadata.gstAmount ??
+         metadata.platformFeeGst ??
+         amountBreakdown.gst
+   );
+   const inferredPenalty = Math.max(grossAmount - netReceived - feeComponent - gstComponent, 0);
+   return inferredPenalty;
 }
 
 function buildPaymentTimeline(
