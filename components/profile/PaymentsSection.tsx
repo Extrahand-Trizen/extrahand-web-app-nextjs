@@ -1567,9 +1567,10 @@ function buildPaymentBreakdown(transaction: Transaction) {
       isIncomingPayout && penaltyDeducted > 0 && netReceived > 0
          ? netReceived + penaltyDeducted
          : 0;
+   // Prefer the explicit task amount when available; only fall back to inferred values.
    const normalizedTaskAmount =
       taskAmount > 0
-         ? Math.max(taskAmount, grossFromPenalty)
+         ? taskAmount
          : grossFromPenalty > 0
          ? grossFromPenalty
          : totalPaid;
