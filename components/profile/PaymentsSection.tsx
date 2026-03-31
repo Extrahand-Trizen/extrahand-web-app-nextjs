@@ -315,19 +315,8 @@ export function PaymentsSection({
       return Array.from(new Set(ids));
    }, [payoutTransactions]);
 
-   const appliedPenaltyTotalFromPayouts = useMemo(
-      () =>
-         payoutTransactions.reduce((sum, transaction) => {
-            const penalty = getPenaltyDeductedValue(transaction);
-            return sum + (penalty > 0 ? penalty : 0);
-         }, 0),
-      [payoutTransactions]
-   );
-
-   const effectivePendingPenaltyTotal = Math.max(
-      0,
-      pendingPenaltyTotal - appliedPenaltyTotalFromPayouts
-   );
+   // Show pending penalty exactly as returned by API; do not net against payouts here.
+   const effectivePendingPenaltyTotal = Math.max(0, pendingPenaltyTotal);
 
    return (
       <div className="max-w-4xl space-y-4 sm:space-y-6">
