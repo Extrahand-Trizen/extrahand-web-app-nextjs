@@ -8,7 +8,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, X, Check, CheckCheck } from "lucide-react";
+import { Bell, X } from "lucide-react";
 import { useNotificationStore } from "@/lib/state/notificationStore";
 import { useAuth } from "@/lib/auth/context";
 import type { InAppNotification } from "@/lib/notifications/pollingService";
@@ -57,8 +57,6 @@ export function NotificationCenter() {
     isLoading,
     fetchNotifications,
     markAsRead,
-    markAllAsRead,
-    markAllAsReadOptimistic,
   } = useNotificationStore();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -92,11 +90,6 @@ export function NotificationCenter() {
     if (isOpen) document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
-
-  const handleMarkAllRead = useCallback(async () => {
-    markAllAsReadOptimistic();
-    await markAllAsRead();
-  }, [markAllAsRead, markAllAsReadOptimistic]);
 
   const handleNotificationClick = useCallback(
     async (notif: InAppNotification) => {
@@ -143,35 +136,16 @@ export function NotificationCenter() {
           <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl border border-secondary-200 shadow-2xl z-50 overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-secondary-100">
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-secondary-900">
-                  Notifications
-                </h3>
-                {unreadCount > 0 && (
-                  <span className="bg-red-100 text-red-600 text-[10px] font-bold rounded-full px-1.5 py-0.5">
-                    {unreadCount}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-1">
-                {unreadCount > 0 && (
-                  <button
-                    onClick={handleMarkAllRead}
-                    className="p-1 text-secondary-400 hover:text-primary-600 transition-colors"
-                    title="Mark all as read"
-                    aria-label="Mark all as read"
-                  >
-                    <CheckCheck className="w-4 h-4" />
-                  </button>
-                )}
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="p-1 text-secondary-400 hover:text-secondary-600 transition-colors"
-                  aria-label="Close"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
+              <h3 className="text-sm font-semibold text-secondary-900">
+                Notifications
+              </h3>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-1 text-secondary-400 hover:text-secondary-600 transition-colors"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
             {/* Body */}
@@ -235,18 +209,6 @@ export function NotificationCenter() {
                           {timeAgo(notif.createdAt)}
                         </p>
                       </div>
-                      {!notif.read && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            markAsRead(notif.id);
-                          }}
-                          className="flex-shrink-0 p-1 text-secondary-300 hover:text-primary-500 transition-colors"
-                          title="Mark as read"
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                        </button>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -258,8 +220,6 @@ export function NotificationCenter() {
               <button
                 id="view-all-notifications-btn"
                 onClick={() => {
-                  markAllAsReadOptimistic();
-                  markAllAsRead();
                   router.push("/notifications");
                   setIsOpen(false);
                 }}

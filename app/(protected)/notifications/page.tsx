@@ -141,8 +141,6 @@ export default function NotificationsPage() {
     isLoading,
     fetchNotifications,
     markAsRead,
-    markAllAsRead,
-    markAllAsReadOptimistic,
     deleteNotification,
   } = useNotificationStore();
 
@@ -155,12 +153,6 @@ export default function NotificationsPage() {
     if (!userId) return;
     fetchNotifications(30, 0);
   }, [userId, fetchNotifications]);
-
-  useEffect(() => {
-    // Opening full notifications should clear unread indicators.
-    markAllAsReadOptimistic();
-    markAllAsRead();
-  }, [markAllAsRead, markAllAsReadOptimistic]);
 
   const handleDelete = useCallback(
     async (e: React.MouseEvent, notifId: string) => {
