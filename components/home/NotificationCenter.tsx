@@ -57,6 +57,8 @@ export function NotificationCenter() {
     isLoading,
     fetchNotifications,
     markAsRead,
+    markAllAsRead,
+    markAllAsReadOptimistic,
   } = useNotificationStore();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -74,8 +76,11 @@ export function NotificationCenter() {
   useEffect(() => {
     if (isOpen && userId) {
       fetchNotifications(20, 0);
+      // Opening dropdown should clear unread badge immediately
+      markAllAsReadOptimistic();
+      markAllAsRead();
     }
-  }, [isOpen, userId, fetchNotifications]);
+  }, [isOpen, userId, fetchNotifications, markAllAsRead, markAllAsReadOptimistic]);
 
   // Close when clicking outside
   useEffect(() => {
