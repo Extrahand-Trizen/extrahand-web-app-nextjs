@@ -225,8 +225,33 @@ export function PaymentsSection({
       }
    };
 
+   const isPenaltyTransaction = (t: Transaction) => {
+      const desc = (t.description || "").toLowerCase();
+      const meta =
+         t.metadata && typeof t.metadata === "object" && !Array.isArray(t.metadata)
+            ? (t.metadata as Record<string, unknown>)
+            : {};
+      const metaTag = String(meta.reason || meta.type || meta.category || meta.label || "").toLowerCase();
+      const hasPenaltyFlag = Boolean(
+         (meta as { isPenalty?: boolean }).isPenalty ||
+            (meta as { penalty?: boolean }).penalty ||
+            (meta as { penaltyAmount?: unknown }).penaltyAmount ||
+            t.penaltyDeducted ||
+            (t.penaltyLines && t.penaltyLines.length > 0)
+      );
+
+      return (
+         desc.includes("penalty") ||
+         metaTag.includes("penalty") ||
+         hasPenaltyFlag ||
+         t.type === "fee"
+      );
+   };
+
    // Filter transactions based on selected filter + range filters
    const filteredTransactions = transactions.filter((t) => {
+      if (isPenaltyTransaction(t)) return false; // hide standalone penalty adjustments from list
+
       // Type filter
       if (transactionFilter === "outgoing" && t.type !== "payment")
          return false;
