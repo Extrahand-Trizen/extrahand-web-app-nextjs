@@ -3,7 +3,20 @@
 import { useEffect, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Bell, ArrowLeft, Check, Trash2 } from "lucide-react";
+import {
+  Bell,
+  ArrowLeft,
+  Check,
+  Trash2,
+  ClipboardList,
+  CreditCard,
+  Clock3,
+  Search,
+  Cog,
+  Mail,
+  BellDot,
+  type LucideIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNotificationStore } from "@/lib/state/notificationStore";
 import { useAuth } from "@/lib/auth/context";
@@ -26,16 +39,58 @@ function timeAgo(date: Date | string): string {
   });
 }
 
-function getCategoryIcon(category?: string): string {
+type CategoryVisual = {
+  Icon: LucideIcon;
+  bgClass: string;
+  fgClass: string;
+  ringClass?: string;
+};
+
+function getCategoryVisual(category?: string): CategoryVisual {
   switch (category) {
-    case "taskUpdates": return "📋";
-    case "payments": return "💳";
-    case "taskReminders": return "⏰";
+    case "taskUpdates":
+      return {
+        Icon: ClipboardList,
+        bgClass: "bg-primary-50",
+        fgClass: "text-primary-700",
+        ringClass: "ring-primary-100",
+      };
+    case "payments":
+      return {
+        Icon: CreditCard,
+        bgClass: "bg-emerald-50",
+        fgClass: "text-emerald-700",
+        ringClass: "ring-emerald-100",
+      };
+    case "taskReminders":
+      return {
+        Icon: Clock3,
+        bgClass: "bg-amber-50",
+        fgClass: "text-amber-700",
+        ringClass: "ring-amber-100",
+      };
     case "keywordTaskAlerts":
-    case "recommendedTaskAlerts": return "🔍";
-    case "system": return "⚙️";
-    case "transactional": return "📬";
-    default: return "🔔";
+    case "recommendedTaskAlerts":
+      return {
+        Icon: Search,
+        bgClass: "bg-indigo-50",
+        fgClass: "text-indigo-700",
+        ringClass: "ring-indigo-100",
+      };
+    case "system":
+      return {
+        Icon: Cog,
+        bgClass: "bg-slate-50",
+        fgClass: "text-slate-700",
+        ringClass: "ring-slate-100",
+      };
+    default:
+      return {
+        Icon: BellDot,
+        bgClass: "bg-secondary-50",
+        fgClass: "text-secondary-600",
+        ringClass: "ring-secondary-100",
+      };
   }
 }
 
@@ -68,8 +123,7 @@ function resolveNotificationRoute(notif: InAppNotification): string | null {
       return "/discover";
 
     case "system":
-    case "transactional":
-      return null; // No navigation for system/transactional
+      return null; // No navigation for system
 
     default:
       if (taskId) return `/tasks/${taskId}`;
@@ -211,6 +265,9 @@ export default function NotificationsPage() {
                 const route = resolveNotificationRoute(notif);
                 const isDeleting = deletingIds.has(notif.id);
                 const isClickable = !!route;
+                const { Icon, bgClass, fgClass, ringClass } = getCategoryVisual(
+                  notif.category
+                );
 
                 return (
                   <div
@@ -225,14 +282,15 @@ export default function NotificationsPage() {
                   >
                     {/* Icon */}
                     <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 ${
-                        !notif.read ? "bg-primary-100" : "bg-secondary-100"
-                      }`}
+                      className={`relative w-11 h-11 rounded-xl border border-secondary-100 flex items-center justify-center shrink-0 ${bgClass} ${ringClass ?? ""}`}
                     >
                       {isDeleting ? (
                         <div className="w-4 h-4 border-2 border-secondary-400 border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        getCategoryIcon(notif.category)
+                        <Icon className={`w-4 h-4 ${fgClass}`} />
+                      )}
+                      {!notif.read && (
+                        <span className="absolute -top-1 -right-1 inline-block w-2 h-2 rounded-full bg-primary-500 ring-2 ring-white" />
                       )}
                     </div>
 

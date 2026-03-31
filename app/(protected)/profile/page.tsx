@@ -235,7 +235,6 @@ function ProfilePageContent() {
          payments: prefs?.push?.payments ?? DEFAULT_NOTIFICATION_SETTINGS.push.payments,
          promotions: prefs?.push?.promotions ?? DEFAULT_NOTIFICATION_SETTINGS.push.promotions,
          system: prefs?.push?.system ?? DEFAULT_NOTIFICATION_SETTINGS.push.system,
-         transactional: prefs?.push?.transactional ?? DEFAULT_NOTIFICATION_SETTINGS.push.transactional,
          taskReminders: prefs?.push?.taskReminders ?? DEFAULT_NOTIFICATION_SETTINGS.push.taskReminders,
          keywordTaskAlerts: prefs?.push?.keywordTaskAlerts ?? DEFAULT_NOTIFICATION_SETTINGS.push.keywordTaskAlerts,
          recommendedTaskAlerts:
@@ -249,7 +248,6 @@ function ProfilePageContent() {
          promotions: prefs?.email?.promotions ?? DEFAULT_NOTIFICATION_SETTINGS.email.promotions,
          system: prefs?.email?.system ?? DEFAULT_NOTIFICATION_SETTINGS.email.system,
          marketing: prefs?.email?.marketing ?? DEFAULT_NOTIFICATION_SETTINGS.email.marketing,
-         transactional: prefs?.email?.transactional ?? DEFAULT_NOTIFICATION_SETTINGS.email.transactional,
          taskReminders: prefs?.email?.taskReminders ?? DEFAULT_NOTIFICATION_SETTINGS.email.taskReminders,
          keywordTaskAlerts: prefs?.email?.keywordTaskAlerts ?? DEFAULT_NOTIFICATION_SETTINGS.email.keywordTaskAlerts,
          recommendedTaskAlerts:
@@ -785,9 +783,6 @@ function renderSection(s: ProfileSection, p: Props) {
          return (
             <PaymentsSection
                userId={p.user.uid || p.user._id}
-               linkedUserIds={[p.user.uid, p.user._id].filter(
-                  (id): id is string => typeof id === "string" && id.length > 0
-               )}
                paymentMethods={p.paymentMethods}
                payoutMethods={p.payoutMethods}
                onRemovePaymentMethod={p.onRemovePaymentMethod}

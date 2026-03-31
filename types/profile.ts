@@ -213,8 +213,7 @@ export interface NotificationPreferences {
       newMessages: boolean;
       marketing: boolean;
       accountAlerts: boolean;
-      weeklyDigest: boolean;
-      transactional?: boolean;
+      system?: boolean;
       taskReminders?: boolean;
       keywordTaskAlerts?: boolean;
       recommendedTaskAlerts?: boolean;

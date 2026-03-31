@@ -1,7 +1,7 @@
 import React from "react";
 import { categoriesApi } from "@/lib/api/endpoints/categories";
 import CategoriesClient from "@/components/categories/CategoriesClient";
-import { Category, Subcategory } from "@/types/category";
+import { Category } from "@/types/category";
 
 /**
  * Services Page (Server Component) - For Posters looking to hire

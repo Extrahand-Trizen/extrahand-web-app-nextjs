@@ -1,5 +1,7 @@
 import type { MetadataRoute } from "next";
 import { cities } from "@/lib/data/cities";
+import { hyderabadServicePageSlugs } from "@/lib/data/hyderabad-service-pages";
+import { manualServiceRoutePaths } from "@/lib/data/manual-services-catalog";
 import { categoriesApi } from "@/lib/api/endpoints/categories";
 import type { CategoriesListItem } from "@/lib/api/endpoints/categories";
 import type { Subcategory } from "@/types/category";
@@ -109,6 +111,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
    }));
 
+   const hyderabadServiceEntries: MetadataRoute.Sitemap = hyderabadServicePageSlugs.map(
+      (slug) => ({
+         url: joinUrl(baseUrl, `/${slug}`),
+         lastModified: now,
+         priority: 0.75,
+      })
+   );
+
+   const manualServiceEntries: MetadataRoute.Sitemap = manualServiceRoutePaths.map(
+      (path) => ({
+         url: joinUrl(baseUrl, path),
+         lastModified: now,
+         priority: 0.65,
+      })
+   );
+
    const allCategories = await categoriesApi.getCategories({
       includeUnpublished: false,
    });
@@ -170,5 +188,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
    // Put dynamic routes earlier so tools that show only the first N URLs
    // still display /services and /jobs.
-   return [...entries, ...dynamicEntries, ...locationEntries];
+   return [
+      ...entries,
+      ...hyderabadServiceEntries,
+      ...manualServiceEntries,
+      ...dynamicEntries,
+      ...locationEntries,
+   ];
 }
