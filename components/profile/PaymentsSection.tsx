@@ -318,7 +318,12 @@ export function PaymentsSection({
          </div>
 
          {/* Quick Stats */}
-         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+         <div
+            className={cn(
+               "grid grid-cols-1 sm:grid-cols-2 gap-3",
+               effectivePendingPenaltyTotal > 0 ? "lg:grid-cols-3" : "lg:grid-cols-2"
+            )}
+         >
             <div className="bg-primary-50 rounded-lg p-3 sm:p-4 border border-primary-100">
                <div className="flex items-center gap-2 mb-1">
                   <TrendingUp className="w-4 h-4 text-primary-600" />
