@@ -14,6 +14,10 @@ interface NeighborhoodsGridProps {
    cityName: string;
 }
 
+function toAreaSlug(area: string) {
+   return area.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
 export function NeighborhoodsGrid({
    neighborhoods,
    citySlug,
@@ -23,6 +27,14 @@ export function NeighborhoodsGrid({
    const popularCount = Math.min(6, Math.floor(neighborhoods.length / 2));
    const popularNeighborhoods = neighborhoods.slice(0, popularCount);
    const otherNeighborhoods = neighborhoods.slice(popularCount);
+
+   const getNeighborhoodHref = (neighborhood: string) => {
+      if (citySlug === "hyderabad") {
+         return `/locations/hyderabad/${toAreaSlug(neighborhood)}`;
+      }
+
+      return `/tasks/new?location=${neighborhood}, ${citySlug}`;
+   };
 
    return (
       <section className="py-16 bg-white">
@@ -45,7 +57,7 @@ export function NeighborhoodsGrid({
                   {popularNeighborhoods.map((neighborhood) => (
                      <Link
                         key={neighborhood}
-                        href={`/tasks/new?location=${neighborhood}, ${citySlug}`}
+                        href={getNeighborhoodHref(neighborhood)}
                         className="flex items-center gap-2 px-4 py-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors"
                      >
                         <MapPin className="w-4 h-4 text-blue-600 flex-shrink-0" />
@@ -67,7 +79,7 @@ export function NeighborhoodsGrid({
                      {otherNeighborhoods.map((neighborhood) => (
                         <Link
                            key={neighborhood}
-                           href={`/tasks/new?location=${neighborhood}, ${citySlug}`}
+                           href={getNeighborhoodHref(neighborhood)}
                            className="px-3 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded-md text-sm text-gray-700 hover:text-gray-900 transition-colors"
                         >
                            {neighborhood}

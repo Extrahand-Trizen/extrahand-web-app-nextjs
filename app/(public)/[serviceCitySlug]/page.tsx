@@ -41,6 +41,10 @@ const hyderabadAreas = [
    "Uppal",
 ];
 
+function toAreaSlug(area: string) {
+   return area.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
 const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
    "electrician-in-hyderabad": {
       imagePath: "/assets/mobilescreens/electrical.png",
@@ -504,12 +508,13 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
                </h2>
                <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   {coverageAreas.map((area) => (
-                     <p
+                     <Link
                         key={area}
-                        className="rounded-lg border border-secondary-200 bg-secondary-50 px-3 py-2 text-sm text-secondary-800"
+                        href={`/locations/hyderabad/${toAreaSlug(area)}/${servicePage.slug}`}
+                        className="rounded-lg border border-secondary-200 bg-secondary-50 px-3 py-2 text-sm text-secondary-800 transition hover:border-primary-300 hover:bg-white"
                      >
                         {area}
-                     </p>
+                     </Link>
                   ))}
                </div>
             </article>
