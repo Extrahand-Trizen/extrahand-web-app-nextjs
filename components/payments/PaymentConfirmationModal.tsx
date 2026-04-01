@@ -40,6 +40,8 @@ interface PaymentConfirmationModalProps {
     selectedDates?: Array<Date | string>;
   };
   posterUid: string;
+  /** For payment-service PLAY_REVIEW_BYPASS_PHONES (metadata.posterPhone). */
+  posterPhone?: string;
   onSuccess: (escrowId: string, paymentId: string) => void;
   onError?: (error: Error) => void;
 }
@@ -112,6 +114,7 @@ export function PaymentConfirmationModal({
         amount: fees.totalAmount, // Use total amount including fees, not just task amount
         autoReleaseAfterDays: 5 / (24 * 60), // 5 minutes for testing (convert minutes to fractional days)
         taskCategory: task.category ?? undefined,
+        metadata: posterPhone ? { posterPhone } : undefined,
       });
 
       if (!escrowResponse.success || !escrowResponse.order) {
@@ -270,12 +273,6 @@ export function PaymentConfirmationModal({
                     <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
                     <p className="text-xs text-green-800">
                       Money held securely until task completion
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
-                    <p className="text-xs text-green-800">
-                      Auto-released after 24-hour grace period
                     </p>
                   </div>
                   <div className="flex items-start gap-2">

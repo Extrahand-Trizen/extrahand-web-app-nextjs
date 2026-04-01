@@ -97,7 +97,7 @@ export function TaskOffersSection({
       useState<TaskApplication | null>(null);
    const [showPaymentModal, setShowPaymentModal] = useState(false);
    const [applicantBadges, setApplicantBadges] = useState<Record<string, BadgeType>>({});
-   const { currentUser } = useAuth();
+   const { currentUser, userData } = useAuth();
    const currentUid = currentUser?.uid;
    const router = useRouter();
    const onApplicationsCountChangeRef = useRef(onApplicationsCountChange);
@@ -832,6 +832,7 @@ export function TaskOffersSection({
                   selectedDates: selectedApplication.selectedDates,
                }}
                posterUid={currentUser?.uid ?? ""}
+               posterPhone={userData?.phone}
                onSuccess={handlePaymentSuccess}
                onError={handlePaymentError}
             />

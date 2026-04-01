@@ -86,6 +86,7 @@ export async function PATCH(
       {
         method: 'PATCH',
         headers: buildAuthHeaders(request),
+        body: '{}',
       }
     );
 
