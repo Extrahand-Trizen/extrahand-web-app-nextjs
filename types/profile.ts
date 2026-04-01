@@ -40,6 +40,13 @@ export interface Review {
    reviewerPhoto?: string;
    rating: number;
    comment: string;
+   ratings?: {
+      communication?: number;
+      quality?: number;
+      timeliness?: number;
+      professionalism?: number;
+      value?: number;
+   };
    createdAt: Date;
    role: "poster" | "tasker";
 }

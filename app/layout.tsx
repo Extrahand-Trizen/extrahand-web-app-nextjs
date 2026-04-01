@@ -16,10 +16,12 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-   title: "ExtraHand - Task Marketplace | Hire & Post Services",
-   description: "Connect with skilled taskers and get things done. Post tasks, hire services, and become a tasker on ExtraHand.",
+   title: "ExtraHand – Hire Help or Earn Money Near You",
+   description:
+      "Hire help or earn money near you. Browse tasks, post tasks, and get things done with ExtraHand.",
    keywords: "task marketplace, hire tasker, post task, services, freelance, home services, India",
    authors: [{ name: "ExtraHand" }],
+   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://extrahand.in"),
    icons: {
       icon: "/logo.png",
       shortcut: "/logo.png",
@@ -28,16 +30,16 @@ export const metadata: Metadata = {
    openGraph: {
       type: "website",
       locale: "en_IN",
-      url: "https://extrahand.in",
+      url: "/",
       siteName: "ExtraHand",
-      title: "ExtraHand - Task Marketplace | Hire & Post Services",
+      title: "ExtraHand – Hire Help or Earn Money Near You",
       description: "Connect with skilled taskers and get things done. Post tasks, hire services, and become a tasker on ExtraHand.",
       images: [
          {
-            url: "/logo.png",
+            url: "/og.png",
             width: 1200,
             height: 630,
-            alt: "ExtraHand Logo",
+            alt: "ExtraHand – Hire help or earn money near you",
             type: "image/png",
          },
       ],
@@ -47,9 +49,10 @@ export const metadata: Metadata = {
    },
    twitter: {
       card: "summary_large_image",
-      title: "ExtraHand - Task Marketplace | Hire & Post Services",
-      description: "Connect with skilled taskers and get things done. Post tasks, hire services, and become a tasker on ExtraHand.",
-      images: ["/logo.png"],
+      title: "ExtraHand – Hire Help or Earn Money Near You",
+      description:
+         "Hire help or earn money near you. Browse taskers, post tasks, and get things done with ExtraHand.",
+      images: ["/og.png"],
       creator: "@ExtraHand",
       site: "@ExtraHand",
    },

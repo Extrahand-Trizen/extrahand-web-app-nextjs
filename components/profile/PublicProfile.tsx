@@ -19,6 +19,7 @@ import { PublicProfileReviews } from "@/components/profile/public/PublicProfileR
 import { PublicProfileWorkProof } from "@/components/profile/public/PublicProfileWorkProof";
 import { PublicProfileMeetCard, buildMeetCardRatingLabel } from "@/components/profile/public/PublicProfileMeetCard";
 import { PublicProfileAbout } from "@/components/profile/public/PublicProfileAbout";
+import { PublicProfilePerformanceBreakdown } from "@/components/profile/public/PublicProfilePerformanceBreakdown";
 
 interface PublicProfileProps {
    user: UserProfile;
@@ -139,6 +140,11 @@ export function PublicProfile({
                   reviews={reviews}
                   userName={user.name}
                   memberSince={user.createdAt}
+               />
+
+               <PublicProfilePerformanceBreakdown
+                  reviews={reviews}
+                  completedTasks={actualStats.completedTasks ?? 0}
                />
 
                <PublicProfileTrustMetrics
