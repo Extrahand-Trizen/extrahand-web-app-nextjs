@@ -65,8 +65,7 @@ export default async function TaskOpenGraphImage({ params }: PageProps) {
           width: "100%",
           height: "100%",
           display: "flex",
-          background:
-            "radial-gradient(900px 600px at 18% 20%, rgba(247,183,40,0.38) 0%, rgba(247,183,40,0.12) 42%, rgba(247,183,40,0) 70%), linear-gradient(135deg, #F6FBFF 0%, #EAF3FF 40%, #FFF7DE 100%)",
+          background: "#FFFFFF",
           padding: 64,
           boxSizing: "border-box",
           color: "#061826",
@@ -81,7 +80,7 @@ export default async function TaskOpenGraphImage({ params }: PageProps) {
             flexDirection: "column",
             borderRadius: 44,
             border: "2px solid rgba(6,24,38,0.10)",
-            background: "rgba(255,255,255,0.72)",
+            background: "#FFFFFF",
             boxShadow: "0 22px 50px rgba(6,24,38,0.18)",
             padding: 56,
             gap: 28,

@@ -38,6 +38,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
    const { taskId } = parsePublicTaskHandle(handleOrId);
    const effectiveId = taskId || handleOrId;
    const task = await fetchTaskOnServer(effectiveId);
+   const canonicalHandle =
+      task?._id && task?.title ? buildPublicTaskHandle(task.title, task._id) : null;
+   const ogImagePath = canonicalHandle
+      ? `/tasks/${canonicalHandle}/opengraph-image`
+      : `/tasks/${effectiveId}/opengraph-image`;
 
    const title = task?.title
       ? `${task.title} – ExtraHand`
@@ -52,10 +57,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       openGraph: {
          title,
          description,
+         images: [
+            {
+               url: ogImagePath,
+               width: 1200,
+               height: 630,
+               alt: task?.title ? `${task.title} – ExtraHand` : "Task – ExtraHand",
+            },
+         ],
       },
       twitter: {
          title,
          description,
+         images: [ogImagePath],
       },
    };
 }
