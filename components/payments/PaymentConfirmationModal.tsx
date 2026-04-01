@@ -162,6 +162,7 @@ export function PaymentConfirmationModal({
   task,
   application,
   posterUid,
+  posterPhone,
   onSuccess,
   onError,
 }: PaymentConfirmationModalProps) {
@@ -246,10 +247,10 @@ export function PaymentConfirmationModal({
             gst: fees.platformFeeGst,
             totalPaid: fees.totalAmount,
           },
+          ...(posterPhone ? { posterPhone } : {}),
         },
         autoReleaseAfterDays: 5 / (24 * 60), // 5 minutes for testing
         taskCategory: task.category ?? undefined,
-        metadata: posterPhone ? { posterPhone } : undefined,
       });
 
       if (!escrowResponse.success || !escrowResponse.order) {
