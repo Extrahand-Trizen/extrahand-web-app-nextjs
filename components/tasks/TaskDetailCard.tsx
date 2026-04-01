@@ -21,6 +21,7 @@ import { usePrefetchTaskDetails } from "@/hooks/usePrefetchTaskDetails";
 import { useQuery } from "@tanstack/react-query";
 import { taskDetailsQueryKeys } from "@/lib/queryKeys";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
+import { buildPublicTaskPath } from "@/lib/utils/taskHandle";
 
 interface TaskDetailCardProps {
    task: Task;
@@ -318,7 +319,7 @@ export function TaskDetailCard({ task, onClose }: TaskDetailCardProps) {
                Close
             </Button>
             <Button
-               onClick={() => router.push(`/tasks/${task._id}`)}
+               onClick={() => router.push(buildPublicTaskPath(displayTask.title, displayTask._id))}
                onMouseEnter={prefetchTask}
                className="flex-1 bg-primary-500 hover:bg-primary-600 text-gray-900 font-semibold shadow-sm"
             >

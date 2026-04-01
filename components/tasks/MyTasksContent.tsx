@@ -19,6 +19,7 @@ import { tasksApi } from "@/lib/api/endpoints/tasks";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { getErrorMessage, isAuthError } from "@/lib/utils/errorUtils";
+import { buildPublicTaskPath } from "@/lib/utils/taskHandle";
 
 type TaskStatus = Task["status"];
 
@@ -188,9 +189,8 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
       }
    };
 
-   // Handle view task
-   const handleViewTask = (taskId: string) => {
-      router.push(`/tasks/${taskId}`);
+   const handleViewTask = (task: Task) => {
+      router.push(buildPublicTaskPath(task.title, task._id));
    };
 
    // Handle edit task
@@ -198,9 +198,8 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
       router.push(`/tasks/${taskId}/edit`);
    };
 
-   // Handle view applications
-   const handleViewApplications = (taskId: string) => {
-      router.push(`/tasks/${taskId}`);
+   const handleViewApplications = (task: Task) => {
+      router.push(buildPublicTaskPath(task.title, task._id));
    };
 
    // Handle track progress
@@ -273,6 +272,7 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
                            key={task._id}
                            task={task}
                            deletingTaskId={deletingTaskId}
+                           onViewTask={handleViewTask}
                            onEdit={handleEditTask}
                            onDelete={handleDeleteTask}
                            onViewApplications={handleViewApplications}

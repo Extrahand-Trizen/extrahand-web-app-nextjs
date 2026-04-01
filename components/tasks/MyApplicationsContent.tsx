@@ -21,6 +21,7 @@ import { getErrorMessage } from "@/lib/utils/errorUtils";
 import { toast } from "sonner";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { TaskBankAccountBanner } from "@/components/tasks/TaskBankAccountBanner";
+import { buildPublicTaskPath } from "@/lib/utils/taskHandle";
 
 type ApplicationStatus = TaskApplication["status"];
 
@@ -166,8 +167,8 @@ export function MyApplicationsContent({
    }, [allApplications]);
 
    // Handlers
-   const handleViewTask = (taskId: string) => {
-      router.push(`/tasks/${taskId}`);
+   const handleViewTask = (taskId: string, taskTitle?: string) => {
+      router.push(buildPublicTaskPath(taskTitle, taskId));
    };
 
    const handleWithdraw = async (applicationId: string) => {

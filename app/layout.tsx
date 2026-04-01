@@ -36,7 +36,7 @@ export const metadata: Metadata = {
       description: "Connect with skilled taskers and get things done. Post tasks, hire services, and become a tasker on ExtraHand.",
       images: [
          {
-            url: "/og.png",
+            url: "/opengraph-image",
             width: 1200,
             height: 630,
             alt: "ExtraHand – Hire help or earn money near you",
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
       title: "ExtraHand – Hire Help or Earn Money Near You",
       description:
          "Hire help or earn money near you. Browse taskers, post tasks, and get things done with ExtraHand.",
-      images: ["/og.png"],
+      images: ["/opengraph-image"],
       creator: "@ExtraHand",
       site: "@ExtraHand",
    },

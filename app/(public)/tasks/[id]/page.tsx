@@ -2,6 +2,12 @@ import { getApiBaseUrl } from "@/lib/config";
 import { cookies } from "next/headers";
 import type { Task } from "@/types/task";
 import { TaskDetailsClient } from "./TaskDetailsClient";
+import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+import {
+   buildPublicTaskHandle,
+   parsePublicTaskHandle,
+} from "@/lib/utils/taskHandle";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -27,8 +33,47 @@ async function fetchTaskOnServer(id: string): Promise<Task | null> {
    }
 }
 
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+   const { id: handleOrId } = await params;
+   const { taskId } = parsePublicTaskHandle(handleOrId);
+   const effectiveId = taskId || handleOrId;
+   const task = await fetchTaskOnServer(effectiveId);
+
+   const title = task?.title
+      ? `${task.title} – ExtraHand`
+      : "Task – ExtraHand";
+   const description =
+      (typeof task?.description === "string" && task.description.trim()) ||
+      "Browse tasks, post tasks, and get things done with ExtraHand.";
+
+   return {
+      title,
+      description,
+      openGraph: {
+         title,
+         description,
+      },
+      twitter: {
+         title,
+         description,
+      },
+   };
+}
+
 export default async function TaskDetailsPage({ params }: PageProps) {
-   const { id } = await params;
-   const initialTask = await fetchTaskOnServer(id);
-   return <TaskDetailsClient initialTask={initialTask} taskId={id} />;
+   const { id: handleOrId } = await params;
+   const { taskId } = parsePublicTaskHandle(handleOrId);
+   const effectiveId = taskId || handleOrId;
+
+   const initialTask = await fetchTaskOnServer(effectiveId);
+
+   // Canonicalize URL to include task title slug when possible.
+   if (initialTask?._id && initialTask?.title) {
+      const canonicalHandle = buildPublicTaskHandle(initialTask.title, initialTask._id);
+      if (handleOrId !== canonicalHandle) {
+         redirect(`/tasks/${canonicalHandle}`);
+      }
+   }
+
+   return <TaskDetailsClient initialTask={initialTask} taskId={effectiveId} />;
 }

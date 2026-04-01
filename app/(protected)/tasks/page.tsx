@@ -34,22 +34,21 @@ export default function TasksPage() {
    const visibleTabs = useMemo(() => {
       const tabs: Array<"mytasks" | "myapplications"> = [];
 
+      /**
+       * Important UX: don't hide tabs while counts are still loading.
+       * Otherwise clicking a tab can "snap back" when activeTab is forced
+       * to the first visible tab (exact bug you're seeing).
+       */
       if (userRole === "tasker") {
-         // For taskers: always show applications, show tasks only if count > 0
-         tabs.push("myapplications");
-         if (tasksCount !== null && tasksCount > 0) {
-            tabs.push("mytasks");
-         }
+         // For taskers: show applications first, but keep My Tasks selectable.
+         tabs.push("myapplications", "mytasks");
       } else {
-         // For posters: always show tasks, show applications only if count > 0
-         tabs.push("mytasks");
-         if (applicationsCount !== null && applicationsCount > 0) {
-            tabs.push("myapplications");
-         }
+         // For posters: show tasks first, but keep My Applications selectable.
+         tabs.push("mytasks", "myapplications");
       }
 
       return tabs;
-   }, [userRole, tasksCount, applicationsCount]);
+   }, [userRole]);
 
    // Set default tab based on role and visible tabs
    const defaultTab = useMemo(() => {

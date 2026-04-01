@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, MapPin, Clock, Tag, Loader2 } from "lucide-react";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
 import { PrefetchTaskWrapper } from "@/hooks/usePrefetchTaskDetails";
+import { buildPublicTaskPath } from "@/lib/utils/taskHandle";
 
 interface Task {
    _id: string;
@@ -179,7 +180,7 @@ export function RecommendedTasks() {
                            timeAgo: formatTimeAgo(task.createdAt),
                            applications: task.offers?.length || 0,
                         }}
-                        onClick={() => router.push(`/tasks/${task._id}`)}
+                        onClick={() => router.push(buildPublicTaskPath(task.title, task._id))}
                      />
                   </PrefetchTaskWrapper>
                ))}
