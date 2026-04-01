@@ -18,12 +18,14 @@ import { profilesApi } from "@/lib/api/endpoints/profiles";
 import { reviewsApi } from "@/lib/api/endpoints/reviews";
 import { useAuth } from "@/lib/auth/context";
 import { toast } from "sonner";
+import { buildPublicProfileHandle, parsePublicProfileHandle } from "@/lib/utils/profileHandle";
 
 
 export default function UserProfilePage() {
    const router = useRouter();
    const params = useParams();
-   const userId = params.id as string;
+   const handle = params.id as string;
+   const { userId } = parsePublicProfileHandle(handle);
    const { userData } = useAuth();
 
    const [user, setUser] = useState<UserProfile | null>(null);
@@ -46,7 +48,15 @@ export default function UserProfilePage() {
             const profileData = await profilesApi.getPublicProfile(userId);
             console.log("✅ Profile fetched:", profileData);
 
-            setUser(profileData as UserProfile);
+            const loaded = profileData as UserProfile;
+            setUser(loaded);
+
+            // Redirect old UID URLs to canonical handle URL (collision-free).
+            const canonicalId = loaded.uid || loaded._id;
+            if (canonicalId && handle === canonicalId) {
+               const canonicalHandle = buildPublicProfileHandle(loaded.name, canonicalId);
+               router.replace(`/profile/${canonicalHandle}`);
+            }
          } catch (err: any) {
             console.error("❌ Failed to load profile:", err);
             setError(err.message || "Failed to load profile");
@@ -61,7 +71,7 @@ export default function UserProfilePage() {
       if (userId) {
          fetchUser();
       }
-   }, [userId]);
+   }, [userId, handle, router]);
 
    // Extract reviews from profile response (already included by backend)
    useEffect(() => {

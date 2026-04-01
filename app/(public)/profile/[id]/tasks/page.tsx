@@ -27,11 +27,13 @@ import { useAuth } from "@/lib/auth/context";
 import { toast } from "sonner";
 import { ShareModal } from "@/components/shared/ShareModal";
 import { usePrefetchTaskDetails } from "@/hooks/usePrefetchTaskDetails";
+import { buildPublicProfileHandle, parsePublicProfileHandle } from "@/lib/utils/profileHandle";
 
 export default function UserPortfolioPage() {
    const router = useRouter();
    const params = useParams();
-   const userId = params.id as string;
+   const handle = params.id as string;
+   const { userId } = parsePublicProfileHandle(handle);
    const { userData } = useAuth();
 
    const [user, setUser] = useState<UserProfile | null>(null);
@@ -51,7 +53,15 @@ export default function UserPortfolioPage() {
 
             // Fetch user profile
             const profileData = await profilesApi.getPublicProfile(userId);
-            setUser(profileData as UserProfile);
+            const loaded = profileData as UserProfile;
+            setUser(loaded);
+
+            // Redirect old UID URLs to canonical handle URL (collision-free).
+            const canonicalId = loaded.uid || loaded._id;
+            if (canonicalId && handle === canonicalId) {
+               const canonicalHandle = buildPublicProfileHandle(loaded.name, canonicalId);
+               router.replace(`/profile/${canonicalHandle}/tasks`);
+            }
 
             // Fetch user's tasks (public view)
             setLoadingTasks(true);
@@ -80,7 +90,7 @@ export default function UserPortfolioPage() {
       if (userId) {
          fetchData();
       }
-   }, [userId]);
+   }, [userId, handle, router]);
 
    const handleShare = async () => {
       const url = window.location.href;
@@ -204,7 +214,7 @@ export default function UserPortfolioPage() {
                   <div className="flex items-start justify-between gap-6">
                      <div className="flex items-start gap-4">
                         {/* Avatar */}
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                        <div className="w-16 h-16 rounded-full bg-linear-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-lg shrink-0">
                            {user.name?.charAt(0)?.toUpperCase() || "U"}
                         </div>
 
@@ -367,7 +377,7 @@ function TaskCard({ task, userName }: TaskCardProps) {
                         e.preventDefault();
                         handleShareTask();
                      }}
-                     className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors flex-shrink-0"
+                     className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors shrink-0"
                   >
                      <Share2 className="w-4 h-4" />
                   </button>

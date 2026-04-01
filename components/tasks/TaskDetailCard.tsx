@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { buildPublicProfilePath } from "@/lib/utils/profileHandle";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -218,7 +219,7 @@ export function TaskDetailCard({ task, onClose }: TaskDetailCardProps) {
                               Posted by
                            </div>
                            <Link
-                              href={`/profile/${displayTask.requesterId}`}
+                              href={buildPublicProfilePath(displayTask.requesterName, displayTask.requesterId)}
                               className="text-base font-normal text-secondary-900 truncate hover:text-primary-600 hover:underline transition-colors"
                               onClick={(e) => e.stopPropagation()}
                            >

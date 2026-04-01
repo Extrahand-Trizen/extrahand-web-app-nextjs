@@ -7,6 +7,7 @@
 
 import React, { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
+import { buildPublicProfileHandle } from "@/lib/utils/profileHandle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -100,7 +101,8 @@ export function ProfileOverview({ user, onNavigate, loading }: ProfileOverviewPr
    const getProfileUrl = () => {
       if (typeof window !== "undefined") {
          const userId = user.uid || user._id;
-         return `${window.location.origin}/profile/${userId}`;
+         const handle = userId ? buildPublicProfileHandle(user.name, userId) : "";
+         return `${window.location.origin}/profile/${handle}`;
       }
       return "";
    };
@@ -285,7 +287,7 @@ export function ProfileOverview({ user, onNavigate, loading }: ProfileOverviewPr
                         onClick={() => onNavigate("edit-profile")}
                         className="text-xs h-8 px-3"
                      >
-                        Edit
+                        Edit profile
                      </Button>
                      <Button
                         variant="outline"
@@ -581,6 +583,17 @@ export function ProfileOverview({ user, onNavigate, loading }: ProfileOverviewPr
                </div>
             </DialogContent>
          </Dialog>
+
+         {/* Single edit entrypoint (bottom) */}
+         <div className="pt-2">
+            <Button
+               onClick={() => onNavigate("edit-profile")}
+               className="w-full rounded-xl h-11 text-sm font-semibold"
+               style={{ backgroundColor: "#f9b233", color: "#222" }}
+            >
+               Edit profile
+            </Button>
+         </div>
       </div>
    );
 }

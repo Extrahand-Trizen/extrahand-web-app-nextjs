@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Star, CheckCircle, MessageSquare, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { buildPublicProfilePath } from "@/lib/utils/profileHandle";
 import Image from "next/image";
 import {
    Select,
@@ -579,7 +580,12 @@ export function TaskOffersSection({
 
                                     {/* Actions */}
                                     <div className="flex gap-2 flex-wrap">
-                                       <Link href={`/profile/${acceptedApplication.applicantId}`}>
+                                       <Link
+                                          href={buildPublicProfilePath(
+                                             (acceptedApplication as any).applicantProfile?.name,
+                                             acceptedApplication.applicantId
+                                          )}
+                                       >
                                           <Button
                                              size="sm"
                                              variant="outline"
@@ -762,7 +768,12 @@ export function TaskOffersSection({
                               {/* Actions - Only show for owner */}
                               {isOwner && (
                                  <div className="flex gap-2 w-full flex-wrap">
-                                    <Link href={`/profile/${application.applicantId}`}>
+                                    <Link
+                                       href={buildPublicProfilePath(
+                                          application.applicantProfile?.name,
+                                          application.applicantId
+                                       )}
+                                    >
                                        <Button
                                           size="sm"
                                           variant="ghost"

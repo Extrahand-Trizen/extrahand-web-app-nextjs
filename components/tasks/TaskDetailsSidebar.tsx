@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Shield, CheckCircle, Star } from "lucide-react";
 import type { Task } from "@/types/task";
 import Link from "next/link";
+import { buildPublicProfilePath } from "@/lib/utils/profileHandle";
 import { getUserBadge } from "@/lib/api/badge";
 import { UserBadge } from "@/components/ui/user-badge";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -171,7 +172,7 @@ export function TaskDetailsSidebar({
                   </div>
                </div>
             </div>
-            <Link href={`/profile/${task.requesterId}`}>
+            <Link href={buildPublicProfilePath(task.requesterName, task.requesterId)}>
                <Button
                   variant="outline"
                   className="w-full mt-4 border-secondary-300 text-secondary-700 hover:bg-secondary-50 text-sm font-medium rounded-xl h-10"

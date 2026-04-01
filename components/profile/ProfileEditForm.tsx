@@ -50,7 +50,8 @@ export function ProfileEditForm({
    const [formData, setFormData] = useState<FormData>({
       firstName: nameParts[0] || "",
       lastName: nameParts.slice(1).join(" ") || "",
-      bio: user.business?.description || "",
+      // Prefer the main profile bio for individuals; fall back to business description.
+      bio: user.bio || user.business?.description || "",
       email: user.email || "",
       phone: user.phone || "",
       location: user.location?.address || user.location?.city || "",
@@ -178,7 +179,13 @@ export function ProfileEditForm({
             email: formData.email,
             phone: formData.phone,
             userType: formData.userType,
-            business: formData.bio ? { description: formData.bio } : undefined,
+            // "About you" should always populate the public profile bio for individuals.
+            bio: formData.bio ? formData.bio : undefined,
+            // Business accounts also keep business.description in sync.
+            business:
+               formData.userType === "business" && formData.bio
+                  ? { description: formData.bio }
+                  : undefined,
             skills: {
                list: formData.skills.map((name) => ({ name })),
             },
@@ -194,30 +201,9 @@ export function ProfileEditForm({
       }
    };
 
-   const renderSaveButton = (sectionKey: string) => (
-      <div className="flex justify-end pt-2">
-         <Button
-            type="button"
-            onClick={() => handleSave(sectionKey)}
-            disabled={isSaving || !hasChanges}
-            className="min-w-24 sm:min-w-[130px] bg-primary-500 hover:bg-primary-600"
-            size="sm"
-         >
-            {isSaving && activeSaveSection === sectionKey ? (
-               <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  <span className="hidden sm:inline">Saving...</span>
-                  <span className="sm:hidden">...</span>
-               </>
-            ) : (
-               <>
-                  <Check className="size-3.5 md:size-4 mr-2" />
-                  Save
-               </>
-            )}
-         </Button>
-      </div>
-   );
+   const handleSaveAll = async () => {
+      await handleSave("all");
+   };
 
    const addSkill = () => {
       const cleanSkill = newSkill.trim();
@@ -352,7 +338,6 @@ export function ProfileEditForm({
                   </p>
                </div>
             </div>
-            {renderSaveButton("photo")}
          </div>
 
          {/* Basic Info */}
@@ -432,7 +417,6 @@ export function ProfileEditForm({
                   {formData.bio.length}/500
                </p>
             </div>
-            {renderSaveButton("basic")}
          </div>
 
          {/* Contact Info */}
@@ -514,7 +498,6 @@ export function ProfileEditForm({
                   This helps users find you in their area
                </p>
             </div>
-            {renderSaveButton("contact")}
          </div>
 
          {/* Account Type */}
@@ -548,7 +531,6 @@ export function ProfileEditForm({
                   Business
                </button>
             </div>
-            {renderSaveButton("accountType")}
          </div>
 
          {/* Skills */}
@@ -628,7 +610,33 @@ export function ProfileEditForm({
             <p className="text-[10px] sm:text-xs text-gray-500 mt-2">
                Add skills to help people find you for relevant tasks
             </p>
-            {renderSaveButton("skills")}
+         </div>
+
+         {/* Single save button (bottom) */}
+         <div className="flex items-center justify-end gap-2 pt-2">
+            {onCancel ? (
+               <Button type="button" variant="outline" onClick={onCancel} disabled={isSaving}>
+                  Cancel
+               </Button>
+            ) : null}
+            <Button
+               type="button"
+               onClick={handleSaveAll}
+               disabled={isSaving || !hasChanges}
+               className="min-w-32 bg-primary-500 hover:bg-primary-600"
+            >
+               {isSaving && activeSaveSection === "all" ? (
+                  <>
+                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                     Saving...
+                  </>
+               ) : (
+                  <>
+                     <Check className="size-4 mr-2" />
+                     Save changes
+                  </>
+               )}
+            </Button>
          </div>
       </div>
    );

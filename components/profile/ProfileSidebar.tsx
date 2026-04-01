@@ -11,7 +11,6 @@ import {
    User,
    Eye,
    EyeOff,
-   Edit3,
    Settings,
    Shield,
    CreditCard,
@@ -44,12 +43,6 @@ const navItems: ProfileNavItem[] = [
       label: "Public Profile",
       icon: <Eye className="w-5 h-5" />,
       description: "What others see",
-   },
-   {
-      id: "edit-profile",
-      label: "Edit Profile",
-      icon: <Edit3 className="w-5 h-5" />,
-      description: "Update your info",
    },
    {
       id: "privacy",
