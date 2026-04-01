@@ -2,8 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { LandingHeader } from "@/components/layout/LandingHeader";
-import { LandingFooter } from "@/components/layout/LandingFooter";
+import { RouteChrome } from "@/components/layout/RouteChrome";
 
 export default function PublicLayout({
    children,
@@ -116,13 +115,5 @@ export default function PublicLayout({
       };
    }, [pathname]);
 
-   return (
-      <div suppressHydrationWarning style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-         <LandingHeader />
-         <main style={{ flex: 1, minHeight: 'calc(100vh - 110px)', position: 'relative' }}>
-            <div className="w-full mx-auto">{children}</div>
-         </main>
-         <LandingFooter />
-      </div>
-   );
+   return <RouteChrome variant="public">{children}</RouteChrome>;
 }

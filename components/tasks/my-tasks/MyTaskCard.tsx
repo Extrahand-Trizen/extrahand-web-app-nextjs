@@ -129,7 +129,7 @@ export function MyTaskCard({
          {/* Location Only */}
          <div className="flex items-center gap-1 text-xs md:text-sm text-secondary-600 mb-3">
             <MapPin className="size-3 md:size-4 shrink-0" />
-            <span className="font-medium">{task.location.city}</span>
+            <span className="font-medium">{!task.location?.coordinates || !task.location?.address ? "Remote" : task.location.city}</span>
          </div>
 
          {/* Assigned Performer (if assigned) */}

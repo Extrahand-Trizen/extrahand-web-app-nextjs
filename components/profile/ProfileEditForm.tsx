@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { UserProfile } from "@/types/user";
 import { api } from "@/lib/api";
 import { isValidImageType, isValidFileSize } from "@/lib/utils/sanitization";
+import { postTaskCategories } from "@/lib/data/categories";
 
 interface ProfileEditFormProps {
    user: UserProfile;
@@ -63,8 +64,34 @@ export function ProfileEditForm({
    const [isSaving, setIsSaving] = useState(false);
    const [errors, setErrors] = useState<Record<string, string>>({});
    const [newSkill, setNewSkill] = useState("");
+   const [skillsInputFocused, setSkillsInputFocused] = useState(false);
    const [hasChanges, setHasChanges] = useState(false);
+   const [activeSaveSection, setActiveSaveSection] = useState<string | null>(null);
    const fileInputRef = useRef<HTMLInputElement>(null);
+   const suggestedSkills = useMemo(() => {
+      const query = newSkill.trim().toLowerCase();
+      return postTaskCategories
+         .map((item) => item.label)
+         .filter((name) => {
+            if (!query) return false;
+            return name.toLowerCase().includes(query);
+         })
+         .filter(
+            (name) =>
+               !formData.skills.some(
+                  (skill) => skill.toLowerCase() === name.toLowerCase()
+               )
+         )
+         .slice(0, 8);
+   }, [formData.skills, newSkill]);
+
+
+   const cachedPhotoUrl = React.useMemo(() => {
+      if (!photoURL) return "";
+      const rawVersion = user.updatedAt ? new Date(user.updatedAt).getTime() : Date.now();
+      const separator = photoURL.includes("?") ? "&" : "?";
+      return `${photoURL}${separator}v=${rawVersion}`;
+   }, [photoURL, user.updatedAt]);
 
    const MAX_PHOTO_MB = 5;
 
@@ -119,9 +146,11 @@ export function ProfileEditForm({
       return Object.keys(newErrors).length === 0;
    };
 
-   const handleSave = async () => {
+   const handleSave = async (sectionKey: string) => {
+      if (isSaving) return;
       if (!validateForm()) return;
 
+      setActiveSaveSection(sectionKey);
       setIsSaving(true);
       try {
          let savedPhotoURL: string | undefined = photoURL || undefined;
@@ -161,20 +190,64 @@ export function ProfileEditForm({
          toast.error("Failed to save profile. Please try again.");
       } finally {
          setIsSaving(false);
+         setActiveSaveSection(null);
       }
    };
 
+   const renderSaveButton = (sectionKey: string) => (
+      <div className="flex justify-end pt-2">
+         <Button
+            type="button"
+            onClick={() => handleSave(sectionKey)}
+            disabled={isSaving || !hasChanges}
+            className="min-w-24 sm:min-w-[130px] bg-primary-500 hover:bg-primary-600"
+            size="sm"
+         >
+            {isSaving && activeSaveSection === sectionKey ? (
+               <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <span className="hidden sm:inline">Saving...</span>
+                  <span className="sm:hidden">...</span>
+               </>
+            ) : (
+               <>
+                  <Check className="size-3.5 md:size-4 mr-2" />
+                  Save
+               </>
+            )}
+         </Button>
+      </div>
+   );
+
    const addSkill = () => {
+      const cleanSkill = newSkill.trim();
+      if (!cleanSkill) return;
       if (
-         newSkill.trim() &&
-         !formData.skills.includes(newSkill.trim().toLowerCase())
+         formData.skills.some(
+            (existingSkill) =>
+               existingSkill.toLowerCase() === cleanSkill.toLowerCase()
+         )
       ) {
-         updateField("skills", [
-            ...formData.skills,
-            newSkill.trim().toLowerCase(),
-         ]);
          setNewSkill("");
+         return;
       }
+
+      updateField("skills", [...formData.skills, cleanSkill]);
+      setNewSkill("");
+   };
+
+   const addSuggestedSkill = (skillName: string) => {
+      if (
+         formData.skills.some(
+            (existingSkill) =>
+               existingSkill.toLowerCase() === skillName.toLowerCase()
+         )
+      ) {
+         return;
+      }
+
+      updateField("skills", [...formData.skills, skillName]);
+      setNewSkill("");
    };
 
    const removeSkill = (skillToRemove: string) => {
@@ -214,7 +287,7 @@ export function ProfileEditForm({
       setHasChanges(true);
    };
 
-   const displayPhotoUrl = photoPreviewUrl || photoURL || undefined;
+   const displayPhotoUrl = photoPreviewUrl || cachedPhotoUrl || undefined;
 
    return (
       <div className="max-w-4xl space-y-4 sm:space-y-6">
@@ -226,6 +299,13 @@ export function ProfileEditForm({
             <p className="text-xs sm:text-sm text-gray-500 mt-1">
                Update your personal information and how you appear on ExtraHand
             </p>
+            {hasChanges && (
+               <p className="text-xs sm:text-sm text-amber-600 flex items-center gap-1.5 mt-2">
+                  <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">You have unsaved changes</span>
+                  <span className="sm:hidden">Unsaved changes</span>
+               </p>
+            )}
          </div>
 
          {/* Photo Section */}
@@ -272,6 +352,7 @@ export function ProfileEditForm({
                   </p>
                </div>
             </div>
+            {renderSaveButton("photo")}
          </div>
 
          {/* Basic Info */}
@@ -351,6 +432,7 @@ export function ProfileEditForm({
                   {formData.bio.length}/500
                </p>
             </div>
+            {renderSaveButton("basic")}
          </div>
 
          {/* Contact Info */}
@@ -432,6 +514,7 @@ export function ProfileEditForm({
                   This helps users find you in their area
                </p>
             </div>
+            {renderSaveButton("contact")}
          </div>
 
          {/* Account Type */}
@@ -465,6 +548,7 @@ export function ProfileEditForm({
                   Business
                </button>
             </div>
+            {renderSaveButton("accountType")}
          </div>
 
          {/* Skills */}
@@ -493,77 +577,58 @@ export function ProfileEditForm({
             </div>
 
             {/* Add New Skill */}
-            <div className="flex gap-2">
-               <Input
-                  value={newSkill}
-                  onChange={(e) => setNewSkill(e.target.value)}
-                  placeholder="Add a skill..."
-                  className="flex-1 h-9 sm:h-10 text-xs md:text-sm"
-                  onKeyDown={(e) =>
-                     e.key === "Enter" && (e.preventDefault(), addSkill())
-                  }
-               />
-               <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={addSkill}
-                  disabled={!newSkill.trim()}
-                  className="size-8 md:size-9 sm:size-10"
-               >
-                  <Plus className="size-3.5 md:size-4" />
-               </Button>
+            <div className="relative">
+               <div className="flex gap-2">
+                  <Input
+                     value={newSkill}
+                     onChange={(e) => setNewSkill(e.target.value)}
+                     placeholder="Add a skill..."
+                     className="flex-1 h-9 sm:h-10 text-xs md:text-sm"
+                     onFocus={() => setSkillsInputFocused(true)}
+                     onBlur={() => {
+                        setTimeout(() => setSkillsInputFocused(false), 120);
+                     }}
+                     onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                           e.preventDefault();
+                           addSkill();
+                        }
+                     }}
+                  />
+                  <Button
+                     type="button"
+                     variant="outline"
+                     size="icon"
+                     onClick={addSkill}
+                     disabled={!newSkill.trim()}
+                     className="size-8 md:size-9 sm:size-10"
+                  >
+                     <Plus className="size-3.5 md:size-4" />
+                  </Button>
+               </div>
+
+               {skillsInputFocused && newSkill.trim().length > 0 && suggestedSkills.length > 0 && (
+                  <div className="absolute z-20 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
+                     {suggestedSkills.map((skill) => (
+                        <button
+                           key={skill}
+                           type="button"
+                           className="block w-full px-3 py-2 text-left text-xs sm:text-sm hover:bg-gray-50"
+                           onPointerDown={(e) => {
+                              e.preventDefault();
+                              addSuggestedSkill(skill);
+                           }}
+                        >
+                           {skill}
+                        </button>
+                     ))}
+                  </div>
+               )}
             </div>
             <p className="text-[10px] sm:text-xs text-gray-500 mt-2">
                Add skills to help people find you for relevant tasks
             </p>
-         </div>
-
-         {/* Save Actions */}
-         <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-            <div>
-               {hasChanges && (
-                  <p className="text-xs sm:text-sm text-amber-600 flex items-center gap-1.5">
-                     <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                     <span className="hidden sm:inline">
-                        You have unsaved changes
-                     </span>
-                     <span className="sm:hidden">Unsaved changes</span>
-                  </p>
-               )}
-            </div>
-            <div className="flex gap-2 sm:gap-3">
-               {onCancel && (
-                  <Button
-                     variant="ghost"
-                     onClick={onCancel}
-                     disabled={isSaving}
-                     size="sm"
-                     className="text-xs h-9 px-3"
-                  >
-                     Cancel
-                  </Button>
-               )}
-               <Button
-                  onClick={handleSave}
-                  disabled={isSaving || !hasChanges}
-                  className="min-w-20 sm:min-w-[100px] bg-primary-500 hover:bg-primary-600"
-                  size="sm"
-               >
-                  {isSaving ? (
-                     <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        <span className="hidden sm:inline">Saving...</span>
-                        <span className="sm:hidden">...</span>
-                     </>
-                  ) : (
-                     <>
-                        <Check className="size-3.5 md:size-4 mr-2" />
-                        Save
-                     </>
-                  )}
-               </Button>
-            </div>
+            {renderSaveButton("skills")}
          </div>
       </div>
    );

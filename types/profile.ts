@@ -125,6 +125,7 @@ export interface PayoutMethod {
 // Transaction history
 export interface Transaction {
    id: string;
+   payoutId?: string;
    type: "payment" | "payout" | "refund" | "fee";
    amount: number;
    currency: string;
@@ -154,6 +155,13 @@ export interface Transaction {
    platformFee?: number;
    gstAmount?: number;
    totalPaid?: number;
+   penaltyDeducted?: number | string;
+   penaltyLines?: Array<{
+      penaltyId: string;
+      taskId: string;
+      applied: string;
+      remainingAfter: string;
+   }>;
 }
 
 // Address types
@@ -205,8 +213,7 @@ export interface NotificationPreferences {
       newMessages: boolean;
       marketing: boolean;
       accountAlerts: boolean;
-      weeklyDigest: boolean;
-      transactional?: boolean;
+      system?: boolean;
       taskReminders?: boolean;
       keywordTaskAlerts?: boolean;
       recommendedTaskAlerts?: boolean;
@@ -299,6 +306,7 @@ export type ProfileSection =
    | "verifications"
    | "payments"
    | "addresses"
+   | "bank-account"
    | "notifications"
    | "security"
    | "privacy"

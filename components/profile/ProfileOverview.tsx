@@ -5,13 +5,19 @@
  * Summary view of account status, stats, and quick actions
  */
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+   Dialog,
+   DialogContent,
+   DialogHeader,
+   DialogTitle,
+} from "@/components/ui/dialog";
 import {
    Star,
    CheckCircle2,
@@ -22,12 +28,16 @@ import {
    Briefcase,
    MapPin,
    Award,
+   Landmark,
    Share2,
+   Plus,
 } from "lucide-react";
 import { UserProfile } from "@/types/user";
 import { ProfileSection } from "@/types/profile";
 import { ShareModal } from "@/components/shared/ShareModal";
 import { toast } from "sonner";
+import { profilesApi } from "@/lib/api/endpoints/profiles";
+import { postTaskCategories } from "@/lib/data/categories";
 
 interface ProfileOverviewProps {
    user: UserProfile;
@@ -37,6 +47,54 @@ interface ProfileOverviewProps {
 
 export function ProfileOverview({ user, onNavigate, loading }: ProfileOverviewProps) {
    const [shareOpen, setShareOpen] = useState(false);
+   const [skillsModalOpen, setSkillsModalOpen] = useState(false);
+   const [aboutModalOpen, setAboutModalOpen] = useState(false);
+   const [savingSkills, setSavingSkills] = useState(false);
+   const [savingAbout, setSavingAbout] = useState(false);
+   const [skillInput, setSkillInput] = useState("");
+   const [skillsInputFocused, setSkillsInputFocused] = useState(false);
+   const [aboutInput, setAboutInput] = useState(
+      user.business?.description || user.bio || ""
+   );
+   const [selectedSkills, setSelectedSkills] = useState<string[]>(
+      (user.skills?.list || []).map((item) => item.name).filter(Boolean)
+   );
+
+   const avatarSrc = React.useMemo(() => {
+      if (!user.photoURL) return undefined;
+      const rawVersion = user.updatedAt ? new Date(user.updatedAt).getTime() : Date.now();
+      const separator = user.photoURL.includes("?") ? "&" : "?";
+      return `${user.photoURL}${separator}v=${rawVersion}`;
+   }, [user.photoURL, user.updatedAt]);
+
+   const suggestedSkills = useMemo(() => {
+      const query = skillInput.trim().toLowerCase();
+      return postTaskCategories
+         .map((item) => item.label)
+         .filter((name) => {
+            if (!query) return false;
+            return name.toLowerCase().includes(query);
+         })
+         .filter(
+            (name) =>
+               !selectedSkills.some(
+                  (selected) => selected.toLowerCase() === name.toLowerCase()
+               )
+         )
+         .slice(0, 8);
+   }, [selectedSkills, skillInput]);
+
+   const handleSkillsModalOpenChange = (open: boolean) => {
+      setSkillsModalOpen(open);
+      if (open) {
+         setSelectedSkills(
+            (user.skills?.list || []).map((item) => item.name).filter(Boolean)
+         );
+      } else {
+         setSkillInput("");
+         setSkillsInputFocused(false);
+      }
+   };
 
    // Generate the public profile URL
    const getProfileUrl = () => {
@@ -75,6 +133,85 @@ export function ProfileOverview({ user, onNavigate, loading }: ProfileOverviewPr
       return <ProfileOverviewSkeleton />;
    }
 
+   const hasSkills = selectedSkills.length > 0;
+   const hasAbout = aboutInput.trim().length > 0;
+   const aadhaarDone = Boolean(user.isAadhaarVerified);
+   const bankDone = Boolean(user.isBankVerified);
+   const hasPhoto = Boolean(user.photoURL);
+   const hasPendingSetup = !hasSkills || !hasAbout || !aadhaarDone || !bankDone || !hasPhoto;
+
+   const addSkill = (skillName: string) => {
+      const clean = skillName.trim();
+      if (!clean) return;
+      if (selectedSkills.some((s) => s.toLowerCase() === clean.toLowerCase())) {
+         setSkillInput("");
+         return;
+      }
+      setSelectedSkills((prev) => [...prev, clean]);
+      setSkillInput("");
+   };
+
+   const removeSkill = (skillName: string) => {
+      setSelectedSkills((prev) => prev.filter((s) => s !== skillName));
+   };
+
+   const saveSkills = async () => {
+      const pendingInput = skillInput.trim();
+      const normalizedSkills =
+         pendingInput.length > 0 &&
+         !selectedSkills.some(
+            (skill) => skill.toLowerCase() === pendingInput.toLowerCase()
+         )
+            ? [...selectedSkills, pendingInput]
+            : selectedSkills;
+
+      if (normalizedSkills.length === 0) {
+         toast.error("Please add at least one skill");
+         return;
+      }
+
+      setSavingSkills(true);
+      try {
+         await profilesApi.upsertProfile({
+            skills: {
+               list: normalizedSkills.map((name) => ({ name })),
+            },
+         });
+
+         setSelectedSkills(normalizedSkills);
+         setSkillInput("");
+         toast.success("Skills saved successfully");
+         setSkillsModalOpen(false);
+      } catch (error) {
+         console.error("Failed to save skills", error);
+         toast.error("Failed to save skills");
+      } finally {
+         setSavingSkills(false);
+      }
+   };
+
+   const saveAbout = async () => {
+      if (!aboutInput.trim()) {
+         toast.error("Please add about you");
+         return;
+      }
+
+      setSavingAbout(true);
+      try {
+         await profilesApi.upsertProfile({
+            bio: aboutInput.trim(),
+            business: { description: aboutInput.trim() },
+         });
+         toast.success("About you saved successfully");
+         setAboutModalOpen(false);
+      } catch (error) {
+         console.error("Failed to save about", error);
+         toast.error("Failed to save about you");
+      } finally {
+         setSavingAbout(false);
+      }
+   };
+
    return (
       <div className="space-y-4 sm:space-y-6">
          {/* Header Card */}
@@ -82,7 +219,7 @@ export function ProfileOverview({ user, onNavigate, loading }: ProfileOverviewPr
             <div className="flex items-start gap-3 sm:gap-4">
                <Avatar className="w-12 h-12 sm:w-16 sm:h-16 shrink-0">
                   <AvatarImage
-                     src={user.photoURL || undefined}
+                     src={avatarSrc}
                      alt={user.name}
                   />
                   <AvatarFallback className="bg-gray-100 text-gray-600 text-lg sm:text-xl font-medium">
@@ -164,32 +301,58 @@ export function ProfileOverview({ user, onNavigate, loading }: ProfileOverviewPr
             </div>
          </div>
 
-         {/* Profile Completion */}
-         {completionPercentage < 100 && (
-            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5">
-               <div className="flex items-center justify-between mb-3">
-                  <div>
-                     <h3 className="text-xs sm:text-sm font-medium text-gray-900">
-                        Profile Completion
-                     </h3>
-                     <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">
-                        Complete your profile to increase visibility
-                     </p>
-                  </div>
-                  <span className="text-sm sm:text-base font-semibold text-gray-900">
-                     {completionPercentage}%
-                  </span>
-               </div>
-               <Progress value={completionPercentage} className="h-2" />
+         {/* Profile Setup Actions */}
+         {hasPendingSetup && (
+            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 space-y-4">
+               <h3 className="text-sm sm:text-base font-semibold text-gray-900">Profile Setup</h3>
 
-               {completionPercentage < 100 && (
-                  <button
+               {!hasSkills && (
+                  <SetupItem
+                     title="Skills"
+                     description="Add skills to get matched with relevant tasks"
+                     cta="Add skills"
+                     onClick={() => setSkillsModalOpen(true)}
+                  />
+               )}
+
+               {!aadhaarDone && (
+                  <SetupItem
+                     title="Aadhar Verification"
+                     description="Verify your identity to apply for tasks and build trust with clients"
+                     cta="Verify now"
+                     onClick={() => {
+                        if (typeof window !== "undefined") {
+                           window.location.href = "/profile/verify/aadhaar";
+                        }
+                     }}
+                  />
+               )}
+
+               {!bankDone && (
+                  <SetupItem
+                     title="Bank Account"
+                     description="Add your bank account to receive payouts after task completion"
+                     cta="Add bank account"
+                     onClick={() => onNavigate("bank-account")}
+                  />
+               )}
+
+               {!hasPhoto && (
+                  <SetupItem
+                     title="Profile Photo"
+                     description="Upload your profile photo to build trust and get more responses"
+                     cta="Upload now"
                      onClick={() => onNavigate("edit-profile")}
-                     className="flex items-center gap-1 mt-3 text-xs sm:text-sm text-primary-600 hover:text-primary-700 font-medium"
-                  >
-                     Complete your profile
-                     <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
-                  </button>
+                  />
+               )}
+
+               {!hasAbout && (
+                  <SetupItem
+                     title="About you"
+                     description="Tell clients what you can do and why they should choose you"
+                     cta="Add about you"
+                     onClick={() => setAboutModalOpen(true)}
+                  />
                )}
             </div>
          )}
@@ -267,6 +430,13 @@ export function ProfileOverview({ user, onNavigate, loading }: ProfileOverviewPr
                   description="Manage your communication settings"
                   onClick={() => onNavigate("notifications")}
                />
+               <QuickActionItem
+                  icon={<Landmark className="w-4 h-4 sm:w-5 sm:h-5" />}
+                  title="Add bank account"
+                  description={bankDone ? "Bank account verified" : "Required to receive payouts"}
+                  status={bankDone ? "complete" : "pending"}
+                  onClick={() => onNavigate("bank-account")}
+               />
             </div>
          </div>
 
@@ -303,6 +473,145 @@ export function ProfileOverview({ user, onNavigate, loading }: ProfileOverviewPr
             url={getProfileUrl()}
             shareText={`Check out ${user.name}'s profile on ExtraHand!`}
          />
+
+         {/* Skills Modal */}
+         <Dialog open={skillsModalOpen} onOpenChange={handleSkillsModalOpenChange}>
+            <DialogContent className="max-w-2xl">
+               <DialogHeader>
+                  <DialogTitle>Choose your skills to start earning</DialogTitle>
+               </DialogHeader>
+
+               <div className="space-y-4">
+                  <div>
+                     <Input
+                        value={skillInput}
+                        placeholder="Type a skill"
+                        onChange={(e) => setSkillInput(e.target.value)}
+                        onFocus={() => setSkillsInputFocused(true)}
+                        onBlur={() => {
+                           setTimeout(() => setSkillsInputFocused(false), 120);
+                        }}
+                        onKeyDown={(e) => {
+                           if (e.key === "Enter") {
+                              e.preventDefault();
+                              addSkill(skillInput);
+                           }
+                        }}
+                     />
+                     {skillsInputFocused && skillInput.trim().length > 0 && suggestedSkills.length > 0 && (
+                        <div className="mt-2 rounded-md border border-gray-200 bg-white max-h-44 overflow-auto">
+                           {suggestedSkills.map((skill) => (
+                              <button
+                                 key={skill}
+                                 type="button"
+                                 className="block w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
+                                 onPointerDown={(e) => {
+                                    e.preventDefault();
+                                    addSkill(skill);
+                                 }}
+                              >
+                                 {skill}
+                              </button>
+                           ))}
+                        </div>
+                     )}
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                     {selectedSkills.map((skill) => (
+                        <span
+                           key={skill}
+                           className="inline-flex items-center gap-1 rounded-full bg-primary-50 px-3 py-1 text-xs text-primary-700"
+                        >
+                           {skill}
+                           <button
+                              type="button"
+                              className="text-primary-700 hover:text-primary-900"
+                              onClick={() => removeSkill(skill)}
+                           >
+                              ×
+                           </button>
+                        </span>
+                     ))}
+                  </div>
+
+                  <div className="flex justify-end">
+                     <Button
+                        onClick={saveSkills}
+                        disabled={savingSkills}
+                        style={{
+                           backgroundColor: "#f9b233",
+                           color: "#222",
+                        }}
+                     >
+                        {savingSkills ? "Saving..." : "Save"}
+                     </Button>
+                  </div>
+               </div>
+            </DialogContent>
+         </Dialog>
+
+         {/* About You Modal */}
+         <Dialog open={aboutModalOpen} onOpenChange={setAboutModalOpen}>
+            <DialogContent className="max-w-xl">
+               <DialogHeader>
+                  <DialogTitle>About you</DialogTitle>
+               </DialogHeader>
+
+               <div className="space-y-4">
+                  <Textarea
+                     value={aboutInput}
+                     placeholder="Tell clients what you can do and why they should choose you"
+                     rows={6}
+                     onChange={(e) => setAboutInput(e.target.value)}
+                  />
+
+                  <div className="flex justify-end">
+                     <Button
+                        onClick={saveAbout}
+                        disabled={savingAbout}
+                        style={{
+                           backgroundColor: "#f9b233",
+                           color: "#222",
+                        }}
+                     >
+                        {savingAbout ? "Saving..." : "Save"}
+                     </Button>
+                  </div>
+               </div>
+            </DialogContent>
+         </Dialog>
+      </div>
+   );
+}
+
+interface SetupItemProps {
+   title: string;
+   description: string;
+   valuePreview?: string;
+   cta: string;
+   onClick: () => void;
+}
+
+function SetupItem({ title, description, valuePreview, cta, onClick }: SetupItemProps) {
+   return (
+      <div className="rounded-lg border border-gray-100 p-3 sm:p-4">
+         <div className="flex items-start justify-between gap-3">
+            <div>
+               <p className="text-sm sm:text-base font-semibold text-gray-900">{title}</p>
+               <p className="text-xs sm:text-sm text-gray-600 mt-1">{description}</p>
+               {valuePreview && (
+                  <p className="text-xs text-gray-500 mt-2 line-clamp-2">{valuePreview}</p>
+               )}
+            </div>
+            <button
+               type="button"
+               onClick={onClick}
+               className="shrink-0 text-xs sm:text-sm font-medium text-primary-600 hover:text-primary-700"
+            >
+               {cta}
+            </button>
+         </div>
       </div>
    );
 }

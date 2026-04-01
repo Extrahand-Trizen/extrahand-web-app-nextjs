@@ -3,27 +3,69 @@
 /**
  * Tasks Page
  * Displays tasks with two tabs: My Tasks and My Applications
+ * Tab ordering and visibility is based on user role and counts
  */
 
 import { useMemo, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { MyTasksContent } from "@/components/tasks/MyTasksContent";
 import { MyApplicationsContent } from "@/components/tasks/MyApplicationsContent";
 import { useDashboardStore } from "@/lib/state/dashboardStore";
+import { useAuth } from "@/lib/auth/context";
 
 export default function TasksPage() {
    const router = useRouter();
    const searchParams = useSearchParams();
+   const { userData } = useAuth();
    const [tasksCount, setTasksCount] = useState<number | null>(null);
    const [applicationsCount, setApplicationsCount] = useState<number | null>(null);
 
+   // Determine user role
+   const userRole = useMemo(() => {
+      const roles = userData?.roles ?? [];
+      if (roles.includes("tasker") || roles.includes("both")) {
+         return "tasker";
+      }
+      return "poster";
+   }, [userData?.roles]);
+
+   // Determine which tabs to show based on role and counts
+   const visibleTabs = useMemo(() => {
+      const tabs: Array<"mytasks" | "myapplications"> = [];
+
+      if (userRole === "tasker") {
+         // For taskers: always show applications, show tasks only if count > 0
+         tabs.push("myapplications");
+         if (tasksCount !== null && tasksCount > 0) {
+            tabs.push("mytasks");
+         }
+      } else {
+         // For posters: always show tasks, show applications only if count > 0
+         tabs.push("mytasks");
+         if (applicationsCount !== null && applicationsCount > 0) {
+            tabs.push("myapplications");
+         }
+      }
+
+      return tabs;
+   }, [userRole, tasksCount, applicationsCount]);
+
+   // Set default tab based on role and visible tabs
+   const defaultTab = useMemo(() => {
+      return userRole === "tasker" ? "myapplications" : "mytasks";
+   }, [userRole]);
+
    const activeTab = useMemo(() => {
       const tabParam = searchParams.get("tab");
-      return tabParam === "myapplications" ? "myapplications" : "mytasks";
-   }, [searchParams]);
+      const selectedTab = tabParam === "myapplications" ? "myapplications" : "mytasks";
+
+      // Ensure activeTab is visible; if not, use default
+      if (visibleTabs.includes(selectedTab)) {
+         return selectedTab;
+      }
+      return visibleTabs.length > 0 ? visibleTabs[0] : defaultTab;
+   }, [searchParams, visibleTabs, defaultTab]);
 
 
    const handleTabChange = (value: string) => {
@@ -56,38 +98,35 @@ export default function TasksPage() {
                               </div>
                            </div>
 
-                           <Button
-                              onClick={() => router.push("/tasks/new")}
-                              className="bg-primary-600 hover:bg-primary-700 shrink-0"
-                           >
-                              <Plus className="w-4 h-4 mr-2" />
-                              Post task
-                           </Button>
                         </div>
                         <TabsList className="bg-transparent p-0 h-auto gap-4 sm:gap-6">
-                           <TabsTrigger
-                              value="mytasks"
-                              className="px-3 py-2 rounded-lg border-b-2 border-transparent data-[state=active]:border-primary-600 data-[state=active]:text-primary-600 text-secondary-600 font-medium text-sm sm:text-base"
-                           >
-                              My Tasks
-                              {tasksCount !== null && (
-                                 <span className="ml-2 text-secondary-400">
-                                    {tasksCount}
-                                 </span>
-                              )}
-                           </TabsTrigger>
+                           {visibleTabs.includes("mytasks") && (
+                              <TabsTrigger
+                                 value="mytasks"
+                                 className="px-3 py-2 rounded-lg border-b-2 border-transparent data-[state=active]:border-primary-600 data-[state=active]:text-primary-600 text-secondary-600 font-medium text-sm sm:text-base"
+                              >
+                                 My Tasks
+                                 {tasksCount !== null && (
+                                    <span className="ml-2 text-secondary-400">
+                                       {tasksCount}
+                                    </span>
+                                 )}
+                              </TabsTrigger>
+                           )}
 
-                           <TabsTrigger
-                              value="myapplications"
-                              className="px-3 py-2 rounded-lg border-b-2 border-transparent data-[state=active]:border-primary-600 data-[state=active]:text-primary-600 text-secondary-600 font-medium text-sm sm:text-base"
-                           >
-                              My Applications
-                              {applicationsCount !== null && (
-                                 <span className="ml-2 text-secondary-400">
-                                    {applicationsCount}
-                                 </span>
-                              )}
-                           </TabsTrigger>
+                           {visibleTabs.includes("myapplications") && (
+                              <TabsTrigger
+                                 value="myapplications"
+                                 className="px-3 py-2 rounded-lg border-b-2 border-transparent data-[state=active]:border-primary-600 data-[state=active]:text-primary-600 text-secondary-600 font-medium text-sm sm:text-base"
+                              >
+                                 My Applications
+                                 {applicationsCount !== null && (
+                                    <span className="ml-2 text-secondary-400">
+                                       {applicationsCount}
+                                    </span>
+                                 )}
+                              </TabsTrigger>
+                           )}
                         </TabsList>
                      </div>
                   </div>
@@ -96,7 +135,7 @@ export default function TasksPage() {
 
             {/* Content */}
             <main className="w-full">
-               {/* Always render both components to fetch counts, but only show the active one */}
+               {/* Both components are always rendered to fetch counts, but only show the active one */}
                <div className={activeTab === "mytasks" ? "" : "hidden"}>
                   <MyTasksContent onCountChange={setTasksCount} />
                </div>

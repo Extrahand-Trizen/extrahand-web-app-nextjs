@@ -12,7 +12,10 @@ type PaymentsState = {
   loading: boolean;
   error: string | null;
   lastFetchedAt: number | null;
-  fetchPayments: (userId: string, opts?: { force?: boolean }) => Promise<void>;
+  fetchPayments: (
+    userId: string,
+    opts?: { force?: boolean; linkedUserIds?: string[] }
+  ) => Promise<void>;
 };
 
 export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
@@ -40,19 +43,52 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
       set({ loading: true, error: null });
 
       // Fetch transaction history
-      const txRes = await paymentApi.getUserTransactions(userId, { limit: 100 });
+      const linkedUserIds = Array.from(
+        new Set(
+          (opts?.linkedUserIds || [])
+            .map((id) => (typeof id === "string" ? id.trim() : ""))
+            .filter((id) => id.length > 0 && id !== userId)
+        )
+      );
+      const txPromise = paymentApi.getUserTransactions(userId, {
+        limit: 100,
+        linkedUserIds: linkedUserIds.length > 0 ? linkedUserIds.join(",") : undefined,
+      });
+      const earningsPromise = paymentApi.getUserEarnings(
+        userId,
+        linkedUserIds.length > 0 ? linkedUserIds.join(",") : undefined
+      );
+      const summaryPromise = paymentApi.getTransactionSummary(userId, {
+        linkedUserIds: linkedUserIds.length > 0 ? linkedUserIds.join(",") : undefined,
+      });
+
+      const txRes = await txPromise;
       let mapped: Transaction[] = [];
 
       if (txRes && Array.isArray(txRes.transactions)) {
         mapped = txRes.transactions.map((tx: any) => {
           let mappedType: Transaction["type"] = "payment";
-          if (tx.type === "payout" || tx.type === "earning") {
+          if (tx.type === "refund") {
+            mappedType = "refund";
+          } else if (tx.type === "cancellation_penalty") {
+            // Keep penalty rows visible in history but out of customer spend totals.
+            mappedType = "fee";
+          } else if (
+            tx.type === "payout" ||
+            tx.type === "earning" ||
+            tx.type === "compensation"
+          ) {
             mappedType = "payout";
           }
 
           const amount = Number.parseFloat(tx.amount);
 
           const metadata = tx.metadata || {};
+          const descriptionText =
+            typeof tx.description === "string" ? tx.description.trim() : "";
+          const taskIdFromDescription =
+            descriptionText.match(/\b[a-f0-9]{24}\b/i)?.[0] || undefined;
+
           const toNumber = (value: unknown): number | undefined => {
             if (typeof value === "number" && Number.isFinite(value)) return value;
             if (typeof value === "string") {
@@ -62,12 +98,21 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
             return undefined;
           };
 
+          const penaltyFromMetadata = toNumber(metadata.penaltyDeducted);
+
           const taskId =
             tx.taskId ||
             metadata.taskId ||
             metadata.task?._id ||
             metadata.task?.id ||
-            tx.relatedTaskId;
+            tx.relatedTaskId ||
+            taskIdFromDescription;
+          const payoutIdCandidate =
+            tx.transactionId ||
+            tx.relatedEntityId ||
+            metadata.payoutId ||
+            tx.id;
+          const payoutId = mappedType === "payout" ? String(payoutIdCandidate) : undefined;
           const taskTitle =
             tx.taskTitle ||
             metadata.taskTitle ||
@@ -79,8 +124,12 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
 
           const taskAmount =
             toNumber(metadata.taskAmount) ||
+            toNumber(metadata.grossAmount) ||
             toNumber(metadata.amountBreakdown?.taskAmount) ||
-            toNumber(metadata.fees?.taskAmount);
+            toNumber(metadata.fees?.taskAmount) ||
+            (mappedType === "payout" && penaltyFromMetadata && penaltyFromMetadata > 0
+              ? amount + penaltyFromMetadata
+              : undefined);
           const platformFee =
             toNumber(metadata.platformFee) ||
             toNumber(metadata.platformFeeAmount) ||
@@ -93,10 +142,23 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
             toNumber(metadata.amountBreakdown?.gst) ||
             toNumber(metadata.fees?.gst);
           const totalPaid =
-            toNumber(metadata.totalPaid) ||
-            toNumber(metadata.totalAmount) ||
-            toNumber(metadata.amountBreakdown?.totalAmount) ||
-            amount;
+            mappedType === "payout"
+              ? amount
+              : toNumber(metadata.totalPaid) ||
+                toNumber(metadata.grossAmount) ||
+                toNumber(metadata.totalAmount) ||
+                toNumber(metadata.amountBreakdown?.totalAmount) ||
+                amount;
+
+          const penaltyDeducted =
+            metadata.penaltyDeducted ||
+            (metadata.netAmount && metadata.grossAmount
+              ? toNumber(metadata.grossAmount) - toNumber(metadata.netAmount)
+              : undefined);
+          
+          // Only include penaltyDeducted if it's actually > 0
+          const effectivePenaltyDeducted = penaltyDeducted && toNumber(penaltyDeducted) > 0 ? penaltyDeducted : undefined;
+          const penaltyLines = Array.isArray(metadata.penaltyLines) && effectivePenaltyDeducted ? metadata.penaltyLines : undefined;
 
           const fallbackDescription =
             mappedType === "payment"
@@ -106,9 +168,17 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
               : "Transaction";
 
           const rawStatus = String(tx.status || "").toLowerCase();
+          const escrowStatusRaw = String(
+            metadata.escrowStatus || metadata.escrow?.status || ""
+          ).toLowerCase();
+          const isCancelledFlow =
+            (escrowStatusRaw === "cancelled" || escrowStatusRaw === "refunded") &&
+            (mappedType === "payment" || mappedType === "refund");
 
           const normalizedStatus: Transaction["status"] =
-            rawStatus === "held" ||
+            isCancelledFlow
+              ? "cancelled"
+              : rawStatus === "held" ||
             rawStatus === "pending" ||
             rawStatus === "processing" ||
             rawStatus === "authorized"
@@ -121,6 +191,7 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
 
           return {
             id: tx.transactionId || tx.id,
+            payoutId,
             type: mappedType,
             amount,
             currency: "INR",
@@ -143,9 +214,30 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
             platformFee,
             gstAmount,
             totalPaid,
+            penaltyDeducted: effectivePenaltyDeducted,
+            penaltyLines,
           };
         });
       }
+
+      const mappedNetSpent = Math.max(
+        0,
+        mapped
+          .filter((t) => t.type === "payment" && t.status !== "failed")
+          .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0) -
+          mapped
+            .filter((t) => t.type === "refund" && t.status === "completed")
+            .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0)
+      );
+
+      // Show transaction rows as soon as they are available.
+      set({
+        transactions: mapped,
+        totalSpent: mappedNetSpent,
+        loading: false,
+        error: null,
+        lastFetchedAt: now,
+      });
 
       // Backfill missing task titles so payment rows can show task names instead of generic labels.
       const missingTitleTaskIds = Array.from(
@@ -174,35 +266,54 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
         );
 
         if (taskTitleMap.size > 0) {
-          mapped = mapped.map((t) => {
+          const enriched = mapped.map((t) => {
             if (!t.taskId || t.taskTitle) return t;
             const resolvedTitle = taskTitleMap.get(t.taskId);
             return resolvedTitle ? { ...t, taskTitle: resolvedTitle } : t;
           });
+
+          set((state) => {
+            if (!state.transactions.length) return state;
+            return { ...state, transactions: enriched };
+          });
         }
       }
 
-      // Fetch earnings summary
-      const earningsRes = await paymentApi.getUserEarnings(userId);
+      const [earningsSettled, summarySettled] = await Promise.allSettled([
+        earningsPromise,
+        summaryPromise,
+      ]);
+
       const totalEarnings =
-        earningsRes.success && earningsRes.data
-          ? earningsRes.data.totalEarnings || 0
+        earningsSettled.status === "fulfilled" && earningsSettled.value?.success && earningsSettled.value?.data
+          ? earningsSettled.value.data.totalEarnings || 0
           : 0;
 
-      // Sum all outgoing payments (type === "payment") regardless of status;
-      // use absolute value so Total Spent displays as a positive number.
-      const totalSpent = mapped
-        .filter((t) => t.type === "payment")
-        .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
+      const summaryTotalPayments =
+        summarySettled.status === "fulfilled"
+          ? Number.parseFloat(summarySettled.value?.summary?.totalPayments || "0")
+          : NaN;
+      const summaryTotalRefunds =
+        summarySettled.status === "fulfilled"
+          ? Number.parseFloat(summarySettled.value?.summary?.totalRefunds || "0")
+          : NaN;
 
-      set({
-        transactions: mapped,
+      const totalSpentFromSummary =
+        Number.isFinite(summaryTotalPayments) && Number.isFinite(summaryTotalRefunds)
+          ? Math.max(0, summaryTotalPayments - summaryTotalRefunds)
+          : mappedNetSpent;
+
+      // Keep UI-consistent behavior: cancelled outgoing payments should not contribute
+      // to Total Spent even before/without a refund row.
+      const totalSpent = mapped.length > 0 ? mappedNetSpent : totalSpentFromSummary;
+
+      set((state) => ({
+        ...state,
         totalEarnings,
         totalSpent,
-        loading: false,
         error: null,
         lastFetchedAt: now,
-      });
+      }));
     } catch (error: any) {
       set({
         loading: false,

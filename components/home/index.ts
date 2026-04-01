@@ -14,3 +14,4 @@ export { LocationHint } from "./LocationHint";
 export { QuickSearch } from "./QuickSearch";
 export { DynamicActionCard } from "./DynamicActionCard";
 export { RecommendedTasks } from "./RecommendedTasks";
+export { TaskerSetupBanner } from "./TaskerSetupBanner";

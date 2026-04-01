@@ -422,14 +422,6 @@ export function NotificationsSection({
                hideChevron={true}
             >
                <NotificationToggle
-                  label="Transactional"
-                  description="Important confirmations and account actions"
-                  checked={localSettings.push.transactional}
-                  onChange={(v) => updateChannelSetting("push", "transactional", v)}
-                  disabled={!localSettings.push.enabled}
-                  comingSoon={true}
-               />
-               <NotificationToggle
                   label="Task Updates"
                   description="Status changes, new offers, task completions"
                   checked={localSettings.push.taskUpdates}
@@ -442,7 +434,6 @@ export function NotificationsSection({
                   checked={localSettings.push.payments}
                   onChange={(v) => updateChannelSetting("push", "payments", v)}
                   disabled={!localSettings.push.enabled}
-                  comingSoon={true}
                />
                <NotificationToggle
                   label="Task Reminders"
@@ -489,14 +480,6 @@ export function NotificationsSection({
                hideChevron={true}
             >
                <NotificationToggle
-                  label="Transactional"
-                  description="Important confirmations and account actions"
-                  checked={localSettings.email.transactional}
-                  onChange={(v) => updateChannelSetting("email", "transactional", v)}
-                  disabled={!localSettings.email.enabled}
-                  comingSoon={true}
-               />
-               <NotificationToggle
                   label="Task Updates"
                   description="Status changes, new offers, task completions"
                   checked={localSettings.email.taskUpdates}
@@ -509,7 +492,6 @@ export function NotificationsSection({
                   checked={localSettings.email.payments}
                   onChange={(v) => updateChannelSetting("email", "payments", v)}
                   disabled={!localSettings.email.enabled}
-                  comingSoon={true}
                />
                <NotificationToggle
                   label="Task Reminders"

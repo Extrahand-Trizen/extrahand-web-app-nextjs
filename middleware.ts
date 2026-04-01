@@ -5,6 +5,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+const REDIRECT_COOKIE_NAME = "extrahand_redirect_to";
+
 // Auth routes (should redirect if already authenticated)
 const authRoutes = ["/login", "/signup", "/otp-verification"];
 
@@ -24,6 +26,9 @@ const protectedRoutes = [
    "/applications",
    "/payments",
    "/dashboard",
+   "/notifications",
+   "/onboarding",
+   "/poster",
 ];
 
 function isPublicPath(pathname: string) {
@@ -110,7 +115,8 @@ export function middleware(request: NextRequest) {
    if (authenticated && isAuthPath(pathname)) {
       const url = request.nextUrl.clone();
       // Check if there's a redirect destination (may include query params like ?action=offer)
-      const next = request.nextUrl.searchParams.get("next");
+      const cookieNext = request.cookies.get(REDIRECT_COOKIE_NAME)?.value;
+      const next = request.nextUrl.searchParams.get("next") || cookieNext;
       if (next) {
          // next may be a full path+search string (e.g. /tasks/123?action=offer)
          // We must parse it to set both pathname and search properly
@@ -126,17 +132,26 @@ export function middleware(request: NextRequest) {
          url.pathname = "/home";
          url.search = "";
       }
-      return NextResponse.redirect(url);
+      const response = NextResponse.redirect(url);
+      response.cookies.delete(REDIRECT_COOKIE_NAME);
+      return response;
    }
 
    // Block protected paths when unauthenticated
    if (!authenticated && isProtectedPath(pathname)) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
-      // Preserve intended destination including any query params (e.g. ?category=...)
       const fullPath = request.nextUrl.pathname + request.nextUrl.search;
-      url.searchParams.set("next", fullPath);
-      return NextResponse.redirect(url);
+      url.search = "";
+
+      // Preserve destination in cookie instead of query string to keep auth URL clean.
+      const response = NextResponse.redirect(url);
+      response.cookies.set(REDIRECT_COOKIE_NAME, fullPath, {
+         path: "/",
+         sameSite: "lax",
+         secure: request.nextUrl.protocol === "https:",
+      });
+      return response;
    }
 
    // Default: allow request

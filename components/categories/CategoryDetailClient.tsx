@@ -203,6 +203,10 @@ const CategoryDetailClient: React.FC<CategoryDetailClientProps> = ({
       handleHeadingClick(headingText);
    };
 
+   const handleTaskerGetStarted = () => {
+      router.push("/discover");
+   };
+
    const earnings: Record<string, string> = {
       "1-2 tasks per week":
          category.earnings1to2 || category.earningsCard?.weekly?.["1-2"] || "",
@@ -245,6 +249,7 @@ const CategoryDetailClient: React.FC<CategoryDetailClientProps> = ({
                   location={category.location || "India"}
                   earningsPeriod={category.earningsPeriod || "per month"}
                   disclaimer={category.disclaimer}
+                  onGetStarted={handleTaskerGetStarted}
                />
             }
          />

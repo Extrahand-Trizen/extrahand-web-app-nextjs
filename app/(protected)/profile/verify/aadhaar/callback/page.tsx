@@ -18,6 +18,7 @@ import {
   Fingerprint,
 } from "lucide-react";
 import { verificationApi } from "@/lib/api/endpoints/verification";
+import { checkBadgeUpgrade } from "@/lib/api/badge";
 import { useAuth } from "@/lib/auth/context";
 import { toast } from "sonner";
 
@@ -91,6 +92,18 @@ export default function AadhaarCallbackPage() {
               });
               setState("success");
               sessionStorage.removeItem(DIGILOCKER_SESSION_KEY);
+              // Automatically trigger badge upgrade check after verification
+              try {
+                const badgeResult = await checkBadgeUpgrade();
+                if (badgeResult.upgraded && badgeResult.newBadge) {
+                  toast.success(`🎉 Badge upgraded to ${badgeResult.newBadge}!`, {
+                    description: "Your profile has been upgraded based on your verification.",
+                    duration: 5000,
+                  });
+                }
+              } catch {
+                // Badge upgrade failure is non-critical; ignore silently
+              }
               await refreshUserData();
               router.refresh();
               toast.success("Aadhaar verified successfully!");

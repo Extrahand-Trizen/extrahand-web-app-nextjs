@@ -5,7 +5,7 @@
  * Optimized for minimal API calls
  */
 
-import React, { useState, useCallback, memo } from "react";
+import React, { useState, useCallback, memo, useEffect, useRef } from "react";
 import { GoogleMap, useJsApiLoader, Marker } from "@react-google-maps/api";
 import { Loader2 } from "lucide-react";
 
@@ -14,6 +14,7 @@ interface GoogleMapPickerProps {
    markerPosition: [number, number]; // [lng, lat]
    onMarkerDragEnd: (lat: number, lng: number) => void;
    apiKey: string;
+   onGoogleAuthFailure?: () => void;
 }
 
 const mapContainerStyle = {
@@ -35,13 +36,41 @@ function GoogleMapPickerComponent({
    markerPosition,
    onMarkerDragEnd,
    apiKey,
+   onGoogleAuthFailure,
 }: GoogleMapPickerProps) {
    const [map, setMap] = useState<google.maps.Map | null>(null);
+   const authFailureNotifiedRef = useRef(false);
 
    const { isLoaded, loadError } = useJsApiLoader({
       id: "google-map-script",
       googleMapsApiKey: apiKey,
    });
+
+   useEffect(() => {
+      const previousAuthFailureHandler = (window as any).gm_authFailure;
+
+      (window as any).gm_authFailure = () => {
+         if (!authFailureNotifiedRef.current) {
+            authFailureNotifiedRef.current = true;
+            onGoogleAuthFailure?.();
+         }
+
+         if (typeof previousAuthFailureHandler === "function") {
+            previousAuthFailureHandler();
+         }
+      };
+
+      return () => {
+         (window as any).gm_authFailure = previousAuthFailureHandler;
+      };
+   }, [onGoogleAuthFailure]);
+
+   useEffect(() => {
+      if (loadError && !authFailureNotifiedRef.current) {
+         authFailureNotifiedRef.current = true;
+         onGoogleAuthFailure?.();
+      }
+   }, [loadError, onGoogleAuthFailure]);
 
    const onLoad = useCallback((map: google.maps.Map) => {
       setMap(map);

@@ -224,7 +224,7 @@ export function TaskOffersSection({
       setShowPaymentModal(false);
 
       toast.success("Payment successful!", {
-         description: "Task assigned to tasker. Money held in escrow.",
+         description: "Task assigned to tasker.",
       });
 
       try {

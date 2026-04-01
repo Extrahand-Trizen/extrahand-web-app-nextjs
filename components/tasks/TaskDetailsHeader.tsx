@@ -27,6 +27,10 @@ export function TaskDetailsHeader({
    const budgetAmount =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
    const categoryLabel = task.categoryLabel || task.subcategory || task.category;
+   
+   // Determine if task is remote
+   const isRemote = !task.location?.coordinates || !task.location?.address;
+   const locationDisplay = isRemote ? "Remote" : task.location?.city || "Remote";
 
    const getStatusBadge = () => {
       if (task.status === "open") {
@@ -196,7 +200,7 @@ export function TaskDetailsHeader({
                   <span className="font-medium">Location</span>
                </div>
                <p className="text-xs md:text-sm font-semibold text-secondary-900 truncate">
-                  {task.location.city}
+                  {locationDisplay}
                </p>
             </div>
 

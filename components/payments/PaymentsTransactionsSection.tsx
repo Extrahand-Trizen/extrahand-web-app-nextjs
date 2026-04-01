@@ -38,17 +38,15 @@ export function PaymentsTransactionsSection({
 }: PaymentsTransactionsSectionProps) {
    const [activeTab, setActiveTab] = useState("all");
 
-   // Calculate summaries
-   const outgoingTransactions = transactions.filter(
-      (t) => t.type === "payment"
-   );
-   const incomingTransactions = transactions.filter((t) => t.type === "payout");
+   const paymentTransactions = transactions.filter((t) => t.type === "payment");
    const refundTransactions = transactions.filter((t) => t.type === "refund");
+   const incomingTransactions = transactions.filter((t) => t.type === "payout");
 
-   const totalOutgoing = outgoingTransactions.reduce(
-      (sum, t) => sum + t.amount,
-      0
-   );
+   const outgoingTransactions = [...paymentTransactions, ...refundTransactions];
+
+   const totalPayments = paymentTransactions.reduce((sum, t) => sum + t.amount, 0);
+   const totalRefundsReturned = refundTransactions.reduce((sum, t) => sum + t.amount, 0);
+   const totalOutgoing = Math.max(0, totalPayments - totalRefundsReturned);
    const totalEarnings = incomingTransactions.reduce(
       (sum, t) => sum + t.amount,
       0
@@ -59,7 +57,10 @@ export function PaymentsTransactionsSection({
       activeTab === "all"
          ? transactions
          : activeTab === "outgoing"
-         ? outgoingTransactions
+         ? outgoingTransactions.sort(
+              (a, b) =>
+                 new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+           )
          : activeTab === "earnings"
          ? incomingTransactions
          : refundTransactions;
@@ -100,7 +101,8 @@ export function PaymentsTransactionsSection({
                   {formatCurrency(totalOutgoing)}
                </p>
                <p className="text-xs text-gray-400 mt-1">
-                  {outgoingTransactions.length} payments
+                  {paymentTransactions.length} paid · {refundTransactions.length}{" "}
+                  refunded
                </p>
             </div>
             <div className="bg-white border border-gray-200 rounded-lg p-4">

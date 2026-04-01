@@ -22,7 +22,7 @@ export function ProfileDataPrefetcher() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (!userData?.uid) return;
+    if (!userData?.uid && !userData?._id) return;
 
     // Badge progress is slower (user-service + task-service); start it first
     queryClient.prefetchQuery({
@@ -38,14 +38,21 @@ export function ProfileDataPrefetcher() {
     });
 
     // Payments: populate Zustand store so Payments section has data when opened
-    usePaymentsStore.getState().fetchPayments(userData.uid).catch(() => {});
+    usePaymentsStore
+      .getState()
+      .fetchPayments(userData.uid || userData._id, {
+        linkedUserIds: [userData.uid, userData._id].filter(
+          (id): id is string => typeof id === "string" && id.length > 0
+        ),
+      })
+      .catch(() => {});
 
     queryClient.prefetchQuery({
       queryKey: PROFILE_ADDRESSES_QUERY_KEY,
       queryFn: () => addressesApi.getAddresses(),
       staleTime: STALE_TIME_MS,
     });
-  }, [userData?.uid, queryClient]);
+  }, [userData?.uid, userData?._id, queryClient]);
 
   return null;
 }

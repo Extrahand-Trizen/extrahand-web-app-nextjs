@@ -3,6 +3,10 @@ import { categoriesApi } from "@/lib/api/endpoints/categories";
 import PosterCategoryPageClient from "@/components/poster/PosterCategoryPageClient";
 import { CategoryDetail, PosterCategoryDetail } from "@/types/category";
 import { CategoryNotFound } from "@/components/shared/CategoryNotFound";
+import {
+   buildManualPosterCategoryOverview,
+   getManualServicesByCategorySlug,
+} from "@/lib/data/manual-services-catalog";
 
 interface ServicePageProps {
    params: Promise<{
@@ -38,6 +42,16 @@ export default async function ServicePage({ params }: ServicePageProps) {
    const categoryData = await categoriesApi.getCategoryBySlug(slug);
 
    if (!categoryData) {
+      const manualServices = getManualServicesByCategorySlug(slug);
+
+      if (manualServices.length > 0) {
+         const manualOverview = buildManualPosterCategoryOverview(slug);
+
+         if (manualOverview) {
+            return <PosterCategoryPageClient category={manualOverview} />;
+         }
+      }
+
       console.log(`Service category with slug "${slug}" not found.`);
       return <CategoryNotFound type="service" categoryName={slug} />;
    }
@@ -60,6 +74,15 @@ export async function generateMetadata({ params }: ServicePageProps) {
    const category = await categoriesApi.getCategoryBySlug(slug);
 
    if (!category) {
+      const manualServices = getManualServicesByCategorySlug(slug);
+
+      if (manualServices.length > 0) {
+         return {
+            title: `${manualServices[0].categoryName} | ExtraHand Services`,
+            description: `Find ${manualServices[0].categoryName.toLowerCase()} on ExtraHand with full service details and booking support.`,
+         };
+      }
+
       return {
          title: "Page Not Found",
       };

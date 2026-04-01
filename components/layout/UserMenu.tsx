@@ -3,15 +3,17 @@ import { useEffect, useRef, useState } from "react";
 
 const USER_MENU_ITEMS = [
    { label: "Home", route: "/home" },
-   { label: "Dashboard", route: "/tasks" },
    { label: "Profile", route: "/profile" },
    { label: "Chat", route: "/chat" },
    { label: "Post a Task", route: "/tasks/new" },
 ];
 
+type UserMenuRole = "poster" | "tasker";
+
 type UserMenuProps = {
    displayName: string;
    initials: string;
+   role: UserMenuRole;
    onNavigate: (route: string) => void;
    onLogout: () => Promise<void>;
    open?: boolean;
@@ -21,6 +23,7 @@ type UserMenuProps = {
 export const UserMenu: React.FC<UserMenuProps> = ({
    displayName,
    initials,
+   role,
    onNavigate,
    onLogout,
    open: openProp,
@@ -91,6 +94,12 @@ export const UserMenu: React.FC<UserMenuProps> = ({
                   </div>
                </div>
                <div className="flex flex-col gap-1">
+                  <button
+                     onClick={() => handleNavigate("/tasks")}
+                     className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium text-secondary-800 hover:bg-secondary-50"
+                  >
+                     {role === "poster" ? "My Tasks" : "My Applications"}
+                  </button>
                   {USER_MENU_ITEMS.map((item) => (
                      <button
                         key={item.label}

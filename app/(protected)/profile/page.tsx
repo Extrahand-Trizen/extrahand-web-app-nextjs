@@ -15,6 +15,7 @@ import {
    VerificationSection,
    PaymentsSection,
    AddressesSection,
+   BankAccountSection,
    NotificationsSection,
    SecuritySection,
    PreferencesSection,
@@ -53,6 +54,7 @@ const VALID_SECTIONS: ProfileSection[] = [
    "verifications",
    "payments",
    "addresses",
+   "bank-account",
    "notifications",
    "security",
    "privacy",
@@ -67,6 +69,7 @@ const SECTION_TITLES: Record<ProfileSection, string> = {
    verifications: "Verifications",
    payments: "Payments",
    addresses: "Addresses",
+   "bank-account": "Bank Account",
    notifications: "Notifications",
    security: "Security",
    privacy: "Privacy",
@@ -232,7 +235,6 @@ function ProfilePageContent() {
          payments: prefs?.push?.payments ?? DEFAULT_NOTIFICATION_SETTINGS.push.payments,
          promotions: prefs?.push?.promotions ?? DEFAULT_NOTIFICATION_SETTINGS.push.promotions,
          system: prefs?.push?.system ?? DEFAULT_NOTIFICATION_SETTINGS.push.system,
-         transactional: prefs?.push?.transactional ?? DEFAULT_NOTIFICATION_SETTINGS.push.transactional,
          taskReminders: prefs?.push?.taskReminders ?? DEFAULT_NOTIFICATION_SETTINGS.push.taskReminders,
          keywordTaskAlerts: prefs?.push?.keywordTaskAlerts ?? DEFAULT_NOTIFICATION_SETTINGS.push.keywordTaskAlerts,
          recommendedTaskAlerts:
@@ -246,7 +248,6 @@ function ProfilePageContent() {
          promotions: prefs?.email?.promotions ?? DEFAULT_NOTIFICATION_SETTINGS.email.promotions,
          system: prefs?.email?.system ?? DEFAULT_NOTIFICATION_SETTINGS.email.system,
          marketing: prefs?.email?.marketing ?? DEFAULT_NOTIFICATION_SETTINGS.email.marketing,
-         transactional: prefs?.email?.transactional ?? DEFAULT_NOTIFICATION_SETTINGS.email.transactional,
          taskReminders: prefs?.email?.taskReminders ?? DEFAULT_NOTIFICATION_SETTINGS.email.taskReminders,
          keywordTaskAlerts: prefs?.email?.keywordTaskAlerts ?? DEFAULT_NOTIFICATION_SETTINGS.email.keywordTaskAlerts,
          recommendedTaskAlerts:
@@ -449,18 +450,38 @@ function ProfilePageContent() {
          toast.success("Payout method removed successfully");
       },
       onSetDefaultPayment: (id: string) => {
-         setPaymentMethods(prev => prev.map(pm => ({
-            ...pm,
-            isDefault: pm.id === id
-         })));
-         toast.success("Default payment method updated");
+         let updated = false;
+         setPaymentMethods(prev => prev.map(pm => {
+            if (pm.id === id && !pm.isDefault) {
+               updated = true;
+            }
+            return {
+               ...pm,
+               isDefault: pm.id === id,
+            };
+         }));
+         if (updated) {
+            toast.success("Default payment method updated", {
+               id: "default-payment-method-updated",
+            });
+         }
       },
       onSetDefaultPayout: (id: string) => {
-         setPayoutMethods(prev => prev.map(pm => ({
-            ...pm,
-            isDefault: pm.id === id
-         })));
-         toast.success("Default payout method updated");
+         let updated = false;
+         setPayoutMethods(prev => prev.map(pm => {
+            if (pm.id === id && !pm.isDefault) {
+               updated = true;
+            }
+            return {
+               ...pm,
+               isDefault: pm.id === id,
+            };
+         }));
+         if (updated) {
+            toast.success("Default payout method updated", {
+               id: "default-payout-method-updated",
+            });
+         }
       },
       onSavePaymentMethod: (data: Partial<PaymentMethod>) => {
          const newMethod: PaymentMethod = {
@@ -491,7 +512,7 @@ function ProfilePageContent() {
                phone: "/profile/verify/phone",
                email: "/profile/verify/email",
                aadhaar: "/profile/verify/aadhaar",
-               bank: "/profile/verify/bank",
+               bank: "/profile?section=bank-account",
             }[t] || "/profile/verify"
          );
       },
@@ -647,7 +668,7 @@ function ProfilePageContent() {
             <ProfileSidebar
                activeSection={section}
                onSectionChange={goTo}
-               className="hidden lg:block sticky top-0"
+               className="hidden lg:block"
             />
             <main className="flex-1 min-h-screen">
                <div className="max-w-4xl mx-auto py-8">
@@ -761,7 +782,7 @@ function renderSection(s: ProfileSection, p: Props) {
       case "payments":
          return (
             <PaymentsSection
-               userId={p.user.uid}
+               userId={p.user.uid || p.user._id}
                paymentMethods={p.paymentMethods}
                payoutMethods={p.payoutMethods}
                onRemovePaymentMethod={p.onRemovePaymentMethod}
@@ -774,6 +795,8 @@ function renderSection(s: ProfileSection, p: Props) {
          );
       case "addresses":
          return <AddressesSection />;
+      case "bank-account":
+         return <BankAccountSection user={p.user} />;
       case "notifications":
          return (
             <NotificationsSection

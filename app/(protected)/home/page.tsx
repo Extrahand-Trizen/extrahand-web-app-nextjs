@@ -9,7 +9,11 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { DynamicActionCard, RecommendedTasks } from "@/components/home";
+import {
+   DynamicActionCard,
+   RecommendedTasks,
+   TaskerSetupBanner,
+} from "@/components/home";
 import { useUserStore } from "@/lib/state/userStore";
 import { useDashboardStore } from "@/lib/state/dashboardStore";
 
@@ -125,6 +129,7 @@ export default function HomePage() {
    return (
       <>
          <div className="bg-secondary-50">
+            {user && <TaskerSetupBanner user={user as any} />}
 
             {/* Main Content - Full Width */}
             <div className="w-full">

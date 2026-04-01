@@ -3,7 +3,20 @@
 import { useEffect, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Bell, ArrowLeft, Check, CheckCheck, Trash2 } from "lucide-react";
+import {
+  Bell,
+  ArrowLeft,
+  Check,
+  Trash2,
+  ClipboardList,
+  CreditCard,
+  Clock3,
+  Search,
+  Cog,
+  Mail,
+  BellDot,
+  type LucideIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNotificationStore } from "@/lib/state/notificationStore";
 import { useAuth } from "@/lib/auth/context";
@@ -26,16 +39,58 @@ function timeAgo(date: Date | string): string {
   });
 }
 
-function getCategoryIcon(category?: string): string {
+type CategoryVisual = {
+  Icon: LucideIcon;
+  bgClass: string;
+  fgClass: string;
+  ringClass?: string;
+};
+
+function getCategoryVisual(category?: string): CategoryVisual {
   switch (category) {
-    case "taskUpdates": return "📋";
-    case "payments": return "💳";
-    case "taskReminders": return "⏰";
+    case "taskUpdates":
+      return {
+        Icon: ClipboardList,
+        bgClass: "bg-primary-50",
+        fgClass: "text-primary-700",
+        ringClass: "ring-primary-100",
+      };
+    case "payments":
+      return {
+        Icon: CreditCard,
+        bgClass: "bg-emerald-50",
+        fgClass: "text-emerald-700",
+        ringClass: "ring-emerald-100",
+      };
+    case "taskReminders":
+      return {
+        Icon: Clock3,
+        bgClass: "bg-amber-50",
+        fgClass: "text-amber-700",
+        ringClass: "ring-amber-100",
+      };
     case "keywordTaskAlerts":
-    case "recommendedTaskAlerts": return "🔍";
-    case "system": return "⚙️";
-    case "transactional": return "📬";
-    default: return "🔔";
+    case "recommendedTaskAlerts":
+      return {
+        Icon: Search,
+        bgClass: "bg-indigo-50",
+        fgClass: "text-indigo-700",
+        ringClass: "ring-indigo-100",
+      };
+    case "system":
+      return {
+        Icon: Cog,
+        bgClass: "bg-slate-50",
+        fgClass: "text-slate-700",
+        ringClass: "ring-slate-100",
+      };
+    default:
+      return {
+        Icon: BellDot,
+        bgClass: "bg-secondary-50",
+        fgClass: "text-secondary-600",
+        ringClass: "ring-secondary-100",
+      };
   }
 }
 
@@ -68,8 +123,7 @@ function resolveNotificationRoute(notif: InAppNotification): string | null {
       return "/discover";
 
     case "system":
-    case "transactional":
-      return null; // No navigation for system/transactional
+      return null; // No navigation for system
 
     default:
       if (taskId) return `/tasks/${taskId}`;
@@ -84,12 +138,9 @@ export default function NotificationsPage() {
 
   const {
     notifications,
-    unreadCount,
     isLoading,
     fetchNotifications,
     markAsRead,
-    markAllAsRead,
-    markAllAsReadOptimistic,
     deleteNotification,
   } = useNotificationStore();
 
@@ -102,11 +153,6 @@ export default function NotificationsPage() {
     if (!userId) return;
     fetchNotifications(30, 0);
   }, [userId, fetchNotifications]);
-
-  const handleMarkAllRead = useCallback(async () => {
-    markAllAsReadOptimistic();
-    await markAllAsRead();
-  }, [markAllAsRead, markAllAsReadOptimistic]);
 
   const handleDelete = useCallback(
     async (e: React.MouseEvent, notifId: string) => {
@@ -159,30 +205,14 @@ export default function NotificationsPage() {
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-secondary-900 flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-secondary-900">
                 Notifications
-                {unreadCount > 0 && (
-                  <span className="bg-red-100 text-red-600 text-xs font-bold rounded-full px-2 py-0.5">
-                    {unreadCount} unread
-                  </span>
-                )}
               </h1>
               <p className="text-sm text-secondary-500 mt-0.5">
                 Stay updated on your tasks, offers, and payments.
               </p>
             </div>
           </div>
-
-          {unreadCount > 0 && (
-            <button
-              id="mark-all-read-btn"
-              onClick={handleMarkAllRead}
-              className="flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 px-3 py-2 rounded-lg transition-colors"
-            >
-              <CheckCheck className="w-4 h-4" />
-              Mark all read
-            </button>
-          )}
         </div>
 
         {/* Content */}
@@ -227,6 +257,9 @@ export default function NotificationsPage() {
                 const route = resolveNotificationRoute(notif);
                 const isDeleting = deletingIds.has(notif.id);
                 const isClickable = !!route;
+                const { Icon, bgClass, fgClass, ringClass } = getCategoryVisual(
+                  notif.category
+                );
 
                 return (
                   <div
@@ -241,14 +274,15 @@ export default function NotificationsPage() {
                   >
                     {/* Icon */}
                     <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 ${
-                        !notif.read ? "bg-primary-100" : "bg-secondary-100"
-                      }`}
+                      className={`relative w-11 h-11 rounded-xl border border-secondary-100 flex items-center justify-center shrink-0 ${bgClass} ${ringClass ?? ""}`}
                     >
                       {isDeleting ? (
                         <div className="w-4 h-4 border-2 border-secondary-400 border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        getCategoryIcon(notif.category)
+                        <Icon className={`w-4 h-4 ${fgClass}`} />
+                      )}
+                      {!notif.read && (
+                        <span className="absolute -top-1 -right-1 inline-block w-2 h-2 rounded-full bg-primary-500 ring-2 ring-white" />
                       )}
                     </div>
 

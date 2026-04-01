@@ -113,7 +113,7 @@ export function ProfileSidebar({
    className,
 }: ProfileSidebarProps) {
    return (
-      <nav className={cn("w-64 min-h-screen bg-white border-r border-gray-200 flex flex-col", className)}>
+      <nav className={cn("w-64 h-full bg-white border-r border-gray-200 flex flex-col", className)}>
          <div className="p-4 shrink-0">
             <h2 className="text-lg font-semibold text-gray-900 mb-1">
                Account
@@ -123,7 +123,7 @@ export function ProfileSidebar({
             </p>
          </div>
 
-         <div className="px-2 pb-4 flex-1">
+         <div className="px-2 pb-4 flex-1 overflow-y-auto">
             {navItems.map((item) => (
                <button
                   key={item.id}

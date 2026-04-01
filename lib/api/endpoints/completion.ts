@@ -33,10 +33,22 @@ export const completionApi = {
    * Changes task status from 'review' to 'completed'
    */
   async approveCompletion(taskId: string): Promise<Task> {
-    const response = await fetchWithAuth(`tasks/${taskId}/completion/approve`, {
-      method: "POST",
-    });
-    return response.data || response;
+    try {
+      // Primary route used by api-gateway + task-service
+      const response = await fetchWithAuth(`tasks/${taskId}/approve-completion`, {
+        method: "POST",
+      });
+      return response.data || response;
+    } catch (error: any) {
+      // Backward-compatible fallback route for older deployments
+      if (error?.status === 404 || String(error?.message || "").includes("404")) {
+        const fallback = await fetchWithAuth(`tasks/${taskId}/completion/approve`, {
+          method: "POST",
+        });
+        return fallback.data || fallback;
+      }
+      throw error;
+    }
   },
 
   /**
@@ -45,10 +57,23 @@ export const completionApi = {
    * Changes task status from 'review' to 'in_progress'
    */
   async rejectCompletion(taskId: string, reason: string): Promise<Task> {
-    const response = await fetchWithAuth(`tasks/${taskId}/completion/reject`, {
-      method: "POST",
-      body: JSON.stringify({ reason }),
-    });
-    return response.data || response;
+    try {
+      // Primary route used by api-gateway + task-service
+      const response = await fetchWithAuth(`tasks/${taskId}/reject-completion`, {
+        method: "POST",
+        body: JSON.stringify({ reason }),
+      });
+      return response.data || response;
+    } catch (error: any) {
+      // Backward-compatible fallback route for older deployments
+      if (error?.status === 404 || String(error?.message || "").includes("404")) {
+        const fallback = await fetchWithAuth(`tasks/${taskId}/completion/reject`, {
+          method: "POST",
+          body: JSON.stringify({ reason }),
+        });
+        return fallback.data || fallback;
+      }
+      throw error;
+    }
   },
 };

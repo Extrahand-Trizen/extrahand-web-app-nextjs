@@ -249,7 +249,8 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
       }
 
       if (!isLoggedIn) {
-         router.push(`/login?next=${encodeURIComponent(`/tasks/${taskId}?action=offer`)}`);
+         sessionStorage.setItem("postAuthRedirectTo", `/tasks/${taskId}?action=offer`);
+         router.push("/login");
          return;
       }
       if (isOwner) {

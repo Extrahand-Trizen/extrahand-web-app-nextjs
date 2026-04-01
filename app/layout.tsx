@@ -8,7 +8,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { EnvironmentLogger } from "@/components/EnvironmentLogger";
 import { ScrollToTop } from "@/components/ScrollToTop";
-import { AutoApprovalRedirect } from "@/components/layout/AutoApprovalRedirect";
+import { ConditionalPublicChrome } from "@/components/layout/ConditionalPublicChrome";
 
 const inter = Inter({
    subsets: ["latin"],
@@ -41,6 +41,9 @@ export const metadata: Metadata = {
             type: "image/png",
          },
       ],
+   },
+   verification: {
+      google: "kJdq2hpjEv7FM_ffiqCPPLdzi2bcOFZGVIUXouVi3Jk",
    },
    twitter: {
       card: "summary_large_image",
@@ -99,10 +102,9 @@ export default function RootLayout({
                   <AuthProvider>
                      <Suspense fallback={null}>
                         <ScrollToTop />
-                        <AutoApprovalRedirect />
                      </Suspense>
                      <Toaster />
-                     {children}
+                     <ConditionalPublicChrome>{children}</ConditionalPublicChrome>
                   </AuthProvider>
                </QueryProvider>
             </ErrorBoundary>

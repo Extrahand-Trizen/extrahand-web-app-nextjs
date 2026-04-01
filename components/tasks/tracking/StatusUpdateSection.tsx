@@ -35,6 +35,8 @@ import {
    XCircle,
    RotateCcw,
    AlertTriangle,
+   Banknote,
+   AlertCircle,
 } from "lucide-react";
 import type { Task } from "@/types/task";
 import type { UserRole } from "@/types/tracking";
@@ -73,6 +75,94 @@ export function StatusUpdateSection({
    const [isUploadingProof, setIsUploadingProof] = useState(false);
    const proofInputRef = useRef<HTMLInputElement | null>(null);
 
+   const formatCurrency = (val: number) => {
+      return new Intl.NumberFormat("en-IN", {
+         style: "currency",
+         currency: "INR",
+         maximumFractionDigits: 0
+      }).format(val);
+   };
+
+   const getCancellationDetails = React.useCallback(() => {
+      const now = new Date();
+      // If the task was just created/assigned, we track time since assigned
+      const assignedAt = task.assignedAt ? new Date(task.assignedAt) : (task.createdAt ? new Date(task.createdAt) : now);
+      
+      let taskStartTime = now;
+      if (task.scheduledDate) {
+         taskStartTime = new Date(task.scheduledDate);
+         if (task.scheduledTime) {
+            const timeMatch = task.scheduledTime.match(/(\d+):(\d+)\s*(am|pm)?/i);
+            if (timeMatch) {
+               let [, hrs, mins, modifier] = timeMatch;
+               let hours = parseInt(hrs, 10);
+               if (modifier) {
+                  modifier = modifier.toLowerCase();
+                  if (modifier === 'pm' && hours < 12) hours += 12;
+                  if (modifier === 'am' && hours === 12) hours = 0;
+               }
+               taskStartTime.setHours(hours, parseInt(mins, 10), 0, 0);
+            }
+         }
+      }
+
+      const msUntilStart = taskStartTime.getTime() - now.getTime();
+      const hoursUntilStart = task.scheduledDate ? msUntilStart / (1000 * 60 * 60) : 999;
+      const minutesSinceAssigned = (now.getTime() - assignedAt.getTime()) / (1000 * 60);
+
+      const budgetValue = typeof task.budget === "number" ? task.budget : (task.budget?.amount || 0);
+
+      let penaltyPercentage = 0;
+      let activeRowIndex = 0;
+      let feeAmount = 0;
+
+      const platformFeeAndGst = budgetValue * 0.059;
+
+      if (userRole === "poster") {
+         if (minutesSinceAssigned <= 15) {
+            penaltyPercentage = 0;
+            activeRowIndex = 0;
+            feeAmount = 0;
+         } else if (hoursUntilStart > 24) {
+            penaltyPercentage = 0;
+            activeRowIndex = 1;
+            feeAmount = 0;
+         } else if (hoursUntilStart > 1) {
+            penaltyPercentage = 10;
+            activeRowIndex = 2;
+            feeAmount = (budgetValue * penaltyPercentage) / 100;
+         } else {
+            penaltyPercentage = 20;
+            activeRowIndex = 3;
+            feeAmount = (budgetValue * penaltyPercentage) / 100;
+         }
+      } else {
+         if (hoursUntilStart > 24) {
+            penaltyPercentage = 0;
+            activeRowIndex = 0;
+            feeAmount = platformFeeAndGst;
+         } else if (hoursUntilStart > 1) {
+            penaltyPercentage = 10;
+            activeRowIndex = 1;
+            feeAmount = (budgetValue * penaltyPercentage) / 100;
+         } else {
+            penaltyPercentage = 15;
+            activeRowIndex = 2;
+            feeAmount = (budgetValue * penaltyPercentage) / 100;
+         }
+      }
+
+      const finalAmount = userRole === "poster" ? budgetValue - feeAmount : feeAmount; 
+
+      return { 
+         penaltyPercentage, 
+         feeAmount, 
+         finalAmount, 
+         budgetValue, 
+         activeRowIndex
+      };
+   }, [task, userRole]);
+
    const getAvailableActions = () => {
       const actions: Array<{
          status: Task["status"];
@@ -92,6 +182,15 @@ export function StatusUpdateSection({
       if (userRole === "tasker") {
          switch (task.status) {
             case "assigned":
+               actions.push({
+                  status: "cancelled",
+                  label: "Cancel Task",
+                  description: "Cancel this task and forfeit the assignment. Penalties may apply.",
+                  icon: <XCircle className="w-4 h-4" />,
+                  variant: "destructive",
+                  requiresConfirmation: true,
+                  requiresReason: true,
+               });
                actions.push({
                   status: "started",
                   label: "Start Task",
@@ -466,6 +565,99 @@ export function StatusUpdateSection({
                                  {action.description}
                               </AlertDialogDescription>
                            </AlertDialogHeader>
+                           {action.status === "cancelled" && (() => {
+                              const info = getCancellationDetails();
+                              return (
+                              <div className="my-4">
+                                 <h4 className="text-sm font-semibold text-gray-900 mb-2">
+                                    Cancellation Policy Overview
+                                 </h4>
+                                 
+                                 <div className="bg-orange-50 border border-orange-100 rounded-lg p-3 mb-3">
+                                    <p className="text-sm text-orange-900 font-medium pb-1 border-b border-orange-100 mb-2">
+                                       Current Estimate
+                                    </p>
+                                    <div className="flex justify-between items-center text-sm mb-1">
+                                       <span className="text-orange-800">Task Amount:</span>
+                                       <span className="font-semibold text-orange-900">{formatCurrency(info.budgetValue)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm mb-1">
+                                       <span className="text-orange-800">
+                                          Cancellation Fee {userRole === "tasker" && info.activeRowIndex === 0 ? "(Platform Fees)" : `(${info.penaltyPercentage}%)`}:
+                                       </span>
+                                       <span className="font-semibold text-red-600">-{formatCurrency(info.feeAmount)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm font-medium pt-1 mt-1 border-t border-orange-100">
+                                       <span className="text-orange-900">{userRole === "poster" ? "Estimated Refund:" : "Penalty to Pay:"}</span>
+                                       <span className="font-bold text-orange-900">{formatCurrency(info.finalAmount)}</span>
+                                    </div>
+                                 </div>
+
+                                 {userRole === "poster" ? (
+                                    <div className="divide-y divide-gray-100 rounded-xl border border-gray-100 overflow-hidden text-left mb-3">
+                                       <div className={`flex justify-between items-center px-3 py-2 ${info.activeRowIndex === 0 ? 'bg-amber-50 relative before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-amber-500' : 'bg-green-50'}`}>
+                                          <div>
+                                             <p className={`text-xs ${info.activeRowIndex === 0 ? 'font-bold' : 'font-medium'} text-gray-800`}>Within 15 mins</p>
+                                             <p className="text-[10px] text-gray-500 mt-0.5">grace period</p>
+                                          </div>
+                                          <span className="text-xs font-bold text-green-600">Free</span>
+                                       </div>
+                                       <div className={`flex justify-between items-center px-3 py-2 ${info.activeRowIndex === 1 ? 'bg-amber-50 relative before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-amber-500' : 'bg-white'}`}>
+                                          <div>
+                                             <p className={`text-xs ${info.activeRowIndex === 1 ? 'font-bold' : 'font-medium'} text-gray-800`}>More than 24 hrs</p>
+                                             <p className="text-[10px] text-gray-500 mt-0.5">before task start</p>
+                                          </div>
+                                          <span className="text-xs font-bold text-green-600">Free</span>
+                                       </div>
+                                       <div className={`flex justify-between items-center px-3 py-2 ${info.activeRowIndex === 2 ? 'bg-amber-50 relative before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-amber-500' : 'bg-white'}`}>
+                                          <div>
+                                             <p className={`text-xs ${info.activeRowIndex === 2 ? 'font-bold' : 'font-medium'} text-gray-800`}>Within 24 hrs</p>
+                                             <p className="text-[10px] text-gray-500 mt-0.5">of task start</p>
+                                          </div>
+                                          <span className="text-xs font-bold text-orange-500">10% Fee</span>
+                                       </div>
+                                       <div className={`flex justify-between items-center px-3 py-2 ${info.activeRowIndex === 3 ? 'bg-amber-50 relative before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-amber-500' : 'bg-white'}`}>
+                                          <div>
+                                             <p className={`text-xs ${info.activeRowIndex === 3 ? 'font-bold' : 'font-medium'} text-gray-800`}>Within 1 hr</p>
+                                             <p className="text-[10px] text-gray-500 mt-0.5">of task start</p>
+                                          </div>
+                                          <span className="text-xs font-bold text-red-500">20% Fee</span>
+                                       </div>
+                                    </div>
+                                 ) : (
+                                    <div className="divide-y divide-gray-100 rounded-xl border border-gray-100 overflow-hidden text-left mb-3">
+                                       <div className={`flex justify-between items-center px-3 py-2 ${info.activeRowIndex === 0 ? 'bg-amber-50 relative before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-amber-500' : 'bg-white'}`}>
+                                          <div>
+                                             <p className={`text-xs ${info.activeRowIndex === 0 ? 'font-bold' : 'font-medium'} text-gray-800`}>More than 24 hrs</p>
+                                             <p className="text-[10px] text-gray-500 mt-0.5">before task start</p>
+                                          </div>
+                                          <span className="text-xs font-bold text-gray-600">Platform Fees</span>
+                                       </div>
+                                       <div className={`flex justify-between items-center px-3 py-2 ${info.activeRowIndex === 1 ? 'bg-amber-50 relative before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-amber-500' : 'bg-white'}`}>
+                                          <div>
+                                             <p className={`text-xs ${info.activeRowIndex === 1 ? 'font-bold' : 'font-medium'} text-gray-800`}>Within 24 hrs</p>
+                                             <p className="text-[10px] text-gray-500 mt-0.5">of task start</p>
+                                          </div>
+                                          <span className="text-xs font-bold text-orange-500">10% Penalty</span>
+                                       </div>
+                                       <div className={`flex justify-between items-center px-3 py-2 ${info.activeRowIndex === 2 ? 'bg-amber-50 relative before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-amber-500' : 'bg-white'}`}>
+                                          <div>
+                                             <p className={`text-xs ${info.activeRowIndex === 2 ? 'font-bold' : 'font-medium'} text-gray-800`}>Within 1 hr</p>
+                                             <p className="text-[10px] text-gray-500 mt-0.5">of task start</p>
+                                          </div>
+                                          <span className="text-xs font-bold text-red-500">15% Penalty</span>
+                                       </div>
+                                    </div>
+                                 )}
+                                 <div className="flex items-start gap-2 bg-gray-50 p-2 rounded-lg border border-gray-100 mt-1">
+                                    <AlertCircle className="w-3.5 h-3.5 text-gray-500 mt-0.5 shrink-0" />
+                                    <p className="text-[11px] text-gray-600 leading-relaxed">
+                                       By confirming, you agree to our <a href="/refund-policy" target="_blank" rel="noreferrer" className="text-primary hover:underline">cancellation &amp; refund policy</a>.
+                                    </p>
+                                 </div>
+                              </div>
+                              );
+                           })()}
                            {action.requiresReason && (
                               <div className="space-y-2">
                                  <Label htmlFor="cancel-reason">

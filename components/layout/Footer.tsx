@@ -7,11 +7,14 @@ const footerColumns = [
   {
     title: 'Discover',
     links: [
-      { label: 'How it works', href: '/#how-it-works' },
-      { label: 'Earn money', href: '/coming-soon?type=info&label=Earn%20money' },
-      { label: 'Cost Guides', href: '/coming-soon?type=info&label=Cost%20Guides' },
-      { label: 'Service Guides', href: '/coming-soon?type=info&label=Service%20Guides' },
-      { label: 'New Users FAQ', href: '/coming-soon?type=info&label=New%20Users%20FAQ' },
+      { label: 'How it works', href: '/how-it-works#how-it-works' },
+      { label: 'Services', href: '/services' },
+      { label: 'Jobs', href: '/jobs' },
+      { label: 'Blogs', href: '/blog' },
+      { label: 'Earn money', href: '/earn-money#how-to-earn' },
+      { label: 'Cost Guides', href: '/cost-guides' },
+      { label: 'Service Guides', href: '/service-guides' },
+      { label: 'New Users FAQ', href: '/faqs' },
     ],
   },
   {
@@ -21,7 +24,7 @@ const footerColumns = [
       { label: 'Careers', href: '/careers' },
       { label: 'Media Enquiries', href: '/press' },
       { label: 'Community Guidelines', href: '/community-guidelines' },
-      { label: 'Tasker Principles', href: '/coming-soon?type=info&label=Tasker%20Principles' },
+      { label: 'Tasker Principles', href: '/tasker-guidelines' },
       { label: 'Terms & Conditions', href: '/terms-and-conditions' },
       { label: 'Privacy Policy', href: '/privacy-policy' },
       { label: 'Refund Policy', href: '/refund-policy' },
@@ -42,27 +45,27 @@ const footerColumns = [
   {
     title: 'Popular Categories',
     links: [
-      { label: 'Electricians', href: '/coming-soon' },
-      { label: 'Plumbers', href: '/coming-soon' },
-      { label: 'Home Cleaning', href: '/coming-soon' },
-      { label: 'Packers & Movers', href: '/coming-soon' },
-      { label: 'Carpenters', href: '/coming-soon' },
-      { label: 'AC Services', href: '/coming-soon' },
-      { label: 'Appliance Repair', href: '/coming-soon' },
+      { label: 'Electricians', href: '/services/electricians-services' },
+      { label: 'Plumbers', href: '/services/plumbing-services' },
+      { label: 'Home Cleaning', href: '/services/cleaning-services' },
+      { label: 'Delivery & Pickup', href: '/services/delivery-services' },
+      { label: 'Flooring Services', href: '/services/flooring-services' },
+      { label: 'Carpenters', href: '/services/carpentry-services' },
+      { label: 'Pet Care Services', href: '/services/pet-care-services' },
     ],
   },
   {
     title: 'Popular Cities',
     links: [
-      { label: 'Delhi NCR', href: '/coming-soon?type=info&label=Delhi%20NCR' },
-      { label: 'Mumbai', href: '/coming-soon?type=info&label=Mumbai' },
-      { label: 'Bangalore', href: '/coming-soon?type=info&label=Bangalore' },
-      { label: 'Hyderabad', href: '/coming-soon?type=info&label=Hyderabad' },
-      { label: 'Chennai', href: '/coming-soon?type=info&label=Chennai' },
-      { label: 'Kolkata', href: '/coming-soon?type=info&label=Kolkata' },
-      { label: 'Pune', href: '/coming-soon?type=info&label=Pune' },
-      { label: 'Ahmedabad', href: '/coming-soon?type=info&label=Ahmedabad' },
-      { label: 'Jaipur', href: '/coming-soon?type=info&label=Jaipur' },
+      { label: "Delhi NCR", href: "/locations/delhi" },
+      { label: "Mumbai", href: "/locations/mumbai" },
+      { label: "Bangalore", href: "/locations/bangalore" },
+      { label: "Hyderabad", href: "/locations/hyderabad" },
+      { label: "Chennai", href: "/locations/chennai" },
+      { label: "Kolkata", href: "/locations/kolkata" },
+      { label: "Pune", href: "/locations/pune" },
+      { label: "Ahmedabad", href: "/locations/ahmedabad" },
+      { label: 'Jaipur', href: '/coming-soon' },
     ],
   },
 ];
@@ -168,8 +171,8 @@ export const Footer: React.FC = () => {
           
           {/* App Download Buttons */}
           <div className="flex flex-col md:flex-row gap-3 md:gap-6.5 items-center">
-            <a
-              href="/coming-soon?type=info&label=Mobile%20App"
+            <Link
+              href="/coming-soon"
               aria-label="Download on the App Store"
               className="inline-block no-underline"
             >
@@ -182,9 +185,9 @@ export const Footer: React.FC = () => {
                   <span className="text-xs md:text-base text-secondary-900 font-semibold leading-none no-underline">App Store</span>
                 </div>
               </div>
-            </a>
-            <a
-              href="/coming-soon?type=info&label=Mobile%20App"
+            </Link>
+            <Link
+              href="/coming-soon"
               aria-label="Get it on Google Play"
               className="inline-block no-underline"
             >
@@ -199,7 +202,7 @@ export const Footer: React.FC = () => {
                   <span className="text-xs md:text-base text-secondary-900 font-semibold leading-none no-underline">Google Play</span>
                 </div>
               </div>
-            </a>
+            </Link>
           </div>
         </div>
         

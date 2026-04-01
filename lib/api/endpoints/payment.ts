@@ -40,6 +40,33 @@ export const paymentApi = {
   },
 
   /**
+   * Cancel escrow and trigger Razorpay refund when applicable
+   * POST /api/v1/payment/cancel
+   */
+  async cancelPayment(body: {
+    taskId?: string;
+    escrowId?: string;
+    razorpayOrderId?: string;
+    reason?: string;
+    userId?: string;
+    cancelledBy?: 'poster' | 'performer';
+    taskStartDate?: string;
+    assignedAt?: string;
+    feeBaseAmount?: number;
+  }): Promise<{
+    success: boolean;
+    cancelled?: boolean;
+    refundRequired?: boolean;
+    refund?: unknown;
+    error?: string;
+  }> {
+    return fetchWithAuth('/payment/cancel', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  },
+
+  /**
    * Get escrow status
    * GET /api/v1/payment/escrow/status/:escrowId
    */
@@ -74,8 +101,41 @@ export const paymentApi = {
    * Get user earnings summary
    * GET /api/v1/payment/earnings/:userId
    */
-  async getUserEarnings(userId: string): Promise<{ success: boolean; data?: UserEarnings; error?: string }> {
-    return fetchWithAuth(`/payment/earnings/${userId}`);
+  async getUserEarnings(
+    userId: string,
+    linkedUserIds?: string
+  ): Promise<{ success: boolean; data?: UserEarnings; error?: string }> {
+    const q = new URLSearchParams();
+    if (linkedUserIds?.trim()) q.set('linkedUserIds', linkedUserIds.trim());
+    const suffix = q.toString() ? `?${q.toString()}` : '';
+    return fetchWithAuth(`/payment/earnings/${userId}${suffix}`);
+  },
+
+  /**
+   * Pending tasker cancellation penalties (deducted from future payouts).
+   * GET /api/v1/payment/earnings/:userId/pending-cancellation-penalties
+   */
+  async getPendingCancellationPenalties(
+    userId: string,
+    linkedUserIds?: string
+  ): Promise<{
+    success: boolean;
+    totalRemaining?: string;
+    items?: Array<{
+      penaltyId: string;
+      taskId: string;
+      taskTitle: string | null;
+      amount: string;
+      remainingAmount: string;
+      cancelledAt: string;
+      reason: string | null;
+    }>;
+    error?: string;
+  }> {
+    const q = new URLSearchParams();
+    if (linkedUserIds?.trim()) q.set('linkedUserIds', linkedUserIds.trim());
+    const suffix = q.toString() ? `?${q.toString()}` : '';
+    return fetchWithAuth(`/payment/earnings/${userId}/pending-cancellation-penalties${suffix}`);
   },
 
   /**
@@ -98,10 +158,43 @@ export const paymentApi = {
    * Get transaction history
    * GET /api/v1/payment/transactions/user/:userId
    */
-  async getUserTransactions(userId: string, params?: { page?: number; limit?: number }): Promise<TransactionHistory> {
-    const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
+  async getUserTransactions(
+    userId: string,
+    params?: { page?: number; limit?: number; linkedUserIds?: string }
+  ): Promise<TransactionHistory> {
+    const search = new URLSearchParams();
+    if (params?.limit != null) search.set('limit', String(params.limit));
+    if (params?.page != null) search.set('page', String(params.page));
+    if (params?.linkedUserIds?.trim()) search.set('linkedUserIds', params.linkedUserIds.trim());
+    const queryString = search.toString() ? `?${search.toString()}` : '';
     const response = await fetchWithAuth(`/payment/transactions/user/${userId}${queryString}`);
     return response.data || response;
+  },
+
+  /**
+   * Get transaction summary totals
+   * GET /api/v1/payment/transactions/user/:userId/summary
+   */
+  async getTransactionSummary(
+    userId: string,
+    params?: { linkedUserIds?: string }
+  ): Promise<{
+    success: boolean;
+    summary?: {
+      totalPayments: string;
+      totalPayouts: string;
+      totalRefunds: string;
+      totalCompensation: string;
+      totalFees: string;
+      netEarnings: string;
+      transactionCount: number;
+    };
+    error?: string;
+  }> {
+    const search = new URLSearchParams();
+    if (params?.linkedUserIds?.trim()) search.set('linkedUserIds', params.linkedUserIds.trim());
+    const queryString = search.toString() ? `?${search.toString()}` : '';
+    return fetchWithAuth(`/payment/transactions/user/${userId}/summary${queryString}`);
   },
 
   /**
@@ -115,5 +208,64 @@ export const paymentApi = {
     const params = new URLSearchParams({ amount: String(amount) });
     if (taskCategory?.trim()) params.set('taskCategory', taskCategory.trim());
     return fetchWithAuth(`/payment/fees/calculate?${params.toString()}`);
+  },
+
+  async upsertBankAccount(data: {
+    accountNumber: string;
+    ifscCode: string;
+    accountHolderName: string;
+    bankName?: string;
+    email?: string;
+    phone?: string;
+    setAsDefault?: boolean;
+  }): Promise<{
+    success: boolean;
+    data?: {
+      bankAccountId: string;
+      maskedAccountNumber: string;
+      fundAccountId: string;
+    };
+    message?: string;
+    error?: string;
+  }> {
+    return fetchWithAuth('/payment/bank-accounts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getMyBankAccounts(): Promise<{
+    success: boolean;
+    data?: Array<{
+      id: string;
+      bankName: string;
+      accountHolderName: string;
+      accountNumber: string;
+      ifscCode: string;
+      isVerified: boolean;
+      isDefault: boolean;
+      createdAt: string;
+    }>;
+    error?: string;
+  }> {
+    return fetchWithAuth('/payment/bank-accounts/me');
+  },
+
+  async processTaskCompletionPayout(data: {
+    taskId: string;
+    performerUid: string;
+    amount: number;
+    taskTitle?: string;
+  }): Promise<{
+    success: boolean;
+    payout?: any;
+    requiresBankAccount?: boolean;
+    message?: string;
+    error?: string;
+  }> {
+    return fetchWithAuth('/payment/payout/task-completion', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   },
 };

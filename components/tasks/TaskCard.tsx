@@ -8,7 +8,6 @@ interface TaskCardProps {
    task: Task;
    isSelected?: boolean;
    onClick?: () => void;
-   distance?: number;
 }
 
 /**
@@ -16,9 +15,13 @@ interface TaskCardProps {
  * Click-only interaction (no hover map movement)
  * Shows all relevant task information from schema
  */
-export function TaskCard({ task, isSelected = false, onClick, distance }: TaskCardProps) {
+export function TaskCard({ task, isSelected = false, onClick }: TaskCardProps) {
    const budgetAmount =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
+
+   // Determine if task is remote
+   const isRemote = !task.location?.coordinates || !task.location?.address;
+   const locationDisplay = isRemote ? "Remote" : task.location?.city || "Remote";
 
    // Status badge styling
    const getStatusBadge = () => {
@@ -79,7 +82,7 @@ export function TaskCard({ task, isSelected = false, onClick, distance }: TaskCa
             <div className="flex items-center justify-between gap-2 text-secondary-600">
                <div className="flex items-center gap-2 min-w-0">
                   <MapPin className="size-3.5 shrink-0" />
-                  <span className="text-xs md:text-sm font-medium truncate">{task.location.city}</span>
+                  <span className="text-xs md:text-sm font-medium truncate">{locationDisplay}</span>
                </div>
                   {/* Distance hidden as per requirement */}
             </div>

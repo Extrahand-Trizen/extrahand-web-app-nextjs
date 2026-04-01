@@ -5,7 +5,9 @@ import { NextResponse } from "next/server";
  * Serves Google Maps JavaScript API without exposing the API key in frontend
  */
 export async function GET() {
-   const apiKey = process.env.GOOGLE_MAPS_API_KEY; // Server-side only, not NEXT_PUBLIC_
+  const apiKey =
+    process.env.GOOGLE_MAPS_API_KEY ||
+    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
    if (!apiKey) {
       console.error('❌ Google Maps API key not configured');

@@ -194,6 +194,7 @@ export function VerificationSection({ user }: VerificationSectionProps) {
       verifiedText: `Verified ${user.maskedAadhaar || "XXXX XXXX XXXX"}`,
       defaultText: "Verify your identity with Aadhaar",
       route: "/profile/verify/aadhaar",
+      required: true,
       lockAfterVerification: true,
     }),
     createVerificationItem({
@@ -203,7 +204,7 @@ export function VerificationSection({ user }: VerificationSectionProps) {
       verifiedAt: user.bankVerifiedAt,
       verifiedText: user.maskedBankAccount ? `Verified ${user.maskedBankAccount}` : "Verified",
       defaultText: "Verify your bank account",
-      route: "/profile/verify/bank",
+      route: "/profile?section=bank-account",
     }),
     createVerificationItem({
       id: "pan",

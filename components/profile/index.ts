@@ -15,6 +15,7 @@ export { ProfileEditForm } from "./ProfileEditForm";
 export { VerificationSection } from "./VerificationSection";
 export { PaymentsSection, PaymentMethodForm, PayoutMethodForm } from "./PaymentsSection";
 export { AddressesSection, AddressForm } from "./AddressesSection";
+export { BankAccountSection } from "./BankAccountSection";
 export { NotificationsSection } from "./NotificationsSection";
 export { SecuritySection } from "./SecuritySection";
 export { PreferencesSection } from "./PreferencesSection";

@@ -7,6 +7,7 @@ import { CityHero } from "@/components/locations/CityHero";
 import { ServiceCategoriesGrid } from "@/components/locations/ServiceCategoriesGrid";
 import { NeighborhoodsGrid } from "@/components/locations/NeighborhoodsGrid";
 import { CityStats } from "@/components/locations/CityStats";
+import { hyderabadServicePages } from "@/lib/data/hyderabad-service-pages";
 
 interface PageProps {
    params: Promise<{ city: string }>;
@@ -88,6 +89,37 @@ export default async function CityPage({ params }: PageProps) {
                citySlug={cityInfo.slug}
                cityName={cityInfo.name}
             />
+
+            {cityInfo.slug === "hyderabad" && (
+               <section className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+                  <div className="rounded-2xl border border-secondary-200 bg-white p-6 sm:p-8">
+                     <h2 className="text-2xl font-bold text-secondary-900 sm:text-3xl">
+                        Hyderabad Service Pages
+                     </h2>
+                     <p className="mt-3 max-w-3xl text-secondary-700">
+                        Explore all service-specific pages for Hyderabad. Each page includes focused content to help users quickly find the right service.
+                     </p>
+
+                     <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {hyderabadServicePages.map((servicePage) => (
+                           <li key={servicePage.slug}>
+                              <Link
+                                 href={`/${servicePage.slug}`}
+                                 className="block rounded-xl border border-secondary-200 bg-secondary-50 p-4 transition hover:border-primary-300 hover:bg-white"
+                              >
+                                 <p className="text-sm font-semibold text-secondary-900">
+                                    {servicePage.serviceName} in Hyderabad
+                                 </p>
+                                 <p className="mt-1 text-xs text-secondary-700 line-clamp-2">
+                                    {servicePage.shortDescription}
+                                 </p>
+                              </Link>
+                           </li>
+                        ))}
+                     </ul>
+                  </div>
+               </section>
+            )}
          </main>
       </>
    );

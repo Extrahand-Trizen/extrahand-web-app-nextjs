@@ -23,6 +23,7 @@ import {
    BadgeCheck,
 } from "lucide-react";
 import { verificationApi } from "@/lib/api/endpoints/verification";
+import { paymentApi } from "@/lib/api/endpoints/payment";
 import { useAuth } from "@/lib/auth/context";
 import { toast } from "sonner";
 
@@ -130,6 +131,14 @@ export default function BankVerificationPage() {
          );
 
          if (result.success) {
+            await paymentApi.upsertBankAccount({
+               accountNumber: state.accountNumber,
+               ifscCode: state.ifsc,
+               accountHolderName: state.accountHolderName,
+               bankName: result.data?.bankName,
+               setAsDefault: true,
+            });
+
             setState((p) => ({
                ...p,
                step: "success",

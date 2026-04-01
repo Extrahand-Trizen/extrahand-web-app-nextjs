@@ -49,6 +49,10 @@ const TOTAL_STEPS = 3;
 const MAX_RETRY_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 1000;
 const DRAFT_KEY = "taskDraft";
+const TOAST_ID_DRAFT_RESTORED = "task-create-draft-restored";
+const TOAST_ID_ADDRESS_REQUIRED = "task-create-address-required";
+const TOAST_ID_BUDGET_INVALID = "task-create-budget-invalid";
+const TOAST_ID_STEP_INVALID = "task-create-step-invalid";
 
 const URGENCY_SURCHARGES: Record<string, number> = {
    standard: 0,
@@ -366,6 +370,7 @@ export function TaskCreationFlow() {
    const [isSubmitting, setIsSubmitting] = useState(false);
    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
    const [retryCount, setRetryCount] = useState(0);
+   const [isStepTransitioning, setIsStepTransitioning] = useState(false);
    const [showAuthModal, setShowAuthModal] = useState(false);
    const [showVerificationModal, setShowVerificationModal] = useState(false);
    const [showEmailVerifyModal, setShowEmailVerifyModal] = useState(false);
@@ -386,6 +391,34 @@ export function TaskCreationFlow() {
          ...(initialCategoryFromQuery && { category: initialCategoryFromQuery }),
       },
    }) as UseFormReturn<TaskFormData>;
+
+   // Restore task creation context from sessionStorage if not in query params
+   useEffect(() => {
+      if (!initialCategoryFromQuery && typeof window !== "undefined") {
+         const context = sessionStorage.getItem("taskCreationContext");
+         if (context) {
+            try {
+               const { category, location } = JSON.parse(context);
+               if (category) {
+                  form.setValue("category", category, {
+                     shouldValidate: false,
+                     shouldDirty: false,
+                  });
+               }
+               if (location) {
+                  form.setValue("location.city", location, {
+                     shouldValidate: false,
+                     shouldDirty: false,
+                  });
+               }
+               // Clear the context after using it
+               sessionStorage.removeItem("taskCreationContext");
+            } catch (e) {
+               console.error("Failed to restore task creation context", e);
+            }
+         }
+      }
+   }, [form, initialCategoryFromQuery]);
 
    const scrollToTop = useCallback(() => {
       requestAnimationFrame(() => {
@@ -451,6 +484,7 @@ export function TaskCreationFlow() {
             const normalized = normalizeDraft(parsedDraft);
             form.reset(normalized);
             toast.info("Draft restored", {
+               id: TOAST_ID_DRAFT_RESTORED,
                description: "Your previous progress has been loaded.",
                action: {
                   label: "Clear",
@@ -496,6 +530,13 @@ export function TaskCreationFlow() {
 
    // Handle navigation between steps
    const handleNext = useCallback(async () => {
+      if (isSubmitting || isStepTransitioning) {
+         return;
+      }
+
+      setIsStepTransitioning(true);
+
+      try {
       const fieldsToValidate =
          stepValidationFields[currentStep as keyof typeof stepValidationFields];
 
@@ -515,6 +556,7 @@ export function TaskCreationFlow() {
                   message: "Please select an address for in-person tasks",
                });
                toast.error("Address required for in-person tasks", {
+                  id: TOAST_ID_ADDRESS_REQUIRED,
                   description: "Select task location to continue.",
                });
                return;
@@ -533,6 +575,7 @@ export function TaskCreationFlow() {
                message: "Enter a budget between ₹50 and ₹50,000.",
             });
             toast.error("Enter a valid budget", {
+               id: TOAST_ID_BUDGET_INVALID,
                description: "Budget must be between ₹50 and ₹50,000.",
             });
             return;
@@ -564,6 +607,7 @@ export function TaskCreationFlow() {
                   : undefined;
 
             toast.error(primaryMessage, {
+               id: TOAST_ID_STEP_INVALID,
                description: secondary,
             });
             return;
@@ -581,7 +625,18 @@ export function TaskCreationFlow() {
             setHasUnsavedChanges(false);
          }
       }
-   }, [currentStep, form, stepValidationFields, hasUnsavedChanges, scrollToTop]);
+      } finally {
+         setIsStepTransitioning(false);
+      }
+   }, [
+      currentStep,
+      form,
+      stepValidationFields,
+      hasUnsavedChanges,
+      isStepTransitioning,
+      isSubmitting,
+      scrollToTop,
+   ]);
 
    const handleBack = useCallback(() => {
       if (currentStep > 1) {
@@ -753,12 +808,32 @@ export function TaskCreationFlow() {
 
    const handleAuthLogin = () => {
       setShowAuthModal(false);
-      window.location.href = "/login?next=/tasks/new";
+      // Store task creation context in sessionStorage to preserve after login
+      const category = searchParams.get("category");
+      const location = searchParams.get("location");
+      if (category || location) {
+         sessionStorage.setItem(
+            "taskCreationContext",
+            JSON.stringify({ category, location })
+         );
+      }
+      sessionStorage.setItem("postAuthRedirectTo", "/tasks/new");
+      window.location.href = "/login";
    };
 
    const handleAuthSignup = () => {
       setShowAuthModal(false);
-      window.location.href = "/signup?next=/tasks/new";
+      // Store task creation context in sessionStorage to preserve after signup
+      const category = searchParams.get("category");
+      const location = searchParams.get("location");
+      if (category || location) {
+         sessionStorage.setItem(
+            "taskCreationContext",
+            JSON.stringify({ category, location })
+         );
+      }
+      sessionStorage.setItem("postAuthRedirectTo", "/tasks/new");
+      window.location.href = "/signup";
    };
 
    return (

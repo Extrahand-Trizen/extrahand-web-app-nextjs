@@ -1,0 +1,142 @@
+Source sitemap: C:\Users\Allam\Downloads\sitemap.xml
+Rule: "Not SEO friendly" URLs are those containing "?" and/or "=" in the path (query-string URLs).
+
+========================================
+1) Exact query URLs seen in sitemap.xml
+========================================
+
+URL: https://extrahand.in/coming-soon?type=info&label=How%20to%20Earn
+Needs change in:
+ - components/layout/Footer.tsx
+ - components/layout/LandingFooter.tsx
+ - app/(public)/coming-soon/page.tsx
+
+URL: https://extrahand.in/coming-soon?type=info&label=Mobile%20App
+Needs change in:
+ - components/layout/Footer.tsx
+ - components/layout/LandingFooter.tsx
+ - app/(public)/coming-soon/page.tsx
+
+URL: https://extrahand.in/login?next=%2Ftasks%2Fnew
+Needs change in:
+ - middleware.ts
+ - components/tasks/TaskCreationFlow.tsx
+ - app/(public)/tasks/[id]/TaskDetailsClient.tsx
+ - components/auth/LoginForm.tsx
+ - app/(auth)/otp-verification/page.tsx
+
+Example URL: https://extrahand.in/login?category=ac-repair&location=delhi&next=%2Ftasks%2Fnew%3Fcategory%3Dac-repair%26location%3Ddelhi
+Needs change in:
+ - middleware.ts
+
+Example URL: https://extrahand.in/login?location=Connaught+Place%2C+delhi&next=%2Ftasks%2Fnew%3Flocation%3DConnaught%2BPlace%252C%2Bdelhi
+Needs change in:
+ - middleware.ts
+
+Note:
+ - Your sitemap.xml contains many more login query-string variations (different category/location/neighborhood values) in addition to the examples above.
+
+========================================
+2) Query-string URL patterns (appear many times in sitemap.xml)
+========================================
+
+Pattern: https://extrahand.in/login?category={category}&location={city}&next=%2Ftasks%2Fnew%3Fcategory%3D{category}%26location%3D{city}
+Needs change in:
+ - middleware.ts
+
+Pattern: https://extrahand.in/login?location={neighborhood},+{city}&next=%2Ftasks%2Fnew%3Flocation%3D{neighborhood}%252C%2B+{city}
+Needs change in:
+ - middleware.ts
+
+========================================
+3) Count (from repo search)
+========================================
+
+Number of <loc> entries in sitemap.xml that contain '?' (query-string URLs): 195
+
+========================================
+4) What changes to do in the code
+========================================
+
+Important reality:
+- Removing '?'/'=' from ALL URLs for ALL app flows is a major refactor (auth, onboarding, tasks/new prefill, chat, etc.).
+- The sitemap you downloaded includes query URLs because your current links and redirects use `searchParams` / query strings.
+- To fully get clean URLs, you must create clean routes (path params) and update all links + page code to read `params` instead of `searchParams`.
+
+----------------------------
+4.1 coming-soon?type=info&label=...
+----------------------------
+Where it appears:
+- `components/layout/Footer.tsx`
+- `components/layout/LandingFooter.tsx`
+- `app/(public)/coming-soon/page.tsx` (reads `searchParams.type` and `searchParams.label`)
+
+Needed change (clean URL approach):
+1) Create a new dynamic route that encodes `type` and `label` in the path, for example:
+   - `app/(public)/coming-soon/[type]/[label]/page.tsx`
+   - or `app/(public)/coming-soon/[label]/page.tsx` if type is always `info` for SEO pages.
+2) Inside the new page, read values from `params` (not `searchParams`).
+3) Update Footer links to point to the new clean path (instead of `...?type=...&label=...`).
+4) If you keep the old query-string route for backwards compatibility, set `noindex` on it (recommended during migration).
+
+----------------------------
+4.2 login?next=...
+----------------------------
+Where it appears:
+- `middleware.ts` (preserves destination by putting it into `next` query param)
+- `components/auth/LoginForm.tsx` (reads `next` from query, then forwards it to OTP)
+- `app/(auth)/otp-verification/page.tsx` (reads `next` from query)
+- `app/(public)/tasks/[id]/TaskDetailsClient.tsx` and `components/tasks/TaskCreationFlow.tsx` (hardcode `/login?next=...` redirects)
+
+Needed change (clean URL approach):
+1) Stop sending `next` as a query parameter.
+2) In `middleware.ts`, set a cookie (or server session) with the intended post-login destination, then redirect to `/login` without any query string.
+   - Example cookie name idea: `extrahand_redirect_to`
+3) Update `LoginForm.tsx` to read that cookie and use it as `redirectTo` (instead of `searchParams.get("next")`).
+4) Update `app/(auth)/otp-verification/page.tsx` similarly: read redirect destination from the cookie, not `searchParams`.
+5) Update any hardcoded redirects like:
+   - `/login?next=/tasks/new`
+   to instead call a redirect helper that sets the cookie (client-side) and navigates to `/login`.
+
+If you do ONLY this, you will still have query params in other URLs (like prefill params), but you will remove the `login?...` pollution from your sitemap discovery.
+
+----------------------------
+4.3 login?category=...&location=...&next=...
+----------------------------
+Why it appears:
+- When a user clicks a protected route like `/tasks/new?category=...&location=...`, `middleware.ts` blocks it and redirects to `/login`, preserving the original URL in `next` (which includes the `category/location` query).
+
+Needed change (two clean-URL options):
+A) Migration-friendly (remove '?' from login only):
+   - Strip `search` from the preserved redirect when you set the cookie in `middleware.ts`.
+   - After login, redirect user to `/tasks/new` without category/location prefill (or prefill via cookie as well).
+   - This removes query strings from login URLs, but tasks/new prefill may not be preserved.
+
+B) Full clean URLs (no '?' anywhere):
+   - Redesign `/tasks/new` prefill to use clean routes (path params) instead of `?category=...&location=...`.
+   - Example target route ideas:
+     - `app/(protected)/tasks/new/[category]/[location]/page.tsx`
+     - or `app/(protected)/tasks/new/[category]/page.tsx` + location as nested route.
+   - Update:
+     - `app/(protected)/tasks/new/page.tsx` + `components/tasks/TaskCreationFlow.tsx` (stop using `useSearchParams()` for these values)
+     - all links that currently create:
+       - `.../tasks/new?category=...`
+       - `.../tasks/new?location=...`
+     - such as:
+       - `components/locations/ServiceCategoriesGrid.tsx`
+       - `components/locations/NeighborhoodsGrid.tsx`
+       - `components/poster/PosterHeroSection.tsx`
+       - `app/(protected)/poster/page.tsx`
+       - `app/(protected)/home/page.tsx`
+
+----------------------------
+4.4 Your “clean URL for every page” scope
+----------------------------
+From repo search, your app also uses query params for other app features (examples):
+- `/discover?category=...`
+- `/chat?chatId=...`
+- `/profile?tab=...`
+- onboarding steps like `/onboarding/...?...`
+
+Those are usually not SEO targets, but if you want literally “no '?' on every page”, you must also convert those to path-based routes (params/cookies/session), and update all internal navigations accordingly.
+

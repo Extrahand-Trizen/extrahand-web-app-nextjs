@@ -81,7 +81,6 @@ export type NotificationCategory =
    | "reminders" // Task reminders, deadlines
    | "system" // Security alerts, account updates
    | "marketing" // Newsletters, product updates
-   | "transactional" // Critical confirmations
    | "task_reminders" // Task-specific reminders
    | "keyword_task_alerts" // Keyword matches
    | "recommended_task_alerts"; // Recommended tasks
@@ -244,7 +243,6 @@ export interface NotificationSettingsState {
       payments: boolean;
       promotions: boolean;
       system: boolean;
-      transactional: boolean;
       taskReminders: boolean;
       keywordTaskAlerts: boolean;
       recommendedTaskAlerts: boolean;
@@ -256,7 +254,6 @@ export interface NotificationSettingsState {
       promotions: boolean;
       system: boolean;
       marketing: boolean;
-      transactional: boolean;
       taskReminders: boolean;
       keywordTaskAlerts: boolean;
       recommendedTaskAlerts: boolean;
@@ -336,7 +333,6 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettingsState = {
       payments: true,
       promotions: false,
       system: true,
-      transactional: true,
       taskReminders: true,
       keywordTaskAlerts: true,
       recommendedTaskAlerts: true,
@@ -348,7 +344,6 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettingsState = {
       promotions: false,
       system: true,
       marketing: false,
-      transactional: true,
       taskReminders: true,
       keywordTaskAlerts: true,
       recommendedTaskAlerts: true,

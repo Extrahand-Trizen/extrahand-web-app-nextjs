@@ -24,6 +24,7 @@ interface EarningsCardProps {
    taskLabel?: string;
    locationLabel?: string;
    buttonText?: string;
+   onGetStarted?: () => void;
 }
 
 export const EarningsCard: React.FC<EarningsCardProps> = ({
@@ -37,6 +38,7 @@ export const EarningsCard: React.FC<EarningsCardProps> = ({
    taskLabel,
    locationLabel,
    buttonText,
+   onGetStarted,
 }) => {
    return (
       <Card className="w-full bg-white border-0 shadow-xl">
@@ -94,7 +96,10 @@ export const EarningsCard: React.FC<EarningsCardProps> = ({
             </div>
 
             {/* CTA Button */}
-            <Button className="w-full h-12 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-base shadow-sm">
+            <Button
+               className="w-full h-12 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-base shadow-sm"
+               onClick={onGetStarted}
+            >
                {buttonText || "Get started"}
                <ArrowRight className="w-4 h-4 ml-2" />
             </Button>

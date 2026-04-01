@@ -1,5 +1,4 @@
-import { LandingHeader } from "@/components/layout/LandingHeader";
-import { LandingFooter } from "@/components/layout/LandingFooter";
+import { RouteChrome } from "@/components/layout/RouteChrome";
 import { FCMProvider } from "@/lib/firebase/FCMProvider";
 import { SocketProvider } from "@/lib/socket/SocketProvider";
 
@@ -11,13 +10,7 @@ export default function ProtectedLayout({
    return (
       <FCMProvider>
          <SocketProvider>
-            <div suppressHydrationWarning>
-               <LandingHeader />
-               <main className="min-h-[calc(100vh - 110px)]">
-                  <div className="w-full mx-auto">{children}</div>
-               </main>
-               <LandingFooter />
-            </div>
+            <RouteChrome variant="protected">{children}</RouteChrome>
          </SocketProvider>
       </FCMProvider>
    );

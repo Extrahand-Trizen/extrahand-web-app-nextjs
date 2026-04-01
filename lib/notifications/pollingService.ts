@@ -26,6 +26,18 @@ export interface NotificationResponse {
   hasMore: boolean;
 }
 
+type RawNotificationResponse = {
+  success?: boolean;
+  notifications?: RawInAppNotification[];
+  unreadCount?: number;
+  hasMore?: boolean;
+  data?: {
+    notifications?: RawInAppNotification[];
+    unreadCount?: number;
+    hasMore?: boolean;
+  };
+};
+
 type RawInAppNotification = Partial<InAppNotification> & {
   _id?: string;
   id?: string;
@@ -189,8 +201,10 @@ export class NotificationPollingService {
         throw new Error(`Failed to fetch notifications: ${response.statusText}`);
       }
 
-      const data: NotificationResponse & { notifications?: RawInAppNotification[] } = await response.json();
-      const normalizedNotifications = this.normalizeNotifications(data.notifications || []);
+      const data: RawNotificationResponse = await response.json();
+      const normalizedNotifications = this.normalizeNotifications(
+        this.extractNotificationsFromResponse(data)
+      );
       console.log('✅ Notifications fetched successfully:', normalizedNotifications.length);
       return normalizedNotifications;
     } catch (error) {
@@ -230,6 +244,24 @@ export class NotificationPollingService {
         } as InAppNotification;
       })
       .filter((notification): notification is InAppNotification => notification !== null);
+  }
+
+  private static extractNotificationsFromResponse(
+    response: RawNotificationResponse
+  ): RawInAppNotification[] {
+    if (Array.isArray(response.notifications)) return response.notifications;
+    if (Array.isArray(response.data?.notifications)) return response.data.notifications;
+    return [];
+  }
+
+  private static extractUnreadCountFromResponse(response: any): number {
+    const direct = response?.unreadCount;
+    if (typeof direct === 'number') return direct;
+
+    const nested = response?.data?.unreadCount;
+    if (typeof nested === 'number') return nested;
+
+    return 0;
   }
 
   /**
@@ -344,7 +376,7 @@ export class NotificationPollingService {
       }
 
       const data = await response.json();
-      return data.unreadCount || 0;
+      return this.extractUnreadCountFromResponse(data);
     } catch (error) {
       console.error('❌ Error fetching unread count:', error);
       return 0;

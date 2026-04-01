@@ -63,6 +63,10 @@ import {
    exportTransactionsToPdf,
    exportTransactionsToExcel,
 } from "@/lib/exportTransactions";
+import { AddBankAccountModal } from "./AddBankAccountModal";
+import { BankAccountBanner } from "./BankAccountBanner";
+import { PayoutHistory } from "./PayoutHistory";
+import { useBankAccounts } from "@/lib/hooks/usePayments";
 
 interface PaymentsSectionProps {
    paymentMethods?: PaymentMethod[];
@@ -89,7 +93,15 @@ export function PaymentsSection({
    onSavePaymentMethod,
    onSavePayoutMethod,
 }: PaymentsSectionProps) {
-   const { currentUser } = useAuth();
+   const { currentUser, userData } = useAuth();
+   const {
+      bankAccounts,
+      hasBankAccount,
+      loading: bankLoading,
+      refetch: refetchBankAccounts,
+      setDefaultBankAccount,
+      deleteBankAccount,
+   } = useBankAccounts();
    const [activeTab, setActiveTab] = useState("methods");
    const [transactionFilter, setTransactionFilter] = useState<
       "all" | "outgoing" | "earnings"
@@ -108,22 +120,69 @@ export function PaymentsSection({
    const [dateRange, setDateRange] = useState<DateRange | undefined>();
    const [minAmount, setMinAmount] = useState<string>("");
    const [maxAmount, setMaxAmount] = useState<string>("");
+   const [pendingPenaltyTotal, setPendingPenaltyTotal] = useState<number>(0);
+   const [pendingPenaltyItems, setPendingPenaltyItems] = useState<
+      Array<{
+         penaltyId: string;
+         taskId: string;
+         taskTitle: string | null;
+         remainingAmount: string;
+      }>
+   >([]);
 
    // Internal modal state
    const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false);
    const [showPayoutMethodModal, setShowPayoutMethodModal] = useState(false);
+   const [showBankAccountModal, setShowBankAccountModal] = useState(false);
    const [selectedTransaction, setSelectedTransaction] =
       useState<Transaction | null>(null);
+   const [settingPaymentMethodId, setSettingPaymentMethodId] = useState<
+      string | null
+   >(null);
+   const [settingPayoutBankId, setSettingPayoutBankId] = useState<
+      string | null
+   >(null);
+   const [deletingPayoutBankId, setDeletingPayoutBankId] = useState<
+      string | null
+   >(null);
 
    // Fetch earnings + transactions as soon as Payments section is shown (use userId
    // from parent so Total Earnings/Total Spent load without waiting for auth or tab).
    const effectiveUserId = userId ?? currentUser?.uid;
+   const linkedUserIds = useMemo(
+      () =>
+         [currentUser?.uid, userData?.uid, userData?._id]
+            .filter((id): id is string => typeof id === "string" && id.trim().length > 0)
+            .map((id) => id.trim()),
+      [currentUser?.uid, userData?.uid, userData?._id]
+   );
    useEffect(() => {
       if (!effectiveUserId) return;
-      fetchPayments(effectiveUserId).catch((error) => {
+      fetchPayments(effectiveUserId, { linkedUserIds }).catch((error) => {
          console.error("Failed to load payments:", error);
       });
-   }, [effectiveUserId, fetchPayments]);
+   }, [effectiveUserId, linkedUserIds, fetchPayments]);
+
+   useEffect(() => {
+      if (!effectiveUserId) return;
+
+      const linkedCsv = linkedUserIds
+         .filter((id) => id !== effectiveUserId)
+         .join(",");
+
+      paymentApi
+         .getPendingCancellationPenalties(effectiveUserId, linkedCsv || undefined)
+         .then((res) => {
+            const total = Number.parseFloat(res?.totalRemaining || "0");
+            setPendingPenaltyTotal(Number.isFinite(total) ? total : 0);
+            setPendingPenaltyItems(Array.isArray(res?.items) ? res.items : []);
+         })
+         .catch((error) => {
+            console.error("Failed to load pending penalties:", error);
+            setPendingPenaltyTotal(0);
+            setPendingPenaltyItems([]);
+         });
+   }, [effectiveUserId, linkedUserIds]);
 
    // Check if any range filters are active
    const hasActiveRangeFilters = useMemo(() => {
@@ -156,8 +215,42 @@ export function PaymentsSection({
       setShowPayoutMethodModal(false);
    };
 
+   const handleSetDefaultPaymentMethod = async (methodId: string) => {
+      if (!onSetDefaultPayment || settingPaymentMethodId) return;
+      setSettingPaymentMethodId(methodId);
+      try {
+         await Promise.resolve(onSetDefaultPayment(methodId));
+      } finally {
+         setSettingPaymentMethodId(null);
+      }
+   };
+
+   const isPenaltyTransaction = (t: Transaction) => {
+      // Only hide standalone penalty adjustments/fees. Keep payouts even if they include penalty deductions.
+      if (t.type === "fee") return true;
+
+      const desc = (t.description || "").toLowerCase();
+      const meta =
+         t.metadata && typeof t.metadata === "object" && !Array.isArray(t.metadata)
+            ? (t.metadata as Record<string, unknown>)
+            : {};
+      const metaTag = String(meta.reason || meta.type || meta.category || meta.label || "").toLowerCase();
+      const explicitPenalty = Boolean(
+         (meta as { isPenalty?: boolean }).isPenalty ||
+            (meta as { penalty?: boolean }).penalty ||
+            (meta as { penaltyAmount?: unknown }).penaltyAmount
+      );
+
+      // If marked as penalty AND not a payout/refund/payment amount, treat as penalty.
+      const isStandalonePenalty = explicitPenalty && t.type !== "payout" && t.type !== "refund";
+
+      return isStandalonePenalty || (desc.includes("penalty") && t.type === "fee");
+   };
+
    // Filter transactions based on selected filter + range filters
    const filteredTransactions = transactions.filter((t) => {
+      if (isPenaltyTransaction(t)) return false; // hide standalone penalty adjustments from list
+
       // Type filter
       if (transactionFilter === "outgoing" && t.type !== "payment")
          return false;
@@ -191,6 +284,39 @@ export function PaymentsSection({
       return true;
    });
 
+   const payoutTransactions = useMemo(
+      () => transactions.filter((t) => t.type === "payout"),
+      [transactions]
+   );
+
+   const payoutIds = useMemo(() => {
+      const ids = payoutTransactions
+         .map((transaction) => {
+            if (transaction.payoutId) return transaction.payoutId;
+            const metadata =
+               transaction.metadata &&
+               typeof transaction.metadata === "object" &&
+               !Array.isArray(transaction.metadata)
+                  ? (transaction.metadata as Record<string, unknown>)
+                  : undefined;
+
+            const fromMetadata =
+               (typeof metadata?.payoutId === "string" && metadata.payoutId) ||
+               (typeof metadata?.relatedEntityId === "string" &&
+                  metadata.relatedEntityId) ||
+               (typeof metadata?.transactionId === "string" &&
+                  metadata.transactionId);
+
+            return fromMetadata || transaction.id;
+         })
+         .filter(Boolean);
+
+      return Array.from(new Set(ids));
+   }, [payoutTransactions]);
+
+   // Show pending penalty exactly as returned by API; do not net against payouts here.
+   const effectivePendingPenaltyTotal = Math.max(0, pendingPenaltyTotal);
+
    return (
       <div className="max-w-4xl space-y-4 sm:space-y-6">
          {/* Header */}
@@ -205,7 +331,12 @@ export function PaymentsSection({
          </div>
 
          {/* Quick Stats */}
-         <div className="grid grid-cols-2 gap-3">
+         <div
+            className={cn(
+               "grid grid-cols-1 sm:grid-cols-2 gap-3",
+               effectivePendingPenaltyTotal > 0 ? "lg:grid-cols-3" : "lg:grid-cols-2"
+            )}
+         >
             <div className="bg-primary-50 rounded-lg p-3 sm:p-4 border border-primary-100">
                <div className="flex items-center gap-2 mb-1">
                   <TrendingUp className="w-4 h-4 text-primary-600" />
@@ -228,12 +359,31 @@ export function PaymentsSection({
                   ₹{totalSpent.toLocaleString()}
                </p>
             </div>
+            {effectivePendingPenaltyTotal > 0 && (
+               <div className="bg-rose-50 rounded-lg p-3 sm:p-4 border border-rose-200">
+                  <div className="flex items-center gap-2 mb-1">
+                     <Wallet className="w-4 h-4 text-rose-700" />
+                     <span className="text-xs text-rose-800 font-medium">
+                        Pending Penalty
+                     </span>
+                  </div>
+                  <p className="text-lg sm:text-xl font-bold text-rose-800">
+                     -₹{effectivePendingPenaltyTotal.toLocaleString()}
+                  </p>
+                  <p className="text-[11px] sm:text-xs text-rose-700 mt-1">
+                     Deducted from next payout
+                  </p>
+               </div>
+            )}
          </div>
 
          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3 bg-gray-100">
+            <TabsList className="grid w-full grid-cols-4 bg-gray-100">
                <TabsTrigger value="methods" className="text-xs sm:text-sm">
                   Payment Methods
+               </TabsTrigger>
+               <TabsTrigger value="bank" className="text-xs sm:text-sm">
+                  Bank Accounts
                </TabsTrigger>
                <TabsTrigger value="payouts" className="text-xs sm:text-sm">
                   Payouts
@@ -254,7 +404,10 @@ export function PaymentsSection({
                               method={method}
                               onRemove={() => onRemovePaymentMethod(method.id)}
                               onSetDefault={() =>
-                                 onSetDefaultPayment(method.id)
+                                 handleSetDefaultPaymentMethod(method.id)
+                              }
+                              isSettingDefault={
+                                 settingPaymentMethodId === method.id
                               }
                            />
                         ))}
@@ -297,63 +450,200 @@ export function PaymentsSection({
                </div>
             </TabsContent>
 
-            {/* Payout Methods Tab */}
+            {/* Payouts History Tab */}
             <TabsContent value="payouts" className="space-y-4 mt-4">
-               <div className="bg-white rounded-lg border border-gray-200">
-                  {payoutMethods.length > 0 ? (
-                     <div className="divide-y divide-gray-100">
-                        {payoutMethods.map((method) => (
-                           <PayoutMethodRow
-                              key={method.id}
-                              method={method}
-                              onRemove={() => onRemovePayoutMethod(method.id)}
-                              onSetDefault={() => onSetDefaultPayout(method.id)}
-                           />
-                        ))}
+               <div className="space-y-4">
+                  <div className="bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg p-4 border border-primary-200">
+                     <div className="flex items-start gap-3">
+                        <div className="text-primary-600">
+                           <Wallet className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1">
+                           <h3 className="text-sm font-medium text-primary-900 mb-1">
+                              Payout Status Tracking
+                           </h3>
+                           <p className="text-xs text-primary-700">
+                              Your tasks are automatically paid out to your registered bank account within 1-2 business days after completion approval. Use this tab to track the status of your transfers.
+                           </p>
+                        </div>
+                     </div>
+                  </div>
+
+                  {effectivePendingPenaltyTotal > 0 && (
+                     <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+                        <div className="flex items-start gap-3">
+                           <div className="text-amber-700">
+                              <Wallet className="w-5 h-5" />
+                           </div>
+                           <div className="flex-1">
+                              <h3 className="text-sm font-medium text-amber-900 mb-1">
+                                 Pending Cancellation Penalty
+                              </h3>
+                              <p className="text-xs text-amber-800 mb-2">
+                                 ₹{effectivePendingPenaltyTotal.toLocaleString()} will be adjusted from upcoming payouts.
+                              </p>
+                              {pendingPenaltyItems.length > 0 && (
+                                 <div className="space-y-1">
+                                    {pendingPenaltyItems.slice(0, 3).map((item) => (
+                                       <div
+                                          key={item.penaltyId}
+                                          className="text-xs text-amber-900 flex items-center justify-between"
+                                       >
+                                          <span className="truncate pr-2">
+                                             {item.taskTitle || `Task ${item.taskId}`}
+                                          </span>
+                                          <span className="font-medium">
+                                             ₹{Number.parseFloat(item.remainingAmount || "0").toLocaleString()}
+                                          </span>
+                                       </div>
+                                    ))}
+                                 </div>
+                              )}
+                           </div>
+                        </div>
+                     </div>
+                  )}
+
+                  <PayoutHistory
+                     payoutIds={payoutIds}
+                     fallbackPayouts={payoutTransactions}
+                     maxItems={20}
+                     showPending={true}
+                     showCompleted={true}
+                  />
+               </div>
+            </TabsContent>
+
+            {/* Bank Accounts Tab */}
+            <TabsContent value="bank" className="space-y-4 mt-4">
+               <div className="bg-white rounded-lg border border-gray-200 p-4">
+                  <h3 className="text-sm font-medium text-gray-900 mb-4">Bank Account for Payouts</h3>
+                  {!hasBankAccount ? (
+                     <div className="space-y-3">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                           <p className="text-sm text-blue-900">
+                              Add your bank account to receive payments for completed tasks via RazorpayX
+                           </p>
+                           <Button
+                              onClick={() => setShowBankAccountModal(true)}
+                              className="mt-3 bg-primary-600 hover:bg-primary-700 text-white"
+                              size="sm"
+                           >
+                              <Plus className="w-4 h-4 mr-2" />
+                              Add Bank Account
+                           </Button>
+                        </div>
                      </div>
                   ) : (
-                     <div className="px-4 py-6 sm:px-5 sm:py-8 text-center">
-                        <Building2 className="w-8 h-8 sm:w-10 sm:h-10 text-gray-300 mx-auto mb-3" />
-                        <p className="text-xs sm:text-sm text-gray-500 mb-2">
-                           No payout method added yet
-                        </p>
-                        <p className="text-[10px] sm:text-xs text-gray-400 mb-4">
-                           Add a bank account or UPI to receive payments for
-                           completed tasks
-                        </p>
+                     <div className="space-y-3">
+                        {bankAccounts.map((account) => (
+                           <div
+                              key={account.id}
+                              className="rounded-lg border border-gray-200 p-3 flex items-center justify-between gap-3"
+                           >
+                              <div>
+                                 <p className="text-sm font-medium text-gray-900">{account.accountNumber}</p>
+                                 <p className="text-xs text-gray-500">{account.ifscCode}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                 {!account.isDefault ? (
+                                    <Button
+                                       variant="outline"
+                                       size="sm"
+                                       onClick={async () => {
+                                          if (
+                                             settingPayoutBankId ||
+                                             account.isDefault
+                                          ) {
+                                             return;
+                                          }
+                                          try {
+                                             setSettingPayoutBankId(account.id);
+                                             await setDefaultBankAccount(account.id);
+                                             toast.success(
+                                                "Default payout bank account updated",
+                                                {
+                                                   id: "default-payout-bank-account",
+                                                }
+                                             );
+                                          } catch (error) {
+                                             toast.error(
+                                                error instanceof Error
+                                                   ? error.message
+                                                   : "Failed to update payout bank account",
+                                                {
+                                                   id: "default-payout-bank-account",
+                                                }
+                                             );
+                                          } finally {
+                                             setSettingPayoutBankId(null);
+                                          }
+                                       }}
+                                       disabled={
+                                          bankLoading ||
+                                          settingPayoutBankId === account.id ||
+                                          deletingPayoutBankId === account.id
+                                       }
+                                    >
+                                       {settingPayoutBankId === account.id
+                                          ? "Setting..."
+                                          : "Set default"}
+                                    </Button>
+                                 ) : (
+                                    <Badge className="bg-green-100 text-green-800 border-green-200">
+                                       Default
+                                    </Badge>
+                                 )}
+                                 <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={async () => {
+                                       if (deletingPayoutBankId) return;
+                                       try {
+                                          setDeletingPayoutBankId(account.id);
+                                          await deleteBankAccount(account.id);
+                                          toast.success("Bank account deleted", {
+                                             id: "delete-payout-bank-account",
+                                          });
+                                       } catch (error) {
+                                          toast.error(
+                                             error instanceof Error
+                                                ? error.message
+                                                : "Failed to delete bank account",
+                                             {
+                                                id: "delete-payout-bank-account",
+                                             }
+                                          );
+                                       } finally {
+                                          setDeletingPayoutBankId(null);
+                                       }
+                                    }}
+                                    disabled={
+                                       bankLoading ||
+                                       deletingPayoutBankId === account.id ||
+                                       settingPayoutBankId === account.id
+                                    }
+                                    className="text-red-600 border-red-200 hover:bg-red-50"
+                                 >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    {deletingPayoutBankId === account.id
+                                       ? "Deleting..."
+                                       : "Delete"}
+                                 </Button>
+                              </div>
+                           </div>
+                        ))}
+
                         <Button
-                           onClick={() => setShowPayoutMethodModal(true)}
+                           onClick={() => setShowBankAccountModal(true)}
+                           className="bg-primary-600 hover:bg-primary-700 text-white"
                            size="sm"
-                           className="text-xs h-8 px-3 bg-primary-600 hover:bg-primary-700"
                         >
-                           <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                           Add Payout Method
+                           <Plus className="w-4 h-4 mr-2" />
+                           Add Another Bank Account
                         </Button>
                      </div>
                   )}
-               </div>
-
-               {payoutMethods.length > 0 && (
-                  <Button
-                     variant="outline"
-                     onClick={() => setShowPayoutMethodModal(true)}
-                     size="sm"
-                     className="w-full sm:w-auto text-xs h-9"
-                  >
-                     <Plus className="w-4 h-4 mr-2" />
-                     Add Payout Method
-                  </Button>
-               )}
-
-               <div className="bg-gray-50 rounded-lg p-3 sm:p-4 space-y-2">
-                  <h4 className="text-xs sm:text-sm font-medium text-gray-900">
-                     Payout Schedule
-                  </h4>
-                  <p className="text-[10px] sm:text-xs text-gray-500">
-                     Payouts are processed within 1-2 business days after task
-                     completion. Bank transfers may take an additional 1-3
-                     business days.
-                  </p>
                </div>
             </TabsContent>
 
@@ -704,6 +994,20 @@ export function PaymentsSection({
             onSave={handleSavePayoutMethod}
          />
 
+         <AddBankAccountModal
+            open={showBankAccountModal}
+            onOpenChange={setShowBankAccountModal}
+            onSuccess={() => {
+               refetchBankAccounts();
+               // Refetch payments to update bank account status
+               if (effectiveUserId) {
+                  fetchPayments(effectiveUserId, { linkedUserIds }).catch((error) => {
+                     console.error("Failed to reload payments:", error);
+                  });
+               }
+            }}
+         />
+
          <TransactionDetailsModal
             transaction={selectedTransaction}
             onClose={() => setSelectedTransaction(null)}
@@ -720,12 +1024,14 @@ interface PaymentMethodRowProps {
    method: PaymentMethod;
    onRemove: () => void;
    onSetDefault: () => void;
+   isSettingDefault?: boolean;
 }
 
 function PaymentMethodRow({
    method,
    onRemove,
    onSetDefault,
+   isSettingDefault = false,
 }: PaymentMethodRowProps) {
    const [showConfirm, setShowConfirm] = useState(false);
 
@@ -775,9 +1081,10 @@ function PaymentMethodRow({
                      variant="ghost"
                      size="sm"
                      onClick={onSetDefault}
+                     disabled={isSettingDefault}
                      className="text-xs h-8 px-2 text-gray-600 hover:text-primary-600"
                   >
-                     Set default
+                     {isSettingDefault ? "Setting..." : "Set default"}
                   </Button>
                )}
                {showConfirm ? (
@@ -982,7 +1289,6 @@ function TransactionRow({ transaction, onOpenDetails }: TransactionRowProps) {
                </p>
                <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 truncate">
                   {formatDate(transaction.createdAt)}
-                  {safeTaskId && !transaction.taskTitle && " • Task linked"}
                </p>
             </div>
 
@@ -1026,11 +1332,16 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
          setIsRefreshing(true);
          try {
             if (taskId) {
+               const shouldFetchEscrow =
+                  transaction.type === "payment" || transaction.type === "refund";
+
                const [task, escrowRes] = await Promise.all([
                   tasksApi.getTask(taskId).catch(() => null),
-                  paymentApi
-                     .getEscrowByTaskId(taskId)
-                     .catch(() => ({ success: false })),
+                  shouldFetchEscrow
+                     ? paymentApi
+                          .getEscrowByTaskId(taskId)
+                          .catch(() => ({ success: false }))
+                     : Promise.resolve({ success: false }),
                ]);
 
                if (cancelled) return;
@@ -1102,15 +1413,28 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
 
    if (!transaction) return null;
 
+   const isIncoming =
+      transaction.type === "payout" || transaction.type === "refund";
    const statusMessage = getEscrowStatusMessage(escrowStatus, transaction.status);
    const breakdown = buildPaymentBreakdown(transaction);
+   const showRefundBreakdown =
+      transaction.type === "refund" ||
+      transaction.status === "cancelled" ||
+      escrowStatus === "cancelled" ||
+      escrowStatus === "refunded";
    const timeline = buildPaymentTimeline(taskStatus, escrowStatus);
+   const counterpartyLabel = isIncoming ? "Received from" : "Paid to";
+   const counterpartyValue = isIncoming
+      ? paidToName || transaction.assignedToName || "ExtraHand"
+      : paidToName || "Will be assigned";
 
    return (
       <Dialog open={Boolean(transaction)} onOpenChange={(open) => !open && onClose()}>
          <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-               <DialogTitle className="text-base font-semibold">Payment Successful</DialogTitle>
+               <DialogTitle className="text-base font-semibold">
+                  {isIncoming ? "Payout Details" : "Payment Details"}
+               </DialogTitle>
             </DialogHeader>
 
             <div className="space-y-4">
@@ -1132,9 +1456,44 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
                   <DetailRow label="Task Amount" value={breakdown.taskAmount} />
                   <DetailRow label="Platform Fee" value={breakdown.platformFee} />
                   <DetailRow label="GST" value={breakdown.gstAmount} />
+                  {isIncoming && breakdown.penaltyDeducted > 0 && (
+                     <div className="pt-2 mt-2 border-t border-gray-200">
+                        <DetailRow
+                           label="Penalty Deducted"
+                           value={breakdown.penaltyDeducted}
+                           strong={false}
+                        />
+                        <p className="text-[11px] text-red-600 mt-1">
+                           Penalty for cancellation adjusted from payout
+                        </p>
+                     </div>
+                  )}
                   <div className="pt-2 mt-2 border-t border-gray-200">
-                     <DetailRow label="Total Paid" value={breakdown.totalPaid} strong />
+                     <DetailRow
+                        label={isIncoming ? "Amount Received" : "Total Paid"}
+                        value={breakdown.totalPaid}
+                        strong
+                     />
                   </div>
+
+                  {showRefundBreakdown && (
+                     <div className="pt-3 mt-3 border-t border-gray-200 space-y-1.5">
+                        <h5 className="text-xs font-semibold text-gray-900">Refund Breakdown</h5>
+                        <DetailRow label="Refundable Base (Task Amount)" value={breakdown.taskAmount} />
+                        <DetailRow
+                           label={breakdown.appliedRuleLabel}
+                           value={breakdown.appliedRuleAmount}
+                        />
+                        {breakdown.actualRefund > 0 ? (
+                           <DetailRow label="Actual Refunded" value={breakdown.actualRefund} strong />
+                        ) : (
+                           <DetailRow label="Refund in Progress" value={breakdown.expectedRefund} strong />
+                        )}
+                        <p className="text-[11px] text-amber-700 mt-1">
+                           Platform fee and GST are non-refundable.
+                        </p>
+                     </div>
+                  )}
                </div>
 
                <div className="space-y-2 border-b border-dashed border-gray-200 pb-4">
@@ -1143,19 +1502,23 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
                   </p>
                </div>
 
-               <div className="space-y-2 border-b border-dashed border-gray-200 pb-4">
-                  <h4 className="text-sm font-semibold text-gray-900">Timeline</h4>
-                  {timeline.map((item) => (
-                     <p key={item.label} className="text-sm text-gray-700">
-                        {item.done ? "✔" : "⏳"} {item.label}
-                     </p>
-                  ))}
-               </div>
+               {!showRefundBreakdown && (
+                  <>
+                     <div className="space-y-2 border-b border-dashed border-gray-200 pb-4">
+                        <h4 className="text-sm font-semibold text-gray-900">Timeline</h4>
+                        {timeline.map((item) => (
+                           <p key={item.label} className="text-sm text-gray-700">
+                              {item.done ? "✔" : "⏳"} {item.label}
+                           </p>
+                        ))}
+                     </div>
 
-               <div>
-                  <h4 className="text-sm font-semibold text-gray-900">Paid to</h4>
-                  <p className="text-sm text-gray-700 mt-1">{paidToName || "Will be assigned"}</p>
-               </div>
+                     <div>
+                        <h4 className="text-sm font-semibold text-gray-900">{counterpartyLabel}</h4>
+                        <p className="text-sm text-gray-700 mt-1">{counterpartyValue}</p>
+                     </div>
+                  </>
+               )}
 
                {isRefreshing && (
                   <p className="text-[11px] text-gray-500">Refreshing payment status...</p>
@@ -1167,24 +1530,143 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
 }
 
 function buildPaymentBreakdown(transaction: Transaction) {
-   const totalPaid = safeNumber(transaction.totalPaid ?? transaction.amount);
-   const taskAmount = Math.round(
-      safeNumber(transaction.taskAmount) || Math.max(totalPaid - 59, 0)
+   const metadata =
+      transaction.metadata &&
+      typeof transaction.metadata === "object" &&
+      !Array.isArray(transaction.metadata)
+         ? (transaction.metadata as Record<string, unknown>)
+         : {};
+   const amountBreakdown =
+      metadata.amountBreakdown &&
+      typeof metadata.amountBreakdown === "object" &&
+      !Array.isArray(metadata.amountBreakdown)
+         ? (metadata.amountBreakdown as Record<string, unknown>)
+         : {};
+
+   const penaltyDeducted = getPenaltyDeductedValue(transaction);
+   const inferredNetAmount = safeNumber(transaction.amount ?? metadata.netAmount);
+   const totalPaid = safeNumber(
+      transaction.totalPaid ?? metadata.totalPaid ?? amountBreakdown.totalPaid ?? transaction.amount
    );
-   const platformFee = Math.round(
-      safeNumber(transaction.platformFee) || Math.round(taskAmount * 0.05)
+   const taskAmount = safeNumber(
+      transaction.taskAmount ?? metadata.taskAmount ?? amountBreakdown.taskAmount
    );
-   const gstAmount = Math.round(
-      safeNumber(transaction.gstAmount) ||
-         Math.max(totalPaid - taskAmount - platformFee, 0)
+   const platformFeeFromMeta = safeNumber(
+      transaction.platformFee ?? metadata.platformFee ?? amountBreakdown.platformFee
+   );
+   const gstAmountFromMeta = safeNumber(
+      transaction.gstAmount ?? metadata.gstAmount ?? metadata.platformFeeGst ?? amountBreakdown.gst
    );
 
+   const isIncomingPayout = transaction.type === "payout";
+   const netReceived =
+      isIncomingPayout && inferredNetAmount > 0
+         ? inferredNetAmount
+         : totalPaid;
+   const grossFromPenalty =
+      isIncomingPayout && penaltyDeducted > 0 && netReceived > 0
+         ? netReceived + penaltyDeducted
+         : 0;
+   // Prefer the explicit task amount when available; only fall back to inferred values.
+   const normalizedTaskAmount =
+      taskAmount > 0
+         ? taskAmount
+         : grossFromPenalty > 0
+         ? grossFromPenalty
+         : totalPaid;
+   const inferredFees = Math.max(totalPaid - normalizedTaskAmount, 0);
+   const platformFee = platformFeeFromMeta > 0 ? platformFeeFromMeta : inferredFees;
+   const gstAmount = gstAmountFromMeta > 0 ? gstAmountFromMeta : Math.max(inferredFees - platformFee, 0);
+   const actualRefund = safeNumber(
+      metadata.refundAmount ?? metadata.refundedAmount ?? (transaction.type === "refund" ? transaction.amount : 0)
+   );
+   const latestCancelledBy = String(metadata.latestCancelledBy || metadata.cancelledBy || "").toLowerCase();
+   const latestRefundAmount = safeNumber(metadata.latestRefundAmount);
+   const expectedRefund =
+      latestCancelledBy === "performer"
+         ? totalPaid
+         : actualRefund > 0
+         ? actualRefund
+         : latestRefundAmount;
+
+   const refundRatio = normalizedTaskAmount > 0 ? expectedRefund / normalizedTaskAmount : 0;
+   const normalizedRatio = Math.round(refundRatio * 100) / 100;
+   const appliedRuleLabel =
+      latestCancelledBy === "performer"
+         ? "Applied: Cancelled by tasker (full refund)"
+         : normalizedRatio >= 0.99
+         ? "Applied: Cancelled within 15 mins or > 24 hrs before start (100%)"
+         : normalizedRatio >= 0.89
+         ? "Applied: Cancelled between 1 and 24 hrs before start (90%)"
+         : normalizedRatio >= 0.79
+         ? "Applied: Cancelled < 1 hr before start (80%)"
+         : "Applied: Refund policy pending calculation";
+   const appliedRuleAmount = expectedRefund;
+
    return {
-      taskAmount,
+      taskAmount: normalizedTaskAmount,
       platformFee,
       gstAmount,
-      totalPaid,
+      totalPaid: isIncomingPayout ? netReceived : totalPaid,
+      penaltyDeducted,
+      refundBefore24h: Math.round(normalizedTaskAmount),
+      refundBefore1hTo24h: Math.round(normalizedTaskAmount * 0.9),
+      refundBefore1h: Math.round(normalizedTaskAmount * 0.8),
+      actualRefund,
+      expectedRefund,
+      appliedRuleLabel,
+      appliedRuleAmount,
    };
+}
+
+function getPenaltyDeductedValue(transaction: Transaction): number {
+   const metadata =
+      transaction.metadata &&
+      typeof transaction.metadata === "object" &&
+      !Array.isArray(transaction.metadata)
+         ? (transaction.metadata as Record<string, unknown>)
+         : {};
+
+   const explicitPenalty = safeNumber(
+      transaction.penaltyDeducted ?? metadata.penaltyDeducted
+   );
+   if (explicitPenalty > 0) return explicitPenalty;
+
+   if (transaction.type !== "payout") return 0;
+
+   const amountBreakdown =
+      metadata.amountBreakdown &&
+      typeof metadata.amountBreakdown === "object" &&
+      !Array.isArray(metadata.amountBreakdown)
+         ? (metadata.amountBreakdown as Record<string, unknown>)
+         : {};
+
+   const netReceived = safeNumber(
+      transaction.amount ?? metadata.netAmount ?? metadata.totalPaid
+   );
+   const grossAmount = safeNumber(
+      transaction.taskAmount ??
+         metadata.taskAmount ??
+         metadata.grossAmount ??
+         amountBreakdown.taskAmount
+   );
+   if (grossAmount <= 0 || netReceived <= 0 || grossAmount <= netReceived) {
+      return 0;
+   }
+
+   const feeComponent = safeNumber(
+      transaction.platformFee ??
+         metadata.platformFee ??
+         amountBreakdown.platformFee
+   );
+   const gstComponent = safeNumber(
+      transaction.gstAmount ??
+         metadata.gstAmount ??
+         metadata.platformFeeGst ??
+         amountBreakdown.gst
+   );
+   const inferredPenalty = Math.max(grossAmount - netReceived - feeComponent - gstComponent, 0);
+   return inferredPenalty;
 }
 
 function buildPaymentTimeline(
@@ -1223,12 +1705,12 @@ function getEscrowStatusMessage(
    if (escrowStatus === "refunded") return "Payment refunded";
    if (escrowStatus === "cancelled") return "Payment cancelled";
    if (escrowStatus === "held" || escrowStatus === "pending") {
-      return "🟡 Payment secured in escrow";
+      return "Payment secured";
    }
-   if (paymentStatus === "completed") return "🟡 Payment secured in escrow";
-   if (paymentStatus === "pending") return "⏳ Payment is being processed";
+   if (paymentStatus === "completed") return "Payment secured";
+   if (paymentStatus === "pending") return "Payment is being processed";
    if (paymentStatus === "failed") return "Payment failed";
-   return "⏳ Status updating";
+   return "Status updating";
 }
 
 function DetailRow({ label, value, strong = false }: { label: string; value: number; strong?: boolean }) {

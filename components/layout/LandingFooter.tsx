@@ -19,7 +19,10 @@ const footerLinks = {
   discover: {
     title: "Discover",
     links: [
-      { label: "How it Works", href: "/#how-it-works" },
+      { label: "How it Works", href: "/how-it-works#how-it-works" },
+      { label: "Services", href: "/services" },
+      { label: "Jobs", href: "/jobs" },
+      { label: "Blogs", href: "/blog" },
       { label: "Browse Categories", href: "https://extrahand.in/discover" },
       { label: "Trust & Safety", href: "/trust-safety" },
       { label: "Pricing", href: "/pricing" },
@@ -29,7 +32,7 @@ const footerLinks = {
     title: "For Taskers",
     links: [
       { label: "Become a Tasker", href: "/earn-money#how-to-become-tasker" },
-      { label: "How to Earn", href: "/coming-soon?type=info&label=How%20to%20Earn" },
+      { label: "How to Earn", href: "/earn-money#how-to-earn" },
       { label: "Tasker Guidelines", href: "/tasker-guidelines" },
       { label: "Success Stories", href: "/success-stories" },
       { label: "Resources", href: "/resources" },
@@ -55,13 +58,13 @@ const footerLinks = {
   categories: {
     title: "Popular Categories",
     links: [
-      { label: "Electricians", href: "/coming-soon" },
-      { label: "Plumbers", href: "/coming-soon" },
-      { label: "Home Cleaning", href: "/coming-soon" },
-      { label: "Packers & Movers", href: "/coming-soon" },
-      { label: "Carpenters", href: "/coming-soon" },
-      { label: "AC Services", href: "/coming-soon" },
-      { label: "Appliance Repair", href: "/coming-soon" },
+      { label: "Electricians", href: "/services/electricians-services" },
+      { label: "Plumbers", href: "/services/plumbing-services" },
+      { label: "Home Cleaning", href: "/services/cleaning-services" },
+      { label: "Delivery & Pickup", href: "/services/delivery-services" },
+      { label: "Flooring Services", href: "/services/flooring-services" },
+      { label: "Carpenters", href: "/services/carpentry-services" },
+      { label: "Pet Care Services", href: "/services/pet-care-services" },
     ],
   },
   cities: {
@@ -101,7 +104,7 @@ export const LandingFooter: React.FC = () => {
     const hasHowItWorks = column.links.some((link) => link.label === "How it Works");
     if (hasHowItWorks) return column.links;
 
-    return [{ label: "How it Works", href: "/#how-it-works" }, ...column.links];
+    return [{ label: "How it Works", href: "/how-it-works#how-it-works" }, ...column.links];
   };
 
   return (
@@ -249,8 +252,8 @@ export const LandingFooter: React.FC = () => {
             </div>
             <div className="flex gap-4">
               {/* App Store */}
-              <a
-                href="/coming-soon?type=info&label=Mobile%20App"
+              <Link
+              href="/coming-soon/mobile-app"
                 className="flex items-center gap-3 bg-white rounded-xl px-3 py-2 md:px-4 md:py-2.5 hover:bg-secondary-100 transition-colors"
               >
                 <svg
@@ -271,11 +274,11 @@ export const LandingFooter: React.FC = () => {
                     App Store
                   </p>
                 </div>
-              </a>
+              </Link>
 
               {/* Google Play */}
-              <a
-                href="/coming-soon?type=info&label=Mobile%20App"
+              <Link
+                href="/coming-soon"
                 className="flex items-center gap-3 bg-white rounded-xl px-3 py-2 md:px-4 md:py-2.5 hover:bg-secondary-100 transition-colors"
               >
                 <svg
@@ -308,7 +311,7 @@ export const LandingFooter: React.FC = () => {
                     Google Play
                   </p>
                 </div>
-              </a>
+              </Link>
             </div>
           </div>
         </div>

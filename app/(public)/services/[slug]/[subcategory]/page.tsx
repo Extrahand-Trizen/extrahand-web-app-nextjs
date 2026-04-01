@@ -3,6 +3,10 @@ import { categoriesApi } from "@/lib/api/endpoints/categories";
 import PosterCategoryPageClient from "@/components/poster/PosterCategoryPageClient";
 import { PosterCategoryDetail, SubcategoryDetail } from "@/types/category";
 import { CategoryNotFound } from "@/components/shared/CategoryNotFound";
+import {
+   buildManualPosterCategoryDetail,
+   getManualServiceBySlugs,
+} from "@/lib/data/manual-services-catalog";
 
 interface ServiceSubcategoryPageProps {
    params: Promise<{
@@ -51,6 +55,13 @@ export default async function ServiceSubcategoryPage({
       subcategoryData = await categoriesApi.getSubcategoryBySlug(subcategorySlug);
    }
 
+   const manualService = getManualServiceBySlugs(slug, subcategorySlug);
+
+   if (!subcategoryData && manualService) {
+      const manualCategoryDetail = buildManualPosterCategoryDetail(manualService);
+      return <PosterCategoryPageClient category={manualCategoryDetail} />;
+   }
+
    if (!subcategoryData) {
       return <CategoryNotFound type="service" categoryName={subcategorySlug} />;
    }
@@ -84,6 +95,15 @@ export async function generateMetadata({
    }
 
    if (!subcategory) {
+      const manualService = getManualServiceBySlugs(slug, subcategorySlug);
+
+      if (manualService) {
+         return {
+            title: `${manualService.subcategoryName} | ExtraHand Services`,
+            description: manualService.shortDescription,
+         };
+      }
+
       return {
          title: "Page Not Found",
       };
