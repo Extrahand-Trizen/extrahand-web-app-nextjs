@@ -58,7 +58,6 @@
       <text class="tagline" x="0" y="148">Hire help or earn money near you</text>
       <g transform="translate(0, 182)">
         <rect x="0" y="0" rx="18" ry="18" width="312" height="44" fill="#F7B728"/>
-        <text class="pillText" x="18" y="30">Public profile preview</text>
       </g>
       <text class="url" x="0" y="270">extrahand.in</text>
     </g>
