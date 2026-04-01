@@ -46,6 +46,7 @@ export default function PANVerificationPage() {
    const router = useRouter();
    const { refreshUserData, userData } = useAuth();
    const isBusiness = userData?.userType === "business";
+   const profileVerificationsUrl = "/profile?section=verifications";
 
    const [state, setState] = useState<PANVerificationState>({
       step: "input",
@@ -57,11 +58,7 @@ export default function PANVerificationPage() {
    const [isLoading, setIsLoading] = useState(false);
 
    const handleBack = () => {
-      if (state.step === "input") {
-         router.push("/profile?section=verifications");
-      } else {
-         router.push("/profile?section=verifications");
-      }
+      router.push(profileVerificationsUrl);
    };
 
    const validatePAN = (pan: string): boolean => {
@@ -379,7 +376,7 @@ export default function PANVerificationPage() {
             </Button>
             <Button
                variant="outline"
-               onClick={() => router.push("/profile/verify")}
+               onClick={() => router.push(profileVerificationsUrl)}
                className="w-full h-12 text-base"
             >
                Complete More Verifications
@@ -419,7 +416,7 @@ export default function PANVerificationPage() {
             </Button>
             <Button
                variant="outline"
-               onClick={() => router.push("/profile/verify")}
+               onClick={() => router.push(profileVerificationsUrl)}
                className="w-full h-12 text-base"
             >
                Back to Verifications
