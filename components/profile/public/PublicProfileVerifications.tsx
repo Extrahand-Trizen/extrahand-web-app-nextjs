@@ -25,6 +25,23 @@ function VerificationBadge({ label, verified }: { label: string; verified?: bool
 }
 
 export function PublicProfileVerifications({ user }: { user: UserProfile }) {
+  const legacyUser = user as UserProfile & {
+    phoneVerified?: boolean;
+    emailVerified?: boolean;
+  };
+
+  // OTP signup verifies phone, so a present phone should be treated as verified fallback.
+  const isPhoneVerified =
+    user.isPhoneVerified === true ||
+    legacyUser.phoneVerified === true ||
+    !!user.phoneVerifiedAt ||
+    !!user.phone;
+
+  const isEmailVerified =
+    user.isEmailVerified === true ||
+    legacyUser.emailVerified === true ||
+    !!user.emailVerifiedAt;
+
   return (
     <Card>
       <CardHeader>
@@ -33,8 +50,8 @@ export function PublicProfileVerifications({ user }: { user: UserProfile }) {
       <CardContent>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <VerificationBadge label="Identity Verified" verified={!!user.isAadhaarVerified} />
-          <VerificationBadge label="Phone Verified" verified={!!user.isPhoneVerified} />
-          <VerificationBadge label="Email Verified" verified={!!user.isEmailVerified} />
+          <VerificationBadge label="Phone Verified" verified={isPhoneVerified} />
+          <VerificationBadge label="Email Verified" verified={isEmailVerified} />
           <VerificationBadge label="Bank Verified" verified={!!user.isBankVerified} />
           {user.userType === "business" ? (
             <>

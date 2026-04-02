@@ -303,7 +303,7 @@ export function StatusUpdateSection({
          setOtpExpiresAt(result.expiresAt);
          setOtpValue("");
          setIsOtpDialogOpen(true);
-         toast.success(`OTP sent to ${result.sentTo}. Ask poster and enter OTP to start task.`);
+         toast.success(`OTP sent to the poster's email${result.sentTo ? ` (${result.sentTo})` : ''}. Ask the poster and enter it here to start the task.`);
       } catch (error: unknown) {
          toast.error(getErrorMessage(error) || "Failed to send OTP");
       } finally {
@@ -316,7 +316,7 @@ export function StatusUpdateSection({
       try {
          const result = await tasksApi.resendStartOtp(task._id);
          setOtpExpiresAt(result.expiresAt);
-         toast.success(`OTP resent to ${result.sentTo}`);
+         toast.success(`OTP resent to the poster's email${result.sentTo ? ` (${result.sentTo})` : ''}`);
       } catch (error: unknown) {
          toast.error(getErrorMessage(error) || "Failed to resend OTP");
       } finally {
@@ -753,7 +753,7 @@ export function StatusUpdateSection({
                <DialogHeader>
                   <DialogTitle>Enter Poster OTP</DialogTitle>
                   <DialogDescription>
-                     Ask the poster for the OTP sent to them and enter it to start this task.
+                     The OTP has been sent to the poster's email. Ask them for the code and enter it below to start this task.
                   </DialogDescription>
                </DialogHeader>
 

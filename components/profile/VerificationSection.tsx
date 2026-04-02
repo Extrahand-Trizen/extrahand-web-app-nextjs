@@ -21,6 +21,7 @@ interface VerificationItem {
   verifiedAt?: Date;
   required?: boolean;
   businessOnly?: boolean;
+  comingSoon?: boolean;
   /** When true, verified items do not navigate (e.g. Aadhaar KYC is one-time). */
   lockAfterVerification?: boolean;
 }
@@ -122,6 +123,7 @@ function createVerificationItem({
   route,
   required = false,
   businessOnly,
+  comingSoon,
   lockAfterVerification,
 }: {
   id: string;
@@ -133,6 +135,7 @@ function createVerificationItem({
   route: string;
   required?: boolean;
   businessOnly?: boolean;
+  comingSoon?: boolean;
   lockAfterVerification?: boolean;
 }): VerificationItem {
   const verified = isVerified ?? false;
@@ -146,6 +149,7 @@ function createVerificationItem({
     verifiedAt,
     required,
     ...(businessOnly !== undefined && { businessOnly }),
+    ...(comingSoon !== undefined && { comingSoon }),
     ...(lockAfterVerification !== undefined && { lockAfterVerification }),
   };
 }
@@ -203,8 +207,9 @@ export function VerificationSection({ user }: VerificationSectionProps) {
       isVerified: user.isBankVerified,
       verifiedAt: user.bankVerifiedAt,
       verifiedText: user.maskedBankAccount ? `Verified ${user.maskedBankAccount}` : "Verified",
-      defaultText: "Verify your bank account",
-      route: "/profile?section=bank-account",
+      defaultText: isBusiness ? "Coming soon for business accounts" : "Verify your bank account",
+      route: isBusiness ? "" : "/profile?section=bank-account",
+      comingSoon: isBusiness,
     }),
     createVerificationItem({
       id: "pan",
@@ -212,8 +217,9 @@ export function VerificationSection({ user }: VerificationSectionProps) {
       isVerified: isPANVerified,
       verifiedAt: panData?.panVerifiedAt,
       verifiedText: `Verified ${panData?.maskedPAN || "XXXXX****X"}`,
-      defaultText: "Verify your PAN card",
-      route: "/profile/verify/pan",
+      defaultText: isBusiness ? "Coming soon for business accounts" : "Verify your PAN card",
+      route: isBusiness ? "" : "/profile/verify/pan",
+      comingSoon: isBusiness,
     }),
   ];
 
@@ -245,6 +251,13 @@ export function VerificationSection({ user }: VerificationSectionProps) {
   };
 
   const handleNavigate = (item: VerificationItem) => {
+    if (item.comingSoon && !item.isVerified) {
+      toast.info("Coming Soon", {
+        description: `${item.title} verification for business profiles will be available soon.`,
+      });
+      return;
+    }
+
     if (item.isVerified) {
       if (alreadyVerifiedIds.includes(item.id)) {
         toast.info(getAlreadyVerifiedMessage(item), {
@@ -268,6 +281,9 @@ export function VerificationSection({ user }: VerificationSectionProps) {
     if (item.isVerified) {
       return <CheckCircle className="w-5 h-5 text-green-600" />;
     }
+    if (item.comingSoon) {
+      return <Shield className="w-5 h-5 text-gray-400" />;
+    }
     if (item.required) {
       return <AlertCircle className="w-5 h-5 text-amber-600" />;
     }
@@ -279,6 +295,13 @@ export function VerificationSection({ user }: VerificationSectionProps) {
       return (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
           Verified
+        </span>
+      );
+    }
+    if (item.comingSoon) {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+          Coming Soon
         </span>
       );
     }
