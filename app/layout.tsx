@@ -8,7 +8,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { EnvironmentLogger } from "@/components/EnvironmentLogger";
 import { ScrollToTop } from "@/components/ScrollToTop";
-import { ConditionalPublicChrome } from "@/components/layout/ConditionalPublicChrome";
+
 
 const inter = Inter({
    subsets: ["latin"],
@@ -107,7 +107,7 @@ export default function RootLayout({
                         <ScrollToTop />
                      </Suspense>
                      <Toaster />
-                     <ConditionalPublicChrome>{children}</ConditionalPublicChrome>
+                     {children}
                   </AuthProvider>
                </QueryProvider>
             </ErrorBoundary>
