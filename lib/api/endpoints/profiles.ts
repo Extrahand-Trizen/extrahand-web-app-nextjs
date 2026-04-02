@@ -6,6 +6,33 @@
 import { fetchWithAuth, fetchPublic } from '../client';
 import { UserProfile } from '@/types/user';
 
+function normalizeProfile(raw: any): UserProfile {
+  return {
+    ...raw,
+    // PAN: backend may return either isPanVerified or isPANVerified.
+    isPanVerified:
+      typeof raw?.isPanVerified === 'boolean'
+        ? raw.isPanVerified
+        : typeof raw?.isPANVerified === 'boolean'
+        ? raw.isPANVerified
+        : false,
+    // Email: support legacy/public payload variants.
+    isEmailVerified:
+      typeof raw?.isEmailVerified === 'boolean'
+        ? raw.isEmailVerified
+        : typeof raw?.emailVerified === 'boolean'
+        ? raw.emailVerified
+        : !!raw?.emailVerifiedAt,
+    // Phone: support legacy/public payload variants.
+    isPhoneVerified:
+      typeof raw?.isPhoneVerified === 'boolean'
+        ? raw.isPhoneVerified
+        : typeof raw?.phoneVerified === 'boolean'
+        ? raw.phoneVerified
+        : !!raw?.phoneVerifiedAt || !!raw?.phone,
+  };
+}
+
 export const profilesApi = {
   /**
    * Get current user's profile
@@ -13,20 +40,7 @@ export const profilesApi = {
    */
   async me(): Promise<UserProfile> {
     const raw = await fetchWithAuth('profiles/me');
-
-    // Normalise PAN verification field from backend (isPANVerified) to frontend type (isPanVerified)
-    const normalised: UserProfile = {
-      ...raw,
-      // Prefer explicit isPanVerified if present, otherwise map from isPANVerified, defaulting to false
-      isPanVerified:
-        typeof raw.isPanVerified === 'boolean'
-          ? raw.isPanVerified
-          : typeof raw.isPANVerified === 'boolean'
-          ? raw.isPANVerified
-          : false,
-    };
-
-    return normalised;
+    return normalizeProfile(raw);
   },
 
   /**
@@ -46,7 +60,7 @@ export const profilesApi = {
    */
   async getProfile(userId: string): Promise<UserProfile> {
     const response = await fetchWithAuth(`profiles/${userId}`);
-    return response.profile || response;
+    return normalizeProfile(response.profile || response);
   },
 
   /**
@@ -55,7 +69,7 @@ export const profilesApi = {
    */
   async getPublicProfile(userId: string): Promise<UserProfile> {
     const response = await fetchPublic(`profiles/${userId}`);
-    return response.profile || response;
+    return normalizeProfile(response.profile || response);
   },
 
   /**
