@@ -19,6 +19,7 @@ import { auth } from "./firebase";
 import { api } from "@/lib/api";
 import { sessionsApi } from "@/lib/api/endpoints/sessions";
 import { sessionManager } from "./session";
+import { otpStateManager } from "./otpStateManager";
 import { isOTPAuthInProgress } from "./authFlowState";
 import { UserProfile } from "@/types/user";
 import { useUserStore } from "@/lib/state/userStore";
@@ -60,11 +61,89 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       } catch (error) {
          console.warn("signOut skipped", error);
       }
-      sessionManager.clearSession();
+      // Clear all session data including localStorage, sessionStorage, and cookies
+      if (typeof window !== "undefined") {
+         sessionManager.clearSession();
+         otpStateManager.clearAll();
+         
+         const sessionStorageKeys = [
+            "taskCreationContext",
+            "postAuthRedirectTo",
+            "pendingReferralCode",
+            "pendingPosterLocationText",
+         ];
+         sessionStorageKeys.forEach((key) => {
+            try {
+               sessionStorage.removeItem(key);
+            } catch (e) {
+               console.warn(`Failed to remove sessionStorage key "${key}":`, e);
+            }
+         });
+         
+         const cookies = ["extrahand_auth", "extrahand_redirect_to"];
+         cookies.forEach((cookieName) => {
+            try {
+               document.cookie = `${cookieName}=; Path=/; Max-Age=0; SameSite=Lax`;
+               document.cookie = `${cookieName}=; Path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax`;
+            } catch (e) {
+               console.warn(`Failed to clear cookie "${cookieName}":`, e);
+            }
+         });
+      }
       storeLogout();
       setCurrentUser(null);
       setUserData(null);
       prevUserRef.current = null;
+   }, [storeLogout]);
+
+   // Helper function to clear all session data (localStorage, sessionStorage, and cookies)
+   const clearAllSessionData = useCallback(() => {
+      try {
+         if (typeof window === "undefined") return;
+
+         // Clear localStorage
+         sessionManager.clearSession();
+         
+         // Clear OTP state
+         otpStateManager.clearAll();
+         
+         // Clear all sessionStorage data to remove temporary auth and task data
+         const sessionStorageKeys = [
+            "taskCreationContext",
+            "postAuthRedirectTo",
+            "pendingReferralCode",
+            "pendingPosterLocationText",
+         ];
+         sessionStorageKeys.forEach((key) => {
+            try {
+               sessionStorage.removeItem(key);
+            } catch (e) {
+               console.warn(`Failed to remove sessionStorage key "${key}":`, e);
+            }
+         });
+
+         // Clear all auth cookies with proper path and domain settings
+         const cookies = [
+            "extrahand_auth",
+            "extrahand_redirect_to",
+         ];
+         cookies.forEach((cookieName) => {
+            try {
+               // Clear cookie with various path/domain combinations to ensure it's deleted
+               document.cookie = `${cookieName}=; Path=/; Max-Age=0; SameSite=Lax`;
+               document.cookie = `${cookieName}=; Path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax`;
+            } catch (e) {
+               console.warn(`Failed to clear cookie "${cookieName}":`, e);
+            }
+         });
+
+         // Clear Zustand store
+         storeLogout();
+
+         console.log("🗑️ All session data cleared (localStorage, sessionStorage, OTP state, cookies)");
+      } catch (error) {
+         console.error("Error clearing session data:", error);
+      }
    }, [storeLogout]);
 
    // With HttpOnly cookies, we can't inspect tokens in JS. Assume backend session
@@ -121,12 +200,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
          await Promise.allSettled([sessionsApi.logout(), signOut(auth)]);
 
-         // Clear session data
-         sessionManager.clearSession();
-         storeLogout();
-         
-         // Clear client-side auth cookie
-         document.cookie = "extrahand_auth=; path=/; max-age=0; SameSite=Lax";
+         // Clear all session and storage data
+         clearAllSessionData();
 
          // Clear user state
          setCurrentUser(null);
@@ -141,11 +216,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
          }
       } catch (error) {
          console.error("❌ Logout error:", error);
-         // Even if Firebase signOut fails, clear local session
-         sessionManager.clearSession();
-         storeLogout();
-         // Clear client-side auth cookie
-         document.cookie = "extrahand_auth=; path=/; max-age=0; SameSite=Lax";
+         // Even if Firebase signOut fails, clear all local session data
+         clearAllSessionData();
          setCurrentUser(null);
          setUserData(null);
       }

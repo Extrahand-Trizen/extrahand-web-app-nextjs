@@ -1415,6 +1415,7 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
 
    const isIncoming =
       transaction.type === "payout" || transaction.type === "refund";
+   const isRefund = transaction.type === "refund";
    const statusMessage = getEscrowStatusMessage(escrowStatus, transaction.status);
    const breakdown = buildPaymentBreakdown(transaction);
    const showRefundBreakdown =
@@ -1433,7 +1434,7 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
          <DialogContent className="sm:max-w-lg">
             <DialogHeader>
                <DialogTitle className="text-base font-semibold">
-                  {isIncoming ? "Payout Details" : "Payment Details"}
+                  {isRefund ? "Refund Details" : isIncoming ? "Payout Details" : "Payment Details"}
                </DialogTitle>
             </DialogHeader>
 
@@ -1492,6 +1493,11 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
                         <p className="text-[11px] text-amber-700 mt-1">
                            Platform fee and GST are non-refundable.
                         </p>
+                        {isRefund && (
+                           <p className="text-[11px] text-blue-700 mt-2 font-medium">
+                              💳 Amount will be credited in 5-7 days
+                           </p>
+                        )}
                      </div>
                   )}
                </div>
@@ -1551,10 +1557,14 @@ function buildPaymentBreakdown(transaction: Transaction) {
    const taskAmount = safeNumber(
       transaction.taskAmount ?? metadata.taskAmount ?? amountBreakdown.taskAmount
    );
-   const platformFeeFromMeta = safeNumber(
+   
+   // Try to get platform fee from multiple sources: transaction field, metadata, or amountBreakdown
+   let platformFeeFromMeta = safeNumber(
       transaction.platformFee ?? metadata.platformFee ?? amountBreakdown.platformFee
    );
-   const gstAmountFromMeta = safeNumber(
+   
+   // Try to get GST from multiple sources: transaction field, metadata (platformFeeGst), or amountBreakdown (gst)
+   let gstAmountFromMeta = safeNumber(
       transaction.gstAmount ?? metadata.gstAmount ?? metadata.platformFeeGst ?? amountBreakdown.gst
    );
 
@@ -1567,15 +1577,33 @@ function buildPaymentBreakdown(transaction: Transaction) {
       isIncomingPayout && penaltyDeducted > 0 && netReceived > 0
          ? netReceived + penaltyDeducted
          : 0;
+   
    // Prefer the explicit task amount when available; only fall back to inferred values.
    const normalizedTaskAmount =
       taskAmount > 0
          ? taskAmount
          : grossFromPenalty > 0
-         ? grossFromPenalty
-         : totalPaid;
+          ? grossFromPenalty
+          : totalPaid;
+   
+   // Calculate fees from the difference if not explicitly provided
    const inferredFees = Math.max(totalPaid - normalizedTaskAmount, 0);
-   const platformFee = platformFeeFromMeta > 0 ? platformFeeFromMeta : inferredFees;
+   
+   // Use explicit fee values if available, otherwise infer from total
+   if (platformFeeFromMeta === 0 && inferredFees > 0) {
+      // If no explicit platform fee, estimate it as ~5-6% of task amount or infer from difference
+      platformFeeFromMeta = Math.round(normalizedTaskAmount * 0.05); // 5% estimate
+      if (platformFeeFromMeta > inferredFees) {
+         platformFeeFromMeta = Math.max(Math.floor(inferredFees * 0.7), 0); // Use ~70% of inferred fees
+      }
+   }
+   
+   if (gstAmountFromMeta === 0 && inferredFees > 0) {
+      // If no explicit GST, estimate remainder after platform fee
+      gstAmountFromMeta = Math.max(inferredFees - platformFeeFromMeta, 0);
+   }
+   
+   const platformFee = platformFeeFromMeta > 0 ? platformFeeFromMeta : inferredFees > 0 ? Math.round(inferredFees * 0.6) : 0;
    const gstAmount = gstAmountFromMeta > 0 ? gstAmountFromMeta : Math.max(inferredFees - platformFee, 0);
    const actualRefund = safeNumber(
       metadata.refundAmount ?? metadata.refundedAmount ?? (transaction.type === "refund" ? transaction.amount : 0)

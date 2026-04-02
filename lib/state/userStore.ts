@@ -87,8 +87,18 @@ export const useUserStore = create<UserState>()((set, get) => ({
          profileError: null,
       });
       try {
-         document.cookie = `extrahand_auth=; Path=/; Max-Age=0; SameSite=Lax`;
-      } catch {}
+         // Clear all auth cookies with multiple methods to ensure deletion
+         const cookies = ["extrahand_auth", "extrahand_redirect_to"];
+         cookies.forEach((cookieName) => {
+            // Method 1: Max-Age=0
+            document.cookie = `${cookieName}=; Path=/; Max-Age=0; SameSite=Lax`;
+            // Method 2: Expires in past
+            document.cookie = `${cookieName}=; Path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax`;
+         });
+         console.log("🗑️ Auth cookies cleared from userStore");
+      } catch (e) {
+         console.warn("Failed to clear auth cookies:", e);
+      }
    },
 
    setOnboarding: (state) => set({ onboarding: state, lastUpdated: Date.now() }),
