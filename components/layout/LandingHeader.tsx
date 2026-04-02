@@ -126,6 +126,7 @@ export const LandingHeader: React.FC = () => {
       }
       return "poster";
    }, [userData?.roles]);
+   const tasksRoute = userMenuRole === "tasker" ? "/tasks?tab=myapplications" : "/tasks?tab=mytasks";
 
    // Handle scroll for sticky header styling
    useEffect(() => {
@@ -566,7 +567,7 @@ export const LandingHeader: React.FC = () => {
                                     <button
                                        onClick={() => {
                                           setIsMobileMenuOpen(false);
-                                          handleRouteChange("/tasks");
+                                          handleRouteChange(tasksRoute);
                                        }}
                                        className="w-full flex items-center gap-3 px-3 py-2.5 text-secondary-700 hover:bg-secondary-50 rounded-lg transition-colors"
                                     >

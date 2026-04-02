@@ -1,5 +1,5 @@
 import { UserRound } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const USER_MENU_ITEMS = [
    { label: "Home", route: "/home" },
@@ -33,12 +33,12 @@ export const UserMenu: React.FC<UserMenuProps> = ({
    const isControlled = typeof openProp === "boolean";
    const open = isControlled ? openProp : internalOpen;
 
-   const setOpen = (nextOpen: boolean) => {
+   const setOpen = useCallback((nextOpen: boolean) => {
       if (!isControlled) {
          setInternalOpen(nextOpen);
       }
       onOpenChange?.(nextOpen);
-   };
+   }, [isControlled, onOpenChange]);
 
    const menuRef = useRef<HTMLDivElement>(null);
 
@@ -57,12 +57,14 @@ export const UserMenu: React.FC<UserMenuProps> = ({
       document.addEventListener("mousedown", handleClickOutside);
       return () =>
          document.removeEventListener("mousedown", handleClickOutside);
-   }, [open]);
+   }, [open, setOpen]);
 
    const handleNavigate = (route: string) => {
       onNavigate(route);
       setOpen(false);
    };
+
+   const tasksRoute = role === "tasker" ? "/tasks?tab=myapplications" : "/tasks?tab=mytasks";
 
    const handleLogout = async () => {
       await onLogout();
@@ -95,7 +97,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
                </div>
                <div className="flex flex-col gap-1">
                   <button
-                     onClick={() => handleNavigate("/tasks")}
+                     onClick={() => handleNavigate(tasksRoute)}
                      className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium text-secondary-800 hover:bg-secondary-50"
                   >
                      {role === "poster" ? "My Tasks" : "My Applications"}
