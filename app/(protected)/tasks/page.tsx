@@ -16,22 +16,34 @@ import { useAuth } from "@/lib/auth/context";
 export default function TasksPage() {
    const router = useRouter();
    const searchParams = useSearchParams();
-   const { userData } = useAuth();
+   const { userData, loading } = useAuth();
    const [tasksCount, setTasksCount] = useState<number | null>(null);
    const [applicationsCount, setApplicationsCount] = useState<number | null>(null);
 
    // Determine user role
-   const userRole = useMemo(() => {
+   const userRole = useMemo<"tasker" | "poster" | null>(() => {
       const roles = userData?.roles ?? [];
       if (roles.includes("tasker") || roles.includes("both")) {
          return "tasker";
       }
+      if (roles.includes("poster") || roles.includes("requester")) {
+         return "poster";
+      }
+      if (loading) {
+         return null;
+      }
       return "poster";
-   }, [userData?.roles]);
+   }, [userData?.roles, loading]);
+
+   const isRoleReady = userRole !== null;
 
    // Determine which tabs to show based on role and counts
    const visibleTabs = useMemo(() => {
       const tabs: Array<"mytasks" | "myapplications"> = [];
+
+      if (!userRole) {
+         return tabs;
+      }
 
       if (userRole === "tasker") {
          // Taskers land on applications; show My Tasks only when there are posted tasks.
@@ -56,6 +68,10 @@ export default function TasksPage() {
    }, [userRole]);
 
    const activeTab = useMemo(() => {
+      if (!isRoleReady) {
+         return "myapplications";
+      }
+
       const tabParam = searchParams.get("tab");
       const selectedTab =
          tabParam === "myapplications" || tabParam === "mytasks"
@@ -67,7 +83,7 @@ export default function TasksPage() {
          return selectedTab;
       }
       return visibleTabs.length > 0 ? visibleTabs[0] : defaultTab;
-   }, [searchParams, visibleTabs, defaultTab]);
+   }, [isRoleReady, searchParams, visibleTabs, defaultTab]);
 
 
    const handleTabChange = (value: string) => {
@@ -101,6 +117,7 @@ export default function TasksPage() {
                            </div>
 
                         </div>
+                        {isRoleReady && (
                         <TabsList className="bg-transparent p-0 h-auto gap-4 sm:gap-6">
                            {visibleTabs.includes("mytasks") && (
                               <TabsTrigger
@@ -130,6 +147,7 @@ export default function TasksPage() {
                               </TabsTrigger>
                            )}
                         </TabsList>
+                        )}
                      </div>
                   </div>
                </div>
@@ -137,12 +155,18 @@ export default function TasksPage() {
 
             {/* Content */}
             <main className="w-full">
+               {!isRoleReady && (
+                  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 text-secondary-500">
+                     Loading your tasks...
+                  </div>
+               )}
+
                {/* Both components are always rendered to fetch counts, but only show the active one */}
-               <div className={activeTab === "mytasks" ? "" : "hidden"}>
+               <div className={isRoleReady && activeTab === "mytasks" ? "" : "hidden"}>
                   <MyTasksContent onCountChange={setTasksCount} />
                </div>
 
-               <div className={activeTab === "myapplications" ? "" : "hidden"}>
+               <div className={isRoleReady && activeTab === "myapplications" ? "" : "hidden"}>
                   <MyApplicationsContent onCountChange={setApplicationsCount} />
                </div>
             </main>
