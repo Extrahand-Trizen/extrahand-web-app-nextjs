@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
 
@@ -263,10 +264,10 @@ export const CategoriesExplorer = () => {
 
             {/* View all button */}
             <div className="text-center mt-6 md:mt-12">
-               <div className="inline-flex items-center gap-2 px-5 py-3 md:px-6 bg-primary-500 font-semibold rounded-xl text-sm md:text-lg shadow-lg text-white opacity-90 cursor-default">
+               <Link href="/services" className="inline-flex items-center gap-2 px-5 py-3 md:px-6 bg-primary-500 hover:bg-primary-600 transition-colors font-semibold rounded-xl text-sm md:text-lg shadow-lg text-white opacity-90 cursor-pointer">
                   View all categories
                   <ArrowRight className="h-5 w-5" />
-               </div>
+               </Link>
             </div>
          </div>
       </section>
