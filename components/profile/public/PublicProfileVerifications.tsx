@@ -53,11 +53,12 @@ export function PublicProfileVerifications({ user }: { user: UserProfile }) {
           <VerificationBadge label="Phone Verified" verified={isPhoneVerified} />
           <VerificationBadge label="Email Verified" verified={isEmailVerified} />
           <VerificationBadge label="Bank Verified" verified={!!user.isBankVerified} />
+          <VerificationBadge
+            label="PAN Verified"
+            verified={!!user.business?.pan?.isPANVerified || !!user.isPanVerified}
+          />
           {user.userType === "business" ? (
-            <>
-              <VerificationBadge label="PAN Verified" verified={!!user.business?.pan?.isPANVerified || !!user.isPanVerified} />
-              <VerificationBadge label="GST Verified" verified={!!user.business?.isGSTVerified} />
-            </>
+            <VerificationBadge label="GST Verified" verified={!!user.business?.isGSTVerified} />
           ) : null}
         </div>
       </CardContent>
