@@ -1,13 +1,13 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle2, TrendingUp, Zap } from "lucide-react";
+import { CheckCircle2, Star, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
 type TrustMetricsProps = {
   completedTasks: number;
   completionRatePercent: number;
-  responseTimeLabel?: string | null;
+  avgRating: number;
 };
 
 function Metric({
@@ -44,11 +44,10 @@ function Metric({
 export function PublicProfileTrustMetrics({
   completedTasks,
   completionRatePercent,
-  responseTimeLabel,
+  avgRating,
 }: TrustMetricsProps) {
+  const safeRating = Number.isFinite(avgRating) ? Math.max(0, Math.min(5, avgRating)) : 0;
   const hasAnyTask = completedTasks > 0;
-  const hasSomethingToShow = hasAnyTask || Boolean(responseTimeLabel);
-  if (!hasSomethingToShow) return null;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -67,18 +66,9 @@ export function PublicProfileTrustMetrics({
             </Badge>
           )
         }
-        sublabel={hasAnyTask ? undefined : undefined}
       />
-      {hasAnyTask ? (
-        <Metric icon={TrendingUp} label="Completion Rate" value={`${completionRatePercent}%`} />
-      ) : (
-        <div />
-      )}
-      {responseTimeLabel ? (
-        <Metric icon={Zap} label="Response Time" value={responseTimeLabel} />
-      ) : (
-        <div />
-      )}
+      <Metric icon={TrendingUp} label="Completion Rate" value={`${completionRatePercent}%`} />
+      <Metric icon={Star} label="Avg Rating" value={safeRating > 0 ? safeRating.toFixed(1) : "New"} />
     </div>
   );
 }

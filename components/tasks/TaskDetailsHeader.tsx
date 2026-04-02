@@ -26,6 +26,18 @@ export function TaskDetailsHeader({
 }: TaskDetailsHeaderProps) {
    const budgetAmount =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
+   const budgetObj =
+      typeof task.budget === "object"
+         ? (task.budget as {
+              negotiable?: boolean;
+              isNegotiable?: boolean;
+           })
+         : null;
+   const isNegotiable =
+      task.budgetType === "negotiable" ||
+      budgetObj?.negotiable === true ||
+      budgetObj?.isNegotiable === true;
+   const isHourly = task.budgetType === "hourly";
    const categoryLabel = task.categoryLabel || task.subcategory || task.category;
    
    // Determine if task is remote
@@ -161,9 +173,9 @@ export function TaskDetailsHeader({
                <div className="text-2xl lg:text-3xl font-bold text-primary-600">
                   ₹{budgetAmount.toLocaleString()}
                </div>
-               {task.budgetType && task.budgetType !== "fixed" && (
+               {(isHourly || isNegotiable) && (
                   <div className="text-xs text-secondary-500 mt-1">
-                     {task.budgetType === "hourly" ? "per hour" : "negotiable"}
+                     {isHourly ? "per hour" : "negotiable"}
                   </div>
                )}
             </div>
@@ -235,9 +247,9 @@ export function TaskDetailsHeader({
                      <p className="text-xl md:text-2xl font-bold text-primary-600">
                         ₹{budgetAmount.toLocaleString()}
                      </p>
-                     {task.budgetType && task.budgetType !== "fixed" && (
+                     {(isHourly || isNegotiable) && (
                         <p className="text-xs text-secondary-500">
-                           {task.budgetType === "hourly"
+                           {isHourly
                               ? "per hour"
                               : "negotiable"}
                         </p>

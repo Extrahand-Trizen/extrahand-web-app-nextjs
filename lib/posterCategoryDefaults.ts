@@ -15,11 +15,11 @@ export const DEFAULT_TOP_TASKERS = [
 ];
 
 export const DEFAULT_REVIEWS = [
-  { reviewerName: "Priya S", reviewerLocation: "Mumbai", price: "₹1,200", text: "Very professional and delivered exactly what we needed. Would definitely hire again!", jobType: "Home service" },
-  { reviewerName: "Rahul K", reviewerLocation: "Delhi NCR", price: "₹800", text: "Quick response and great quality work. Highly recommend.", jobType: "Repair" },
-  { reviewerName: "Anita M", reviewerLocation: "Bangalore", price: "₹2,500", text: "Excellent service from start to finish. The expert was punctual and very skilled.", jobType: "Consultation" },
-  { reviewerName: "Vikram P", reviewerLocation: "Chennai", price: "₹950", text: "Above and beyond what we expected. Problem solved in no time.", jobType: "Installation" },
-  { reviewerName: "Sneha R", reviewerLocation: "Pune", price: "₹1,500", text: "Reliable and trustworthy. Completed the task with great attention to detail.", jobType: "Maintenance" },
+  { reviewerName: "Priya S", reviewerLocation: "Hyderabad", price: "₹1,200", text: "Very professional and delivered exactly what we needed. Would definitely hire again!", jobType: "Home service" },
+  { reviewerName: "Rahul K", reviewerLocation: "Hyderabad", price: "₹800", text: "Quick response and great quality work. Highly recommend.", jobType: "Repair" },
+  { reviewerName: "Anita M", reviewerLocation: "Hyderabad", price: "₹2,500", text: "Excellent service from start to finish. The expert was punctual and very skilled.", jobType: "Consultation" },
+  { reviewerName: "Vikram P", reviewerLocation: "Hyderabad", price: "₹950", text: "Above and beyond what we expected. Problem solved in no time.", jobType: "Installation" },
+  { reviewerName: "Sneha R", reviewerLocation: "Hyderabad", price: "₹1,500", text: "Reliable and trustworthy. Completed the task with great attention to detail.", jobType: "Maintenance" },
   { reviewerName: "Arjun D", reviewerLocation: "Hyderabad", price: "₹1,100", text: "Very helpful and knew what to do straight away. Will book again.", jobType: "Support" },
 ];
 

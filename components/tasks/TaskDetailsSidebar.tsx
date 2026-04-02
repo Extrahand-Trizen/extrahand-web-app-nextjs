@@ -51,6 +51,18 @@ export function TaskDetailsSidebar({
 
    const budgetAmount =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
+   const budgetObj =
+      typeof task.budget === "object"
+         ? (task.budget as {
+              negotiable?: boolean;
+              isNegotiable?: boolean;
+           })
+         : null;
+   const isNegotiable =
+      task.budgetType === "negotiable" ||
+      budgetObj?.negotiable === true ||
+      budgetObj?.isNegotiable === true;
+   const isHourly = task.budgetType === "hourly";
    const categoryLabel = task.categoryLabel || task.subcategory || task.category;
 
    // Extract requester data from task (already populated by backend)
@@ -71,9 +83,9 @@ export function TaskDetailsSidebar({
                   <span className="text-3xl font-bold text-primary-600">
                      ₹{budgetAmount.toLocaleString()}
                   </span>
-                  {task.budgetType && task.budgetType !== "fixed" && (
+                  {(isHourly || isNegotiable) && (
                      <span className="text-xs text-secondary-500">
-                        {task.budgetType === "hourly" ? "/hr" : "negotiable"}
+                        {isHourly ? "/hr" : "negotiable"}
                      </span>
                   )}
                </div>

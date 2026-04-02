@@ -1,8 +1,9 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Star } from "lucide-react";
+import { ChevronDown, ChevronUp, Star } from "lucide-react";
 import type { Review } from "@/types/profile";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 type RatingKey = "communication" | "quality" | "timeliness" | "professionalism" | "value";
 
@@ -76,6 +77,7 @@ export function PublicProfilePerformanceBreakdown({
   completedTasks: number;
 }) {
   const { averages, hasAny } = useMemo(() => computeAverages(reviews), [reviews]);
+  const [expanded, setExpanded] = useState(false);
 
   if (!completedTasks || completedTasks <= 0) return null;
   if (!hasAny) return null;
@@ -87,20 +89,40 @@ export function PublicProfilePerformanceBreakdown({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <div className="flex items-end justify-between gap-3">
-          <CardTitle className="text-base">Performance breakdown</CardTitle>
-          <div className={cn("text-xs text-muted-foreground", reviewsWithDetailedRatings ? "" : "hidden")}>
-            {reviewsWithDetailedRatings} review{reviewsWithDetailedRatings === 1 ? "" : "s"}
+        <div className="flex items-center justify-between gap-3">
+          <div className="space-y-1">
+            <CardTitle className="text-base">Performance breakdown</CardTitle>
+            <div className={cn("text-xs text-muted-foreground", reviewsWithDetailedRatings ? "" : "hidden")}>
+              {reviewsWithDetailedRatings} review{reviewsWithDetailedRatings === 1 ? "" : "s"}
+            </div>
           </div>
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-8 px-2 text-secondary-700 hover:text-secondary-900"
+            onClick={() => setExpanded((prev) => !prev)}
+          >
+            {expanded ? (
+              <>
+                Hide <ChevronUp className="size-4 ml-1" />
+              </>
+            ) : (
+              <>
+                Show <ChevronDown className="size-4 ml-1" />
+              </>
+            )}
+          </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {RATING_ROWS.map(({ key, label }) => {
-          const v = averages[key];
-          if (typeof v !== "number") return null;
-          return <RatingRow key={key} label={label} value={v} />;
-        })}
-      </CardContent>
+      {expanded ? (
+        <CardContent className="space-y-3">
+          {RATING_ROWS.map(({ key, label }) => {
+            const v = averages[key];
+            if (typeof v !== "number") return null;
+            return <RatingRow key={key} label={label} value={v} />;
+          })}
+        </CardContent>
+      ) : null}
     </Card>
   );
 }

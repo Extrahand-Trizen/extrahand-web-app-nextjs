@@ -456,28 +456,28 @@ function buildReviews(serviceName: string): PosterReview[] {
    return [
       {
          reviewerName: "Priya S",
-         reviewerLocation: "Mumbai, Maharashtra",
+         reviewerLocation: "Hyderabad, Telangana",
          jobType: serviceName,
          text: `Very professional ${serviceName.toLowerCase()} experience and excellent delivery quality.`,
          price: "₹1,200",
       },
       {
          reviewerName: "Rahul K",
-         reviewerLocation: "Delhi NCR",
+         reviewerLocation: "Hyderabad, Telangana",
          jobType: serviceName,
          text: `Quick response and reliable outcome for my ${serviceName.toLowerCase()} requirement.`,
          price: "₹800",
       },
       {
          reviewerName: "Anita M",
-         reviewerLocation: "Bangalore, Karnataka",
+         reviewerLocation: "Hyderabad, Telangana",
          jobType: serviceName,
          text: "Excellent support from start to finish. I would definitely book this service again.",
          price: "₹2,500",
       },
       {
          reviewerName: "Vikram P",
-         reviewerLocation: "Chennai, Tamil Nadu",
+         reviewerLocation: "Hyderabad, Telangana",
          jobType: serviceName,
          text: "Above expectations and completed with strong attention to detail.",
          price: "₹950",

@@ -104,14 +104,9 @@ export function PublicProfile({
       ? Math.round((actualStats.completedTasks / actualStats.totalTasks) * 100)
       : 0;
 
-   const availability = getAvailabilityInfo(user);
-   const responseTimeLabel = normalizeResponseTimeLabel(availability?.responseTime);
+  const availability = getAvailabilityInfo(user);
 
    const headline = buildHeadline(user);
-   const ratingNode = buildRatingLabel({
-      rating: actualStats.rating,
-      totalReviews: actualStats.totalReviews,
-   });
    const meetCardRatingNode = buildMeetCardRatingLabel({
       rating: actualStats.rating,
       totalReviews: actualStats.totalReviews,
@@ -135,11 +130,10 @@ export function PublicProfile({
             <div className="space-y-6 min-w-0">
                <PublicProfileAbout user={user} />
 
-               {/* Reviews: carousel + see all */}
-               <PublicProfileReviews
-                  reviews={reviews}
-                  userName={user.name}
-                  memberSince={user.createdAt}
+               <PublicProfileTrustMetrics
+                  completedTasks={actualStats.completedTasks ?? 0}
+                  completionRatePercent={completionRate}
+                  avgRating={actualStats.rating ?? 0}
                />
 
                <PublicProfilePerformanceBreakdown
@@ -147,10 +141,11 @@ export function PublicProfile({
                   completedTasks={actualStats.completedTasks ?? 0}
                />
 
-               <PublicProfileTrustMetrics
-                  completedTasks={actualStats.completedTasks ?? 0}
-                  completionRatePercent={completionRate}
-                  responseTimeLabel={responseTimeLabel}
+               {/* Reviews: carousel + see all */}
+               <PublicProfileReviews
+                  reviews={reviews}
+                  userName={user.name}
+                  memberSince={user.createdAt}
                />
 
                <PublicProfileSkills user={user} />
@@ -181,15 +176,6 @@ function buildHeadline(user: UserProfile): string {
 
    if (city) return `Helping with home tasks in ${city}`;
    return "Helping with home tasks";
-}
-
-function normalizeResponseTimeLabel(label?: string | null): string | null {
-   if (!label) return null;
-   const trimmed = label.trim();
-   if (!trimmed) return null;
-   const lowered = trimmed.toLowerCase();
-   if (lowered === "n/a" || lowered === "na" || lowered === "not available") return null;
-   return trimmed;
 }
 
 export default PublicProfile;

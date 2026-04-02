@@ -239,6 +239,12 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
    );
    const bestSuggestion = categorySuggestions[0];
    const shouldAutoSelect = isHighConfidence(categorySuggestions);
+   const selectedCategory = CATEGORIES.find((cat) => cat.id === category);
+   const selectedCategoryChip = selectedCategory
+      ? [{ id: selectedCategory.id, label: selectedCategory.label, score: 0, confidence: 100 }]
+      : [];
+   const displayedCategoryChips =
+      selectedCategoryChip.length > 0 ? selectedCategoryChip : categorySuggestions;
 
    useEffect(() => {
       const autoSelectedCategory = autoSelectedCategoryRef.current;
@@ -365,14 +371,15 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
             )}
          />
 
-         {(title.trim() || description.trim()) && categorySuggestions.length > 0 && (
+         {((title.trim() || description.trim()) && categorySuggestions.length > 0) ||
+         Boolean(selectedCategory) ? (
             <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 md:p-4 space-y-3">
                <div className="flex items-start justify-between gap-3">
                   <div>
                      <p className="text-xs md:text-sm font-semibold text-gray-900">
                         Suggested category
                      </p>
-                     {categorySuggestions.length > 1 && (
+                     {categorySuggestions.length > 1 && !selectedCategory && (
                         <p className="text-[11px] md:text-xs text-gray-600 mt-1">
                            Select a category
                         </p>
@@ -391,7 +398,7 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
                </div>
 
                <div className="flex flex-wrap gap-2">
-                  {categorySuggestions.map((suggestion) => {
+                  {displayedCategoryChips.map((suggestion) => {
                      const isSelected = category === suggestion.id;
                      return (
                         <button
@@ -458,7 +465,7 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
                   </DialogContent>
                </Dialog>
             </div>
-         )}
+         ) : null}
 
          {/* Category (hidden field; selection is controlled via Suggested category UI) */}
          <FormField
