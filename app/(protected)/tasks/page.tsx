@@ -6,12 +6,11 @@
  * Tab ordering and visibility is based on user role and counts
  */
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MyTasksContent } from "@/components/tasks/MyTasksContent";
 import { MyApplicationsContent } from "@/components/tasks/MyApplicationsContent";
-import { useDashboardStore } from "@/lib/state/dashboardStore";
 import { useAuth } from "@/lib/auth/context";
 
 export default function TasksPage() {
@@ -34,21 +33,22 @@ export default function TasksPage() {
    const visibleTabs = useMemo(() => {
       const tabs: Array<"mytasks" | "myapplications"> = [];
 
-      /**
-       * Important UX: don't hide tabs while counts are still loading.
-       * Otherwise clicking a tab can "snap back" when activeTab is forced
-       * to the first visible tab (exact bug you're seeing).
-       */
       if (userRole === "tasker") {
-         // For taskers: show applications first, but keep My Tasks selectable.
-         tabs.push("myapplications", "mytasks");
+         // Taskers land on applications; show My Tasks only when there are posted tasks.
+         tabs.push("myapplications");
+         if ((tasksCount ?? 0) > 0) {
+            tabs.push("mytasks");
+         }
       } else {
-         // For posters: show tasks first, but keep My Applications selectable.
-         tabs.push("mytasks", "myapplications");
+         // Posters land on tasks; show My Applications only when there are applications.
+         tabs.push("mytasks");
+         if ((applicationsCount ?? 0) > 0) {
+            tabs.push("myapplications");
+         }
       }
 
       return tabs;
-   }, [userRole]);
+   }, [userRole, tasksCount, applicationsCount]);
 
    // Set default tab based on role and visible tabs
    const defaultTab = useMemo(() => {
@@ -57,7 +57,10 @@ export default function TasksPage() {
 
    const activeTab = useMemo(() => {
       const tabParam = searchParams.get("tab");
-      const selectedTab = tabParam === "myapplications" ? "myapplications" : "mytasks";
+      const selectedTab =
+         tabParam === "myapplications" || tabParam === "mytasks"
+            ? tabParam
+            : defaultTab;
 
       // Ensure activeTab is visible; if not, use default
       if (visibleTabs.includes(selectedTab)) {
