@@ -1802,16 +1802,21 @@ function formatDateTime(date: Date | string): string {
 }
 
 function safeNumber(value: unknown): number {
-   if (typeof value === "number" && Number.isFinite(value)) return Math.round(Math.abs(value));
+   if (typeof value === "number" && Number.isFinite(value)) {
+      return Number(Math.abs(value).toFixed(2));
+   }
    if (typeof value === "string") {
       const parsed = Number.parseFloat(value.replace(/,/g, ""));
-      if (Number.isFinite(parsed)) return Math.round(Math.abs(parsed));
+      if (Number.isFinite(parsed)) return Number(Math.abs(parsed).toFixed(2));
    }
    return 0;
 }
 
 function safeCurrency(value: unknown): string {
-   return safeNumber(value).toLocaleString("en-IN");
+   return safeNumber(value).toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+   });
 }
 
 // ============================================================================
