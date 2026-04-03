@@ -3,6 +3,26 @@
  * Prevents meaningless, spam-like, or low-quality text submissions
  */
 
+const COMMON_MEANINGFUL_WORDS = new Set([
+  'clean', 'cleaning', 'deep', 'repair', 'fix', 'install', 'replace', 'service', 'help', 'need', 'required',
+  'urgent', 'today', 'tomorrow', 'home', 'house', 'apartment', 'room', 'kitchen', 'bathroom', 'office',
+  'plumber', 'plumbing', 'electrician', 'electrical', 'carpenter', 'painting', 'paint', 'garden', 'gardening',
+  'delivery', 'pickup', 'assemble', 'assembly', 'furniture', 'sofa', 'bed', 'wardrobe', 'table', 'chair',
+  'ac', 'air', 'conditioner', 'appliance', 'washing', 'machine', 'refrigerator', 'fridge', 'geyser',
+  'pest', 'control', 'car', 'wash', 'laundry', 'ironing', 'driver', 'tutor', 'teacher', 'cook', 'chef',
+  'pet', 'dog', 'cat', 'walking', 'security', 'camera', 'cctv', 'installation', 'moving', 'packers', 'movers',
+  'website', 'mobile', 'app', 'design', 'develop', 'developer', 'photography', 'photo', 'video', 'event',
+  // Common Hinglish terms to avoid false negatives
+  'ghar', 'safai', 'kaam', 'kam', 'chahiye', 'karna', 'karni', 'pani', 'tank', 'bijli', 'plumber', 'mistri',
+  'paint', 'driver', 'khana', 'banwana', 'madad', 'turant', 'aaj', 'kal', 'andar', 'bahar', 'naya', 'purana'
+]);
+
+const COMMON_BIGRAMS = new Set([
+  'th', 'he', 'in', 'er', 'an', 're', 'on', 'at', 'en', 'nd', 'ti', 'es', 'or', 'te', 'of', 'ed', 'is',
+  'it', 'al', 'ar', 'st', 'to', 'nt', 'ng', 'se', 'ha', 'as', 'ou', 'io', 'le', 've', 'co', 'me', 'de',
+  'ra', 'ri', 'ro', 'la', 'li', 'na', 'ni', 'sa', 'ka', 'ki', 'ke', 'ai', 'ch', 'sh', 'bh', 'ph', 'dh'
+]);
+
 function countVowels(text: string): number {
   return (text.match(/[aeiouy]/gi) || []).length;
 }
@@ -15,8 +35,28 @@ function extractWords(text: string): string[] {
   return text.match(/[A-Za-z]+(?:'[A-Za-z]+)*/g) || [];
 }
 
+function normalizeWord(word: string): string {
+  return word.toLowerCase().replace(/[^a-z]/g, '');
+}
+
+function getBigramScore(word: string): number {
+  if (word.length < 2) return 0;
+  let total = 0;
+  let hits = 0;
+  for (let i = 0; i < word.length - 1; i++) {
+    const bg = word.slice(i, i + 2);
+    total++;
+    if (COMMON_BIGRAMS.has(bg)) hits++;
+  }
+  return total ? hits / total : 0;
+}
+
 function isLikelyMeaningfulWord(word: string): boolean {
-  const normalized = word.toLowerCase();
+  const normalized = normalizeWord(word);
+
+  if (COMMON_MEANINGFUL_WORDS.has(normalized)) {
+    return true;
+  }
 
   if (normalized.length < 3) {
     return false;
@@ -39,6 +79,14 @@ function isLikelyMeaningfulWord(word: string): boolean {
 
   const uniqueChars = new Set(normalized.split(''));
   if (normalized.length >= 5 && uniqueChars.size <= 2) {
+    return false;
+  }
+
+  const hasDictionarySignal = false;
+  const bigramScore = getBigramScore(normalized);
+  const hasShapeSignal = normalized.length >= 4 && bigramScore >= 0.34;
+
+  if (!hasDictionarySignal && !hasShapeSignal) {
     return false;
   }
 
