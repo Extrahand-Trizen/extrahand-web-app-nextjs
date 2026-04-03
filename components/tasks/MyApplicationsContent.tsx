@@ -20,7 +20,6 @@ import { applicationsApi } from "@/lib/api/endpoints/applications";
 import { getErrorMessage } from "@/lib/utils/errorUtils";
 import { toast } from "sonner";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { TaskBankAccountBanner } from "@/components/tasks/TaskBankAccountBanner";
 import { buildPublicTaskPath } from "@/lib/utils/taskHandle";
 
 type ApplicationStatus = TaskApplication["status"];
@@ -209,10 +208,6 @@ export function MyApplicationsContent({
 
    return (
       <div className="flex flex-col flex-1">
-         <div className="px-4 sm:px-6 lg:px-8 pt-4">
-            <TaskBankAccountBanner />
-         </div>
-
          {/* Filters */}
          <MyApplicationsFilters
             searchQuery={searchQuery}

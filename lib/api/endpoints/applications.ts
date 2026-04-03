@@ -4,7 +4,7 @@
  */
 
 import { fetchWithAuth, fetchPublic } from '../client';
-import { TaskApplication, CreateApplicationRequest, UpdateApplicationRequest, ApplicationsResponse } from '@/types/application';
+import { TaskApplication, CreateApplicationRequest, UpdateApplicationRequest, ApplicationsResponse, NegotiateApplicationRequest } from '@/types/application';
 import { ApplicationQueryParams } from '@/types/api';
 
 export const applicationsApi = {
@@ -60,6 +60,17 @@ export const applicationsApi = {
     const response = await fetchWithAuth(`applications/${applicationId}`, {
       method: 'PUT',
       body: JSON.stringify(updateData),
+    });
+    return response.data || response;
+  },
+
+  async negotiateApplication(
+    applicationId: string,
+    payload: NegotiateApplicationRequest
+  ): Promise<TaskApplication> {
+    const response = await fetchWithAuth(`applications/${applicationId}/negotiate`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
     });
     return response.data || response;
   },

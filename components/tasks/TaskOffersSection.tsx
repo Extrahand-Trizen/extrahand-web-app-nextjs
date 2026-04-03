@@ -9,6 +9,13 @@ import Link from "next/link";
 import { buildPublicProfilePath } from "@/lib/utils/profileHandle";
 import Image from "next/image";
 import {
+   Dialog,
+   DialogContent,
+   DialogHeader,
+   DialogTitle,
+   DialogFooter,
+} from "@/components/ui/dialog";
+import {
    Select,
    SelectContent,
    SelectItem,
@@ -97,6 +104,9 @@ export function TaskOffersSection({
    const [selectedApplication, setSelectedApplication] =
       useState<TaskApplication | null>(null);
    const [showPaymentModal, setShowPaymentModal] = useState(false);
+   const [counterApplication, setCounterApplication] = useState<TaskApplication | null>(null);
+   const [counterAmountInput, setCounterAmountInput] = useState("");
+   const [isCounterSubmitting, setIsCounterSubmitting] = useState(false);
    const [applicantBadges, setApplicantBadges] = useState<Record<string, BadgeType>>({});
    const { currentUser, userData } = useAuth();
    const currentUid = currentUser?.uid;
@@ -214,6 +224,75 @@ export function TaskOffersSection({
       } catch (error) {
          console.error("Error rejecting application:", error);
          toast.error("Failed to reject offer", {
+            description: "Please try again.",
+         });
+      }
+   };
+
+   const openCounterDialog = (application: TaskApplication) => {
+      const currentAmount = application.negotiation?.currentAmount ?? application.proposedBudget.amount;
+      setCounterApplication(application);
+      setCounterAmountInput(String(currentAmount));
+   };
+
+   const handleCounterAmountChange = (rawValue: string) => {
+      const digitsOnly = rawValue.replace(/\D/g, "");
+      if (!digitsOnly) {
+         setCounterAmountInput("");
+         return;
+      }
+      const numericValue = Number(digitsOnly);
+      setCounterAmountInput(String(Math.min(50000, numericValue)));
+   };
+
+   const handleSubmitCounterOffer = async () => {
+      if (!counterApplication) return;
+
+      const amount = Number(counterAmountInput);
+      if (!Number.isInteger(amount) || amount <= 0) {
+         toast.error("Enter a valid amount", {
+            description: "Amount must be numbers only.",
+         });
+         return;
+      }
+      if (amount > 50000) {
+         toast.error("Amount too high", {
+            description: "Amount must be 50000 or less.",
+         });
+         return;
+      }
+
+      try {
+         setIsCounterSubmitting(true);
+         await applicationsApi.negotiateApplication(counterApplication._id, {
+            action: "counter",
+            amount,
+         });
+         toast.success("Counter offer sent");
+         setCounterApplication(null);
+         setCounterAmountInput("");
+         await applicationsQuery.refetch();
+      } catch (error) {
+         console.error("Error sending counter offer:", error);
+         toast.error("Failed to send counter offer", {
+            description: "Please try again.",
+         });
+      } finally {
+         setIsCounterSubmitting(false);
+      }
+   };
+
+   const handleNegotiationAction = async (
+      application: TaskApplication,
+      action: "accept" | "reject"
+   ) => {
+      try {
+         await applicationsApi.negotiateApplication(application._id, { action });
+         toast.success(action === "accept" ? "Counter accepted" : "Offer rejected");
+         await applicationsQuery.refetch();
+      } catch (error) {
+         console.error(`Error applying ${action} action:`, error);
+         toast.error("Action failed", {
             description: "Please try again.",
          });
       }
@@ -420,6 +499,49 @@ export function TaskOffersSection({
                         <div className="flex justify-between text-xs text-secondary-500 pt-2">
                            <span>Submitted: {new Date(myApplication.createdAt).toLocaleDateString()}</span>
                         </div>
+
+                        {myApplication.status === "pending" && myApplication.negotiation?.status === "countered_by_poster" && (
+                           <div className="mt-3 pt-3 border-t border-primary-200">
+                              <p className="text-sm font-semibold text-secondary-900 mb-2">
+                                 Client countered with ₹{(myApplication.negotiation.currentAmount || myApplication.proposedBudget.amount).toLocaleString()}
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                 <Button
+                                    size="sm"
+                                    onClick={() => handleNegotiationAction(myApplication, "accept")}
+                                    className="bg-primary-600 hover:bg-primary-700 text-white"
+                                 >
+                                    Accept
+                                 </Button>
+                                 <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => openCounterDialog(myApplication)}
+                                 >
+                                    Counter again
+                                 </Button>
+                                 <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-red-600 border-red-200 hover:bg-red-50"
+                                    onClick={() => handleNegotiationAction(myApplication, "reject")}
+                                 >
+                                    Reject
+                                 </Button>
+                              </div>
+                           </div>
+                        )}
+
+                        {myApplication.status === "pending" && myApplication.negotiation?.status === "accepted" && (
+                           <div className="mt-3 pt-3 border-t border-primary-200">
+                              <p className="text-sm font-semibold text-green-700">
+                                 Final price agreed: ₹{(myApplication.negotiation.currentAmount || myApplication.proposedBudget.amount).toLocaleString()}
+                              </p>
+                              <p className="text-xs text-secondary-500 mt-1">
+                                 Waiting for client to assign and pay.
+                              </p>
+                           </div>
+                        )}
                      </div>
                   </div>
                </div>
@@ -779,6 +901,26 @@ export function TaskOffersSection({
                                     </div>
                                  )}
 
+                              {isOwner && application.status === "pending" && application.negotiation?.status === "countered_by_tasker" && (
+                                 <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+                                    <p className="text-xs text-amber-800 font-medium">
+                                       Tasker countered with ₹{(application.negotiation.currentAmount || application.proposedBudget.amount).toLocaleString()}
+                                    </p>
+                                 </div>
+                              )}
+
+                              {isOwner && application.status === "pending" && application.negotiation?.status === "accepted" && (
+                                 <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 flex items-center justify-between gap-2">
+                                    <div>
+                                       <p className="text-xs text-green-800 font-semibold">Final price agreed</p>
+                                       <p className="text-[11px] text-green-700">Both parties confirmed</p>
+                                    </div>
+                                    <p className="text-sm font-bold text-green-800">
+                                       ₹{(application.negotiation.currentAmount || application.proposedBudget.amount).toLocaleString()}
+                                    </p>
+                                 </div>
+                              )}
+
                               {/* Actions - Only show for owner */}
                               {isOwner && (
                                  <div className="flex gap-2 w-full flex-wrap">
@@ -806,8 +948,18 @@ export function TaskOffersSection({
                                              }
                                              className="bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-[10px] md:text-xs font-semibold px-5"
                                           >
-                                             Accept Offer
+                                             {application.negotiation?.status === "accepted" ? "Assign & Pay" : "Accept Offer"}
                                           </Button>
+                                          {application.proposedBudget.isNegotiable && (
+                                             <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => openCounterDialog(application)}
+                                                className="rounded-lg text-[10px] md:text-xs font-semibold px-5"
+                                             >
+                                                Negotiate
+                                             </Button>
+                                          )}
                                           <Button
                                              size="sm"
                                              onClick={() =>
@@ -831,6 +983,60 @@ export function TaskOffersSection({
                </div>
             )}
          </div>
+
+         <Dialog
+            open={!!counterApplication}
+            onOpenChange={(open) => {
+               if (!open) {
+                  setCounterApplication(null);
+                  setCounterAmountInput("");
+               }
+            }}
+         >
+            <DialogContent className="sm:max-w-md">
+               <DialogHeader>
+                  <DialogTitle>Counter offer</DialogTitle>
+               </DialogHeader>
+               <div className="space-y-3">
+                  <p className="text-sm text-secondary-600">
+                     Current offer: ₹{(counterApplication?.negotiation?.currentAmount || counterApplication?.proposedBudget.amount || 0).toLocaleString()}
+                  </p>
+                  <div className="space-y-1">
+                     <label className="text-sm font-medium text-secondary-700">Amount (max ₹50,000)</label>
+                     <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary-500">₹</span>
+                        <input
+                           value={counterAmountInput}
+                           onChange={(e) => handleCounterAmountChange(e.target.value)}
+                           inputMode="numeric"
+                           pattern="[0-9]*"
+                           maxLength={5}
+                           placeholder="Enter amount"
+                           className="w-full h-11 rounded-md border border-secondary-300 pl-8 pr-3 text-base focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        />
+                     </div>
+                  </div>
+               </div>
+               <DialogFooter>
+                  <Button
+                     variant="outline"
+                     onClick={() => {
+                        setCounterApplication(null);
+                        setCounterAmountInput("");
+                     }}
+                  >
+                     Cancel
+                  </Button>
+                  <Button
+                     onClick={handleSubmitCounterOffer}
+                     disabled={isCounterSubmitting}
+                     className="bg-primary-600 hover:bg-primary-700 text-white"
+                  >
+                     {isCounterSubmitting ? "Sending..." : "Send counter offer"}
+                  </Button>
+               </DialogFooter>
+            </DialogContent>
+         </Dialog>
 
          {/* Payment Confirmation Modal - render when offer selected so modal opens; posterUid can be empty if auth still loading */}
          {selectedApplication && (

@@ -45,6 +45,17 @@ export interface TaskApplication {
   
   // Application status
   status: 'pending' | 'accepted' | 'rejected' | 'withdrawn';
+  negotiation?: {
+    currentAmount: number;
+    status: 'none' | 'countered_by_poster' | 'countered_by_tasker' | 'accepted' | 'rejected';
+    lastActionBy?: 'poster' | 'tasker';
+    history?: Array<{
+      amount: number;
+      action: 'counter' | 'accept' | 'reject';
+      by: 'poster' | 'tasker';
+      at: Date | string;
+    }>;
+  };
   
   // Communication
   messages: ApplicationMessage[];
@@ -88,6 +99,11 @@ export interface CreateApplicationRequest {
 export interface UpdateApplicationRequest {
   status: 'accepted' | 'rejected';
   message?: string;
+}
+
+export interface NegotiateApplicationRequest {
+  action: 'counter' | 'accept' | 'reject';
+  amount?: number;
 }
 
 export interface ApplicationsResponse {
