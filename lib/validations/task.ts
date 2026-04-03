@@ -1,9 +1,16 @@
 import { z } from "zod";
 import { containsPhoneNumber, PHONE_NUMBER_ERROR } from "@/lib/utils/phoneDetection";
+import { getMeaningfulTextError } from "@/lib/utils/textValidation";
 
 /**
  * Task creation validation schemas
  */
+
+const getTitleMeaningError = (value: string) =>
+   getMeaningfulTextError(value, "Title", 5, 2, false, 4, 0.25);
+
+const getDescriptionMeaningError = (value: string) =>
+   getMeaningfulTextError(value, "Description", 10, 3, false, 4, 0.25);
 
 // Step 1: Task Basics
 export const taskBasicsSchema = z
@@ -12,12 +19,30 @@ export const taskBasicsSchema = z
          .string()
          .min(5, "Please add a few more details to your title")
          .max(200, "Title is too long")
-         .refine((val) => !containsPhoneNumber(val), PHONE_NUMBER_ERROR),
+         .refine((val) => !containsPhoneNumber(val), PHONE_NUMBER_ERROR)
+         .superRefine((val, ctx) => {
+            const message = getTitleMeaningError(val);
+            if (message) {
+               ctx.addIssue({
+                  code: z.ZodIssueCode.custom,
+                  message,
+               });
+            }
+         }),
       description: z
          .string()
          .min(10, "Add more detail so taskers understand what's needed")
          .max(2000, "Description is too long")
-         .refine((val) => !containsPhoneNumber(val), PHONE_NUMBER_ERROR),
+         .refine((val) => !containsPhoneNumber(val), PHONE_NUMBER_ERROR)
+         .superRefine((val, ctx) => {
+            const message = getDescriptionMeaningError(val);
+            if (message) {
+               ctx.addIssue({
+                  code: z.ZodIssueCode.custom,
+                  message,
+               });
+            }
+         }),
       category: z.string().min(1, "Please select a category"),
       subcategory: z.string().optional(),
       requirements: z.array(z.string()).max(10).nullable().default([]).transform(val => val || []),
@@ -193,11 +218,31 @@ export const editTaskSchema = z
          .string()
          .min(5, "Please add a few more details to your title")
          .max(200, "Title is too long")
+         .refine((val) => !containsPhoneNumber(val), PHONE_NUMBER_ERROR)
+         .superRefine((val, ctx) => {
+            const message = getTitleMeaningError(val);
+            if (message) {
+               ctx.addIssue({
+                  code: z.ZodIssueCode.custom,
+                  message,
+               });
+            }
+         })
          .optional(),
       description: z
          .string()
          .min(10, "Add more detail so taskers understand what's needed")
          .max(2000, "Description is too long")
+         .refine((val) => !containsPhoneNumber(val), PHONE_NUMBER_ERROR)
+         .superRefine((val, ctx) => {
+            const message = getDescriptionMeaningError(val);
+            if (message) {
+               ctx.addIssue({
+                  code: z.ZodIssueCode.custom,
+                  message,
+               });
+            }
+         })
          .optional(),
       category: z.string().min(1, "Please select a category").optional(),
       subcategory: z.string().optional(),

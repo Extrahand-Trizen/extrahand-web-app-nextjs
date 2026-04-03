@@ -72,6 +72,10 @@ const formatSelectedDates = (dates?: Array<Date | string>) => {
    return `${formatted.slice(0, 3).join(", ")} +${formatted.length - 3}`;
 };
 
+const getApplicationAmount = (application?: TaskApplication | null) => {
+   return application?.proposedBudget?.amount ?? 0;
+};
+
 export function TaskOffersSection({
    taskId,
    isOwner = false,
@@ -230,19 +234,14 @@ export function TaskOffersSection({
    };
 
    const openCounterDialog = (application: TaskApplication) => {
-      const currentAmount = application.negotiation?.currentAmount ?? application.proposedBudget.amount;
+      const currentAmount = application.negotiation?.currentAmount ?? getApplicationAmount(application);
       setCounterApplication(application);
       setCounterAmountInput(String(currentAmount));
    };
 
    const handleCounterAmountChange = (rawValue: string) => {
       const digitsOnly = rawValue.replace(/\D/g, "");
-      if (!digitsOnly) {
-         setCounterAmountInput("");
-         return;
-      }
-      const numericValue = Number(digitsOnly);
-      setCounterAmountInput(String(Math.min(50000, numericValue)));
+      setCounterAmountInput(digitsOnly);
    };
 
    const handleSubmitCounterOffer = async () => {
@@ -331,7 +330,7 @@ export function TaskOffersSection({
 
    const sortedApplications = [...applications].sort((a, b) => {
       if (sortBy === "price-low")
-         return a.proposedBudget.amount - b.proposedBudget.amount;
+         return getApplicationAmount(a) - getApplicationAmount(b);
       if (sortBy === "rating") {
          const ratingA = a.applicantProfile?.rating || 0;
          const ratingB = b.applicantProfile?.rating || 0;
@@ -503,7 +502,7 @@ export function TaskOffersSection({
                         {myApplication.status === "pending" && myApplication.negotiation?.status === "countered_by_poster" && (
                            <div className="mt-3 pt-3 border-t border-primary-200">
                               <p className="text-sm font-semibold text-secondary-900 mb-2">
-                                 Client countered with ₹{(myApplication.negotiation.currentAmount || myApplication.proposedBudget.amount).toLocaleString()}
+                                 Client countered with ₹{(myApplication.negotiation.currentAmount ?? getApplicationAmount(myApplication)).toLocaleString()}
                               </p>
                               <div className="flex flex-wrap gap-2">
                                  <Button
@@ -513,21 +512,6 @@ export function TaskOffersSection({
                                  >
                                     Accept
                                  </Button>
-                                 <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => openCounterDialog(myApplication)}
-                                 >
-                                    Counter again
-                                 </Button>
-                                 <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="text-red-600 border-red-200 hover:bg-red-50"
-                                    onClick={() => handleNegotiationAction(myApplication, "reject")}
-                                 >
-                                    Reject
-                                 </Button>
                               </div>
                            </div>
                         )}
@@ -535,7 +519,7 @@ export function TaskOffersSection({
                         {myApplication.status === "pending" && myApplication.negotiation?.status === "accepted" && (
                            <div className="mt-3 pt-3 border-t border-primary-200">
                               <p className="text-sm font-semibold text-green-700">
-                                 Final price agreed: ₹{(myApplication.negotiation.currentAmount || myApplication.proposedBudget.amount).toLocaleString()}
+                                 Final price agreed: ₹{(myApplication.negotiation.currentAmount ?? getApplicationAmount(myApplication)).toLocaleString()}
                               </p>
                               <p className="text-xs text-secondary-500 mt-1">
                                  Waiting for client to assign and pay.
@@ -676,11 +660,11 @@ export function TaskOffersSection({
                                           {isOwner && (
                                              <>
                                                 <div className="text-xl font-bold text-green-700 mb-1">
-                                                   ₹{(acceptedApplication.proposedBudget.amount * (acceptedApplication.selectedDates?.length || 1)).toLocaleString()}
+                                                   ₹{(getApplicationAmount(acceptedApplication) * (acceptedApplication.selectedDates?.length || 1)).toLocaleString()}
                                                 </div>
                                                 {acceptedApplication.selectedDates && acceptedApplication.selectedDates.length > 0 && (
                                                    <div className="text-xs text-secondary-500">
-                                                      ₹{acceptedApplication.proposedBudget.amount} × {acceptedApplication.selectedDates.length} days
+                                                      ₹{getApplicationAmount(acceptedApplication)} × {acceptedApplication.selectedDates.length} days
                                                    </div>
                                                 )}
                                                 {acceptedApplication.proposedTime?.estimatedDuration && !acceptedApplication.selectedDates?.length && (
@@ -825,11 +809,11 @@ export function TaskOffersSection({
                                        <>
                                           <div className="text-lg font-bold text-primary-600 mb-1">
                                              ₹
-                                             {(application.proposedBudget.amount * (application.selectedDates?.length || 1)).toLocaleString()}
+                                             {(getApplicationAmount(application) * (application.selectedDates?.length || 1)).toLocaleString()}
                                           </div>
                                           {application.selectedDates && application.selectedDates.length > 0 && (
                                              <div className="text-xs text-secondary-400 font-medium mb-1">
-                                                ₹{application.proposedBudget.amount} × {application.selectedDates.length} days
+                                                ₹{getApplicationAmount(application)} × {application.selectedDates.length} days
                                              </div>
                                           )}
                                        </>
@@ -877,7 +861,7 @@ export function TaskOffersSection({
                                     </span>
                                  )}
                                  {/* Only show negotiable status to task owner */}
-                                 {isOwner && application.proposedBudget.isNegotiable && (
+                                 {isOwner && application.proposedBudget?.isNegotiable && (
                                     <span className="text-primary-600">
                                        Negotiable
                                     </span>
@@ -902,27 +886,54 @@ export function TaskOffersSection({
                                  )}
 
                               {isOwner && application.status === "pending" && application.negotiation?.status === "countered_by_tasker" && (
-                                 <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
-                                    <p className="text-xs text-amber-800 font-medium">
-                                       Tasker countered with ₹{(application.negotiation.currentAmount || application.proposedBudget.amount).toLocaleString()}
-                                    </p>
-                                 </div>
+                                 <>
+                                    <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 mb-3">
+                                       <p className="text-xs text-amber-800 font-bold">
+                                                               Tasker countered with ₹{(application.negotiation?.currentAmount ?? getApplicationAmount(application)).toLocaleString()}
+                                       </p>
+                                    </div>
+                                    <div className="flex gap-2 w-full flex-wrap">
+                                       <Button
+                                          size="sm"
+                                          onClick={() => handleAcceptOffer(application)}
+                                          className="bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-[10px] md:text-xs font-semibold px-5"
+                                       >
+                                          Accept & Pay
+                                       </Button>
+                                       {application.proposedBudget?.isNegotiable && (
+                                          <Button
+                                             size="sm"
+                                             variant="outline"
+                                             onClick={() => openCounterDialog(application)}
+                                             className="rounded-lg text-[10px] md:text-xs font-semibold px-5"
+                                          >
+                                             Counter again
+                                          </Button>
+                                       )}
+                                       <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="text-red-600 border-red-200 hover:bg-red-50 rounded-lg text-[10px] md:text-xs font-semibold px-5"
+                                          onClick={() => handleNegotiationAction(application, "reject")}
+                                       >
+                                          Reject
+                                       </Button>
+                                    </div>
+                                 </>
                               )}
 
                               {isOwner && application.status === "pending" && application.negotiation?.status === "accepted" && (
-                                 <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 flex items-center justify-between gap-2">
+                                 <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-3 flex items-start justify-between gap-2">
                                     <div>
-                                       <p className="text-xs text-green-800 font-semibold">Final price agreed</p>
-                                       <p className="text-[11px] text-green-700">Both parties confirmed</p>
+                                       <p className="text-xs text-green-800 font-bold">✓ Tasker accepted</p>
+                                       <p className="text-[11px] text-green-700 mt-1">
+                                          Agreed price: ₹{(application.negotiation?.currentAmount ?? application.proposedBudget?.amount ?? 0).toLocaleString()}
+                                       </p>
                                     </div>
-                                    <p className="text-sm font-bold text-green-800">
-                                       ₹{(application.negotiation.currentAmount || application.proposedBudget.amount).toLocaleString()}
-                                    </p>
                                  </div>
                               )}
 
-                              {/* Actions - Only show for owner */}
-                              {isOwner && (
+                              {isOwner && application.status === "pending" && application.negotiation?.status !== "countered_by_tasker" && (
                                  <div className="flex gap-2 w-full flex-wrap">
                                     <Link
                                        href={buildPublicProfilePath(
@@ -939,39 +950,33 @@ export function TaskOffersSection({
                                        </Button>
                                     </Link>
 
-                                    {application.status === "pending" && (
-                                       <>
-                                          <Button
-                                             size="sm"
-                                             onClick={() =>
-                                                handleAcceptOffer(application)
-                                             }
-                                             className="bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-[10px] md:text-xs font-semibold px-5"
-                                          >
-                                             {application.negotiation?.status === "accepted" ? "Assign & Pay" : "Accept Offer"}
-                                          </Button>
-                                          {application.proposedBudget.isNegotiable && (
-                                             <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() => openCounterDialog(application)}
-                                                className="rounded-lg text-[10px] md:text-xs font-semibold px-5"
-                                             >
-                                                Negotiate
-                                             </Button>
-                                          )}
-                                          <Button
-                                             size="sm"
-                                             onClick={() =>
-                                                handleRejectOffer(application)
-                                             }
-                                             variant="outline"
-                                             className="text-secondary-600 hover:text-red-600 hover:bg-red-50 border-secondary-300 rounded-lg text-[10px] md:text-xs font-semibold px-5"
-                                          >
-                                             Reject
-                                          </Button>
-                                       </>
+                                    <Button
+                                       size="sm"
+                                       onClick={() => handleAcceptOffer(application)}
+                                       className="bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-[10px] md:text-xs font-semibold px-5"
+                                    >
+                                       {application.negotiation?.status === "accepted" ? "Assign & Pay" : "Accept Offer"}
+                                    </Button>
+
+                                    {application.proposedBudget?.isNegotiable && (
+                                       <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => openCounterDialog(application)}
+                                          className="rounded-lg text-[10px] md:text-xs font-semibold px-5"
+                                       >
+                                          Negotiate
+                                       </Button>
                                     )}
+
+                                    <Button
+                                       size="sm"
+                                       onClick={() => handleRejectOffer(application)}
+                                       variant="outline"
+                                       className="text-secondary-600 hover:text-red-600 hover:bg-red-50 border-secondary-300 rounded-lg text-[10px] md:text-xs font-semibold px-5"
+                                    >
+                                       Reject
+                                    </Button>
                                  </div>
                               )}
                            </div>
@@ -998,23 +1003,46 @@ export function TaskOffersSection({
                   <DialogTitle>Counter offer</DialogTitle>
                </DialogHeader>
                <div className="space-y-3">
-                  <p className="text-sm text-secondary-600">
-                     Current offer: ₹{(counterApplication?.negotiation?.currentAmount || counterApplication?.proposedBudget.amount || 0).toLocaleString()}
-                  </p>
+                  <div className="text-sm text-secondary-600">
+                     <p className="mb-2 font-medium">Original offer: ₹{getApplicationAmount(counterApplication).toLocaleString()}</p>
+                     {counterApplication?.negotiation && counterApplication.negotiation.history && counterApplication.negotiation.history.length > 0 && (
+                        <div className="mt-2 pt-2 border-t border-secondary-200">
+                           <p className="text-xs font-semibold text-secondary-700 mb-1">Negotiation history:</p>
+                           <div className="space-y-1">
+                              {counterApplication.negotiation.history.map((entry, idx) => (
+                                 <p key={idx} className="text-xs text-secondary-500">
+                                    • {entry.action === 'counter' ? 'Counter' : 'Accepted'} by {entry.by === 'poster' ? 'Client' : 'Tasker'}: {entry.action === 'counter' ? `₹${entry.amount?.toLocaleString() || 'N/A'}` : 'N/A'}
+                                 </p>
+                              ))}
+                           </div>
+                        </div>
+                     )}
+                  </div>
                   <div className="space-y-1">
-                     <label className="text-sm font-medium text-secondary-700">Amount (max ₹50,000)</label>
-                     <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary-500">₹</span>
-                        <input
-                           value={counterAmountInput}
-                           onChange={(e) => handleCounterAmountChange(e.target.value)}
-                           inputMode="numeric"
-                           pattern="[0-9]*"
-                           maxLength={5}
-                           placeholder="Enter amount"
-                           className="w-full h-11 rounded-md border border-secondary-300 pl-8 pr-3 text-base focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        />
-                     </div>
+                     {(() => {
+                        const inputAmount = Number(counterAmountInput) || 0;
+                        const isExceeded = inputAmount > 50000;
+                        return (
+                           <div className="relative">
+                              <span className={`absolute left-3 top-1/2 -translate-y-1/2 ${isExceeded ? 'text-red-500' : 'text-secondary-500'}`}>₹</span>
+                              <input
+                                 value={counterAmountInput}
+                                 onChange={(e) => handleCounterAmountChange(e.target.value)}
+                                 inputMode="numeric"
+                                 pattern="[0-9]*"
+                                 placeholder="Enter amount"
+                                 className={`w-full h-11 rounded-md border pl-8 pr-3 text-base focus:outline-none focus:ring-2 ${
+                                    isExceeded
+                                       ? 'border-red-300 text-red-700 focus:ring-red-500'
+                                       : 'border-secondary-300 focus:ring-primary-500'
+                                 }`}
+                              />
+                           </div>
+                        );
+                     })()}
+                     {Number(counterAmountInput) > 50000 && (
+                        <p className="text-xs text-red-600 font-medium">Amount exceeds maximum of ₹50,000</p>
+                     )}
                   </div>
                </div>
                <DialogFooter>
