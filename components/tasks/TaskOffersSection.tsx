@@ -505,13 +505,20 @@ export function TaskOffersSection({
                                  <div className="flex flex-col gap-4">
                                     {/* Header: Avatar + Name + Budget */}
                                     <div className="flex items-center justify-between gap-3">
-                                       <div className="flex gap-3">
-                                          <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-green-600 flex items-center justify-center text-white text-lg md:text-xl font-bold shrink-0 shadow-md">
+                                       <Link
+                                          href={buildPublicProfilePath(
+                                             acceptedApplication.applicantProfile?.name,
+                                             String(acceptedApplication.applicantId)
+                                          )}
+                                          className="flex gap-3 min-w-0 group"
+                                          aria-label={`View ${acceptedApplication.applicantProfile?.name || "user"}'s profile`}
+                                       >
+                                          <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-green-600 flex items-center justify-center text-white text-lg md:text-xl font-bold shrink-0 shadow-md transition-transform duration-200 group-hover:scale-[1.03]">
                                              {((acceptedApplication.applicantProfile?.name) || "U").charAt(0)}
                                           </div>
                                           <div className="min-w-0">
                                              <div className="flex items-center gap-2">
-                                                <h3 className="font-bold text-secondary-900 text-sm sm:text-base truncate">
+                                                <h3 className="font-bold text-secondary-900 text-sm sm:text-base truncate group-hover:text-green-700 transition-colors">
                                                    {acceptedApplication.applicantProfile?.name || "Unknown User"}
                                                 </h3>
                                                 {applicantBadges[String(acceptedApplication.applicantId)] &&
@@ -541,7 +548,7 @@ export function TaskOffersSection({
                                                 </span>
                                              </div>
                                           </div>
-                                       </div>
+                                       </Link>
                                        <div className="text-right">
                                           {/* Only show budget to task owner */}
                                           {isOwner && (
@@ -582,7 +589,7 @@ export function TaskOffersSection({
                                     <div className="flex gap-2 flex-wrap">
                                        <Link
                                           href={buildPublicProfilePath(
-                                             (acceptedApplication as any).applicantProfile?.name,
+                                             acceptedApplication.applicantProfile?.name,
                                              acceptedApplication.applicantId
                                           )}
                                        >
@@ -636,8 +643,15 @@ export function TaskOffersSection({
                            <div className="flex flex-col gap-4">
                               {/* Header: Avatar + Name + Time */}
                               <div className="flex items-center justify-between gap-3">
-                                 <div className="flex gap-3">
-                                    <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-full bg-primary-500 flex items-center justify-center text-white text-lg md:text-xl font-bold shrink-0 shadow-md overflow-hidden">
+                                 <Link
+                                    href={buildPublicProfilePath(
+                                       application.applicantProfile?.name,
+                                       String(application.applicantId)
+                                    )}
+                                    className="flex gap-3 min-w-0 group"
+                                    aria-label={`View ${user.name}'s profile`}
+                                 >
+                                    <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-full bg-primary-500 flex items-center justify-center text-white text-lg md:text-xl font-bold shrink-0 shadow-md overflow-hidden transition-transform duration-200 group-hover:scale-[1.03]">
                                        {user.photoURL ? (
                                           <Image
                                              src={user.photoURL}
@@ -653,7 +667,7 @@ export function TaskOffersSection({
 
                                     <div className="min-w-0">
                                        <div className="flex items-center gap-2">
-                                          <h3 className="font-bold text-secondary-900 text-sm sm:text-base truncate">
+                                          <h3 className="font-bold text-secondary-900 text-sm sm:text-base truncate group-hover:text-primary-600 transition-colors">
                                              {user.name}
                                           </h3>
                                           {applicantBadges[String(application.applicantId)] &&
@@ -681,7 +695,7 @@ export function TaskOffersSection({
                                           </span>
                                        </div>
                                     </div>
-                                 </div>
+                                 </Link>
 
                                  <div className="text-right">
                                     {/* Only show budget to task owner */}
