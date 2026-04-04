@@ -45,22 +45,12 @@ export default function TasksPage() {
          return tabs;
       }
 
-      if (userRole === "tasker") {
-         // Taskers land on applications; show My Tasks only when there are posted tasks.
-         tabs.push("myapplications");
-         if ((tasksCount ?? 0) > 0) {
-            tabs.push("mytasks");
-         }
-      } else {
-         // Posters land on tasks; show My Applications only when there are applications.
-         tabs.push("mytasks");
-         if ((applicationsCount ?? 0) > 0) {
-            tabs.push("myapplications");
-         }
-      }
+      // Keep both tabs available so users can always switch between them,
+      // even before count data has loaded.
+      tabs.push("mytasks", "myapplications");
 
       return tabs;
-   }, [userRole, tasksCount, applicationsCount]);
+   }, [userRole]);
 
    // Set default tab based on role and visible tabs
    const defaultTab = useMemo(() => {

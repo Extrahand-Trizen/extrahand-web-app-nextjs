@@ -303,7 +303,7 @@ export function StatusUpdateSection({
          setOtpExpiresAt(result.expiresAt);
          setOtpValue("");
          setIsOtpDialogOpen(true);
-         toast.success(`OTP sent to the poster's email${result.sentTo ? ` (${result.sentTo})` : ''}. Ask the poster and enter it here to start the task.`);
+         toast.success(`OTP sent to the poster in app${result.sentTo ? ` (${result.sentTo})` : ''}. Ask the poster and enter it here to start the task.`);
       } catch (error: unknown) {
          toast.error(getErrorMessage(error) || "Failed to send OTP");
       } finally {
@@ -316,7 +316,7 @@ export function StatusUpdateSection({
       try {
          const result = await tasksApi.resendStartOtp(task._id);
          setOtpExpiresAt(result.expiresAt);
-         toast.success(`OTP resent to the poster's email${result.sentTo ? ` (${result.sentTo})` : ''}`);
+         toast.success(`OTP resent to the poster in app${result.sentTo ? ` (${result.sentTo})` : ''}`);
       } catch (error: unknown) {
          toast.error(getErrorMessage(error) || "Failed to resend OTP");
       } finally {

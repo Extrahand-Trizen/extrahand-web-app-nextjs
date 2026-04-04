@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { EnvironmentLogger } from "@/components/EnvironmentLogger";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { PollingOtpToastBridge } from "@/components/notifications/PollingOtpToastBridge";
 
 
 const inter = Inter({
@@ -107,6 +108,7 @@ export default function RootLayout({
                         <ScrollToTop />
                      </Suspense>
                      <Toaster />
+                     <PollingOtpToastBridge />
                      {children}
                   </AuthProvider>
                </QueryProvider>
