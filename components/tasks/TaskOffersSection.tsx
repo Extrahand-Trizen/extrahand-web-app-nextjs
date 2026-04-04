@@ -512,6 +512,16 @@ export function TaskOffersSection({
                                  >
                                     Accept
                                  </Button>
+                                 {myApplication.proposedBudget?.isNegotiable && (
+                                    <Button
+                                       size="sm"
+                                       variant="outline"
+                                       onClick={() => openCounterDialog(myApplication)}
+                                       className="border-primary-300 text-primary-700 hover:bg-primary-50"
+                                    >
+                                       Counter Again
+                                    </Button>
+                                 )}
                                  <Button
                                     size="sm"
                                     onClick={() => handleNegotiationAction(myApplication, "reject")}
