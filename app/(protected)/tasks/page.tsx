@@ -6,19 +6,19 @@
  * Tab ordering and visibility is based on user role and counts
  */
 
-import { useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MyTasksContent } from "@/components/tasks/MyTasksContent";
 import { MyApplicationsContent } from "@/components/tasks/MyApplicationsContent";
 import { useAuth } from "@/lib/auth/context";
 
 export default function TasksPage() {
-   const router = useRouter();
    const searchParams = useSearchParams();
    const { userData, loading } = useAuth();
    const [tasksCount, setTasksCount] = useState<number | null>(null);
    const [applicationsCount, setApplicationsCount] = useState<number | null>(null);
+   const [selectedTab, setSelectedTab] = useState<"mytasks" | "myapplications" | null>(null);
 
    // Determine user role
    const userRole = useMemo<"tasker" | "poster" | null>(() => {
@@ -57,27 +57,37 @@ export default function TasksPage() {
       return userRole === "tasker" ? "myapplications" : "mytasks";
    }, [userRole]);
 
+   useEffect(() => {
+      const tabParam = searchParams.get("tab");
+      if (tabParam === "myapplications" || tabParam === "mytasks") {
+         setSelectedTab(tabParam);
+      }
+   }, [searchParams]);
+
    const activeTab = useMemo(() => {
       if (!isRoleReady) {
          return "myapplications";
       }
 
       const tabParam = searchParams.get("tab");
-      const selectedTab =
+      const tabFromUrl =
          tabParam === "myapplications" || tabParam === "mytasks"
             ? tabParam
             : defaultTab;
+      const resolvedTab = selectedTab ?? tabFromUrl;
 
       // Ensure activeTab is visible; if not, use default
-      if (visibleTabs.includes(selectedTab)) {
-         return selectedTab;
+      if (visibleTabs.includes(resolvedTab)) {
+         return resolvedTab;
       }
       return visibleTabs.length > 0 ? visibleTabs[0] : defaultTab;
-   }, [isRoleReady, searchParams, visibleTabs, defaultTab]);
+   }, [isRoleReady, searchParams, visibleTabs, defaultTab, selectedTab]);
 
 
    const handleTabChange = (value: string) => {
-      router.push(`/tasks?tab=${value}`);
+      if (value === "mytasks" || value === "myapplications") {
+         setSelectedTab(value);
+      }
    };
 
    return (
