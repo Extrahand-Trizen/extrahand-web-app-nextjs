@@ -512,6 +512,14 @@ export function TaskOffersSection({
                                  >
                                     Accept
                                  </Button>
+                                 <Button
+                                    size="sm"
+                                    onClick={() => handleNegotiationAction(myApplication, "reject")}
+                                    variant="outline"
+                                    className="border-red-300 text-red-700 hover:bg-red-50"
+                                 >
+                                    Reject
+                                 </Button>
                               </div>
                            </div>
                         )}
