@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
@@ -40,6 +41,60 @@ import {
 } from "@/components/ui/dialog";
 
 export type TaskFormData = CompleteTaskFormData;
+
+type TaskLike = {
+   _id?: string;
+   id?: string;
+   [key: string]: unknown;
+};
+
+function getCreatedTaskFromResponse(response: any): TaskLike | null {
+   const candidate = response?.data ?? response ?? null;
+   if (!candidate || typeof candidate !== "object") return null;
+   const id = (candidate as TaskLike)._id || (candidate as TaskLike).id;
+   if (!id || typeof id !== "string") return null;
+   return candidate as TaskLike;
+}
+
+function mergeTaskIntoMyTasksCache(prev: any, createdTask: TaskLike) {
+   if (!createdTask?._id && !createdTask?.id) return prev;
+   const createdId = (createdTask._id || createdTask.id) as string;
+   const dedupe = (list: any[]) => [createdTask, ...list.filter((t) => (t?._id || t?.id) !== createdId)];
+
+   if (Array.isArray(prev)) {
+      return dedupe(prev);
+   }
+
+   if (Array.isArray(prev?.data?.tasks)) {
+      return {
+         ...prev,
+         data: {
+            ...prev.data,
+            tasks: dedupe(prev.data.tasks),
+         },
+      };
+   }
+
+   if (Array.isArray(prev?.data)) {
+      return {
+         ...prev,
+         data: dedupe(prev.data),
+      };
+   }
+
+   if (Array.isArray(prev?.tasks)) {
+      return {
+         ...prev,
+         tasks: dedupe(prev.tasks),
+      };
+   }
+
+   return {
+      data: {
+         tasks: [createdTask],
+      },
+   };
+}
 
 // ============================================================================
 // Constants
@@ -365,6 +420,7 @@ const INITIAL_FORM_DATA: TaskFormData = {
 
 export function TaskCreationFlow() {
    const router = useRouter();
+   const queryClient = useQueryClient();
    const searchParams = useSearchParams();
    const [currentStep, setCurrentStep] = useState(1);
    const [isSubmitting, setIsSubmitting] = useState(false);
@@ -711,11 +767,20 @@ export function TaskCreationFlow() {
             localStorage.removeItem(DRAFT_KEY);
             setHasUnsavedChanges(false);
 
-            const taskId =
-               (response as any)?.data?._id || (response as any)?._id;
+            const createdTask = getCreatedTaskFromResponse(response);
+
+            // Ensure My Tasks page renders the new task immediately from cache.
+            if (createdTask) {
+               queryClient.setQueryData(["my-tasks"], (prev: any) =>
+                  mergeTaskIntoMyTasksCache(prev, createdTask)
+               );
+            }
+
+            // Keep cache fresh in background for server-truth reconciliation.
+            queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
 
             setTimeout(() => {
-               router.push(taskId ? `/tasks/${taskId}` : "/tasks");
+               router.push("/tasks?tab=mytasks");
             }, 500);
          } catch (error) {
             console.error("Task submission error:", error);
@@ -739,7 +804,7 @@ export function TaskCreationFlow() {
             setRetryCount(0);
          }
       },
-      [isSubmitting, createTaskWithRetry, router, form]
+      [isSubmitting, createTaskWithRetry, router, form, queryClient]
    );
 
    const onSubmit = useCallback(
