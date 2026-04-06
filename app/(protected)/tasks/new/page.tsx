@@ -6,7 +6,19 @@
  */
 
 import { TaskCreationFlow } from "@/components/tasks/TaskCreationFlow";
+import { ReportIssueButton } from "@/components/shared/ReportIssueButton";
 
 export default function PostTaskPage() {
-   return <TaskCreationFlow />;
+   return (
+      <div>
+         <div className="mx-auto max-w-7xl px-4 pt-3 sm:px-6 lg:px-8">
+            <ReportIssueButton
+               buttonLabel="Report Task Issue"
+               issueType="task"
+               pageContext="post-task"
+            />
+         </div>
+         <TaskCreationFlow />
+      </div>
+   );
 }

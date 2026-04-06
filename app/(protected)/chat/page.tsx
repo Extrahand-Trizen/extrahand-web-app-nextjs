@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ReportIssueButton } from "@/components/shared/ReportIssueButton";
 import { chatsApi, type Chat, type Message } from "@/lib/api/endpoints/chats";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
 import { profilesApi } from "@/lib/api/endpoints/profiles";
@@ -728,7 +729,16 @@ export default function ChatPage() {
     <div className="h-full flex flex-col bg-white border-r border-secondary-200">
       {/* Header */}
       <div className="p-4 border-b border-secondary-200">
-        <h1 className="text-xl font-bold text-secondary-900 mb-3">Messages</h1>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h1 className="text-xl font-bold text-secondary-900">Messages</h1>
+          <ReportIssueButton
+            buttonLabel="Report Chat Issue"
+            issueType="chat"
+            pageContext="chat-page"
+            buttonVariant="link"
+            buttonSize="sm"
+          />
+        </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-secondary-400" />
           <Input
@@ -849,6 +859,14 @@ export default function ChatPage() {
             </h2>
             <p className="text-xs text-secondary-500">Task conversation</p>
           </div>
+          <ReportIssueButton
+            buttonLabel="Report Chat Issue"
+            issueType="chat"
+            pageContext="chat-conversation"
+            metadata={{ chatId: selectedChat.chatId }}
+            buttonVariant="link"
+            buttonSize="sm"
+          />
           {!isChatOpen(selectedChat) && (
             <button
               onClick={() => handleDeleteChat(selectedChat.chatId)}

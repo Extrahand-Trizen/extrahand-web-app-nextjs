@@ -159,7 +159,7 @@ export function ConversationView({
                      <DropdownMenuSeparator />
                      <DropdownMenuItem className="cursor-pointer text-orange-600">
                         <Flag className="w-4 h-4 mr-2" />
-                        Report Issue
+                        Report Chat Issue
                      </DropdownMenuItem>
                      <DropdownMenuItem className="cursor-pointer text-red-600">
                         <Ban className="w-4 h-4 mr-2" />

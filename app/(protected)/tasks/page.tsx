@@ -11,6 +11,7 @@ import { useSearchParams } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MyTasksContent } from "@/components/tasks/MyTasksContent";
 import { MyApplicationsContent } from "@/components/tasks/MyApplicationsContent";
+import { ReportIssueButton } from "@/components/shared/ReportIssueButton";
 import { useAuth } from "@/lib/auth/context";
 
 export default function TasksPage() {
@@ -18,18 +19,7 @@ export default function TasksPage() {
    const { userData, loading } = useAuth();
    const [tasksCount, setTasksCount] = useState<number | null>(null);
    const [applicationsCount, setApplicationsCount] = useState<number | null>(null);
-   const [selectedTab, setSelectedTab] = useState<"mytasks" | "myapplications" | null>(() => {
-      if (typeof window === "undefined") return null;
-
-      try {
-         const raw = window.sessionStorage.getItem("extrahand_post_task_route");
-         if (!raw) return null;
-         const parsed = JSON.parse(raw) as { tab?: string };
-         return parsed.tab === "mytasks" ? "mytasks" : null;
-      } catch {
-         return null;
-      }
-   });
+   const [selectedTab, setSelectedTab] = useState<"mytasks" | "myapplications" | null>(null);
 
    // Determine user role
    const userRole = useMemo<"tasker" | "poster" | null>(() => {
@@ -71,7 +61,7 @@ export default function TasksPage() {
    useEffect(() => {
       const tabParam = searchParams.get("tab");
       const postTaskRouteRaw = typeof window !== "undefined"
-         ? window.sessionStorage.getItem("extrahand_post_task_route")
+         ? window.localStorage.getItem("extrahand_post_task_route")
          : null;
 
       if (postTaskRouteRaw) {
@@ -79,11 +69,11 @@ export default function TasksPage() {
             const postTaskRoute = JSON.parse(postTaskRouteRaw) as { tab?: string; createdAt?: number };
             if (postTaskRoute.tab === "mytasks") {
                setSelectedTab("mytasks");
-               window.sessionStorage.removeItem("extrahand_post_task_route");
+               window.localStorage.removeItem("extrahand_post_task_route");
                return;
             }
          } catch {
-            window.sessionStorage.removeItem("extrahand_post_task_route");
+            window.localStorage.removeItem("extrahand_post_task_route");
          }
       }
 
@@ -143,6 +133,14 @@ export default function TasksPage() {
                                  </p>
                               </div>
                            </div>
+                           <ReportIssueButton
+                              buttonLabel="Report Task Issue"
+                              issueType="task"
+                              pageContext="tasks-page"
+                              buttonVariant="link"
+                              buttonSize="sm"
+                              className="self-start sm:self-auto"
+                           />
 
                         </div>
                         {isRoleReady && (

@@ -36,6 +36,7 @@ import {
    SheetTitle,
 } from "@/components/ui/sheet";
 import { ArrowLeft, Menu } from "lucide-react";
+import { ReportIssueButton } from "@/components/shared/ReportIssueButton";
 import { reviewsApi } from "@/lib/api/endpoints/reviews";
 import { toast } from "sonner";
 import { privacyApi } from "@/lib/api/endpoints/privacy";
@@ -651,8 +652,15 @@ function ProfilePageContent() {
                   <h1 className="text-base font-semibold text-gray-900 flex-1 text-center">
                      {SECTION_TITLES[section]}
                   </h1>
-                  {/* Spacer so title stays centered when only one icon */}
-                  <div className="w-9 shrink-0" aria-hidden />
+                  <ReportIssueButton
+                     buttonLabel="Report Issue"
+                     issueType="general"
+                     pageContext={`profile-${section}`}
+                     buttonVariant="link"
+                     buttonSize="sm"
+                     buttonClassName="text-xs"
+                     className="shrink-0"
+                  />
                </div>
             </div>
             <div className="px-4 py-6 pb-20">
@@ -672,6 +680,15 @@ function ProfilePageContent() {
             />
             <main className="flex-1 min-h-screen">
                <div className="max-w-4xl mx-auto py-8">
+                  <div className="mb-4 flex justify-end">
+                     <ReportIssueButton
+                        buttonLabel="Report Issue"
+                        issueType="general"
+                        pageContext={`profile-${section}`}
+                        buttonVariant="link"
+                        buttonSize="sm"
+                     />
+                  </div>
                   {section !== "overview" && (
                      <button
                         onClick={() => goTo("overview")}

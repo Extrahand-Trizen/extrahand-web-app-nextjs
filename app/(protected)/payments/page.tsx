@@ -24,6 +24,7 @@ import {
    PaymentFailed,
    RefundStatus,
 } from "@/components/payments";
+import { ReportIssueButton } from "@/components/shared/ReportIssueButton";
 import {
    mockPaymentError,
    mockPaymentSummary,
@@ -400,6 +401,14 @@ export default function PaymentsDemoPage() {
                <h1 className="text-base font-semibold text-gray-900">
                   Payment Flow Demo
                </h1>
+               <ReportIssueButton
+                  buttonLabel="Report Payment Issue"
+                  issueType="payment"
+                  pageContext="payments-checkout"
+                  buttonVariant="link"
+                  buttonSize="sm"
+                  className="ml-auto"
+               />
             </div>
          </div>
 

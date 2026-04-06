@@ -67,6 +67,7 @@ import { AddBankAccountModal } from "./AddBankAccountModal";
 import { BankAccountBanner } from "./BankAccountBanner";
 import { PayoutHistory } from "./PayoutHistory";
 import { useBankAccounts } from "@/lib/hooks/usePayments";
+import { ReportIssueButton } from "@/components/shared/ReportIssueButton";
 
 interface PaymentsSectionProps {
    paymentMethods?: PaymentMethod[];
@@ -320,14 +321,23 @@ export function PaymentsSection({
    return (
       <div className="max-w-4xl space-y-4 sm:space-y-6">
          {/* Header */}
-         <div>
-            <h2 className="text-base sm:text-lg font-semibold text-gray-900">
-               Payments
-            </h2>
-            <p className="text-xs sm:text-sm text-gray-500 mt-1">
-               Manage your payment methods, payouts, and view transaction
-               history
-            </p>
+         <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+               <h2 className="text-base sm:text-lg font-semibold text-gray-900">
+                  Payments
+               </h2>
+               <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                  Manage your payment methods, payouts, and view transaction
+                  history
+               </p>
+            </div>
+            <ReportIssueButton
+               buttonLabel="Report Payment Issue"
+               issueType="payment"
+               pageContext="payments-earnings"
+               buttonVariant="link"
+               buttonSize="sm"
+            />
          </div>
 
          {/* Quick Stats */}
