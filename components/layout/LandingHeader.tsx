@@ -15,7 +15,6 @@ import React, {
    useEffect,
    useRef,
    useCallback,
-   useMemo,
 } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -119,14 +118,7 @@ export const LandingHeader: React.FC = () => {
       .join("")
       .slice(0, 2)
       .toUpperCase();
-   const userMenuRole: "poster" | "tasker" = useMemo(() => {
-      const roles = userData?.roles ?? [];
-      if (roles.includes("tasker") || roles.includes("both")) {
-         return "tasker";
-      }
-      return "poster";
-   }, [userData?.roles]);
-   const tasksRoute = userMenuRole === "tasker" ? "/tasks?tab=myapplications" : "/tasks?tab=mytasks";
+   const tasksRoute = activeRole === "tasker" ? "/tasks?tab=myapplications" : "/tasks?tab=mytasks";
 
    // Handle scroll for sticky header styling
    useEffect(() => {
@@ -448,7 +440,7 @@ export const LandingHeader: React.FC = () => {
                            <UserMenu
                               displayName={displayName}
                               initials={initials}
-                              role={userMenuRole}
+                              role={activeRole}
                               onNavigate={handleRouteChange}
                               onLogout={handleLogout}
                               open={isUserMenuOpen}
@@ -573,7 +565,7 @@ export const LandingHeader: React.FC = () => {
                                     >
                                        <LayoutDashboard className="w-4 h-4" />
                                        <span className="text-sm font-medium">
-                                          {userMenuRole === "poster" ? "My Tasks" : "My Applications"}
+                                          {activeRole === "poster" ? "My Tasks" : "My Applications"}
                                        </span>
                                     </button>
                                     <button
