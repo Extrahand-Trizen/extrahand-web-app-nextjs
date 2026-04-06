@@ -91,7 +91,10 @@ export default async function CityPage({ params }: PageProps) {
             />
 
             {cityInfo.slug === "hyderabad" && (
-               <section className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+               <section
+                  id="hyderabad-service-pages"
+                  className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8"
+               >
                   <div className="rounded-2xl border border-secondary-200 bg-white p-6 sm:p-8">
                      <h2 className="text-2xl font-bold text-secondary-900 sm:text-3xl">
                         Hyderabad Service Pages

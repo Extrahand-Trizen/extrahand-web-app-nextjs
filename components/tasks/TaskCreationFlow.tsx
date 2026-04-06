@@ -780,7 +780,7 @@ export function TaskCreationFlow() {
             queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
 
             // Signal the tasks page to open My Tasks regardless of user role defaults.
-            localStorage.setItem(
+            sessionStorage.setItem(
                "extrahand_post_task_route",
                JSON.stringify({
                   tab: "mytasks",

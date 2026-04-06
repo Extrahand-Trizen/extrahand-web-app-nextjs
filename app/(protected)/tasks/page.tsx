@@ -18,7 +18,18 @@ export default function TasksPage() {
    const { userData, loading } = useAuth();
    const [tasksCount, setTasksCount] = useState<number | null>(null);
    const [applicationsCount, setApplicationsCount] = useState<number | null>(null);
-   const [selectedTab, setSelectedTab] = useState<"mytasks" | "myapplications" | null>(null);
+   const [selectedTab, setSelectedTab] = useState<"mytasks" | "myapplications" | null>(() => {
+      if (typeof window === "undefined") return null;
+
+      try {
+         const raw = window.sessionStorage.getItem("extrahand_post_task_route");
+         if (!raw) return null;
+         const parsed = JSON.parse(raw) as { tab?: string };
+         return parsed.tab === "mytasks" ? "mytasks" : null;
+      } catch {
+         return null;
+      }
+   });
 
    // Determine user role
    const userRole = useMemo<"tasker" | "poster" | null>(() => {
@@ -60,7 +71,7 @@ export default function TasksPage() {
    useEffect(() => {
       const tabParam = searchParams.get("tab");
       const postTaskRouteRaw = typeof window !== "undefined"
-         ? window.localStorage.getItem("extrahand_post_task_route")
+         ? window.sessionStorage.getItem("extrahand_post_task_route")
          : null;
 
       if (postTaskRouteRaw) {
@@ -68,11 +79,11 @@ export default function TasksPage() {
             const postTaskRoute = JSON.parse(postTaskRouteRaw) as { tab?: string; createdAt?: number };
             if (postTaskRoute.tab === "mytasks") {
                setSelectedTab("mytasks");
-               window.localStorage.removeItem("extrahand_post_task_route");
+               window.sessionStorage.removeItem("extrahand_post_task_route");
                return;
             }
          } catch {
-            window.localStorage.removeItem("extrahand_post_task_route");
+            window.sessionStorage.removeItem("extrahand_post_task_route");
          }
       }
 

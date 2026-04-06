@@ -9,6 +9,32 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { ServiceCategory } from "@/lib/data/categories";
 
+const hyderabadCategoryToServicePageSlug: Record<string, string> = {
+   "ac-repair": "ac-repair-in-hyderabad",
+   electrical: "electrician-in-hyderabad",
+   plumbing: "plumber-in-hyderabad",
+   carpenter: "carpenter-in-hyderabad",
+   "home-cleaning": "home-cleaning-in-hyderabad",
+   "deep-cleaning": "home-cleaning-in-hyderabad",
+   "pest-control": "pest-control-in-hyderabad",
+   painting: "painting-services-in-hyderabad",
+   "packers-movers": "packers-and-movers-in-hyderabad",
+};
+
+function getCategoryHref(categoryId: string, citySlug: string): string {
+   if (citySlug !== "hyderabad") {
+      return `/tasks/new?category=${categoryId}&location=${citySlug}`;
+   }
+
+   const matchingServicePageSlug = hyderabadCategoryToServicePageSlug[categoryId];
+
+   if (matchingServicePageSlug) {
+      return `/${matchingServicePageSlug}`;
+   }
+
+   return "/locations/hyderabad#hyderabad-service-pages";
+}
+
 interface ServiceCategoriesGridProps {
    categories: ServiceCategory[];
    citySlug: string;
@@ -38,7 +64,7 @@ export function ServiceCategoriesGrid({
                {categories.map((category) => (
                   <Link
                      key={category.id}
-                     href={`/tasks/new?category=${category.id}&location=${citySlug}`}
+                     href={getCategoryHref(category.id, citySlug)}
                      className="group block"
                   >
                      <div className="bg-white border border-gray-200 rounded-lg p-6 hover:border-blue-500 hover:shadow-md transition-all">
