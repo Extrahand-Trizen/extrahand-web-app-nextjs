@@ -779,6 +779,16 @@ export function TaskCreationFlow() {
             // Keep cache fresh in background for server-truth reconciliation.
             queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
 
+            // Signal the tasks page to open My Tasks regardless of user role defaults.
+            localStorage.setItem(
+               "extrahand_post_task_route",
+               JSON.stringify({
+                  tab: "mytasks",
+                  taskId: createdTask?._id || createdTask?.id || null,
+                  createdAt: Date.now(),
+               })
+            );
+
             setTimeout(() => {
                router.push("/tasks?tab=mytasks");
             }, 500);

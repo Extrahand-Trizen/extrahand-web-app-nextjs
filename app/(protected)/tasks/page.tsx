@@ -59,6 +59,23 @@ export default function TasksPage() {
 
    useEffect(() => {
       const tabParam = searchParams.get("tab");
+      const postTaskRouteRaw = typeof window !== "undefined"
+         ? window.localStorage.getItem("extrahand_post_task_route")
+         : null;
+
+      if (postTaskRouteRaw) {
+         try {
+            const postTaskRoute = JSON.parse(postTaskRouteRaw) as { tab?: string; createdAt?: number };
+            if (postTaskRoute.tab === "mytasks") {
+               setSelectedTab("mytasks");
+               window.localStorage.removeItem("extrahand_post_task_route");
+               return;
+            }
+         } catch {
+            window.localStorage.removeItem("extrahand_post_task_route");
+         }
+      }
+
       if (tabParam === "myapplications" || tabParam === "mytasks") {
          setSelectedTab(tabParam);
       }
