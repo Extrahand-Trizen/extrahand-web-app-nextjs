@@ -70,7 +70,14 @@ export function PrivacySection({
    useEffect(() => {
       setLocalSettings(settings);
       setHasChanges(false);
-   }, [settings]);
+   }, [
+      settings.profileVisibility,
+      settings.showEarnings,
+      settings.showTaskHistory,
+      settings.showReviews,
+      settings.locationSharing,
+      settings.analyticsTracking,
+   ]);
 
    const toggleSection = (section: string) => {
       setExpandedSections((prev) =>

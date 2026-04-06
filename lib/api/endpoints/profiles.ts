@@ -78,10 +78,14 @@ export const profilesApi = {
 
   /**
    * Get public profile by user ID (no authentication required)
-   * GET /api/v1/profiles/:userId
+   * GET /api/v1/profiles/public/:uid or /api/v1/profiles/public/id/:profileId
    */
   async getPublicProfile(userId: string): Promise<UserProfile> {
-    const response = await fetchPublic(`profiles/${userId}`);
+    const isMongoObjectId = /^[0-9a-fA-F]{24}$/.test(userId);
+    const endpoint = isMongoObjectId
+      ? `profiles/public/id/${userId}`
+      : `profiles/public/${userId}`;
+    const response = await fetchPublic(endpoint);
     return normalizeProfile(response.profile || response);
   },
 
