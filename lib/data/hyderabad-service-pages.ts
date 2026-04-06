@@ -55,6 +55,48 @@ export const hyderabadServicePages: HyderabadServicePage[] = [
       ],
    },
    {
+      slug: "appliance-repair-in-hyderabad",
+      serviceName: "Appliance Repair Services",
+      shortDescription: "Book appliance repair in Hyderabad for common home appliances including microwave, refrigerator, washing machine, and dishwasher issues.",
+      heroDescription: "Get doorstep appliance diagnostics and repair support from trusted technicians across Hyderabad.",
+      whatYouGet: ["Issue diagnosis and troubleshooting", "Minor part replacement support", "Safety and performance checks"],
+      commonNeeds: ["Appliance not starting", "Heating or cooling issues", "Abnormal noise or vibration"],
+      faq: [
+         {
+            question: "Do you repair multiple appliances in one visit?",
+            answer: "Yes, you can request inspection for multiple appliances and the scope is confirmed during booking.",
+         },
+      ],
+   },
+   {
+      slug: "beauty-services-in-hyderabad",
+      serviceName: "Beauty Services",
+      shortDescription: "Book beauty services in Hyderabad for salon-at-home support including grooming, cleanup, and occasion-ready packages.",
+      heroDescription: "Get convenient at-home beauty and grooming services from experienced professionals.",
+      whatYouGet: ["At-home salon-style support", "Hygienic service setup", "Customized service options"],
+      commonNeeds: ["Party or event grooming", "Routine skincare and cleanup", "Quick home salon booking"],
+      faq: [
+         {
+            question: "Can I book beauty services for a specific time slot?",
+            answer: "Yes, you can choose preferred slots based on availability in your Hyderabad location.",
+         },
+      ],
+   },
+   {
+      slug: "car-washing-in-hyderabad",
+      serviceName: "Car Washing and Cleaning Services",
+      shortDescription: "Find car washing and car cleaning services in Hyderabad for interior cleaning, exterior wash, and detailing support.",
+      heroDescription: "Keep your car fresh and road-ready with convenient cleaning and detailing services.",
+      whatYouGet: ["Exterior foam wash support", "Interior vacuum and wipe-down", "Basic detailing and finishing"],
+      commonNeeds: ["Weekend car cleaning", "Interior odor and dust cleanup", "Post-travel car wash"],
+      faq: [
+         {
+            question: "Do you provide interior and exterior cleaning together?",
+            answer: "Yes, combined interior and exterior car cleaning options are available.",
+         },
+      ],
+   },
+   {
       slug: "washing-machine-repair-in-hyderabad",
       serviceName: "Washing Machine Repair",
       shortDescription: "Get washing machine repair in Hyderabad for spin, drainage, motor, and control panel issues.",
@@ -167,6 +209,20 @@ export const hyderabadServicePages: HyderabadServicePage[] = [
       ],
    },
    {
+      slug: "deep-cleaning-in-hyderabad",
+      serviceName: "Deep Cleaning Services",
+      shortDescription: "Book deep cleaning in Hyderabad for kitchens, bathrooms, living spaces, and high-use surfaces.",
+      heroDescription: "Restore cleanliness and hygiene with detailed deep-cleaning support for your home.",
+      whatYouGet: ["Room-wise deep cleaning", "Stain and grime treatment", "Surface sanitization support"],
+      commonNeeds: ["Festival deep cleaning", "Move-in or move-out cleaning", "Post-renovation cleanup"],
+      faq: [
+         {
+            question: "How is deep cleaning different from regular cleaning?",
+            answer: "Deep cleaning targets buildup and hard-to-reach areas beyond routine daily cleaning.",
+         },
+      ],
+   },
+   {
       slug: "sofa-cleaning-in-hyderabad",
       serviceName: "Sofa Cleaning",
       shortDescription: "Professional sofa cleaning in Hyderabad for stain removal, odor control, and fabric care.",
@@ -275,6 +331,76 @@ export const hyderabadServicePages: HyderabadServicePage[] = [
          {
             question: "Can office relocation be done during non-working hours?",
             answer: "Yes, many moves can be scheduled during evenings or weekends to reduce downtime.",
+         },
+      ],
+   },
+   {
+      slug: "home-chef-services-in-hyderabad",
+      serviceName: "Cooking and Home Chef Services",
+      shortDescription: "Book cooking and home chef services in Hyderabad for daily meals, special occasions, and customized menu support.",
+      heroDescription: "Get experienced home chefs for convenient meal prep and event-based cooking at home.",
+      whatYouGet: ["Home-cooked meal preparation", "Custom menu planning", "One-time or recurring chef support"],
+      commonNeeds: ["Daily meal assistance", "Party or guest meal prep", "Special-diet cooking support"],
+      faq: [
+         {
+            question: "Can I book a chef for one-time events?",
+            answer: "Yes, one-time event and recurring home chef bookings are both available.",
+         },
+      ],
+   },
+   {
+      slug: "driver-services-in-hyderabad",
+      serviceName: "Driver and Chauffeur Services",
+      shortDescription: "Hire driver services in Hyderabad for local travel, business commute, and personal chauffeur needs.",
+      heroDescription: "Book reliable drivers for flexible city travel and scheduled rides across Hyderabad.",
+      whatYouGet: ["On-demand driver booking", "Short and full-day options", "Professional local-route support"],
+      commonNeeds: ["Daily office commute", "Airport pickup and drop", "Family travel assistance"],
+      faq: [
+         {
+            question: "Can I book driver service for a full day?",
+            answer: "Yes, part-day and full-day chauffeur options are available depending on requirement.",
+         },
+      ],
+   },
+   {
+      slug: "event-services-in-hyderabad",
+      serviceName: "Event Services",
+      shortDescription: "Find event services in Hyderabad for catering, decor, DJ support, and small-to-medium event coordination.",
+      heroDescription: "Plan smoother events with trusted professionals for setup, support, and service execution.",
+      whatYouGet: ["Event requirement planning", "Vendor and setup coordination", "On-site service support"],
+      commonNeeds: ["Birthday and family events", "Corporate gatherings", "Small venue celebrations"],
+      faq: [
+         {
+            question: "Do you support small home events as well?",
+            answer: "Yes, event support is available for both home and venue-based functions.",
+         },
+      ],
+   },
+   {
+      slug: "fitness-trainers-in-hyderabad",
+      serviceName: "Fitness Trainers",
+      shortDescription: "Book fitness trainers in Hyderabad for personal training, weight goals, and home workout guidance.",
+      heroDescription: "Reach your fitness goals with personalized coaching and structured training sessions.",
+      whatYouGet: ["Personalized workout plans", "Goal-based fitness tracking", "Home and outdoor training options"],
+      commonNeeds: ["Weight loss training", "Strength and conditioning", "Posture and mobility improvement"],
+      faq: [
+         {
+            question: "Can beginners book personal trainers?",
+            answer: "Yes, beginner-friendly training plans are available with progressive routines.",
+         },
+      ],
+   },
+   {
+      slug: "furniture-assembly-in-hyderabad",
+      serviceName: "Furniture Assembly Services",
+      shortDescription: "Book furniture assembly in Hyderabad for beds, wardrobes, tables, workstations, and modular units.",
+      heroDescription: "Get safe and precise furniture assembly support for home and office setups.",
+      whatYouGet: ["Flat-pack furniture assembly", "Alignment and fitting support", "Basic hardware tightening and checks"],
+      commonNeeds: ["New furniture setup", "Relocation reassembly", "Loose fitting corrections"],
+      faq: [
+         {
+            question: "Can you assemble office furniture as well?",
+            answer: "Yes, furniture assembly support is available for both residential and office requirements.",
          },
       ],
    },

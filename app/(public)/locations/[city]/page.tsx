@@ -97,7 +97,7 @@ export default async function CityPage({ params }: PageProps) {
                >
                   <div className="rounded-2xl border border-secondary-200 bg-white p-6 sm:p-8">
                      <h2 className="text-2xl font-bold text-secondary-900 sm:text-3xl">
-                        Hyderabad Service Pages
+                        Explore Services in Hyderabad
                      </h2>
                      <p className="mt-3 max-w-3xl text-secondary-700">
                         Explore all service-specific pages for Hyderabad. Each page includes focused content to help users quickly find the right service.

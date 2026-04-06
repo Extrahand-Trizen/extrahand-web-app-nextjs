@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
    getHyderabadServicePageBySlug,
+   type HyderabadServicePage,
    hyderabadServicePageSlugs,
 } from "@/lib/data/hyderabad-service-pages";
 
@@ -215,7 +216,7 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
       },
    },
    "pest-control-in-hyderabad": {
-      imagePath: "/assets/mobilescreens/home.png",
+      imagePath: "/assets/images/home.png",
       overview: "Pest treatment combines inspection and targeted application to address active infestations and reduce repeat activity in residential and office environments.",
       bestFor: "Recurring cockroach, ant, termite, and mosquito concerns in homes or commercial spaces.",
       serviceDeepDive: "Effective pest control is built on accurate infestation mapping and targeted treatment. When combined with preventive steps, it reduces recurrence and improves indoor hygiene confidence.",
@@ -274,6 +275,114 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
          answer: "Yes, multi-stage relocation can be planned to reduce operational disruption.",
       },
    },
+   "appliance-repair-in-hyderabad": {
+      imagePath: "https://www.zuper.co/wp-content/uploads/2023/11/Blog-Feature-Image-Appliance-repair.webp",
+      overview: "Appliance repair support covers common home devices with practical diagnostics and clear recommendations.",
+      bestFor: "Households facing appliance faults, sudden shutdowns, and recurring performance issues.",
+      serviceDeepDive: "Appliance reliability improves when diagnosis checks both electrical and mechanical causes before replacement decisions.",
+      prepTips: ["Share appliance model and issue details", "Mention when the fault usually occurs", "Keep appliance access area clear"],
+      postServiceTips: ["Run a short test cycle after repair", "Use the appliance as advised", "Schedule periodic maintenance checks"],
+      secondFaq: {
+         question: "Can multiple appliances be checked in one booking?",
+         answer: "Yes, multiple appliance checks can be planned in one visit based on service scope.",
+      },
+   },
+   "beauty-services-in-hyderabad": {
+      imagePath: "https://charmssalon.in/wp-content/uploads/2024/09/beautician-with-brush-applies-white-moisturizing-mask-face-young-girl-client-spa-beauty-salon-scaled.jpg",
+      overview: "Beauty services are tailored for at-home convenience with hygienic setup and flexible slot availability.",
+      bestFor: "Users looking for home salon support, event grooming, and regular personal care sessions.",
+      serviceDeepDive: "At-home beauty service quality depends on hygienic practices, product suitability, and clear service customization before the session.",
+      prepTips: ["Share preferred services in advance", "Keep a clean, well-lit setup area", "Mention any skin sensitivity upfront"],
+      postServiceTips: ["Follow after-care guidance provided", "Use recommended products for maintenance", "Book routine sessions based on your schedule"],
+      secondFaq: {
+         question: "Can I book beauty services for events at home?",
+         answer: "Yes, event-focused beauty and grooming sessions can be booked based on availability.",
+      },
+   },
+   "car-washing-in-hyderabad": {
+      imagePath: "https://img.freepik.com/free-photo/professional-washer-blue-uniform-washing-luxury-car-with-water-gun-open-air-car-wash_496169-333.jpg?semt=ais_hybrid&w=740&q=80",
+      overview: "Car washing services provide practical cleaning support for routine upkeep and appearance maintenance.",
+      bestFor: "Cars needing interior cleanup, exterior wash, and periodic detailing support.",
+      serviceDeepDive: "Good car cleaning combines exterior treatment and interior hygiene with attention to high-touch and dust-prone areas.",
+      prepTips: ["Remove valuable items from the vehicle", "Share preferred cleaning type", "Confirm wash location access"],
+      postServiceTips: ["Avoid immediate dusty parking after wash", "Use periodic interior wipe-down", "Schedule regular wash intervals"],
+      secondFaq: {
+         question: "Are interior and exterior cleaning both available?",
+         answer: "Yes, combined interior and exterior cleaning options are available.",
+      },
+   },
+   "deep-cleaning-in-hyderabad": {
+      imagePath: "/assets/mobilescreens/cleaning.png",
+      overview: "Deep cleaning covers high-use rooms and difficult corners for better hygiene and comfort.",
+      bestFor: "Homes preparing for festivals, move-ins, or periodic full-space hygiene resets.",
+      serviceDeepDive: "Deep cleaning outcomes improve with room-wise planning and targeted treatment of buildup zones.",
+      prepTips: ["Share priority rooms and concern spots", "Keep fragile items aside", "Ensure water and power availability"],
+      postServiceTips: ["Allow cleaned surfaces to dry", "Ventilate rooms after service", "Maintain with weekly light cleaning"],
+      secondFaq: {
+         question: "Can deep cleaning be booked for selected rooms only?",
+         answer: "Yes, you can request room-specific deep cleaning based on your requirement.",
+      },
+   },
+   "home-chef-services-in-hyderabad": {
+      imagePath: "https://www.staffingattiffanies.com/wp-content/uploads/2022/05/chef-in-restaurant-kitchen-cooking.jpg",
+      overview: "Home chef services support daily meal prep and occasion-based cooking with menu flexibility.",
+      bestFor: "Families, working professionals, and events that need convenient cooking assistance.",
+      serviceDeepDive: "Home chef experiences are best when dietary needs, cuisine preferences, and kitchen setup are discussed in advance.",
+      prepTips: ["Share menu and diet preferences", "Confirm ingredient availability", "Keep kitchen workspace ready"],
+      postServiceTips: ["Store prepared food as advised", "Plan upcoming meals in advance", "Maintain kitchen hygiene between sessions"],
+      secondFaq: {
+         question: "Can I book one-time and recurring chef services?",
+         answer: "Yes, both one-time and recurring home chef options are available.",
+      },
+   },
+   "driver-services-in-hyderabad": {
+      imagePath: "/assets/mobilescreens/delivery.png",
+      overview: "Driver services are suited for flexible city travel, office commutes, and daily mobility support.",
+      bestFor: "Users needing part-day, full-day, or schedule-based chauffeur assistance.",
+      serviceDeepDive: "Reliable driver support depends on clear route planning, time scheduling, and requirement communication before pickup.",
+      prepTips: ["Share trip plan and duration", "Mention pickup and drop constraints", "Confirm any route preferences"],
+      postServiceTips: ["Review trip details at completion", "Save preferred schedules for repeat booking", "Book early during peak hours"],
+      secondFaq: {
+         question: "Can I book a driver for an entire day?",
+         answer: "Yes, full-day and custom-duration driver slots are available based on requirement.",
+      },
+   },
+   "event-services-in-hyderabad": {
+      imagePath: "https://4.imimg.com/data4/VH/CO/MY-19253486/event-management-services.jpg",
+      overview: "Event services help with setup, coordination, and execution for smoother gatherings.",
+      bestFor: "Home functions, celebrations, and corporate gatherings requiring support teams.",
+      serviceDeepDive: "Event quality improves when roles, timelines, and setup requirements are finalized before the event day.",
+      prepTips: ["Share event date and expected guest count", "List required support services", "Confirm venue access and setup time"],
+      postServiceTips: ["Review service outcomes with providers", "Capture feedback for future events", "Store contact details for repeat bookings"],
+      secondFaq: {
+         question: "Can event services be customized by event size?",
+         answer: "Yes, service scope is tailored to event size and support needs.",
+      },
+   },
+   "fitness-trainers-in-hyderabad": {
+      imagePath: "https://www.embodyfitnessatx.com/wp-content/uploads/sites/70/2022/12/Personal-Training.jpg",
+      overview: "Fitness training support includes structured coaching plans for strength, weight, and consistency goals.",
+      bestFor: "Beginners and regular trainees looking for goal-based personal guidance.",
+      serviceDeepDive: "Training outcomes improve with personalized routines, progressive load plans, and periodic progress checks.",
+      prepTips: ["Share your current fitness level", "Mention goals and health constraints", "Keep a safe workout space ready"],
+      postServiceTips: ["Track sessions and consistency", "Follow warm-up and recovery routine", "Adjust plan periodically with trainer input"],
+      secondFaq: {
+         question: "Are beginner fitness plans available?",
+         answer: "Yes, beginner-friendly plans are included with gradual progression.",
+      },
+   },
+   "furniture-assembly-in-hyderabad": {
+      imagePath: "/assets/mobilescreens/furniture.png",
+      overview: "Furniture assembly services focus on stable fitting, alignment, and safe setup at home or office.",
+      bestFor: "Flat-pack furniture setup, relocation reassembly, and fixing loose assembled units.",
+      serviceDeepDive: "Furniture assembly quality depends on measurement accuracy, component fitting, and hardware tightening for long-term stability.",
+      prepTips: ["Keep all assembly parts ready", "Share furniture model details", "Clear enough space for assembly work"],
+      postServiceTips: ["Avoid heavy load immediately", "Recheck hinges and bolts after first use", "Schedule periodic tightening for heavy-use units"],
+      secondFaq: {
+         question: "Can both home and office furniture be assembled?",
+         answer: "Yes, assembly support is available for both residential and office furniture.",
+      },
+   },
    "cctv-installation-in-hyderabad": {
       imagePath: "/assets/mobilescreens/mounting.png",
       overview: "CCTV setup focuses on practical camera placement, stable wiring, and visibility optimization for homes, stores, and office premises.",
@@ -287,6 +396,35 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
       },
    },
 };
+
+function getServicePageEnhancement(servicePage: HyderabadServicePage): ServicePageEnhancement {
+   const explicitEnhancement = servicePageEnhancements[servicePage.slug];
+
+   if (explicitEnhancement) {
+      return explicitEnhancement;
+   }
+
+   return {
+      imagePath: "/assets/images/default.png",
+      overview: `${servicePage.serviceName} in Hyderabad is tailored for local needs with quick booking and dependable service support.`,
+      bestFor: servicePage.commonNeeds[0] || `Common ${servicePage.serviceName.toLowerCase()} requests in Hyderabad.`,
+      serviceDeepDive: `This service focuses on practical diagnosis, quality execution, and clear next steps so users can get reliable outcomes for ${servicePage.serviceName.toLowerCase()} requirements.`,
+      prepTips: [
+         `Share specific details about your ${servicePage.serviceName.toLowerCase()} requirement before booking.`,
+         "Keep the work area accessible for faster assessment.",
+         "Mention any urgency, preferred timing, or prior issues to help with planning.",
+      ],
+      postServiceTips: [
+         "Follow the professional's care instructions after service completion.",
+         "Track performance for the first 24 to 48 hours and report recurring issues.",
+         "Plan periodic maintenance to keep service outcomes consistent.",
+      ],
+      secondFaq: {
+         question: `Can I request this ${servicePage.serviceName.toLowerCase()} service in my Hyderabad area?`,
+         answer: "Yes, service availability covers major Hyderabad neighborhoods and nearby localities based on provider slots.",
+      },
+   };
+}
 
 function getAreaSlice(slug: string) {
    const sum = slug.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -311,13 +449,14 @@ export async function generateMetadata({
 }: ServiceCityPageProps): Promise<Metadata> {
    const { serviceCitySlug } = await params;
    const servicePage = getHyderabadServicePageBySlug(serviceCitySlug);
-   const enhancement = servicePageEnhancements[serviceCitySlug];
 
-   if (!servicePage || !enhancement) {
+   if (!servicePage) {
       return {
          title: "Service Page Not Found | ExtraHand",
       };
    }
+
+   const enhancement = getServicePageEnhancement(servicePage);
 
    const canonicalPath = `/${servicePage.slug}`;
 
@@ -353,11 +492,12 @@ export async function generateMetadata({
 export default async function ServiceCityPage({ params }: ServiceCityPageProps) {
    const { serviceCitySlug } = await params;
    const servicePage = getHyderabadServicePageBySlug(serviceCitySlug);
-   const enhancement = servicePageEnhancements[serviceCitySlug];
 
-   if (!servicePage || !enhancement) {
+   if (!servicePage) {
       notFound();
    }
+
+   const enhancement = getServicePageEnhancement(servicePage);
 
    const coverageAreas = getAreaSlice(servicePage.slug);
    const postTaskHref = `/tasks/new?source=seo&service=${servicePage.slug}`;
@@ -433,7 +573,7 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
                      alt={`${servicePage.serviceName} in Hyderabad`}
                      width={900}
                      height={560}
-                     className="h-full min-h-80 w-full object-cover sm:min-h-96"
+                     className="h-80 w-full object-cover object-center sm:h-96 lg:h-112"
                      priority
                   />
                </div>
