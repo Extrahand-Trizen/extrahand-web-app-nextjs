@@ -38,7 +38,7 @@ function resolveNotificationRoute(notif: InAppNotification): string | null {
       return taskId ? `/tasks/${taskId}` : "/tasks";
     case "keywordTaskAlerts":
     case "recommendedTaskAlerts":
-      return taskId ? `/discover?taskId=${taskId}` : "/discover";
+      return taskId ? `/tasks/${taskId}` : "/tasks";
     default:
       return taskId ? `/tasks/${taskId}` : null;
   }

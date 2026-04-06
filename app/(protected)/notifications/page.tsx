@@ -119,8 +119,8 @@ function resolveNotificationRoute(notif: InAppNotification): string | null {
 
     case "keywordTaskAlerts":
     case "recommendedTaskAlerts":
-      if (taskId) return `/discover?taskId=${taskId}`;
-      return "/discover";
+      if (taskId) return `/tasks/${taskId}`;
+      return "/tasks";
 
     case "system":
       return null; // No navigation for system
