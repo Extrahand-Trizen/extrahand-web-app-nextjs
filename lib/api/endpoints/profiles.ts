@@ -82,11 +82,27 @@ export const profilesApi = {
    */
   async getPublicProfile(userId: string): Promise<UserProfile> {
     const isMongoObjectId = /^[0-9a-fA-F]{24}$/.test(userId);
-    const endpoint = isMongoObjectId
+    const preferredEndpoint = isMongoObjectId
       ? `profiles/public/id/${userId}`
       : `profiles/public/${userId}`;
-    const response = await fetchPublic(endpoint);
-    return normalizeProfile(response.profile || response);
+    const fallbackEndpoint = `profiles/${userId}`;
+
+    try {
+      const response = await fetchPublic(preferredEndpoint);
+      return normalizeProfile(response.profile || response);
+    } catch (error: any) {
+      const message = String(error?.message || '');
+      const isMissingPublicRoute =
+        error?.status === 404 &&
+        (message.includes('/profiles/public/') || message.toLowerCase().includes('no route found'));
+
+      if (!isMissingPublicRoute) {
+        throw error;
+      }
+
+      const response = await fetchPublic(fallbackEndpoint);
+      return normalizeProfile(response.profile || response);
+    }
   },
 
   /**
