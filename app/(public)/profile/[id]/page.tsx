@@ -34,6 +34,7 @@ export default function UserProfilePage() {
    const [loading, setLoading] = useState(true);
    const [loadingReviews, setLoadingReviews] = useState(false);
    const [error, setError] = useState<string | null>(null);
+   const [errorTitle, setErrorTitle] = useState<string>("Profile not found");
 
    const isOwnProfile = userData?.uid === userId || userData?._id === userId;
 
@@ -42,6 +43,7 @@ export default function UserProfilePage() {
          try {
             setLoading(true);
             setError(null);
+            setErrorTitle("Profile not found");
 
             // Fetch user profile (public access, no auth required)
             console.log("🔍 Fetching public profile for user:", userId);
@@ -59,9 +61,22 @@ export default function UserProfilePage() {
             }
          } catch (err: any) {
             console.error("❌ Failed to load profile:", err);
-            setError(err.message || "Failed to load profile");
+            const isPrivateProfile =
+               err?.status === 403 && err?.data?.code === "PROFILE_PRIVATE";
+            const errorMessage =
+               err?.data?.message ||
+               err?.message ||
+               "Failed to load profile";
+
+            if (isPrivateProfile) {
+               setErrorTitle("This profile is private");
+               setError(errorMessage);
+               return;
+            }
+
+            setError(errorMessage);
             toast.error("Failed to load profile", {
-               description: err.message || "This user profile may not exist.",
+               description: errorMessage || "This user profile may not exist.",
             });
          } finally {
             setLoading(false);
@@ -174,7 +189,7 @@ export default function UserProfilePage() {
             <div className="flex-1 flex items-center justify-center">
                <div className="text-center">
                   <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                     Profile not found
+                     {errorTitle}
                   </h2>
                   <p className="text-gray-500 mb-4">
                      {error || "This user profile doesn't exist or has been removed."}

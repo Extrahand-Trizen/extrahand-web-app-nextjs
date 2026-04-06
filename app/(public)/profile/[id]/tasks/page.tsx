@@ -41,6 +41,7 @@ export default function UserPortfolioPage() {
    const [loading, setLoading] = useState(true);
    const [loadingTasks, setLoadingTasks] = useState(false);
    const [error, setError] = useState<string | null>(null);
+   const [errorTitle, setErrorTitle] = useState<string>("Portfolio not found");
    const [shareOpen, setShareOpen] = useState(false);
 
    const isOwnProfile = userData?.uid === userId || userData?._id === userId;
@@ -50,6 +51,7 @@ export default function UserPortfolioPage() {
          try {
             setLoading(true);
             setError(null);
+            setErrorTitle("Portfolio not found");
 
             // Fetch user profile
             const profileData = await profilesApi.getPublicProfile(userId);
@@ -77,9 +79,22 @@ export default function UserPortfolioPage() {
             }
          } catch (err: any) {
             console.error("❌ Failed to load portfolio:", err);
-            setError(err.message || "Failed to load portfolio");
+            const isPrivateProfile =
+               err?.status === 403 && err?.data?.code === "PROFILE_PRIVATE";
+            const errorMessage =
+               err?.data?.message ||
+               err?.message ||
+               "Failed to load portfolio";
+
+            if (isPrivateProfile) {
+               setErrorTitle("This profile is private");
+               setError(errorMessage);
+               return;
+            }
+
+            setError(errorMessage);
             toast.error("Failed to load portfolio", {
-               description: err.message || "Please try again.",
+               description: errorMessage || "Please try again.",
             });
          } finally {
             setLoading(false);
@@ -160,7 +175,7 @@ export default function UserPortfolioPage() {
             <div className="flex-1 flex items-center justify-center">
                <div className="text-center">
                   <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                     Portfolio not found
+                     {errorTitle}
                   </h2>
                   <p className="text-gray-500 mb-4">
                      {error || "This user's portfolio doesn't exist."}

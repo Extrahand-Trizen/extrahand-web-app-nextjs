@@ -81,10 +81,9 @@ export function TaskTrackingHeader({
                      variant="ghost"
                      size="sm"
                      onClick={onReportClick}
-                     className="text-xs md:text-sm text-secondary-600 hover:text-red-600"
+                     className="text-xs md:text-sm text-amber-500 hover:text-amber-600 bg-transparent border-none shadow-none font-medium"
                   >
-                     <Flag className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5" />
-                     Report
+                     ⚠️ Report an Issue
                   </Button>
                )}
             </div>

@@ -1,17 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
 import {
    Check,
    Loader2,
    Eye,
    MapPin,
-   BarChart3,
    Shield,
    Users,
    Lock,
@@ -19,16 +16,12 @@ import {
    ChevronDown,
    ChevronUp,
    Info,
-   Download,
-   Trash2,
-   AlertTriangle,
 } from "lucide-react";
 import {
    PrivacySettingsState,
    ProfileVisibilityLevel,
    DEFAULT_PRIVACY_SETTINGS,
 } from "@/types/consent";
-import { privacyApi } from "@/lib/api/endpoints/privacy";
 import { toast } from "sonner";
 
 interface PrivacySectionProps {
@@ -66,17 +59,18 @@ export function PrivacySection({
    settings = DEFAULT_PRIVACY_SETTINGS,
    onSave,
 }: PrivacySectionProps) {
-    const [localSettings, setLocalSettings] =
+   const [localSettings, setLocalSettings] =
       useState<PrivacySettingsState>(settings);
    const [isSaving, setIsSaving] = useState(false);
    const [hasChanges, setHasChanges] = useState(false);
    const [expandedSections, setExpandedSections] = useState<string[]>([
       "visibility",
    ]);
-   const [isDownloading, setIsDownloading] = useState(false);
-   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-   const [deleteReason, setDeleteReason] = useState("");
-   const [isDeleting, setIsDeleting] = useState(false);
+
+   useEffect(() => {
+      setLocalSettings(settings);
+      setHasChanges(false);
+   }, [settings]);
 
    const toggleSection = (section: string) => {
       setExpandedSections((prev) =>
@@ -109,60 +103,6 @@ export function PrivacySection({
       }
    };
 
-   const handleDataExport = async () => {
-      try {
-         setIsDownloading(true);
-         toast.info("Preparing your data export...");
-         
-         const exportData = await privacyApi.exportData();
-         
-         // Create a downloadable JSON file
-         const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-            type: "application/json",
-         });
-         const url = URL.createObjectURL(blob);
-         const link = document.createElement("a");
-         link.href = url;
-         link.download = `extrahand-data-export-${new Date().toISOString().split('T')[0]}.json`;
-         document.body.appendChild(link);
-         link.click();
-         document.body.removeChild(link);
-         URL.revokeObjectURL(url);
-         
-         toast.success("Your data has been downloaded successfully!");
-      } catch (error: any) {
-         console.error("Data export error:", error);
-         toast.error(error.message || "Failed to export data");
-      } finally {
-         setIsDownloading(false);
-      }
-   };
-
-   const handleDeleteAccount = async () => {
-      if (!showDeleteConfirm) {
-         setShowDeleteConfirm(true);
-         return;
-      }
-
-      try {
-         setIsDeleting(true);
-         const result = await privacyApi.requestDeletion(true, deleteReason);
-         
-         toast.success(result.message, {
-            description: `Account will be deleted on ${new Date(result.deletionScheduledFor).toLocaleDateString()}`,
-            duration: 8000,
-         });
-         
-         setShowDeleteConfirm(false);
-         setDeleteReason("");
-      } catch (error: any) {
-         console.error("Account deletion error:", error);
-         toast.error(error.message || "Failed to request account deletion");
-      } finally {
-         setIsDeleting(false);
-      }
-   };
-
    return (
       <div className="max-w-4xl space-y-4 sm:space-y-6">
          {/* Header */}
@@ -173,19 +113,6 @@ export function PrivacySection({
             <p className="text-xs sm:text-sm text-gray-500 mt-1">
                Control your privacy settings and how your data is used
             </p>
-         </div>
-
-         {/* Coming Soon Banner */}
-         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
-            <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-            <div className="flex-1">
-               <h3 className="text-sm font-semibold text-amber-900">
-                  🚧 Features In Development
-               </h3>
-               <p className="text-xs text-amber-700 mt-1">
-                  We're actively working on implementing all privacy features. Some options may be limited or unavailable. Thank you for your patience!
-               </p>
-            </div>
          </div>
 
          {/* Profile Visibility */}
@@ -205,26 +132,16 @@ export function PrivacySection({
                {VISIBILITY_OPTIONS.map((option) => {
                   const isSelected =
                      localSettings.profileVisibility === option.value;
-                  const isComingSoon = option.value === "registered_users";
-                  
+
                   return (
                      <button
                         key={option.value}
-                        onClick={() => {
-                           if (isComingSoon) {
-                              toast.info("Coming Soon", {
-                                 description: "This visibility option will be available soon. Stay tuned!"
-                              });
-                              return;
-                           }
-                           updateSetting("profileVisibility", option.value);
-                        }}
+                        onClick={() => updateSetting("profileVisibility", option.value)}
                         className={cn(
                            "w-full flex items-start gap-3 p-3 rounded-lg border text-left transition-colors relative",
                            isSelected
                               ? "border-gray-900 bg-gray-50"
-                              : "border-gray-200 hover:border-gray-300",
-                           isComingSoon && "opacity-75"
+                              : "border-gray-200 hover:border-gray-300"
                         )}
                      >
                         <div
@@ -247,17 +164,12 @@ export function PrivacySection({
                               >
                                  {option.label}
                               </p>
-                              {isComingSoon && (
-                                 <span className="text-xs px-2 py-0.5 rounded-full bg-primary-100 text-primary-700 font-medium">
-                                    Coming Soon
-                                 </span>
-                              )}
                            </div>
                            <p className="text-xs text-gray-500 mt-0.5">
                               {option.description}
                            </p>
                         </div>
-                        {isSelected && !isComingSoon && (
+                        {isSelected && (
                            <Check className="w-4 h-4 text-gray-900 shrink-0 mt-1" />
                         )}
                      </button>
@@ -273,29 +185,9 @@ export function PrivacySection({
             icon={<Users className="w-4 h-4 sm:w-5 sm:h-5" />}
             isExpanded={expandedSections.includes("info")}
             onToggle={() => toggleSection("info")}
+            badge="Coming Soon"
          >
-            <div className="space-y-1 divide-y divide-gray-100">
-               <PrivacyToggle
-                  label="Show Earnings"
-                  description="Display your total earnings on your profile"
-                  checked={localSettings.showEarnings}
-                  onChange={(checked) => updateSetting("showEarnings", checked)}
-               />
-               <PrivacyToggle
-                  label="Show Task History"
-                  description="Display completed tasks on your profile"
-                  checked={localSettings.showTaskHistory}
-                  onChange={(checked) =>
-                     updateSetting("showTaskHistory", checked)
-                  }
-               />
-               <PrivacyToggle
-                  label="Show Reviews"
-                  description="Display reviews and ratings on your profile"
-                  checked={localSettings.showReviews}
-                  onChange={(checked) => updateSetting("showReviews", checked)}
-               />
-            </div>
+            <ComingSoonNotice description="Profile information controls are under development and will be available soon." />
          </CollapsibleSection>
 
          {/* Location & Tracking */}
@@ -305,27 +197,9 @@ export function PrivacySection({
             icon={<MapPin className="w-4 h-4 sm:w-5 sm:h-5" />}
             isExpanded={expandedSections.includes("location")}
             onToggle={() => toggleSection("location")}
+            badge="Coming Soon"
          >
-            <div className="space-y-1 divide-y divide-gray-100">
-               <PrivacyToggle
-                  label="Location Sharing"
-                  description="Share your location for task matching and navigation"
-                  checked={localSettings.locationSharing}
-                  onChange={(checked) =>
-                     updateSetting("locationSharing", checked)
-                  }
-                  note="Required for task matching features"
-               />
-               <PrivacyToggle
-                  label="Analytics Tracking"
-                  description="Help us improve by sharing usage data"
-                  checked={localSettings.analyticsTracking}
-                  onChange={(checked) =>
-                     updateSetting("analyticsTracking", checked)
-                  }
-                  note="Anonymous usage data only"
-               />
-            </div>
+            <ComingSoonNotice description="Location sharing and analytics controls are under development and will be available soon." />
          </CollapsibleSection>
 
          {/* Data Management */}
@@ -335,130 +209,9 @@ export function PrivacySection({
             icon={<Shield className="w-4 h-4 sm:w-5 sm:h-5" />}
             isExpanded={expandedSections.includes("advanced")}
             onToggle={() => toggleSection("advanced")}
+            badge="Coming Soon"
          >
-            <div className="space-y-4">
-               {/* Data Export */}
-               <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                     <Download className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                     <h4 className="text-sm font-medium text-gray-900">
-                        Export Your Data
-                     </h4>
-                     <p className="text-xs text-gray-500 mt-1">
-                        Download a complete copy of all your data in JSON format
-                     </p>
-                     <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs h-8 mt-2"
-                        onClick={handleDataExport}
-                        disabled={isDownloading}
-                     >
-                        {isDownloading ? (
-                           <>
-                              <Loader2 className="w-3 h-3 mr-2 animate-spin" />
-                              Preparing...
-                           </>
-                        ) : (
-                           <>
-                              <Download className="w-3 h-3 mr-2" />
-                              Download My Data
-                           </>
-                        )}
-                     </Button>
-                  </div>
-               </div>
-
-               {/* Account Deletion */}
-               <div className="flex items-start gap-3 pt-4 border-t border-gray-100">
-                  <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                     <Trash2 className="w-4 h-4 text-red-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                     <h4 className="text-sm font-medium text-gray-900">
-                        Delete Account
-                     </h4>
-                     <p className="text-xs text-gray-500 mt-1">
-                        Permanently delete your account and all associated data
-                     </p>
-                     
-                     {!showDeleteConfirm ? (
-                        <Button
-                           variant="outline"
-                           size="sm"
-                           className="text-xs h-8 mt-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                           onClick={() => setShowDeleteConfirm(true)}
-                        >
-                           <Trash2 className="w-3 h-3 mr-2" />
-                           Delete Account
-                        </Button>
-                     ) : (
-                        <div className="mt-3 space-y-3 bg-red-50 border border-red-200 rounded-lg p-3">
-                           <div className="flex items-start gap-2">
-                              <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
-                              <div>
-                                 <p className="text-xs font-medium text-red-900">
-                                    Are you absolutely sure?
-                                 </p>
-                                 <p className="text-xs text-red-700 mt-1">
-                                    This action cannot be undone. Your account will be scheduled for deletion after a 30-day grace period.
-                                 </p>
-                              </div>
-                           </div>
-                           
-                           <div className="space-y-2">
-                              <Label htmlFor="deleteReason" className="text-xs text-red-900">
-                                 Reason for deletion (optional)
-                              </Label>
-                              <textarea
-                                 id="deleteReason"
-                                 className="w-full text-xs p-2 border border-red-300 rounded-md resize-none"
-                                 rows={2}
-                                 placeholder="Help us improve by telling us why you're leaving..."
-                                 value={deleteReason}
-                                 onChange={(e) => setDeleteReason(e.target.value)}
-                              />
-                           </div>
-                           
-                           <div className="flex gap-2">
-                              <Button
-                                 size="sm"
-                                 variant="outline"
-                                 className="text-xs h-8 flex-1"
-                                 onClick={() => {
-                                    setShowDeleteConfirm(false);
-                                    setDeleteReason("");
-                                 }}
-                                 disabled={isDeleting}
-                              >
-                                 Cancel
-                              </Button>
-                              <Button
-                                 size="sm"
-                                 className="text-xs h-8 flex-1 bg-red-600 hover:bg-red-700"
-                                 onClick={handleDeleteAccount}
-                                 disabled={isDeleting}
-                              >
-                                 {isDeleting ? (
-                                    <>
-                                       <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                                       Deleting...
-                                    </>
-                                 ) : (
-                                    <>
-                                       <Trash2 className="w-3 h-3 mr-1" />
-                                       Confirm Delete
-                                    </>
-                                 )}
-                              </Button>
-                           </div>
-                        </div>
-                     )}
-                  </div>
-               </div>
-            </div>
+            <ComingSoonNotice description="Data export and account management controls are under development and will be available soon." />
          </CollapsibleSection>
 
          {/* Info Box */}
@@ -563,42 +316,11 @@ function CollapsibleSection({
    );
 }
 
-interface PrivacyToggleProps {
-   label: string;
-   description: string;
-   checked: boolean;
-   onChange: (checked: boolean) => void;
-   note?: string;
-}
-
-function PrivacyToggle({
-   label,
-   description,
-   checked,
-   onChange,
-   note,
-}: PrivacyToggleProps) {
+function ComingSoonNotice({ description }: { description: string }) {
    return (
-      <div className="py-3 sm:py-4 flex items-start justify-between gap-4">
-         <div className="flex-1 min-w-0">
-            <p className="text-xs sm:text-sm font-medium text-gray-900">
-               {label}
-            </p>
-            <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">
-               {description}
-            </p>
-            {note && (
-               <p className="text-[10px] sm:text-xs text-amber-600 mt-1 flex items-center gap-1">
-                  <Info className="w-3 h-3" />
-                  {note}
-               </p>
-            )}
-         </div>
-         <Switch
-            checked={checked}
-            onCheckedChange={onChange}
-            className="data-[state=checked]:bg-primary-600"
-         />
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+         <p className="text-xs font-medium text-amber-900">Coming Soon</p>
+         <p className="text-xs text-amber-700 mt-1">{description}</p>
       </div>
    );
 }

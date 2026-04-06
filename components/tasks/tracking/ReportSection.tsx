@@ -212,11 +212,11 @@ export function ReportSection({
                </p>
                <Button
                   onClick={() => setShowReportForm(true)}
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  className="text-sm"
+                  className="text-sm text-amber-500 hover:text-amber-600 bg-transparent border-none shadow-none font-medium"
                >
-                  Report Task
+                  ⚠️ Report an Issue
                </Button>
             </div>
          )}

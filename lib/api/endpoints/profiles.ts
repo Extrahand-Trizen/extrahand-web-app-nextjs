@@ -55,6 +55,19 @@ export const profilesApi = {
   },
 
   /**
+   * Update current user's profile
+   * PUT /api/v1/profiles/me
+   */
+  async updateMyProfile(body: Partial<UserProfile>): Promise<UserProfile> {
+    const response = await fetchWithAuth('profiles/me', {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+
+    return response.profile || response;
+  },
+
+  /**
    * Get profile by user ID (requires authentication)
    * GET /api/v1/profiles/:userId
    */

@@ -4,7 +4,14 @@ import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth/context";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { ProfileSection, Review, WorkHistoryItem, PaymentMethod, PayoutMethod } from "@/types/profile";
+import {
+   ProfileSection,
+   Review,
+   WorkHistoryItem,
+   PaymentMethod,
+   PayoutMethod,
+   PrivacySettings,
+} from "@/types/profile";
 import { UserProfile } from "@/types/user";
 import {
    ProfileSidebar,
@@ -24,10 +31,12 @@ import {
 import ReferralDashboardSimple from "@/components/profile/ReferralDashboardSimple";
 import BadgeDisplaySimple from "@/components/profile/BadgeDisplaySimple";
 import {
+   DEFAULT_PRIVACY_SETTINGS,
    DEFAULT_NOTIFICATION_SETTINGS,
    FrequencySettings,
    CommunicationChannel,
    NotificationSettingsState,
+   PrivacySettingsState,
 } from "@/types/consent";
 import {
    Sheet,
@@ -580,15 +589,29 @@ function ProfilePageContent() {
          // TODO: Implement revoke all sessions
          toast.info("Session management feature coming soon");
       },
-      onUpdatePrivacy: async (settings?: any) => {
+      onUpdatePrivacy: async (
+         settings?: PrivacySettingsState | PrivacySettings
+      ) => {
          try {
-            // Privacy settings are handled within PrivacySection component
-            // This is called when SecuritySection saves privacy settings
+            const isProfilePrivacySettings =
+               settings &&
+               typeof settings === "object" &&
+               "profileVisibility" in settings;
+
+            if (isProfilePrivacySettings) {
+               const updatedProfile = await profilesApi.updateMyProfile({
+                  profilePrivacy: settings as PrivacySettingsState,
+               });
+               setUser(updatedProfile as UserProfile);
+            }
+
             toast.success("Privacy settings updated successfully");
             await refreshUserData();
+            await refreshProfile();
          } catch (error: any) {
             console.error("Failed to update privacy settings:", error);
             toast.error(error.message || "Failed to update privacy settings");
+            throw error;
          }
       },
       onDeleteAccount: async (reason?: string) => {
@@ -653,12 +676,12 @@ function ProfilePageContent() {
                      {SECTION_TITLES[section]}
                   </h1>
                   <ReportIssueButton
-                     buttonLabel="Report Issue"
+                     buttonLabel="⚠️ Report Issue"
                      issueType="general"
                      pageContext={`profile-${section}`}
                      buttonVariant="link"
                      buttonSize="sm"
-                     buttonClassName="text-xs"
+                     buttonClassName="text-xs text-red-600 hover:text-red-700"
                      className="shrink-0"
                   />
                </div>
@@ -682,11 +705,12 @@ function ProfilePageContent() {
                <div className="max-w-4xl mx-auto py-8">
                   <div className="mb-4 flex justify-end">
                      <ReportIssueButton
-                        buttonLabel="Report Issue"
+                        buttonLabel="⚠️ Report Issue"
                         issueType="general"
                         pageContext={`profile-${section}`}
                         buttonVariant="link"
                         buttonSize="sm"
+                        buttonClassName="text-sm text-red-600 hover:text-red-700"
                      />
                   </div>
                   {section !== "overview" && (
@@ -741,7 +765,9 @@ interface Props {
    onSavePreferences: () => Promise<void>;
    onRevokeSession: () => Promise<void>;
    onRevokeAllSessions: () => Promise<void>;
-   onUpdatePrivacy: () => Promise<void>;
+   onUpdatePrivacy: (
+      settings?: PrivacySettingsState | PrivacySettings
+   ) => Promise<void>;
    onDeleteAccount: () => Promise<void>;
    paymentMethods: PaymentMethod[];
    payoutMethods: PayoutMethod[];
@@ -856,16 +882,30 @@ function renderSection(s: ProfileSection, p: Props) {
             />
          );
       case "privacy":
+         const privacySettings: PrivacySettingsState = {
+            profileVisibility:
+               p.user.profilePrivacy?.profileVisibility ||
+               DEFAULT_PRIVACY_SETTINGS.profileVisibility,
+            showEarnings:
+               p.user.profilePrivacy?.showEarnings ??
+               DEFAULT_PRIVACY_SETTINGS.showEarnings,
+            showTaskHistory:
+               p.user.profilePrivacy?.showTaskHistory ??
+               DEFAULT_PRIVACY_SETTINGS.showTaskHistory,
+            showReviews:
+               p.user.profilePrivacy?.showReviews ??
+               DEFAULT_PRIVACY_SETTINGS.showReviews,
+            locationSharing:
+               p.user.profilePrivacy?.locationSharing ??
+               DEFAULT_PRIVACY_SETTINGS.locationSharing,
+            analyticsTracking:
+               p.user.profilePrivacy?.analyticsTracking ??
+               DEFAULT_PRIVACY_SETTINGS.analyticsTracking,
+         };
+
          return (
             <PrivacySection
-               settings={{
-                  profileVisibility: "registered_users",
-                  showEarnings: false,
-                  showTaskHistory: true,
-                  showReviews: true,
-                  locationSharing: true,
-                  analyticsTracking: true,
-               }}
+               settings={privacySettings}
                onSave={p.onUpdatePrivacy}
             />
          );
