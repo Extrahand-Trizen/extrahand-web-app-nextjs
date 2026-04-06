@@ -38,7 +38,7 @@ function resolveNotificationRoute(notif: InAppNotification): string | null {
       return taskId ? `/tasks/${taskId}` : "/tasks";
     case "keywordTaskAlerts":
     case "recommendedTaskAlerts":
-      return taskId ? `/tasks/${taskId}` : "/tasks";
+      return "/tasks?tab=mytasks";
     default:
       return taskId ? `/tasks/${taskId}` : null;
   }
@@ -123,7 +123,7 @@ export function NotificationCenter() {
       >
         <Bell className="w-5 h-5" />
         {!isNotificationsPage && unreadCount > 0 && (
-          <span className="absolute top-1 right-1 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[16px] h-4 px-0.5 leading-none">
+          <span className="absolute top-1 right-1 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full min-w-4 h-4 px-0.5 leading-none">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
@@ -154,7 +154,7 @@ export function NotificationCenter() {
             </div>
 
             {/* Body */}
-            <div className="max-h-[320px] overflow-y-auto">
+            <div className="max-h-80 overflow-y-auto">
               {isLoading && notifications.length === 0 ? (
                 <div className="flex flex-col gap-3 p-4">
                   {[1, 2, 3].map((i) => (
@@ -190,7 +190,7 @@ export function NotificationCenter() {
                       }`}
                     >
                       {/* Unread dot */}
-                      <div className="flex-shrink-0 mt-1.5">
+                      <div className="shrink-0 mt-1.5">
                         {notif.read ? (
                           <div className="w-2 h-2 rounded-full bg-transparent" />
                         ) : (
