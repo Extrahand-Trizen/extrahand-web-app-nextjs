@@ -1,7 +1,5 @@
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI;
-
 /**
  * Global is used here to maintain a cached connection across hot reloads
  * in development. This prevents connections growing exponentially
@@ -23,11 +21,16 @@ if (!global.mongoose) {
 }
 
 async function connectDB(): Promise<typeof mongoose> {
+   const mongoUri =
+      process.env.MONGODB_URI ||
+      process.env.MONGO_URI ||
+      process.env.DATABASE_URL;
+
    // Validate MONGODB_URI at runtime, not at module load time
    // This allows Next.js build to succeed without database credentials
-   if (!MONGODB_URI) {
+   if (!mongoUri) {
       throw new Error(
-         "Please define the MONGODB_URI environment variable inside .env.local"
+         "Missing MongoDB URI. Set one of: MONGODB_URI, MONGO_URI, DATABASE_URL"
       );
    }
 
@@ -40,7 +43,7 @@ async function connectDB(): Promise<typeof mongoose> {
          bufferCommands: false,
       };
 
-      cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+      cached.promise = mongoose.connect(mongoUri, opts).then((mongoose) => {
          return mongoose;
       });
    }

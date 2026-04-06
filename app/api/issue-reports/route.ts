@@ -85,8 +85,17 @@ export async function POST(request: NextRequest) {
       );
    } catch (error) {
       console.error("Failed to submit issue report:", error);
+
+      const errorMessage =
+         error instanceof Error
+            ? error.message
+            : "Unknown server error while saving issue report";
+
       return NextResponse.json(
-         { message: "Failed to submit issue report" },
+         {
+            message: "Failed to submit issue report",
+            details: errorMessage,
+         },
          { status: 500 }
       );
    }
