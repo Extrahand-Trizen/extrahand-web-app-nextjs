@@ -9,7 +9,7 @@ export function PollingOtpToastBridge() {
   const shownToastIdsRef = useRef<Set<string>>(new Set());
 
   useInAppNotifications({
-    pollingInterval: 30000,
+    pollingInterval: 10000,
     onNotification: (notification: InAppNotification) => {
       if (notification.data?.otpType !== "task_start") return;
 
