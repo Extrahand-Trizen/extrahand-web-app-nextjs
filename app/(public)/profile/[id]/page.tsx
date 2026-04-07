@@ -13,9 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { UserProfile } from "@/types/user";
 import { Review, WorkHistoryItem } from "@/types/profile";
-import Link from "next/link";
 import { profilesApi } from "@/lib/api/endpoints/profiles";
-import { reviewsApi } from "@/lib/api/endpoints/reviews";
 import { useAuth } from "@/lib/auth/context";
 import { toast } from "sonner";
 import { buildPublicProfileHandle, parsePublicProfileHandle } from "@/lib/utils/profileHandle";
@@ -61,15 +59,19 @@ export default function UserProfilePage() {
             }
          } catch (err: any) {
             console.error("❌ Failed to load profile:", err);
-            const isPrivateProfile =
-               err?.status === 403 && err?.data?.code === "PROFILE_PRIVATE";
             const errorMessage =
                err?.data?.message ||
                err?.message ||
                "Failed to load profile";
+            const messageLower = String(errorMessage).toLowerCase();
+            const isPrivateProfile =
+               err?.status === 403 ||
+               err?.data?.code === "PROFILE_PRIVATE" ||
+               messageLower.includes("profile is private") ||
+               messageLower.includes("visible only to");
 
             if (isPrivateProfile) {
-               setErrorTitle("This profile is private");
+               setErrorTitle("Private account");
                setError(errorMessage);
                return;
             }
@@ -94,26 +96,35 @@ export default function UserProfilePage() {
          console.log('📦 Using reviews from profile response:', (user as any).reviews.length);
          const profileReviews = (user as any).reviews;
 
-         // Map to Review format - filter out reviews without real data
+         // Map to Review format with safe fallbacks so we still show valid ratings.
          const mappedReviews: Review[] = profileReviews
-            .filter((review: any) => 
-               review.reviewerName && 
-               review.reviewerName.trim() !== "" &&
-               review.rating > 0 &&
-               review.taskTitle
-            )
-            .map((review: any) => ({
-               id: review._id,
-               taskId: review.taskId,
+            .filter((review: any) => Number(review?.rating) > 0)
+            .map((review: any, index: number) => ({
+               id:
+                  review._id ||
+                  review.id ||
+                  `${review.taskId || review.reviewerId || "review"}-${index}`,
+               taskId: review.taskId || "",
                taskTitle: review.taskTitle || review.title || "Task",
-               reviewerId: review.reviewerId || review.reviewerUid,
-               reviewerName: review.reviewerName,
-               reviewerPhoto: review.reviewerPhoto,
-               rating: review.rating,
-               comment: review.comment || "",
-               createdAt: new Date(review.createdAt),
+               reviewerId:
+                  review.reviewerId ||
+                  review.reviewerUid ||
+                  review.reviewer?.id ||
+                  "unknown",
+               reviewerName:
+                  (typeof review.reviewerName === "string" && review.reviewerName.trim()) ||
+                  (typeof review.reviewer?.name === "string" && review.reviewer.name.trim()) ||
+                  "Verified user",
+               reviewerPhoto:
+                  review.reviewerPhoto ||
+                  review.reviewer?.photoURL ||
+                  review.reviewer?.photo,
+               rating: Number(review.rating) || 0,
+               comment: typeof review.comment === "string" ? review.comment : "",
+               createdAt: new Date(review.createdAt || review.updatedAt || Date.now()),
                role: "poster" as const,
-            }));
+            }))
+            .filter((review) => review.rating > 0);
 
          setReviews(mappedReviews);
          setLoadingReviews(false);

@@ -79,15 +79,19 @@ export default function UserPortfolioPage() {
             }
          } catch (err: any) {
             console.error("❌ Failed to load portfolio:", err);
-            const isPrivateProfile =
-               err?.status === 403 && err?.data?.code === "PROFILE_PRIVATE";
             const errorMessage =
                err?.data?.message ||
                err?.message ||
                "Failed to load portfolio";
+            const messageLower = String(errorMessage).toLowerCase();
+            const isPrivateProfile =
+               err?.status === 403 ||
+               err?.data?.code === "PROFILE_PRIVATE" ||
+               messageLower.includes("profile is private") ||
+               messageLower.includes("visible only to");
 
             if (isPrivateProfile) {
-               setErrorTitle("This profile is private");
+               setErrorTitle("Private account");
                setError(errorMessage);
                return;
             }
