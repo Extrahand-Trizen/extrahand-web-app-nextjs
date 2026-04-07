@@ -332,7 +332,10 @@ async function fetchPublic(
          );
       }
 
-      if (error instanceof Error) {
+      // Only prepend the prefix for unknown/network errors.
+      // Structured API errors (4xx/5xx) already have error.status + error.data set;
+      // mutating their message here would hide the structured data from callers.
+      if (error instanceof Error && !apiError.status) {
          error.message = `Public API call failed: ${error.message}`;
       }
 

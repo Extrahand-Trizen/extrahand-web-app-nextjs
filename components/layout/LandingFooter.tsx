@@ -84,7 +84,7 @@ const footerLinks = {
 
 const socialLinks = [
   { icon: Facebook, href: "https://www.facebook.com/profile.php?id=61587931868799", label: "Facebook" },
-  { icon: Linkedin, href: "https://www.linkedin.com/company/112403995/admin/dashboard/", label: "LinkedIn" },
+  { icon: Linkedin, href: "https://www.linkedin.com/company/extrahand-in/", label: "LinkedIn" },
   { icon: Twitter, href: "https://x.com/ExtrahandI42141", label: "X (Twitter)" },
   { icon: Instagram, href: "https://www.instagram.com/extrahand.in/", label: "Instagram" },
   { icon: Youtube, href: "https://www.youtube.com/channel/UCHCIU5Qq0mEdGf8RgJIjCUw", label: "YouTube" },
