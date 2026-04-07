@@ -21,6 +21,7 @@ export interface PostTaskCategory {
 
 // Keep this list in sync with the "Select Category" list in Post a Task flow.
 export const postTaskCategories: PostTaskCategory[] = [
+   { id: "accounting", label: "Accounting" },
    { id: "ac-repair", label: "AC Repair & Service" },
    { id: "appliance-repair", label: "Appliance Repair" },
    { id: "beauty-services", label: "Beauty Services" },
@@ -51,6 +52,13 @@ export const postTaskCategories: PostTaskCategory[] = [
 ];
 
 export const serviceCategories: ServiceCategory[] = [
+   {
+      id: "accounting",
+      name: "Accounting",
+      description: "Accounting, bookkeeping, and tax services",
+      icon: "",
+      gradient: "from-slate-500 via-gray-500 to-zinc-500",
+   },
    {
       id: "ac-repair",
       name: "AC Repair & Service",

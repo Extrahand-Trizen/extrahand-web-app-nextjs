@@ -47,13 +47,35 @@ export function ProfileEditForm({
 }: ProfileEditFormProps) {
    const nameParts = user.name?.split(" ") || ["", ""];
 
+   // Extract only the 10-digit phone number, removing "+91" and other formatting
+   const extractPhoneDigits = (phoneStr: string): string => {
+      if (!phoneStr) return "";
+      // Remove all non-digits
+      const digitsOnly = phoneStr.replace(/\D/g, "");
+      // If it starts with "91", remove it (India country code)
+      if (digitsOnly.startsWith("91") && digitsOnly.length === 12) {
+         return digitsOnly.slice(2);
+      }
+      // Return last 10 digits if longer than 10
+      return digitsOnly.slice(-10);
+   };
+
+   const normalizePhoneInput = (value: string): string => {
+      const digitsOnly = value.replace(/\D/g, "");
+      if (!digitsOnly) return "";
+      if (digitsOnly.startsWith("91") && digitsOnly.length > 10) {
+         return digitsOnly.slice(-10);
+      }
+      return digitsOnly.slice(0, 10);
+   };
+
    const [formData, setFormData] = useState<FormData>({
       firstName: nameParts[0] || "",
       lastName: nameParts.slice(1).join(" ") || "",
       // Prefer the main profile bio for individuals; fall back to business description.
       bio: user.bio || user.business?.description || "",
       email: user.email || "",
-      phone: user.phone || "",
+      phone: extractPhoneDigits(user.phone || ""),
       location: user.location?.address || user.location?.city || "",
       skills: user.skills?.list?.map((s) => s.name) || [],
       userType: user.userType || "individual",
@@ -462,12 +484,14 @@ export function ProfileEditForm({
                   id="phone"
                   type="tel"
                   value={formData.phone}
-                  onChange={(e) => updateField("phone", e.target.value)}
+                  onChange={(e) => updateField("phone", normalizePhoneInput(e.target.value))}
                   className={cn(
                      "mt-1.5 h-9 sm:h-10 text-xs md:text-sm",
                      errors.phone && "border-red-300 focus:border-red-500"
                   )}
                   placeholder="10-digit phone number"
+                  maxLength={10}
+                  inputMode="numeric"
                />
                {errors.phone && (
                   <p className="text-[10px] sm:text-xs text-red-500 mt-1 flex items-center gap-1">

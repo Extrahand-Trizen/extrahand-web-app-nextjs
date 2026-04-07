@@ -174,6 +174,9 @@ export default function UserPortfolioPage() {
    }
 
    if (error || !user) {
+      const isPrivateProfile = errorTitle === "Private account";
+      const isLoggedIn = !!userData;
+
       return (
          <div className="flex flex-col min-h-screen bg-gray-50">
             <div className="flex-1 flex items-center justify-center">
@@ -184,7 +187,17 @@ export default function UserPortfolioPage() {
                   <p className="text-gray-500 mb-4">
                      {error || "This user's portfolio doesn't exist."}
                   </p>
-                  <Button onClick={() => router.back()}>Go Back</Button>
+                  {isPrivateProfile && !isLoggedIn ? (
+                     <Button
+                        onClick={() =>
+                           router.push(`/login?returnUrl=/profile/${handle}/tasks`)
+                        }
+                     >
+                        Login
+                     </Button>
+                  ) : (
+                     <Button onClick={() => router.back()}>Go Back</Button>
+                  )}
                </div>
             </div>
          </div>

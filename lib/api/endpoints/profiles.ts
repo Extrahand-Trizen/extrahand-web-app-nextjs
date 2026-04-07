@@ -6,8 +6,8 @@
 import { fetchWithAuth, fetchPublic } from '../client';
 import { UserProfile } from '@/types/user';
 
-function normalizeProfile(raw: any): UserProfile {
-  return {
+function normalizeProfile(raw: any): any {
+  const normalized = {
     ...raw,
     // PAN: backend may return either isPanVerified or isPANVerified.
     isPanVerified:
@@ -31,6 +31,16 @@ function normalizeProfile(raw: any): UserProfile {
         ? raw.phoneVerified
         : !!raw?.phoneVerifiedAt || !!raw?.phone,
   };
+  
+  // Preserve reviews, workHistory, and other extra fields from API response
+  if (raw?.reviews) {
+    normalized.reviews = raw.reviews;
+  }
+  if (raw?.workHistory) {
+    normalized.workHistory = raw.workHistory;
+  }
+  
+  return normalized;
 }
 
 export const profilesApi = {
