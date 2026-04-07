@@ -594,7 +594,7 @@ export function OTPVerificationForm({
                                  inputMode="numeric"
                                  autoComplete={idx === 0 ? "one-time-code" : "off"}
                                  name={idx === 0 ? "otp" : undefined}
-                                 maxLength={1}
+                                 maxLength={idx === 0 ? OTP_LENGTH : 1}
                                  value={digit}
                                  onChange={(e) =>
                                     handleChange(e.target.value, idx)

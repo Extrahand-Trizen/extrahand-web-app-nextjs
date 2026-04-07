@@ -87,10 +87,14 @@ export function PublicProfileReviews({
   reviews,
   userName,
   memberSince,
+  totalReviews = 0,
+  avgRating = 0,
 }: {
   reviews: Review[];
   userName: string;
   memberSince?: Date | string;
+  totalReviews?: number;
+  avgRating?: number;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -107,18 +111,21 @@ export function PublicProfileReviews({
 
   const top = sorted.slice(0, 3);
   const recentlyJoined = isRecentlyJoined(memberSince);
+  const displayReviewCount = Math.max(reviews.length, totalReviews || 0);
+  const displayRating = averageRating > 0 ? averageRating : avgRating;
+  const hasAnyReviews = top.length > 0 || displayReviewCount > 0;
 
   return (
     <Card>
       <CardHeader>
-        {top.length > 0 ? (
+        {hasAnyReviews ? (
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <CardTitle className="text-base flex items-center gap-2">
-                Overall rating {averageRating.toFixed(1)}
+                Overall rating {displayRating.toFixed(1)}
                 <Star className="size-4 text-amber-400 fill-amber-400" />
               </CardTitle>
-              <p className="text-sm text-muted-foreground">{reviews.length} reviews</p>
+              <p className="text-sm text-muted-foreground">{displayReviewCount} reviews</p>
             </div>
             {reviews.length > 3 ? (
               <Button
@@ -163,7 +170,9 @@ export function PublicProfileReviews({
           </>
         ) : (
           <div className="text-sm text-slate-700">
-            {recentlyJoined
+            {displayReviewCount > 0
+              ? "Reviews are available and will appear here shortly."
+              : recentlyJoined
               ? `${userName} is new here — be the first to hire and leave a review.`
               : `No reviews yet — be the first to hire ${userName}.`}
           </div>

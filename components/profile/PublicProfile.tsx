@@ -146,6 +146,8 @@ export function PublicProfile({
                   reviews={reviews}
                   userName={user.name}
                   memberSince={user.createdAt}
+                  totalReviews={actualStats.totalReviews ?? 0}
+                  avgRating={actualStats.rating ?? 0}
                />
 
                <PublicProfileSkills user={user} />

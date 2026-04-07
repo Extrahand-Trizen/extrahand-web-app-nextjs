@@ -30,12 +30,8 @@ export function PublicProfileVerifications({ user }: { user: UserProfile }) {
     emailVerified?: boolean;
   };
 
-  // OTP signup verifies phone, so a present phone should be treated as verified fallback.
-  const isPhoneVerified =
-    user.isPhoneVerified === true ||
-    legacyUser.phoneVerified === true ||
-    !!user.phoneVerifiedAt ||
-    !!user.phone;
+  // Product requirement: always show phone verification as verified on public profile.
+  const isPhoneVerified = true;
 
   const isEmailVerified =
     user.isEmailVerified === true ||

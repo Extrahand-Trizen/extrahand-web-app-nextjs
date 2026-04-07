@@ -336,26 +336,27 @@ function ProfilePageContent() {
                return;
             }
 
-            // Map API reviews to profile review format - filter out reviews without real data
+            // Map API reviews to profile review format with safe fallbacks.
             const mappedReviews: Review[] = response.data
-               .filter((review: any) => 
-                  review.reviewerName && 
-                  review.reviewerName.trim() !== "" &&
-                  review.rating > 0 &&
-                  review.taskTitle
-               )
-               .map((review: any) => ({
-                  id: review._id,
-                  taskId: review.taskId,
-                  taskTitle: review.taskTitle || "Task",
-                  reviewerId: review.reviewerUid,
-                  reviewerName: review.reviewerName,
+               .filter((review: any) => Number(review?.rating) > 0)
+               .map((review: any, index: number) => ({
+                  id:
+                     review._id ||
+                     review.id ||
+                     `${review.taskId || review.reviewerUid || "review"}-${index}`,
+                  taskId: review.taskId || "",
+                  taskTitle: review.taskTitle || review.title || "Task",
+                  reviewerId: review.reviewerUid || review.reviewerId || "unknown",
+                  reviewerName:
+                     (typeof review.reviewerName === "string" && review.reviewerName.trim()) ||
+                     "Verified user",
                   reviewerPhoto: review.reviewerPhoto,
-                  rating: review.rating,
+                  rating: Number(review.rating) || 0,
                   comment: review.comment || "",
-                  createdAt: new Date(review.createdAt),
-                  role: "poster" as const, // Assuming reviews are from posters
-               }));
+                  createdAt: new Date(review.createdAt || review.updatedAt || Date.now()),
+                  role: "poster" as const,
+               }))
+               .filter((review) => review.rating > 0);
 
             console.log("✅ Reviews loaded (with real data only):", mappedReviews.length);
             setReviews(mappedReviews);

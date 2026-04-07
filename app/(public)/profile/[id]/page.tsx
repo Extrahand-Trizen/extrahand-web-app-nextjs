@@ -14,6 +14,7 @@ import { ArrowLeft } from "lucide-react";
 import { UserProfile } from "@/types/user";
 import { Review, WorkHistoryItem } from "@/types/profile";
 import { profilesApi } from "@/lib/api/endpoints/profiles";
+import { reviewsApi } from "@/lib/api/endpoints/reviews";
 import { useAuth } from "@/lib/auth/context";
 import { toast } from "sonner";
 import { buildPublicProfileHandle, parsePublicProfileHandle } from "@/lib/utils/profileHandle";
@@ -92,12 +93,8 @@ export default function UserProfilePage() {
 
    // Extract reviews from profile response (already included by backend)
    useEffect(() => {
-      if (user && (user as any).reviews) {
-         console.log('📦 Using reviews from profile response:', (user as any).reviews.length);
-         const profileReviews = (user as any).reviews;
-
-         // Map to Review format with safe fallbacks so we still show valid ratings.
-         const mappedReviews: Review[] = profileReviews
+      const mapReviews = (rawReviews: any[]): Review[] => {
+         return rawReviews
             .filter((review: any) => Number(review?.rating) > 0)
             .map((review: any, index: number) => ({
                id:
@@ -125,14 +122,43 @@ export default function UserProfilePage() {
                role: "poster" as const,
             }))
             .filter((review) => review.rating > 0);
+      };
 
-         setReviews(mappedReviews);
-         setLoadingReviews(false);
-      } else {
-         console.log('ℹ️ No reviews in profile response');
-         setReviews([]);
-         setLoadingReviews(false);
-      }
+      const loadReviews = async () => {
+         setLoadingReviews(true);
+
+         const profileReviewsRaw = user && Array.isArray((user as any).reviews)
+            ? (user as any).reviews
+            : [];
+
+         if (profileReviewsRaw.length > 0) {
+            console.log("📦 Using reviews from profile response:", profileReviewsRaw.length);
+            setReviews(mapReviews(profileReviewsRaw));
+            setLoadingReviews(false);
+            return;
+         }
+
+         if (!userId) {
+            console.log("ℹ️ No reviews in profile response");
+            setReviews([]);
+            setLoadingReviews(false);
+            return;
+         }
+
+         try {
+            console.log("🔄 Falling back to reviews API for user:", userId);
+            const response = await reviewsApi.getUserReviews(userId, { limit: 20 });
+            const apiReviewsRaw = Array.isArray(response?.data) ? response.data : [];
+            setReviews(mapReviews(apiReviewsRaw));
+         } catch (reviewsError) {
+            console.warn("⚠️ Failed to fetch fallback reviews:", reviewsError);
+            setReviews([]);
+         } finally {
+            setLoadingReviews(false);
+         }
+      };
+
+      loadReviews();
 
       // Extract work history from profile response - filter out dummy/empty entries
       if (user && (user as any).workHistory) {
@@ -155,7 +181,7 @@ export default function UserProfilePage() {
          console.log('ℹ️ No work history in profile response');
          setWorkHistory([]);
       }
-   }, [user]);
+   }, [user, userId]);
 
 
 
