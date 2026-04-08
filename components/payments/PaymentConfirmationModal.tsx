@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { paymentApi } from "@/lib/api/endpoints/payment";
 import { initiateRazorpayPayment, formatCurrency } from "@/lib/services/razorpay";
-import type { RazorpayPaymentResponse, FeeBreakdown as IFeeBreakdown } from "@/types/payment";
+import type { RazorpayPaymentResponse } from "@/types/payment";
 import {
   Loader2,
   CreditCard,
@@ -125,8 +125,8 @@ function CancellationPolicyView({ onBack }: { onBack: () => void }) {
         <div className="flex items-start gap-2 px-1">
           <AlertCircle className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
           <p className="text-xs text-amber-700 leading-relaxed">
-            Platform fee and GST are non‑refundable in all cases, regardless of
-            when cancellation occurs.
+            Cancellation charges (if any) are calculated only on the task
+            amount based on the timing window.
           </p>
         </div>
 
@@ -166,9 +166,7 @@ export function PaymentConfirmationModal({
   onSuccess,
   onError,
 }: PaymentConfirmationModalProps) {
-  const [isCalculating, setIsCalculating] = useState(true);
   const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
-  const [fees, setFees] = useState<IFeeBreakdown | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [escrowId, setEscrowId] = useState<string | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -184,29 +182,9 @@ export function PaymentConfirmationModal({
     if (open) {
       setAgreedToTerms(false);
       setShowPolicy(false);
-      calculateFees();
-    }
-  }, [open, amount, task.category]);
-
-  const calculateFees = async () => {
-    try {
-      setIsCalculating(true);
       setError(null);
-
-      const response = await paymentApi.calculateFees(amount, task.category);
-
-      if (response.success && response.fees) {
-        setFees(response.fees);
-      } else {
-        throw new Error(response.error || "Failed to calculate fees");
-      }
-    } catch (err: any) {
-      console.error("Error calculating fees:", err);
-      setError(err.message || "Failed to calculate fees");
-    } finally {
-      setIsCalculating(false);
     }
-  };
+  }, [open]);
 
   const handlePayment = async () => {
     // Guard: must agree to terms first
@@ -226,9 +204,6 @@ export function PaymentConfirmationModal({
       if (!posterUid) {
         throw new Error("Please log in to complete payment");
       }
-      if (!fees) {
-        throw new Error("Fee calculation required before payment");
-      }
 
       // Step 1: Create escrow and get Razorpay order
       console.log("Creating escrow...");
@@ -237,15 +212,15 @@ export function PaymentConfirmationModal({
         applicationId: application.id,
         posterUid: posterUid,
         performerUid: application.applicantId,
-        amount: fees.totalAmount,
-        taskAmount: amount, // Base task amount for refund calculation
+        amount, // Charge poster only the task amount
+        taskAmount: amount,
         metadata: {
           taskTitle: task.title,
           amountBreakdown: {
             taskAmount: amount,
-            platformFee: fees.platformFee,
-            gst: fees.platformFeeGst,
-            totalPaid: fees.totalAmount,
+            platformFee: 0,
+            gst: 0,
+            totalPaid: amount,
           },
           ...(posterPhone ? { posterPhone } : {}),
         },
@@ -342,18 +317,8 @@ export function PaymentConfirmationModal({
             </DialogHeader>
 
             <div className="flex-1 overflow-y-auto px-6 py-4">
-              {/* Loading */}
-              {isCalculating && (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                  <span className="ml-2 text-sm text-gray-500">
-                    Calculating fees...
-                  </span>
-                </div>
-              )}
-
               {/* Not logged in */}
-              {!posterUid && !isCalculating && (
+              {!posterUid && (
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
@@ -371,7 +336,7 @@ export function PaymentConfirmationModal({
               )}
 
               {/* Payment Summary */}
-              {!isCalculating && fees && (
+              {posterUid && !error && (
                 <div className="space-y-3">
                   {/* Task Info */}
                   <div className="bg-gray-50 rounded-lg p-3">
@@ -392,30 +357,9 @@ export function PaymentConfirmationModal({
                       <span className="font-medium">{formatCurrency(amount)}</span>
                     </div>
 
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">
-                        Platform Fee (
-                        {((fees.metadata?.platformFeePercentage || 0.05) * 100).toFixed(0)}%)
-                      </span>
-                      <span className="text-gray-600">
-                        +{formatCurrency(fees.platformFee)}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">
-                        GST ({((fees.metadata?.gstPercentage || 0.18) * 100).toFixed(0)}%)
-                      </span>
-                      <span className="text-gray-600">
-                        +{formatCurrency(fees.platformFeeGst)}
-                      </span>
-                    </div>
-
                     <div className="border-t border-gray-100 pt-2 flex justify-between text-base font-semibold">
                       <span className="text-gray-900">Total Amount</span>
-                      <span className="text-primary">
-                        {formatCurrency(fees.totalAmount)}
-                      </span>
+                      <span className="text-primary">{formatCurrency(amount)}</span>
                     </div>
                   </div>
 
@@ -524,7 +468,7 @@ export function PaymentConfirmationModal({
               </Button>
               <Button
                 onClick={handlePayment}
-                disabled={!posterUid || isCalculating || isPaymentProcessing || !!error}
+                disabled={!posterUid || isPaymentProcessing || !!error}
                 className="min-w-[120px]"
               >
                 {isPaymentProcessing ? (
@@ -535,7 +479,7 @@ export function PaymentConfirmationModal({
                 ) : (
                   <>
                     <CreditCard className="w-4 h-4 mr-2" />
-                    Pay {fees && formatCurrency(fees.totalAmount)}
+                    Pay {formatCurrency(amount)}
                   </>
                 )}
               </Button>
