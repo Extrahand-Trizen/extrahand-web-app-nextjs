@@ -105,6 +105,7 @@ export function OTPVerificationForm({
 
    const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
    const hiddenOtpInputRef = useRef<HTMLInputElement | null>(null);
+   const autofillInputRef = useRef<HTMLInputElement | null>(null);
 
    // Define focusInput before applyOtpCode since applyOtpCode depends on it
    const focusInput = useCallback((idx: number) => {
@@ -131,24 +132,29 @@ export function OTPVerificationForm({
       [focusInput, setOtp]
    );
 
-   // Some Android Chrome builds can autofill OTP fields without firing input/change events.
-   // Polling the hidden/first field briefly ensures we still capture and apply the code.
+   // Poll the autofill input and first visible input for any injected value.
+   // Some Chrome builds on Android silently fill inputs without firing React synthetic events.
+   // We use a 100ms interval to catch any injected value quickly.
    useEffect(() => {
       const existingCode = otp.join("");
       if (existingCode.length === OTP_LENGTH) return;
 
       const intervalId = setInterval(() => {
+         const autofillValue = autofillInputRef.current?.value || "";
          const hiddenValue = hiddenOtpInputRef.current?.value || "";
          const firstInputValue = inputRefs.current[0]?.value || "";
-         const candidate = hiddenValue.length >= firstInputValue.length
-            ? hiddenValue
-            : firstInputValue;
 
-         const digits = candidate.replace(/\D/g, "").slice(0, OTP_LENGTH);
+         // Pick whichever candidate has the most digits
+         const candidates = [autofillValue, hiddenValue, firstInputValue];
+         const best = candidates.reduce((a, b) =>
+            b.replace(/\D/g, "").length > a.replace(/\D/g, "").length ? b : a
+         , "");
+
+         const digits = best.replace(/\D/g, "").slice(0, OTP_LENGTH);
          if (digits.length === OTP_LENGTH) {
             applyOtpCode(digits);
          }
-      }, 300);
+      }, 100);
 
       return () => clearInterval(intervalId);
    }, [applyOtpCode, otp]);
@@ -626,21 +632,45 @@ export function OTPVerificationForm({
                               hasError && "animate-shake"
                            )}
                         >
-                           {/* Bridge input used by Chrome one-time-code autofill. */}
+                           {/*
+                            * Real autofill input: positioned absolutely over all OTP boxes.
+                            * Chrome on Android requires the target input to be interactable
+                            * (not opacity-0 / pointer-events-none) to inject the one-time-code.
+                            * We make it transparent via color/bg so the individual digit boxes
+                            * remain visible, while this input captures the full 6-digit code.
+                            */}
                            <input
-                              ref={hiddenOtpInputRef}
+                              ref={autofillInputRef}
                               type="text"
                               inputMode="numeric"
                               autoComplete="one-time-code"
                               name="one-time-code"
+                              id="otp-autofill-input"
                               maxLength={OTP_LENGTH}
                               onChange={(e) => applyOtpCode(e.target.value)}
                               onInput={(e) =>
                                  applyOtpCode((e.target as HTMLInputElement).value)
                               }
                               onAnimationStart={handleAutofillAnimation}
-                              className="absolute inset-0 h-full w-full opacity-0 pointer-events-none"
-                              aria-label="OTP auto-fill bridge"
+                              className="absolute inset-0 h-full w-full z-10 bg-transparent text-transparent caret-transparent border-0 outline-none select-none"
+                              style={{ WebkitTextFillColor: "transparent" }}
+                              aria-label="OTP auto-fill"
+                              tabIndex={-1}
+                           />
+                           {/* Hidden bridge for extra browser compat */}
+                           <input
+                              ref={hiddenOtpInputRef}
+                              type="text"
+                              inputMode="numeric"
+                              autoComplete="one-time-code"
+                              maxLength={OTP_LENGTH}
+                              onChange={(e) => applyOtpCode(e.target.value)}
+                              onInput={(e) =>
+                                 applyOtpCode((e.target as HTMLInputElement).value)
+                              }
+                              className="sr-only"
+                              aria-hidden="true"
+                              tabIndex={-1}
                            />
 
                            {otp.map((digit, idx) => (
