@@ -22,6 +22,7 @@ import {
 import type { Task } from "@/types/task";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { TaskStatusBadge } from "../TaskStatusBadge";
+import { getTaskCategoryLabel } from "@/lib/utils/taskCategory";
 
 interface MyTaskCardProps {
    task: Task;
@@ -112,7 +113,7 @@ export function MyTaskCard({
                   {getUrgencyBadge()}
                   <span className="inline-flex items-center px-1 md:px-2 py-0.5 rounded text-[10px] md:text-xs font-medium bg-secondary-100 text-secondary-700">
                      <Tag className="size-2 md:size-3 mr-1" />
-                     {task.category}
+                     {getTaskCategoryLabel(task)}
                   </span>
                </div>
             </div>

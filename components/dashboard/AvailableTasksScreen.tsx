@@ -10,6 +10,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { getTaskCategoryLabel } from "@/lib/utils/taskCategory";
 
 // Mock tasks data
 const mockTasks = [
@@ -155,7 +156,7 @@ export default function AvailableTasksScreen() {
                                  backgroundColor: "#E3F2FD",
                               }}
                            >
-                              {task.category}
+                              {getTaskCategoryLabel(task)}
                            </span>
                            <span className="text-xs text-gray-600 flex-1 text-right">
                               {!task.location?.coordinates || !task.location?.address

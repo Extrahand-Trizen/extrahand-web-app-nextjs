@@ -22,6 +22,7 @@ import { useQuery } from "@tanstack/react-query";
 import { taskDetailsQueryKeys } from "@/lib/queryKeys";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
 import { buildPublicTaskPath } from "@/lib/utils/taskHandle";
+import { getTaskCategoryLabel } from "@/lib/utils/taskCategory";
 
 interface TaskDetailCardProps {
    task: Task;
@@ -52,10 +53,7 @@ export function TaskDetailCard({ task, onClose }: TaskDetailCardProps) {
       typeof displayTask.budget === "object"
          ? displayTask.budget.negotiable
          : false;
-   const categoryLabel =
-      displayTask.categoryLabel ||
-      displayTask.subcategory ||
-      displayTask.category;
+   const categoryLabel = getTaskCategoryLabel(displayTask);
    
    // Smart date display
    const scheduledDateLabel = displayTask.dateOption === "flexible" || !displayTask.dateOption || !displayTask.scheduledDate

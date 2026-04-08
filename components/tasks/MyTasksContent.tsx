@@ -6,7 +6,7 @@
  * Uses real API data from tasksApi.getMyTasks(), cached via React Query.
  */
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useDeferredValue } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,30 @@ import { buildPublicTaskPath } from "@/lib/utils/taskHandle";
 
 type TaskStatus = Task["status"];
 
+const PAGE_SIZE = 10;
+
+function extractTaskPage(response: any): Task[] {
+   if (!response) return [];
+
+   if (Array.isArray(response)) return response as Task[];
+   if (Array.isArray(response?.tasks)) return response.tasks as Task[];
+   if (Array.isArray(response?.data?.tasks)) return response.data.tasks as Task[];
+   if (Array.isArray(response?.data)) return response.data as Task[];
+
+   return [];
+}
+
+function extractPagination(response: any) {
+   const pagination = response?.pagination ?? response?.data?.pagination ?? {};
+
+   return {
+      page: pagination.page ?? 1,
+      limit: pagination.limit ?? PAGE_SIZE,
+      total: pagination.total ?? 0,
+      pages: pagination.pages ?? pagination.totalPages ?? 1,
+   };
+}
+
 interface MyTasksContentProps {
    onCountChange?: (count: number) => void;
 }
@@ -36,8 +60,36 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
    const [sortBy, setSortBy] = useState("recent");
    const [page, setPage] = useState(1);
    const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
+   const deferredSearchQuery = useDeferredValue(searchQuery);
 
-   // Fetch tasks via React Query (cached across navigations)
+   useEffect(() => {
+      setPage(1);
+   }, [deferredSearchQuery, statusFilter, sortBy]);
+
+   const queryParams = useMemo(
+      () => ({
+         page,
+         limit: PAGE_SIZE,
+         ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+         ...(deferredSearchQuery.trim() ? { search: deferredSearchQuery.trim() } : {}),
+         sortBy,
+      }),
+      [page, statusFilter, deferredSearchQuery, sortBy]
+   );
+
+   // Fetch total count once so the tab badge stays stable across local filters.
+   const { data: totalCountData } = useQuery<TaskListResponse | any>({
+      queryKey: ["my-tasks-total"],
+      queryFn: async () => {
+         const response = await tasksApi.getMyTasks({ page: 1, limit: 1 });
+         return response;
+      },
+      staleTime: Infinity,
+      refetchOnMount: false,
+      refetchOnWindowFocus: false,
+   });
+
+   // Fetch the page the user is actually looking at.
    const {
       data,
       isLoading,
@@ -45,10 +97,17 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
       refetch,
       isFetching,
    } = useQuery<TaskListResponse | any>({
-      queryKey: ["my-tasks"],
+      queryKey: [
+         "my-tasks",
+         queryParams.page,
+         queryParams.limit,
+         queryParams.status ?? "all",
+         queryParams.search ?? "",
+         queryParams.sortBy,
+      ],
       queryFn: async () => {
          console.log("📤 Fetching my tasks via React Query...");
-         const response = await tasksApi.getMyTasks({ limit: 100 });
+         const response = await tasksApi.getMyTasks(queryParams);
          console.log("✅ My tasks response:", response);
          return response;
       },
@@ -57,26 +116,12 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
       refetchOnWindowFocus: false, // Don't refetch on window focus
    });
 
-   // Normalize tasks array from API response
-   const allTasks: Task[] = useMemo(() => {
-      const responseData = data as any;
-      let tasksData: Task[] = [];
-
-      if (!responseData) return tasksData;
-
-      if (Array.isArray(responseData)) {
-         tasksData = responseData as Task[];
-      } else if (Array.isArray(responseData?.data)) {
-         tasksData = responseData.data as Task[];
-      } else if (Array.isArray(responseData?.data?.tasks)) {
-         tasksData = responseData.data.tasks as Task[];
-      } else if (Array.isArray(responseData?.tasks)) {
-         tasksData = responseData.tasks as Task[];
-      }
-
-      console.log("✅ Extracted tasks from query data:", tasksData.length);
-      return tasksData;
-   }, [data]);
+   const tasks = useMemo(() => extractTaskPage(data), [data]);
+   const pagination = useMemo(() => extractPagination(data), [data]);
+   const totalTaskCount = useMemo(
+      () => extractPagination(totalCountData).total,
+      [totalCountData]
+   );
 
    // Surface non-auth errors via toast (once per error instance)
    useEffect(() => {
@@ -92,71 +137,12 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
       });
    }, [error, refetch]);
 
-   // Client-side filtering, searching, and sorting
-   const filteredTasks = useMemo(() => {
-      let result = [...allTasks];
-
-      // Status filter
-      if (statusFilter !== "all") {
-         result = result.filter((task) => task.status === statusFilter);
-      }
-
-      // Search filter
-      if (searchQuery.trim()) {
-         const query = searchQuery.toLowerCase();
-         result = result.filter(
-            (task) =>
-               (task.title?.toLowerCase().includes(query) ?? false) ||
-               (task.description?.toLowerCase().includes(query) ?? false) ||
-               (task.category?.toLowerCase().includes(query) ?? false) ||
-               (task.location?.city?.toLowerCase().includes(query) ?? false)
-         );
-      }
-
-      // Sort
-      result.sort((a, b) => {
-         switch (sortBy) {
-            case "oldest":
-               return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-            case "budget-high":
-               const budgetA = typeof a.budget === "number" ? a.budget : a.budget?.amount ?? 0;
-               const budgetB = typeof b.budget === "number" ? b.budget : b.budget?.amount ?? 0;
-               return budgetB - budgetA;
-            case "budget-low":
-               const budgetALow = typeof a.budget === "number" ? a.budget : a.budget?.amount ?? 0;
-               const budgetBLow = typeof b.budget === "number" ? b.budget : b.budget?.amount ?? 0;
-               return budgetALow - budgetBLow;
-            case "applications":
-               return (b.applications ?? 0) - (a.applications ?? 0);
-            case "recent":
-            default:
-               return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-         }
-      });
-
-      return result;
-   }, [allTasks, searchQuery, statusFilter, sortBy]);
-
-   // Pagination computed from filtered tasks
-   const pagination = useMemo(() => {
-      const total = filteredTasks.length;
-      const limit = 10;
-      const pages = Math.ceil(total / limit) || 1;
-      return { page, limit, total, pages };
-   }, [filteredTasks.length, page]);
-
-   // Paginated tasks for display
-   const tasks = useMemo(() => {
-      const start = (page - 1) * 10;
-      return filteredTasks.slice(start, start + 10);
-   }, [filteredTasks, page]);
-
    // Notify parent of total count change (use total tasks, not filtered)
    // Only call after data has loaded (not during initial loading)
    useEffect(() => {
       if (isLoading) return; // Don't report count while still loading
-      onCountChange?.(allTasks.length);
-   }, [allTasks.length, onCountChange, isLoading]);
+      onCountChange?.(totalTaskCount);
+   }, [totalTaskCount, onCountChange, isLoading]);
 
    // Handle delete task
    const handleDeleteTask = async (taskId: string, taskTitle: string) => {
@@ -207,7 +193,7 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
       router.push(`/tasks/${taskId}/track`);
    };
 
-   const hasFilters = searchQuery.trim() !== "" || statusFilter !== "all";
+   const hasFilters = deferredSearchQuery.trim() !== "" || statusFilter !== "all" || sortBy !== "recent";
 
    // Initial loading state - render subtle list skeleton without explicit text
    if (isLoading && tasks.length === 0) {
@@ -305,7 +291,7 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
                                     Math.min(pagination.pages, p + 1)
                                  )
                               }
-                              disabled={page === pagination.pages}
+                                disabled={pagination.page === pagination.pages}
                            >
                               Next
                               <ChevronRight className="w-4 h-4 ml-1" />

@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import type { Task } from "@/types/task";
 import { format } from "date-fns";
+import { getTaskCategoryLabel } from "@/lib/utils/taskCategory";
 
 interface TaskDetailsCardProps {
    task: Task;
@@ -33,7 +34,7 @@ const InfoRow = ({
    value: string | React.ReactNode;
 }) => (
    <div className="flex items-start gap-3 py-3 border-b border-secondary-100 last:border-0">
-      <div className="flex-shrink-0 mt-0.5">
+      <div className="shrink-0 mt-0.5">
          <Icon className="w-5 h-5 text-secondary-400" />
       </div>
       <div className="flex-1 min-w-0">
@@ -51,7 +52,7 @@ export function TaskDetailsCard({ task, assignedBudget }: TaskDetailsCardProps) 
       : typeof task.budget === "object" ? task.budget.amount : task.budget;
    const budgetCurrency =
       typeof task.budget === "object" ? task.budget.currency : "INR";
-   const categoryLabel = task.categoryLabel || task.subcategory || task.category;
+   const categoryLabel = getTaskCategoryLabel(task);
 
    const formatDate = (date: Date | string | undefined) => {
       if (!date) return "Not scheduled";
@@ -100,11 +101,11 @@ export function TaskDetailsCard({ task, assignedBudget }: TaskDetailsCardProps) 
                icon={MapPin}
                label="Location"
                value={
-                  <div className="break-words min-w-0">
-                     <p className="font-medium md:font-semibold break-words">
+                  <div className="wrap-break-word min-w-0">
+                     <p className="font-medium md:font-semibold wrap-break-word">
                         {task.location?.address || "No address provided"}
                      </p>
-                     <p className="text-xs text-secondary-500 mt-0.5 break-words">
+                     <p className="text-xs text-secondary-500 mt-0.5 wrap-break-word">
                         {task.location?.city || "N/A"}, {task.location?.state || "N/A"}
                         {task.location?.pinCode && ` - ${task.location.pinCode}`}
                      </p>

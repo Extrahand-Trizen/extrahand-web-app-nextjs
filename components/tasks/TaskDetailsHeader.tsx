@@ -4,6 +4,7 @@ import { MapPin, Calendar, Clock, Tag, User, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Task } from "@/types/task";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { getTaskCategoryLabel } from "@/lib/utils/taskCategory";
 
 interface TaskDetailsHeaderProps {
    task: Task;
@@ -38,7 +39,7 @@ export function TaskDetailsHeader({
       budgetObj?.negotiable === true ||
       budgetObj?.isNegotiable === true;
    const isHourly = task.budgetType === "hourly";
-   const categoryLabel = task.categoryLabel || task.subcategory || task.category;
+   const categoryLabel = getTaskCategoryLabel(task);
    
    // Determine if task is remote
    const isRemote = !task.location?.coordinates || !task.location?.address;

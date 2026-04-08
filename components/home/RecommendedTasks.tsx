@@ -12,6 +12,7 @@ import { ChevronLeft, ChevronRight, MapPin, Clock, Tag, Loader2 } from "lucide-r
 import { tasksApi } from "@/lib/api/endpoints/tasks";
 import { PrefetchTaskWrapper } from "@/hooks/usePrefetchTaskDetails";
 import { buildPublicTaskPath } from "@/lib/utils/taskHandle";
+import { getTaskCategoryLabel } from "@/lib/utils/taskCategory";
 
 interface Task {
    _id: string;
@@ -168,7 +169,7 @@ export function RecommendedTasks() {
                   <PrefetchTaskWrapper
                      key={task._id}
                      taskId={task._id}
-                     className="task-card snap-start flex-shrink-0 w-[calc(100%-1rem)] sm:w-[calc(50%-1.5rem)] lg:w-[calc(33.333%-1.5rem)] min-w-[280px]"
+                     className="task-card snap-start shrink-0 w-[calc(100%-1rem)] sm:w-[calc(50%-1.5rem)] lg:w-[calc(33.333%-1.5rem)] min-w-[280px]"
                   >
                      <TaskCard
                         task={{
@@ -216,7 +217,7 @@ function TaskCard({
          <div className="flex items-center justify-between mb-3">
             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary-50 text-primary-700">
                <Tag className="w-3 h-3 mr-1" />
-               {task.category}
+               {getTaskCategoryLabel(task)}
             </span>
             <span className="text-xs text-secondary-700 flex items-center gap-1">
                <Clock className="w-3 h-3" />

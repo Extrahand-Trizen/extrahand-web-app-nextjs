@@ -104,6 +104,25 @@ export function OTPVerificationForm({
    const verificationCompletedRef = useRef(false); // Track if verification succeeded
 
    const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+   const hiddenOtpInputRef = useRef<HTMLInputElement | null>(null);
+
+   const applyOtpCode = useCallback(
+      (rawCode: string) => {
+         const digits = rawCode.replace(/\D/g, "").slice(0, OTP_LENGTH);
+         if (!digits) return;
+
+         const otpArray = digits.split("");
+         const newOtp = Array(OTP_LENGTH).fill("");
+         otpArray.forEach((digit, i) => {
+            newOtp[i] = digit;
+         });
+
+         setHasError(false);
+         setOtp(newOtp);
+         focusInput(Math.min(otpArray.length - 1, OTP_LENGTH - 1));
+      },
+      [focusInput, setOtp]
+   );
 
    const applyPendingReferralCode = useCallback(async () => {
       if (authType !== "signup" || typeof window === "undefined") return;
@@ -158,6 +177,11 @@ export function OTPVerificationForm({
       // eslint-disable-next-line react-hooks/exhaustive-deps
    }, [otp, verifying, isVerified]);
 
+   // Keep hidden one-time-code input focused on mobile to improve autofill pickup.
+   useEffect(() => {
+      hiddenOtpInputRef.current?.focus();
+   }, []);
+
    const focusInput = useCallback((idx: number) => {
       if (idx >= 0 && idx < OTP_LENGTH) {
          inputRefs.current[idx]?.focus();
@@ -179,13 +203,7 @@ export function OTPVerificationForm({
       }
 
       // Handle paste
-      const otpArray = digits.slice(0, OTP_LENGTH).split("");
-      const newOtp = Array(OTP_LENGTH).fill("");
-      otpArray.forEach((digit, i) => {
-         newOtp[i] = digit;
-      });
-      setOtp(newOtp);
-      focusInput(Math.min(otpArray.length, OTP_LENGTH - 1));
+      applyOtpCode(digits);
    };
 
    const handleKeyDown = (
@@ -216,13 +234,7 @@ export function OTPVerificationForm({
    const handlePaste = (e: React.ClipboardEvent) => {
       e.preventDefault();
       const pastedData = e.clipboardData.getData("text").replace(/\D/g, "");
-      const otpArray = pastedData.slice(0, OTP_LENGTH).split("");
-      const newOtp = Array(OTP_LENGTH).fill("");
-      otpArray.forEach((digit, i) => {
-         newOtp[i] = digit;
-      });
-      setOtp(newOtp);
-      focusInput(Math.min(otpArray.length - 1, OTP_LENGTH - 1));
+      applyOtpCode(pastedData);
    };
 
    const handleSendOtp = async (phoneInput: string) => {
@@ -576,6 +588,23 @@ export function OTPVerificationForm({
 
                {!isVerified && (
                   <CardContent className="space-y-6 px-4 lg:px-6">
+                     {/* Hidden single input to capture browser one-time-code autofill values reliably */}
+                     <input
+                        ref={hiddenOtpInputRef}
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        name="one-time-code"
+                        maxLength={OTP_LENGTH}
+                        onChange={(e) => applyOtpCode(e.target.value)}
+                        onInput={(e) =>
+                           applyOtpCode((e.target as HTMLInputElement).value)
+                        }
+                        className="sr-only"
+                        aria-hidden="true"
+                        tabIndex={-1}
+                     />
+
                      {/* OTP Input */}
                      <div className="space-y-4">
                         <div
@@ -598,6 +627,12 @@ export function OTPVerificationForm({
                                  value={digit}
                                  onChange={(e) =>
                                     handleChange(e.target.value, idx)
+                                 }
+                                 onInput={(e) =>
+                                    handleChange(
+                                       (e.target as HTMLInputElement).value,
+                                       idx
+                                    )
                                  }
                                  onKeyDown={(e) => handleKeyDown(e, idx)}
                                  onPaste={handlePaste}

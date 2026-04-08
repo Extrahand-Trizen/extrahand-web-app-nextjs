@@ -321,7 +321,7 @@ export function PaymentConfirmationModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
       <DialogContent
-        className="sm:max-w-[500px]"
+        className="sm:max-w-[500px] max-h-[calc(100vh-2rem)] overflow-y-auto"
         showCloseButton={!isPaymentProcessing}
       >
         {/* ── POLICY VIEW ─────────────────────────────────────── */}

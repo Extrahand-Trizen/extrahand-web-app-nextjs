@@ -9,6 +9,7 @@ import { buildPublicProfilePath } from "@/lib/utils/profileHandle";
 import { getUserBadge } from "@/lib/api/badge";
 import { UserBadge } from "@/components/ui/user-badge";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { getTaskCategoryLabel } from "@/lib/utils/taskCategory";
 
 interface TaskDetailsSidebarProps {
    task: Task;
@@ -63,7 +64,7 @@ export function TaskDetailsSidebar({
       budgetObj?.negotiable === true ||
       budgetObj?.isNegotiable === true;
    const isHourly = task.budgetType === "hourly";
-   const categoryLabel = task.categoryLabel || task.subcategory || task.category;
+   const categoryLabel = getTaskCategoryLabel(task);
 
    // Extract requester data from task (already populated by backend)
    // Note: task.requesterId is a MongoDB ObjectId, not a UID

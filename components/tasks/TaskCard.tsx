@@ -1,8 +1,9 @@
 "use client";
 
-import { MapPin, Clock, Calendar, User } from "lucide-react";
+import { MapPin, Clock, Calendar, User, Tag } from "lucide-react";
 import Image from "next/image";
 import type { Task } from "@/types/task";
+import { getTaskCategoryLabel } from "@/lib/utils/taskCategory";
 
 interface TaskCardProps {
    task: Task;
@@ -114,6 +115,10 @@ export function TaskCard({ task, isSelected = false, onClick }: TaskCardProps) {
          <div className="flex items-center justify-between pt-2 border-t border-secondary-100">
             <div className="flex items-center gap-3">
                {getStatusBadge()}
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] md:text-xs font-medium bg-secondary-100 text-secondary-700">
+                     <Tag className="size-2 md:size-3 mr-1" />
+                     {getTaskCategoryLabel(task)}
+                  </span>
             </div>
 
             {/* User Profile Avatar */}

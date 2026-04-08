@@ -10,6 +10,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { getTaskCategoryLabel } from "@/lib/utils/taskCategory";
 
 // Mock tasks data (tasks created by current user)
 const mockMyTasks = [
@@ -200,7 +201,7 @@ export default function MyTasksScreen() {
                               Category:
                            </span>
                            <span className="text-sm text-gray-900 font-semibold">
-                              {task.category}
+                              {getTaskCategoryLabel(task)}
                            </span>
                         </div>
                         <div className="flex items-center justify-between">

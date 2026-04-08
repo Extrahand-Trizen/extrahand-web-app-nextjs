@@ -11,6 +11,7 @@ import { ChevronLeft, User, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TaskStatusBadge } from "@/components/tasks/TaskStatusBadge";
 import type { Task } from "@/types/task";
+import { getTaskCategoryLabel } from "@/lib/utils/taskCategory";
 
 interface TaskTrackingHeaderProps {
    task: Task;
@@ -59,7 +60,7 @@ export function TaskTrackingHeader({
 
       return "Viewer";
    };
-   const categoryLabel = task.categoryLabel || task.subcategory || task.category;
+   const categoryLabel = getTaskCategoryLabel(task);
 
    return (
       <div className="bg-white/95 backdrop-blur-sm border-b border-secondary-100 sticky top-16 z-20">
