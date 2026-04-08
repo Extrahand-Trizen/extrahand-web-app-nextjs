@@ -27,25 +27,15 @@ function isPanVerified(profile: UserProfile | null): boolean {
 
 /**
  * Check if the user has completed required verifications for posting a task
- * Aadhaar is required only for taskers. Poster/requester-only users can post
- * without Aadhaar. PAN and Bank are optional for posting.
+ * Task posting does not require any verification.
  */
 export function getTaskPostingVerificationStatus(
    profile: UserProfile | null
 ): VerificationGateResult {
-   const missing: string[] = [];
-   if (!profile) {
-      return { allowed: false, missing: ["Aadhaar"] };
-   }
-
-   // Aadhaar is optional for poster/requester-only users, required for taskers.
-   if (isTaskerRole(profile) && !profile.isAadhaarVerified) {
-      missing.push("Aadhaar");
-   }
-
+   // No verification required for task posting
    return {
-      allowed: missing.length === 0,
-      missing,
+      allowed: true,
+      missing: [],
    };
 }
 

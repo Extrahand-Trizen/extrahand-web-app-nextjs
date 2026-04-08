@@ -106,6 +106,13 @@ export function OTPVerificationForm({
    const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
    const hiddenOtpInputRef = useRef<HTMLInputElement | null>(null);
 
+   // Define focusInput before applyOtpCode since applyOtpCode depends on it
+   const focusInput = useCallback((idx: number) => {
+      if (idx >= 0 && idx < OTP_LENGTH) {
+         inputRefs.current[idx]?.focus();
+      }
+   }, []);
+
    const applyOtpCode = useCallback(
       (rawCode: string) => {
          const digits = rawCode.replace(/\D/g, "").slice(0, OTP_LENGTH);
@@ -180,12 +187,6 @@ export function OTPVerificationForm({
    // Keep hidden one-time-code input focused on mobile to improve autofill pickup.
    useEffect(() => {
       hiddenOtpInputRef.current?.focus();
-   }, []);
-
-   const focusInput = useCallback((idx: number) => {
-      if (idx >= 0 && idx < OTP_LENGTH) {
-         inputRefs.current[idx]?.focus();
-      }
    }, []);
 
    const handleChange = (value: string, idx: number) => {

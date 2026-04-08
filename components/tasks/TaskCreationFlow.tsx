@@ -30,6 +30,8 @@ import {
 import { api } from "@/lib/api";
 import { getErrorMessage, isNetworkError } from "@/lib/utils/errorUtils";
 import { useAuth } from "@/lib/auth/context";
+import { addressesApi } from "@/lib/api/endpoints/addresses";
+import { ADDRESSES_QUERY_KEY } from "@/components/shared/InteractiveLocationPicker";
 import {
    Dialog,
    DialogContent,
@@ -527,6 +529,15 @@ export function TaskCreationFlow() {
       window.addEventListener("beforeunload", handleBeforeUnload);
       return () => window.removeEventListener("beforeunload", handleBeforeUnload);
    }, [hasUnsavedChanges, isSubmitting]);
+
+   // Prefetch saved addresses to make InteractiveLocationPicker load faster
+   useEffect(() => {
+      queryClient.prefetchQuery({
+         queryKey: ADDRESSES_QUERY_KEY,
+         queryFn: () => addressesApi.getAddresses(),
+         staleTime: 5 * 60 * 1000,
+      });
+   }, [queryClient]);
 
    // Load draft on mount
    useEffect(() => {

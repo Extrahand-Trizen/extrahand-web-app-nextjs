@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { MapPin, Locate, Loader2, Navigation, Home, Plus, X, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,9 @@ import { isValidCoordinate, sanitizeString } from "@/lib/utils/sanitization";
 import { GoogleMapPicker } from "@/components/maps/GoogleMapPicker";
 import { addressesApi } from "@/lib/api/endpoints/addresses";
 import type { SavedAddress } from "@/types/profile";
+
+// Query key for React Query caching
+export const ADDRESSES_QUERY_KEY = ["saved-addresses"];
 
 interface LocationData {
    address: string;
@@ -113,31 +117,46 @@ export function InteractiveLocationPicker({
    const autoSelectRef = useRef(false); // Prevent duplicate auto-select
    const locateToastShownRef = useRef(false); // Prevent duplicate toasts for "Locate Me"
 
-   // Fetch saved addresses on mount
+   // Fetch saved addresses using React Query for faster caching and reuse
+   const { data: savedAddressesFromQuery, isLoading: isLoadingQueryAddresses } = useQuery({
+      queryKey: ADDRESSES_QUERY_KEY,
+      queryFn: () => addressesApi.getAddresses(),
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+   });
+
+   // Update savedAddresses state from Query and handle auto-selection
    useEffect(() => {
-      const fetchAddresses = async () => {
-         try {
-            setIsLoadingAddresses(true);
-            const addresses = await addressesApi.getAddresses();
-            setSavedAddresses(addresses || []);
+      if (savedAddressesFromQuery) {
+         setSavedAddresses(savedAddressesFromQuery);
+
+         // Auto-select address only once, if no address is set yet
+         if (!autoSelectRef.current && (!value.address || value.address === "") && !value.coordinates) {
+            // First try to find default address
+            let addressToSelect = savedAddressesFromQuery.find(addr => addr.isDefault);
             
-            // Auto-select default address only once, if no address is set yet
-            if (!autoSelectRef.current && (!value.address || value.address === "") && !value.coordinates) {
-               const defaultAddress = addresses?.find(addr => addr.isDefault);
-               if (defaultAddress) {
-                  autoSelectRef.current = true; // Prevent future auto-selects
-                  setSelectedSavedAddressId(defaultAddress.id);
-                  await handleSelectSavedAddress(defaultAddress);
-               }
+            // If no default, prefer Home type address
+            if (!addressToSelect) {
+               addressToSelect = savedAddressesFromQuery.find(addr => addr.type === "home");
             }
-         } catch (err) {
-            console.error("Failed to load saved addresses:", err);
-         } finally {
-            setIsLoadingAddresses(false);
+            
+            // Otherwise, just take the first address
+            if (!addressToSelect && savedAddressesFromQuery.length > 0) {
+               addressToSelect = savedAddressesFromQuery[0];
+            }
+
+            if (addressToSelect) {
+               autoSelectRef.current = true;
+               setSelectedSavedAddressId(addressToSelect.id);
+            }
          }
-      };
-      fetchAddresses();
-   }, []);
+      }
+   }, [savedAddressesFromQuery, value.address, value.coordinates]);
+
+   // Sync loading state
+   useEffect(() => {
+      setIsLoadingAddresses(isLoadingQueryAddresses);
+   }, [isLoadingQueryAddresses]);
 
    // Initialize location picker with value when editing task
    useEffect(() => {
@@ -309,6 +328,16 @@ export function InteractiveLocationPicker({
          }
       }
    };
+
+   // Auto-select saved address when ID is set
+   useEffect(() => {
+      if (selectedSavedAddressId && autoSelectRef.current && savedAddresses.length > 0 && (!value.address || value.address === "")) {
+         const addressToSelect = savedAddresses.find(addr => addr.id === selectedSavedAddressId);
+         if (addressToSelect) {
+            handleSelectSavedAddress(addressToSelect);
+         }
+      }
+   }, [selectedSavedAddressId, savedAddresses, value.address]);
 
    // Debounce location search - Increased to 500ms to reduce API calls
    useEffect(() => {
