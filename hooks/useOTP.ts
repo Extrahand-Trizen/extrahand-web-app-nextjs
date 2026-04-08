@@ -15,6 +15,43 @@ import {
 const OTP_LENGTH = 6;
 const MAX_SESSION_AGE = 5 * 60 * 1000; // 5 minutes
 
+const extractOtpDigits = (value: unknown): string => {
+   if (!value) return "";
+
+   if (typeof value === "string") {
+      const explicit = value.match(new RegExp(`\\b\\d{${OTP_LENGTH}}\\b`));
+      if (explicit?.[0]) return explicit[0];
+      return value.replace(/\D/g, "").slice(0, OTP_LENGTH);
+   }
+
+   if (typeof value === "object") {
+      const candidate = value as Record<string, unknown>;
+      const nestedCandidates = [
+         candidate.code,
+         candidate.id,
+         candidate.otp,
+         candidate.value,
+         candidate.sms,
+         candidate.message,
+      ];
+
+      for (const nested of nestedCandidates) {
+         const extracted = extractOtpDigits(nested);
+         if (extracted.length === OTP_LENGTH) {
+            return extracted;
+         }
+      }
+
+      const asText = String(value);
+      const extractedFromText = extractOtpDigits(asText);
+      if (extractedFromText.length === OTP_LENGTH) {
+         return extractedFromText;
+      }
+   }
+
+   return "";
+};
+
 interface UseOTPResult {
    otp: string[];
    setOtp: (otp: string[]) => void;
@@ -65,7 +102,7 @@ export const useOTP = (
       }
 
       const nav = navigator as any;
-      if (!window.isSecureContext || !nav?.credentials?.get || !(window as any).OTPCredential) {
+      if (!window.isSecureContext || !nav?.credentials?.get) {
          return;
       }
 
@@ -85,17 +122,20 @@ export const useOTP = (
                signal: controller.signal,
             });
 
-            if (content?.code) {
-               const digits = content.code
-                  .replace(/\D/g, "")
-                  .slice(0, OTP_LENGTH)
-                  .split("");
+            const otpDigits = extractOtpDigits(content);
+
+            if (otpDigits.length === OTP_LENGTH) {
+               const digits = otpDigits.split("");
                const newOtp = Array(OTP_LENGTH).fill("");
                digits.forEach((d: string, i: number) => {
                   newOtp[i] = d;
                });
                setOtp(newOtp);
-               console.log("📥 [useOTP] Auto-filled OTP via WebOTP API");
+               console.log("📥 [useOTP] Auto-filled OTP via WebOTP API", {
+                  otpLength: otpDigits.length,
+               });
+            } else {
+               console.warn("⚠️ [useOTP] WebOTP returned no valid 6-digit code");
             }
          } catch (err: any) {
             if (err?.name !== "AbortError") {

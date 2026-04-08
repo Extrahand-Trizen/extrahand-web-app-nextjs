@@ -264,14 +264,19 @@ export default function ChatPage() {
     try {
       setLoading(true);
       const { chats: loadedChats } = await chatsApi.getChats();
-      const hydratedChats = await hydrateChats(loadedChats);
-      const chatsWithLiveStatus = await Promise.all(
-        hydratedChats.map((chat) => refreshChatWithLiveTaskStatus(chat))
-      );
-      setChats(chatsWithLiveStatus);
+      // Show chat list immediately, then enrich in background.
+      setChats(loadedChats);
+      setLoading(false);
+
+      void (async () => {
+        const hydratedChats = await hydrateChats(loadedChats);
+        const chatsWithLiveStatus = await Promise.all(
+          hydratedChats.map((chat) => refreshChatWithLiveTaskStatus(chat))
+        );
+        setChats(chatsWithLiveStatus);
+      })();
     } catch (error) {
       console.error("Failed to load chats:", error);
-    } finally {
       setLoading(false);
     }
   };
@@ -282,22 +287,37 @@ export default function ChatPage() {
       if (!chat?.chatId) {
         throw new Error("Chat creation failed");
       }
-      const hydratedChat = await resolveOtherParticipant(chat);
-      const chatWithLiveStatus = await refreshChatWithLiveTaskStatus(hydratedChat);
       setChats((prev) => {
         const existingIndex = prev.findIndex(
-          (c) => c.chatId === chatWithLiveStatus.chatId || c._id === chatWithLiveStatus._id
+          (c) => c.chatId === chat.chatId || c._id === chat._id
         );
         if (existingIndex >= 0) {
           const updated = [...prev];
-          updated[existingIndex] = chatWithLiveStatus;
+          updated[existingIndex] = chat;
           return updated;
         }
-        return [chatWithLiveStatus, ...prev];
+        return [chat, ...prev];
       });
-      setSelectedChat(chatWithLiveStatus);
-      await loadMessages(chatWithLiveStatus);
+      setSelectedChat(chat);
+      setMessages([]);
+      void loadMessages(chat);
       setShowMobileList(false);
+
+      // Enrich participant/status without blocking initial render.
+      void (async () => {
+        const hydratedChat = await resolveOtherParticipant(chat);
+        const chatWithLiveStatus = await refreshChatWithLiveTaskStatus(hydratedChat);
+        setChats((prev) =>
+          prev.map((c) =>
+            c.chatId === chat.chatId || c._id === chat._id ? chatWithLiveStatus : c
+          )
+        );
+        setSelectedChat((prev) =>
+          prev && (prev.chatId === chat.chatId || prev._id === chat._id)
+            ? chatWithLiveStatus
+            : prev
+        );
+      })();
     } catch (error) {
       console.error("Failed to start chat:", error);
       toast.error("Unable to start chat", {
@@ -308,7 +328,6 @@ export default function ChatPage() {
 
   const openTaskChatContext = async (taskId: string) => {
     try {
-      setLoading(true);
       setShowMobileList(false);
       let { chat } = await chatsApi.getTaskChat(taskId);
 
@@ -323,51 +342,76 @@ export default function ChatPage() {
         setMessages([]);
         return;
       }
-
-      const hydratedChat = await resolveOtherParticipant(chat);
-      const chatWithLiveStatus = await refreshChatWithLiveTaskStatus(hydratedChat);
-
       setChats((prev) => {
         const existingIndex = prev.findIndex(
-          (c) => c.chatId === chatWithLiveStatus.chatId || c._id === chatWithLiveStatus._id
+          (c) => c.chatId === chat.chatId || c._id === chat._id
         );
         if (existingIndex >= 0) {
           const updated = [...prev];
-          updated[existingIndex] = chatWithLiveStatus;
+          updated[existingIndex] = chat;
           return updated;
         }
-        return [chatWithLiveStatus, ...prev];
+        return [chat, ...prev];
       });
 
-      setSelectedChat(chatWithLiveStatus);
-      await loadMessages(chatWithLiveStatus);
+      // Open the conversation immediately, then fetch messages/enrichment.
+      setSelectedChat(chat);
+      setMessages([]);
+      void loadMessages(chat);
+
+      void (async () => {
+        const hydratedChat = await resolveOtherParticipant(chat as Chat);
+        const chatWithLiveStatus = await refreshChatWithLiveTaskStatus(hydratedChat);
+        setChats((prev) =>
+          prev.map((c) =>
+            c.chatId === chat.chatId || c._id === chat._id ? chatWithLiveStatus : c
+          )
+        );
+        setSelectedChat((prev) =>
+          prev && (prev.chatId === chat.chatId || prev._id === chat._id)
+            ? chatWithLiveStatus
+            : prev
+        );
+      })();
     } catch (error) {
       console.error("Failed to open task chat context:", error);
       toast.error("Unable to open task chat");
-    } finally {
-      setLoading(false);
     }
   };
 
   const loadChatById = async (chatId: string) => {
     try {
       const chat = await chatsApi.getChatDetails(chatId);
-      const hydratedChat = await resolveOtherParticipant(chat);
-      const chatWithLiveStatus = await refreshChatWithLiveTaskStatus(hydratedChat);
       setChats((prev) => {
         const existingIndex = prev.findIndex(
-          (c) => c.chatId === chatWithLiveStatus.chatId || c._id === chatWithLiveStatus._id
+          (c) => c.chatId === chat.chatId || c._id === chat._id
         );
         if (existingIndex >= 0) {
           const updated = [...prev];
-          updated[existingIndex] = chatWithLiveStatus;
+          updated[existingIndex] = chat;
           return updated;
         }
-        return [chatWithLiveStatus, ...prev];
+        return [chat, ...prev];
       });
-      setSelectedChat(chatWithLiveStatus);
-      await loadMessages(chatWithLiveStatus);
+      setSelectedChat(chat);
+      setMessages([]);
+      void loadMessages(chat);
       setShowMobileList(false);
+
+      void (async () => {
+        const hydratedChat = await resolveOtherParticipant(chat);
+        const chatWithLiveStatus = await refreshChatWithLiveTaskStatus(hydratedChat);
+        setChats((prev) =>
+          prev.map((c) =>
+            c.chatId === chat.chatId || c._id === chat._id ? chatWithLiveStatus : c
+          )
+        );
+        setSelectedChat((prev) =>
+          prev && (prev.chatId === chat.chatId || prev._id === chat._id)
+            ? chatWithLiveStatus
+            : prev
+        );
+      })();
     } catch (error) {
       console.error("Failed to load chat details:", error);
       toast.error("Unable to open chat", {
@@ -378,39 +422,46 @@ export default function ChatPage() {
 
   const handleSelectChat = async (chat: Chat) => {
     setShowMobileList(false);
-    setSelectedChat(null);
+    setSelectedChat(chat);
     setMessages([]);
+    void loadMessages(chat);
 
-    let chatToSelect = await resolveOtherParticipant(chat);
-    chatToSelect = await refreshChatWithLiveTaskStatus(chatToSelect);
+    // Enrich selected chat in background to keep selection snappy.
+    void (async () => {
+      let chatToSelect = await resolveOtherParticipant(chat);
+      chatToSelect = await refreshChatWithLiveTaskStatus(chatToSelect);
 
-    // Re-check task chat status before opening so completed tasks are locked immediately.
-    if (chatToSelect.relatedTask) {
-      try {
-        const { chat: latestTaskChat } = await chatsApi.getTaskChat(chatToSelect.relatedTask);
-        if (latestTaskChat) {
-          chatToSelect = await resolveOtherParticipant(latestTaskChat);
-          setChats((prev) =>
-            prev.map((c) =>
-              c.chatId === chatToSelect.chatId ? chatToSelect : c
-            )
-          );
+      // Re-check task chat status before opening so completed tasks are locked immediately.
+      if (chatToSelect.relatedTask) {
+        try {
+          const { chat: latestTaskChat } = await chatsApi.getTaskChat(chatToSelect.relatedTask);
+          if (latestTaskChat) {
+            chatToSelect = await resolveOtherParticipant(latestTaskChat);
+          }
+        } catch (error) {
+          console.error("Failed to refresh task chat status:", error);
         }
-      } catch (error) {
-        console.error("Failed to refresh task chat status:", error);
       }
-    }
 
-    setSelectedChat(chatToSelect);
-    await loadMessages(chatToSelect);
+      setChats((prev) =>
+        prev.map((c) =>
+          c.chatId === chat.chatId || c._id === chat._id ? chatToSelect : c
+        )
+      );
+      setSelectedChat((prev) =>
+        prev && (prev.chatId === chat.chatId || prev._id === chat._id)
+          ? chatToSelect
+          : prev
+      );
+    })();
     
     // Mark as read
-    if (chatToSelect.unreadCount > 0) {
+    if (chat.unreadCount > 0) {
       try {
-        await chatsApi.markChatAsRead(chatToSelect.chatId);
+        await chatsApi.markChatAsRead(chat.chatId);
         setChats((prev) =>
           prev.map((c) =>
-            c.chatId === chatToSelect.chatId ? { ...c, unreadCount: 0 } : c
+            c.chatId === chat.chatId ? { ...c, unreadCount: 0 } : c
           )
         );
       } catch (error) {

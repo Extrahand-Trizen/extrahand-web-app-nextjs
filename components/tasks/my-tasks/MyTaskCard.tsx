@@ -51,11 +51,10 @@ export function MyTaskCard({
       typeof task.budget === "object" ? task.budget.negotiable : false;
    const canEditOrDelete = task.status === "open";
    const canMessageTasker =
-      (task.status === "assigned" ||
-         task.status === "started" ||
-         task.status === "in_progress" ||
-         task.status === "review") &&
-      !!(task.assignedTo || task.assignedToName);
+      task.status === "assigned" ||
+      task.status === "started" ||
+      task.status === "in_progress" ||
+      task.status === "review";
 
    // Time ago helper
    const getTimeAgo = (date: Date | string | undefined): string => {

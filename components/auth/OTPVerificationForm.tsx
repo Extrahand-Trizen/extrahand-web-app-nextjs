@@ -184,10 +184,10 @@ export function OTPVerificationForm({
       // eslint-disable-next-line react-hooks/exhaustive-deps
    }, [otp, verifying, isVerified]);
 
-   // Keep hidden one-time-code input focused on mobile to improve autofill pickup.
+   // Keep the first visible OTP input focused so Chrome autofill targets a real field.
    useEffect(() => {
-      hiddenOtpInputRef.current?.focus();
-   }, []);
+      focusInput(0);
+   }, [focusInput]);
 
    const handleChange = (value: string, idx: number) => {
       setHasError(false);
@@ -602,8 +602,6 @@ export function OTPVerificationForm({
                            applyOtpCode((e.target as HTMLInputElement).value)
                         }
                         className="sr-only"
-                        aria-hidden="true"
-                        tabIndex={-1}
                      />
 
                      {/* OTP Input */}
@@ -626,6 +624,7 @@ export function OTPVerificationForm({
                                  name={idx === 0 ? "otp" : undefined}
                                  maxLength={idx === 0 ? OTP_LENGTH : 1}
                                  value={digit}
+                                 autoFocus={idx === 0}
                                  onChange={(e) =>
                                     handleChange(e.target.value, idx)
                                  }
