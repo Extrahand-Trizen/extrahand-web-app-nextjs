@@ -142,7 +142,11 @@ export const SearchFilter = ({ value, onChange, className }: { value: string, on
 
 export const CategoryFilter = ({ filters, onFilterChange }) => {
    const [open, setOpen] = useState(false);
-   const CATEGORIES = serviceCategories;
+   const CATEGORIES = [...serviceCategories].sort((a, b) => {
+      if (a.id === "other") return 1;
+      if (b.id === "other") return -1;
+      return a.name.localeCompare(b.name);
+   });
 
    const toggleCategory = (category: string) => {
       const updated = filters.categories.includes(category)

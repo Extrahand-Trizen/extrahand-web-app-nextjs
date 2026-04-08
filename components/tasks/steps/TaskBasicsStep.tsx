@@ -37,6 +37,11 @@ interface CategorySuggestion {
 }
 
 const CATEGORIES = postTaskCategories;
+const DISPLAY_CATEGORIES = [...postTaskCategories].sort((a, b) => {
+   if (a.id === "other") return 1;
+   if (b.id === "other") return -1;
+   return a.label.localeCompare(b.label);
+});
 
 const CATEGORY_TAGS: Record<string, string[]> = {
    "home-cleaning": ["dusting", "mopping", "vacuuming", "bathrooms", "kitchens", "pet-friendly", "eco-friendly"],
@@ -424,7 +429,7 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
                         <DialogTitle>Select Category</DialogTitle>
                      </DialogHeader>
                      <div className="grid grid-cols-2 gap-3 py-4">
-                        {CATEGORIES.map((cat) => (
+                        {DISPLAY_CATEGORIES.map((cat) => (
                            <button
                               key={cat.id}
                               type="button"

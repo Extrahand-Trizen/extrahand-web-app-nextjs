@@ -431,7 +431,7 @@ export function DiscoverClient({
           <div className="hidden lg:block lg:w-1/2">
             <div className="sticky" style={{ top: `${TOP_OFFSET_PX}px` }}>
               <div
-                className="relative"
+                className="relative z-0 isolate overflow-hidden rounded-lg border border-secondary-200 bg-white"
                 style={{
                   height: `calc(100vh - ${TOP_OFFSET_PX}px)`,
                 }}
@@ -444,7 +444,7 @@ export function DiscoverClient({
                 />
                 {/* Desktop Task Detail Card Overlay */}
                 {showTaskDetail && selectedTask && (
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] w-full px-4">
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-1000 w-full px-4">
                     <TaskDetailCard
                       task={selectedTask}
                       onClose={handleCloseDetail}
