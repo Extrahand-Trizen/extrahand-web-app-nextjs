@@ -67,7 +67,6 @@ import { AddBankAccountModal } from "./AddBankAccountModal";
 import { BankAccountBanner } from "./BankAccountBanner";
 import { PayoutHistory } from "./PayoutHistory";
 import { useBankAccounts } from "@/lib/hooks/usePayments";
-import { ReportIssueButton } from "@/components/shared/ReportIssueButton";
 
 interface PaymentsSectionProps {
    paymentMethods?: PaymentMethod[];
@@ -331,13 +330,6 @@ export function PaymentsSection({
                   history
                </p>
             </div>
-            <ReportIssueButton
-               buttonLabel="Report Payment Issue"
-               issueType="payment"
-               pageContext="payments-earnings"
-               buttonVariant="link"
-               buttonSize="sm"
-            />
          </div>
 
          {/* Quick Stats */}

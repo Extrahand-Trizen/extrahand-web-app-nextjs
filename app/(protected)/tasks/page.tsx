@@ -134,7 +134,7 @@ export default function TasksPage() {
                               </div>
                            </div>
                            <ReportIssueButton
-                              buttonLabel="Report Task Issue"
+                              buttonLabel="Report Issue"
                               issueType="task"
                               pageContext="tasks-page"
                               buttonVariant="link"

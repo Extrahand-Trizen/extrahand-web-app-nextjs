@@ -310,7 +310,13 @@ export default function ChatPage() {
     try {
       setLoading(true);
       setShowMobileList(false);
-      const { chat } = await chatsApi.getTaskChat(taskId);
+      let { chat } = await chatsApi.getTaskChat(taskId);
+
+      // If no existing task chat is found, create one for the task participants.
+      if (!chat) {
+        const started = await chatsApi.startChatForTask(taskId);
+        chat = started?.chat ?? null;
+      }
 
       if (!chat) {
         setSelectedChat(null);
@@ -732,7 +738,7 @@ export default function ChatPage() {
         <div className="mb-3 flex items-center justify-between gap-3">
           <h1 className="text-xl font-bold text-secondary-900">Messages</h1>
           <ReportIssueButton
-            buttonLabel="Report Chat Issue"
+            buttonLabel="Report Issue"
             issueType="chat"
             pageContext="chat-page"
             buttonVariant="link"
@@ -860,7 +866,7 @@ export default function ChatPage() {
             <p className="text-xs text-secondary-500">Task conversation</p>
           </div>
           <ReportIssueButton
-            buttonLabel="Report Chat Issue"
+            buttonLabel="Report Issue"
             issueType="chat"
             pageContext="chat-conversation"
             metadata={{ chatId: selectedChat.chatId }}

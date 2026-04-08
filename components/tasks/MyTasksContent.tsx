@@ -6,7 +6,15 @@
  * Uses real API data from tasksApi.getMyTasks(), cached via React Query.
  */
 
-import React, { useState, useEffect, useMemo, useDeferredValue } from "react";
+import React, {
+   useState,
+   useEffect,
+   useMemo,
+   useDeferredValue,
+   useRef,
+   useCallback,
+   useLayoutEffect,
+} from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -53,6 +61,7 @@ interface MyTasksContentProps {
 
 export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
    const router = useRouter();
+   const pageTopRef = useRef<HTMLDivElement | null>(null);
 
    // State
    const [searchQuery, setSearchQuery] = useState("");
@@ -66,9 +75,27 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
       setPage(1);
    }, [deferredSearchQuery, statusFilter, sortBy]);
 
-   useEffect(() => {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-   }, [page]);
+   const scrollToPageTop = useCallback(() => {
+      // Blur footer pagination button so browser doesn't keep viewport near footer.
+      if (document.activeElement instanceof HTMLElement) {
+         document.activeElement.blur();
+      }
+
+      pageTopRef.current?.scrollIntoView({ block: "start", behavior: "auto" });
+      window.scrollTo({ top: 0, behavior: "auto" });
+   }, []);
+
+   useLayoutEffect(() => {
+      scrollToPageTop();
+   }, [page, scrollToPageTop]);
+
+   const handlePageChange = useCallback(
+      (nextPage: number) => {
+         setPage(nextPage);
+         requestAnimationFrame(scrollToPageTop);
+      },
+      [scrollToPageTop]
+   );
 
    const queryParams = useMemo(
       () => ({
@@ -197,6 +224,10 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
       router.push(`/tasks/${taskId}/track`);
    };
 
+   const handleMessageTasker = (taskId: string) => {
+      router.push(`/chat?taskId=${taskId}`);
+   };
+
    const hasFilters = deferredSearchQuery.trim() !== "" || statusFilter !== "all" || sortBy !== "recent";
 
    // Initial loading state - render subtle list skeleton without explicit text
@@ -240,6 +271,7 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
 
    return (
       <div className="flex flex-col flex-1">
+         <div ref={pageTopRef} />
          {/* Filters Section */}
          <MyTasksFilters
             searchQuery={searchQuery}
@@ -267,6 +299,7 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
                            onDelete={handleDeleteTask}
                            onViewApplications={handleViewApplications}
                            onTrackProgress={handleTrackProgress}
+                           onMessageTasker={handleMessageTasker}
                         />
                      ))}
                   </div>
@@ -281,7 +314,9 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
                            <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => setPage((p) => Math.max(1, p - 1))}
+                              onClick={() =>
+                                 handlePageChange(Math.max(1, pagination.page - 1))
+                              }
                               disabled={page === 1}
                            >
                               <ChevronLeft className="w-4 h-4 mr-1" />
@@ -291,8 +326,8 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
                               variant="outline"
                               size="sm"
                               onClick={() =>
-                                 setPage((p) =>
-                                    Math.min(pagination.pages, p + 1)
+                                 handlePageChange(
+                                    Math.min(pagination.pages, pagination.page + 1)
                                  )
                               }
                                 disabled={pagination.page === pagination.pages}

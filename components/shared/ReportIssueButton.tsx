@@ -15,11 +15,12 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useUserStore } from "@/lib/state/userStore";
 import { cn } from "@/lib/utils";
+import { AlertTriangle } from "lucide-react";
 
 export type ReportIssueType = "payment" | "task" | "chat" | "general";
 
 interface ReportIssueButtonProps {
-   buttonLabel: string;
+   buttonLabel?: string;
    issueType: ReportIssueType;
    pageContext: string;
    metadata?: Record<string, unknown>;
@@ -30,7 +31,7 @@ interface ReportIssueButtonProps {
 }
 
 export function ReportIssueButton({
-   buttonLabel,
+   buttonLabel = "Report Issue",
    issueType,
    pageContext,
    metadata,
@@ -97,10 +98,16 @@ export function ReportIssueButton({
             type="button"
             variant={buttonVariant}
             size={buttonSize}
-            className={cn("px-0", buttonClassName)}
+            className={cn(
+               "px-0 text-amber-500 hover:text-amber-600 font-medium",
+               buttonClassName
+            )}
             onClick={() => setOpen(true)}
          >
-            {buttonLabel}
+            <span className="inline-flex items-center gap-1.5">
+               <AlertTriangle className="w-3.5 h-3.5" />
+               <span>{buttonLabel}</span>
+            </span>
          </Button>
 
          <Dialog open={open} onOpenChange={setOpen}>

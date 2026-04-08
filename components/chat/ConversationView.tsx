@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, MoreVertical, ExternalLink, Flag, Ban } from "lucide-react";
+import { ArrowLeft, MoreVertical, ExternalLink, AlertTriangle, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback,AvatarImage } from "@/components/ui/avatar";
@@ -157,9 +157,9 @@ export function ConversationView({
                         View Task Details
                      </DropdownMenuItem>
                      <DropdownMenuSeparator />
-                     <DropdownMenuItem className="cursor-pointer text-orange-600">
-                        <Flag className="w-4 h-4 mr-2" />
-                        Report Chat Issue
+                     <DropdownMenuItem className="cursor-pointer text-amber-600">
+                        <AlertTriangle className="w-4 h-4 mr-2" />
+                        Report Issue
                      </DropdownMenuItem>
                      <DropdownMenuItem className="cursor-pointer text-red-600">
                         <Ban className="w-4 h-4 mr-2" />

@@ -402,7 +402,7 @@ export default function PaymentsDemoPage() {
                   Payment Flow Demo
                </h1>
                <ReportIssueButton
-                  buttonLabel="Report Payment Issue"
+                  buttonLabel="Report Issue"
                   issueType="payment"
                   pageContext="payments-checkout"
                   buttonVariant="link"

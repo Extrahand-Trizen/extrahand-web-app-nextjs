@@ -677,12 +677,12 @@ function ProfilePageContent() {
                      {SECTION_TITLES[section]}
                   </h1>
                   <ReportIssueButton
-                     buttonLabel="⚠️ Report Issue"
+                     buttonLabel="Report Issue"
                      issueType="general"
                      pageContext={`profile-${section}`}
                      buttonVariant="link"
                      buttonSize="sm"
-                     buttonClassName="text-xs text-red-600 hover:text-red-700"
+                     buttonClassName="text-xs"
                      className="shrink-0"
                   />
                </div>
@@ -706,12 +706,12 @@ function ProfilePageContent() {
                <div className="max-w-4xl mx-auto py-8">
                   <div className="mb-4 flex justify-end">
                      <ReportIssueButton
-                        buttonLabel="⚠️ Report Issue"
+                        buttonLabel="Report Issue"
                         issueType="general"
                         pageContext={`profile-${section}`}
                         buttonVariant="link"
                         buttonSize="sm"
-                        buttonClassName="text-sm text-red-600 hover:text-red-700"
+                        buttonClassName="text-sm"
                      />
                   </div>
                   {section !== "overview" && (

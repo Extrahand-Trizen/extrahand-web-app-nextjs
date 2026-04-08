@@ -216,7 +216,8 @@ export function ReportSection({
                   size="sm"
                   className="text-sm text-amber-500 hover:text-amber-600 bg-transparent border-none shadow-none font-medium"
                >
-                  ⚠️ Report an Issue
+                  <AlertTriangle className="w-3.5 h-3.5 mr-1.5" />
+                  Report Issue
                </Button>
             </div>
          )}

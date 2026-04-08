@@ -32,6 +32,7 @@ interface MyTaskCardProps {
    onDelete: (taskId: string, taskTitle: string) => void;
    onViewApplications: (task: Task) => void;
    onTrackProgress: (taskId: string) => void;
+   onMessageTasker: (taskId: string) => void;
 }
 
 export function MyTaskCard({
@@ -42,12 +43,19 @@ export function MyTaskCard({
    onDelete,
    onViewApplications,
    onTrackProgress,
+   onMessageTasker,
 }: MyTaskCardProps) {
    const budgetAmount =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
    const budgetNegotiable =
       typeof task.budget === "object" ? task.budget.negotiable : false;
    const canEditOrDelete = task.status === "open";
+   const canMessageTasker =
+      (task.status === "assigned" ||
+         task.status === "started" ||
+         task.status === "in_progress" ||
+         task.status === "review") &&
+      !!(task.assignedTo || task.assignedToName);
 
    // Time ago helper
    const getTimeAgo = (date: Date | string | undefined): string => {
@@ -231,6 +239,16 @@ export function MyTaskCard({
                >
                   <TrendingUp className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                   <span>Track Task</span>
+               </Button>
+            )}
+            {canMessageTasker && (
+               <Button
+                  size="sm"
+                  onClick={() => onMessageTasker(task._id)}
+                  className="flex-1 sm:flex-initial bg-primary-600 hover:bg-primary-700 text-white text-xs md:text-sm"
+               >
+                  <MessageSquare className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+                  <span>Message Tasker</span>
                </Button>
             )}
             {canEditOrDelete && (
