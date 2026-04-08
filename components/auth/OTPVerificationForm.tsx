@@ -260,6 +260,13 @@ export function OTPVerificationForm({
       applyOtpCode(pastedData);
    };
 
+   const handleAutofillAnimation = (
+      e: React.AnimationEvent<HTMLInputElement>
+   ) => {
+      if (e.animationName !== "onAutoFillStart") return;
+      applyOtpCode((e.target as HTMLInputElement).value || "");
+   };
+
    const handleSendOtp = async (phoneInput: string) => {
       if (isLocalTestMode() && isTestPhone(phoneInput)) {
          resetTimer();
@@ -611,29 +618,31 @@ export function OTPVerificationForm({
 
                {!isVerified && (
                   <CardContent className="space-y-6 px-4 lg:px-6">
-                     {/* Hidden single input to capture browser one-time-code autofill values reliably */}
-                     <input
-                        ref={hiddenOtpInputRef}
-                        type="text"
-                        inputMode="numeric"
-                        autoComplete="one-time-code"
-                        name="one-time-code"
-                        maxLength={OTP_LENGTH}
-                        onChange={(e) => applyOtpCode(e.target.value)}
-                        onInput={(e) =>
-                           applyOtpCode((e.target as HTMLInputElement).value)
-                        }
-                        className="sr-only"
-                     />
-
                      {/* OTP Input */}
                      <div className="space-y-4">
                         <div
                            className={cn(
-                              "flex gap-2 justify-center",
+                              "relative flex gap-2 justify-center",
                               hasError && "animate-shake"
                            )}
                         >
+                           {/* Bridge input used by Chrome one-time-code autofill. */}
+                           <input
+                              ref={hiddenOtpInputRef}
+                              type="text"
+                              inputMode="numeric"
+                              autoComplete="one-time-code"
+                              name="one-time-code"
+                              maxLength={OTP_LENGTH}
+                              onChange={(e) => applyOtpCode(e.target.value)}
+                              onInput={(e) =>
+                                 applyOtpCode((e.target as HTMLInputElement).value)
+                              }
+                              onAnimationStart={handleAutofillAnimation}
+                              className="absolute inset-0 h-full w-full opacity-0 pointer-events-none"
+                              aria-label="OTP auto-fill bridge"
+                           />
+
                            {otp.map((digit, idx) => (
                               <Input
                                  key={idx}
@@ -656,6 +665,7 @@ export function OTPVerificationForm({
                                        idx
                                     )
                                  }
+                                 onAnimationStart={handleAutofillAnimation}
                                  onKeyDown={(e) => handleKeyDown(e, idx)}
                                  onPaste={handlePaste}
                                  className={cn(
@@ -764,6 +774,18 @@ export function OTPVerificationForm({
             }
             .animate-scale-in {
                animation: scale-in 0.5s ease-out;
+            }
+            input:-webkit-autofill {
+               animation-name: onAutoFillStart;
+               animation-duration: 0.01s;
+            }
+            @keyframes onAutoFillStart {
+               from {
+                  opacity: 1;
+               }
+               to {
+                  opacity: 1;
+               }
             }
          `}</style>
       </div>

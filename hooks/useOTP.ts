@@ -102,9 +102,20 @@ export const useOTP = (
       }
 
       const nav = navigator as any;
-      if (!window.isSecureContext || !nav?.credentials?.get) {
+      if (!nav?.credentials?.get) {
+         console.warn("⚠️ [useOTP] WebOTP unavailable: navigator.credentials.get not found");
          return;
       }
+
+      if (!window.isSecureContext) {
+         console.warn("⚠️ [useOTP] Not in secure context; WebOTP may fail");
+      }
+
+      console.info("ℹ️ [useOTP] Starting WebOTP listener", {
+         secureContext: window.isSecureContext,
+         hasOtpCredential: Boolean((window as any).OTPCredential),
+         userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "unknown",
+      });
 
       cleanupWebOtp();
 
@@ -120,6 +131,12 @@ export const useOTP = (
             const content = await nav.credentials.get({
                otp: { transport: ["sms"] },
                signal: controller.signal,
+            });
+
+            console.info("ℹ️ [useOTP] WebOTP credential received", {
+               hasContent: Boolean(content),
+               contentType: typeof content,
+               keys: content && typeof content === "object" ? Object.keys(content as Record<string, unknown>) : [],
             });
 
             const otpDigits = extractOtpDigits(content);
