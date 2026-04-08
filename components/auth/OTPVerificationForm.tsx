@@ -131,6 +131,28 @@ export function OTPVerificationForm({
       [focusInput, setOtp]
    );
 
+   // Some Android Chrome builds can autofill OTP fields without firing input/change events.
+   // Polling the hidden/first field briefly ensures we still capture and apply the code.
+   useEffect(() => {
+      const existingCode = otp.join("");
+      if (existingCode.length === OTP_LENGTH) return;
+
+      const intervalId = setInterval(() => {
+         const hiddenValue = hiddenOtpInputRef.current?.value || "";
+         const firstInputValue = inputRefs.current[0]?.value || "";
+         const candidate = hiddenValue.length >= firstInputValue.length
+            ? hiddenValue
+            : firstInputValue;
+
+         const digits = candidate.replace(/\D/g, "").slice(0, OTP_LENGTH);
+         if (digits.length === OTP_LENGTH) {
+            applyOtpCode(digits);
+         }
+      }, 300);
+
+      return () => clearInterval(intervalId);
+   }, [applyOtpCode, otp]);
+
    const applyPendingReferralCode = useCallback(async () => {
       if (authType !== "signup" || typeof window === "undefined") return;
       const pendingReferralCode = sessionStorage.getItem("pendingReferralCode");

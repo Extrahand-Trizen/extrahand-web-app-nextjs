@@ -271,6 +271,7 @@ export const useOTP = (
             }
 
             // Send OTP via Firebase
+            startWebOtpListener();
             const res = await sendOTP(fullNumber);
 
             if (res.success && res.confirmation) {
@@ -289,7 +290,6 @@ export const useOTP = (
                // Make sure any previously typed OTP is removed from localStorage
                otpStateManager.clearOTPInput();
                console.log("✅ [useOTP] OTP sent successfully");
-               startWebOtpListener();
             } else {
                // Handle Firebase Errors
                let msg = res.error || "Failed to send verification code.";
