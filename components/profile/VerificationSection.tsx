@@ -158,6 +158,7 @@ export function VerificationSection({ user }: VerificationSectionProps) {
   const router = useRouter();
 
   const isBusiness = user.userType === "business";
+  const isTaskerRole = user.roles?.includes("tasker") || user.roles?.includes("both");
   const panData = isBusiness
     ? user.business?.pan
     : {
@@ -198,7 +199,7 @@ export function VerificationSection({ user }: VerificationSectionProps) {
       verifiedText: `Verified ${user.maskedAadhaar || "XXXX XXXX XXXX"}`,
       defaultText: "Verify your identity with Aadhaar",
       route: "/profile/verify/aadhaar",
-      required: true,
+      required: Boolean(isTaskerRole),
       lockAfterVerification: true,
     }),
     createVerificationItem({
@@ -333,7 +334,7 @@ export function VerificationSection({ user }: VerificationSectionProps) {
       <div className="bg-white rounded-lg border border-gray-200">
         <div className="px-4 py-3 sm:px-5 sm:py-4 bg-gray-50 border-b border-gray-200">
           <h3 className="text-sm font-semibold text-gray-900">Individual Verifications</h3>
-          <p className="text-xs text-gray-500 mt-0.5">Required for all users</p>
+          <p className="text-xs text-gray-500 mt-0.5">Required and optional items depend on your role</p>
         </div>
         <div className="divide-y divide-gray-100">
           {individualVerifications.map((item) => (

@@ -1,7 +1,7 @@
 /**
  * Verification gate for task posting and offer submission.
  * Currently:
- * - Task posting requires Aadhaar only.
+ * - Task posting requires Aadhaar only for taskers (poster-only users can post without it).
  * - Offer submission keeps the full Aadhaar + Bank + PAN requirement.
  */
 
@@ -10,6 +10,11 @@ import type { UserProfile } from "@/types/user";
 export interface VerificationGateResult {
    allowed: boolean;
    missing: string[];
+}
+
+function isTaskerRole(profile: UserProfile): boolean {
+   const roles = Array.isArray(profile.roles) ? profile.roles : [];
+   return roles.includes("tasker") || roles.includes("both");
 }
 
 function isPanVerified(profile: UserProfile | null): boolean {
@@ -22,7 +27,8 @@ function isPanVerified(profile: UserProfile | null): boolean {
 
 /**
  * Check if the user has completed required verifications for posting a task
- * Currently only Aadhaar is required (PAN and Bank are optional for posting).
+ * Aadhaar is required only for taskers. Poster/requester-only users can post
+ * without Aadhaar. PAN and Bank are optional for posting.
  */
 export function getTaskPostingVerificationStatus(
    profile: UserProfile | null
@@ -31,7 +37,12 @@ export function getTaskPostingVerificationStatus(
    if (!profile) {
       return { allowed: false, missing: ["Aadhaar"] };
    }
-   if (!profile.isAadhaarVerified) missing.push("Aadhaar");
+
+   // Aadhaar is optional for poster/requester-only users, required for taskers.
+   if (isTaskerRole(profile) && !profile.isAadhaarVerified) {
+      missing.push("Aadhaar");
+   }
+
    return {
       allowed: missing.length === 0,
       missing,

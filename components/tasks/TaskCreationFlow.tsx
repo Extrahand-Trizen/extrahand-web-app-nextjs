@@ -29,7 +29,6 @@ import {
 
 import { api } from "@/lib/api";
 import { getErrorMessage, isNetworkError } from "@/lib/utils/errorUtils";
-import { getTaskPostingVerificationStatus } from "@/lib/utils/verificationGate";
 import { useAuth } from "@/lib/auth/context";
 import {
    Dialog,
@@ -428,12 +427,10 @@ export function TaskCreationFlow() {
    const [retryCount, setRetryCount] = useState(0);
    const [isStepTransitioning, setIsStepTransitioning] = useState(false);
    const [showAuthModal, setShowAuthModal] = useState(false);
-   const [showVerificationModal, setShowVerificationModal] = useState(false);
    const [showEmailVerifyModal, setShowEmailVerifyModal] = useState(false);
    const [pendingPostData, setPendingPostData] = useState<TaskFormData | null>(null);
    const { currentUser, userData } = useAuth();
    const isAuthenticated = Boolean(currentUser) || Boolean(userData);
-   const verificationStatus = getTaskPostingVerificationStatus(userData ?? null);
 
    const initialTitleFromQuery = searchParams.get("title") || "";
    const initialCategoryFromQuery = searchParams.get("category") || "";
@@ -827,15 +824,6 @@ export function TaskCreationFlow() {
             return;
          }
 
-         const nonEmailMissing = verificationStatus.missing.filter(
-            (item) => item.toLowerCase() !== "email"
-         );
-
-         if (nonEmailMissing.length > 0) {
-            setShowVerificationModal(true);
-            return;
-         }
-
          if (!userData?.isEmailVerified) {
             const values = form.getValues();
             localStorage.setItem(DRAFT_KEY, JSON.stringify(values));
@@ -847,7 +835,7 @@ export function TaskCreationFlow() {
 
          await submitTask(data);
       },
-      [isAuthenticated, verificationStatus.missing, userData?.isEmailVerified, form, submitTask]
+      [isAuthenticated, userData?.isEmailVerified, form, submitTask]
    );
 
    // Save draft handler
@@ -1013,44 +1001,6 @@ export function TaskCreationFlow() {
                      onClick={handleAuthLogin}
                   >
                      Log in
-                  </Button>
-               </DialogFooter>
-            </DialogContent>
-         </Dialog>
-
-         {/* Verification required: Aadhaar */}
-         <Dialog open={showVerificationModal} onOpenChange={setShowVerificationModal}>
-            <DialogContent>
-               <DialogHeader>
-                  <DialogTitle>Verification required to post a task</DialogTitle>
-                  <DialogDescription>
-                     To post a task, your Aadhaar must be verified. Please
-                     complete the following in your profile:
-                  </DialogDescription>
-               </DialogHeader>
-               <ul className="list-disc list-inside text-sm text-secondary-700 space-y-1">
-                  {verificationStatus.missing
-                     .filter((item) => item.toLowerCase() !== "email")
-                     .map((item) => (
-                     <li key={item}>{item}</li>
-                  ))}
-               </ul>
-               <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-end">
-                  <Button
-                     variant="outline"
-                     className="w-full sm:w-auto"
-                     onClick={() => setShowVerificationModal(false)}
-                  >
-                     Close
-                  </Button>
-                  <Button
-                     className="w-full sm:w-auto"
-                     onClick={() => {
-                        setShowVerificationModal(false);
-                        router.push("/profile?section=verifications");
-                     }}
-                  >
-                     Complete verification
                   </Button>
                </DialogFooter>
             </DialogContent>

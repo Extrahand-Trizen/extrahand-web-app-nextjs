@@ -321,7 +321,7 @@ export function PaymentConfirmationModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
       <DialogContent
-        className="sm:max-w-[500px] max-h-[calc(100vh-2rem)] overflow-y-auto"
+        className="sm:max-w-[500px] p-0 max-h-[calc(100dvh-1rem)] overflow-hidden"
         showCloseButton={!isPaymentProcessing}
       >
         {/* ── POLICY VIEW ─────────────────────────────────────── */}
@@ -329,8 +329,8 @@ export function PaymentConfirmationModal({
           <CancellationPolicyView onBack={() => setShowPolicy(false)} />
         ) : (
           /* ── PAYMENT VIEW ───────────────────────────────────── */
-          <>
-            <DialogHeader>
+          <div className="flex max-h-[calc(100dvh-1rem)] flex-col">
+            <DialogHeader className="px-6 pt-6 pb-2">
               <DialogTitle>Complete Payment</DialogTitle>
               <DialogDescription>
                 Secure payment via Razorpay •{" "}
@@ -341,7 +341,7 @@ export function PaymentConfirmationModal({
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-4">
+            <div className="flex-1 overflow-y-auto px-6 py-4">
               {/* Loading */}
               {isCalculating && (
                 <div className="flex items-center justify-center py-8">
@@ -514,7 +514,7 @@ export function PaymentConfirmationModal({
               )}
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="border-t border-gray-100 bg-white px-6 py-4 sm:justify-end">
               <Button
                 variant="outline"
                 onClick={() => onOpenChange(false)}
@@ -540,7 +540,7 @@ export function PaymentConfirmationModal({
                 )}
               </Button>
             </DialogFooter>
-          </>
+          </div>
         )}
       </DialogContent>
     </Dialog>

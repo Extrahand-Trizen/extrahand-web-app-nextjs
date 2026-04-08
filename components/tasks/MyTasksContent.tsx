@@ -66,6 +66,10 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
       setPage(1);
    }, [deferredSearchQuery, statusFilter, sortBy]);
 
+   useEffect(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+   }, [page]);
+
    const queryParams = useMemo(
       () => ({
          page,
