@@ -62,30 +62,38 @@ export function useProcessPayout() {
           throw new Error(data.error || "Failed to process payout");
         }
 
+        const payout =
+          data && typeof data.payout === "object" && data.payout
+            ? data.payout
+            : data;
+        const payoutId = payout?.payoutId;
+        const payoutStatus = payout?.status || "processing";
+        const payoutNetAmount = Number(payout?.netAmount || props.amount);
+
         // Add notification for successful payout
-        const notificationId = `payout-${data.payoutId}`;
+        const notificationId = `payout-${payoutId}`;
         addNotification({
           id: notificationId,
-          type: data.status || "processing",
+          type: payoutStatus,
           amount: props.amount,
-          netAmount: data.netAmount || props.amount,
+          netAmount: payoutNetAmount,
           taskTitle: props.taskTitle || "Task",
           taskId: props.taskId,
-          payoutId: data.payoutId,
+          payoutId,
           message:
-            data.status === "completed"
-              ? `₹${data.netAmount} has been credited to your bank account for "${props.taskTitle || "Task"}"`
-              : `Payout of ₹${data.netAmount} is being processed for "${props.taskTitle || "Task"}"`,
+            payoutStatus === "completed"
+              ? `₹${payoutNetAmount} has been credited to your bank account for "${props.taskTitle || "Task"}"`
+              : `Payout of ₹${payoutNetAmount} is being processed for "${props.taskTitle || "Task"}"`,
           createdAt: new Date().toISOString(),
         });
 
         setLoading(false);
         return {
           success: true,
-          payoutId: data.payoutId,
-          status: data.status,
+          payoutId,
+          status: payoutStatus,
           amount: props.amount,
-          netAmount: data.netAmount,
+          netAmount: payoutNetAmount,
         };
       } catch (err) {
         const errorMessage =

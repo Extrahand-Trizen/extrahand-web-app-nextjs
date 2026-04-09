@@ -1443,7 +1443,11 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
             <div className="space-y-4">
                <div className="border-b border-dashed border-gray-200 pb-4">
                   <p className="text-2xl font-bold text-gray-900">
-                     ₹{safeCurrency(transaction.totalPaid ?? transaction.amount)}
+                     ₹{safeCurrency(
+                        isIncoming
+                           ? transaction.amount
+                           : transaction.totalPaid ?? transaction.amount
+                     )}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
                      {formatDateTime(transaction.createdAt)}
@@ -1562,12 +1566,19 @@ function buildPaymentBreakdown(transaction: Transaction) {
    
    // Try to get platform fee from multiple sources: transaction field, metadata, or amountBreakdown
    let platformFeeFromMeta = safeNumber(
-      transaction.platformFee ?? metadata.platformFee ?? amountBreakdown.platformFee
+      transaction.platformFee ??
+         metadata.platformFee ??
+         metadata.platformCommission ??
+         amountBreakdown.platformFee
    );
    
    // Try to get GST from multiple sources: transaction field, metadata (platformFeeGst), or amountBreakdown (gst)
    let gstAmountFromMeta = safeNumber(
-      transaction.gstAmount ?? metadata.gstAmount ?? metadata.platformFeeGst ?? amountBreakdown.gst
+      transaction.gstAmount ??
+         metadata.gstAmount ??
+         metadata.platformFeeGst ??
+         metadata.gstOnCommission ??
+         amountBreakdown.gst
    );
 
    const isIncomingPayout = transaction.type === "payout";
@@ -1687,12 +1698,14 @@ function getPenaltyDeductedValue(transaction: Transaction): number {
    const feeComponent = safeNumber(
       transaction.platformFee ??
          metadata.platformFee ??
+         metadata.platformCommission ??
          amountBreakdown.platformFee
    );
    const gstComponent = safeNumber(
       transaction.gstAmount ??
          metadata.gstAmount ??
          metadata.platformFeeGst ??
+         metadata.gstOnCommission ??
          amountBreakdown.gst
    );
    const inferredPenalty = Math.max(grossAmount - netReceived - feeComponent - gstComponent, 0);

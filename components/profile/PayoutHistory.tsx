@@ -126,12 +126,23 @@ export function PayoutHistory({
                 ? "reversed"
                 : transaction.status;
 
+            const fallbackGrossAmount =
+              transaction.taskAmount ||
+              (typeof metadata?.grossAmount === "number"
+                ? metadata.grossAmount
+                : Number.parseFloat(String(metadata?.grossAmount ?? 0))) ||
+              (typeof metadata?.taskAmount === "number"
+                ? metadata.taskAmount
+                : Number.parseFloat(String(metadata?.taskAmount ?? 0))) ||
+              transaction.totalPaid ||
+              transaction.amount;
+
             return {
               payoutId,
               status: (normalizedStatus || "processing") as Payout["status"],
-              amount: transaction.totalPaid || transaction.amount,
+              amount: fallbackGrossAmount,
               netAmount: transaction.amount,
-              grossAmount: transaction.totalPaid || transaction.amount,
+              grossAmount: fallbackGrossAmount,
               taskTitle: transaction.taskTitle || transaction.description,
               taskId:
                 typeof transaction.taskId === "string"

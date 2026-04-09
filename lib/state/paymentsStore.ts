@@ -133,17 +133,23 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
           const platformFee =
             toNumber(metadata.platformFee) ||
             toNumber(metadata.platformFeeAmount) ||
+            toNumber(metadata.platformCommission) ||
             toNumber(metadata.amountBreakdown?.platformFee) ||
             toNumber(metadata.fees?.platformFee);
           const gstAmount =
             toNumber(metadata.gstAmount) ||
             toNumber(metadata.platformFeeGst) ||
+            toNumber(metadata.gstOnCommission) ||
             toNumber(metadata.gst) ||
             toNumber(metadata.amountBreakdown?.gst) ||
             toNumber(metadata.fees?.gst);
           const totalPaid =
             mappedType === "payout"
-              ? amount
+              ? toNumber(metadata.totalPaid) ||
+                toNumber(metadata.grossAmount) ||
+                toNumber(metadata.taskAmount) ||
+                toNumber(metadata.amountBreakdown?.taskAmount) ||
+                amount
               : toNumber(metadata.totalPaid) ||
                 toNumber(metadata.grossAmount) ||
                 toNumber(metadata.totalAmount) ||
