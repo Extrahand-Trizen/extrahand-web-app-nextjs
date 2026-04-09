@@ -104,7 +104,13 @@ export default function RootLayout({
                      <Suspense fallback={null}>
                         <ScrollToTop />
                      </Suspense>
-                     <Toaster />
+                     <Toaster
+                        position="top-right"
+                        expand
+                        visibleToasts={5}
+                        closeButton
+                        richColors
+                     />
                      <PollingOtpToastBridge />
                      {children}
                   </AuthProvider>
