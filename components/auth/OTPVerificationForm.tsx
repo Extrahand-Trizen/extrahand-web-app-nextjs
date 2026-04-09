@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
    Card,
    CardContent,
@@ -103,15 +102,12 @@ export function OTPVerificationForm({
    const isVerifyingRef = useRef(false); // Prevent duplicate verification attempts
    const verificationCompletedRef = useRef(false); // Track if verification succeeded
 
-   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-   const hiddenOtpInputRef = useRef<HTMLInputElement | null>(null);
-   const autofillInputRef = useRef<HTMLInputElement | null>(null);
+   // Single real input that Chrome autofill targets
+   const singleOtpRef = useRef<HTMLInputElement | null>(null);
 
-   // Define focusInput before applyOtpCode since applyOtpCode depends on it
-   const focusInput = useCallback((idx: number) => {
-      if (idx >= 0 && idx < OTP_LENGTH) {
-         inputRefs.current[idx]?.focus();
-      }
+   // Focus the single real input (accepts optional idx for backward compat, ignores it)
+   const focusInput = useCallback((_idx?: number) => {
+      singleOtpRef.current?.focus();
    }, []);
 
    const applyOtpCode = useCallback(
@@ -132,25 +128,16 @@ export function OTPVerificationForm({
       [focusInput, setOtp]
    );
 
-   // Poll the autofill input and first visible input for any injected value.
-   // Some Chrome builds on Android silently fill inputs without firing React synthetic events.
-   // We use a 100ms interval to catch any injected value quickly.
+   // Poll the single real input DOM value directly.
+   // Chrome Android autofill sometimes sets the DOM value without firing React
+   // synthetic events on controlled inputs — reading .value directly catches those.
    useEffect(() => {
       const existingCode = otp.join("");
       if (existingCode.length === OTP_LENGTH) return;
 
       const intervalId = setInterval(() => {
-         const autofillValue = autofillInputRef.current?.value || "";
-         const hiddenValue = hiddenOtpInputRef.current?.value || "";
-         const firstInputValue = inputRefs.current[0]?.value || "";
-
-         // Pick whichever candidate has the most digits
-         const candidates = [autofillValue, hiddenValue, firstInputValue];
-         const best = candidates.reduce((a, b) =>
-            b.replace(/\D/g, "").length > a.replace(/\D/g, "").length ? b : a
-         , "");
-
-         const digits = best.replace(/\D/g, "").slice(0, OTP_LENGTH);
+         const rawValue = singleOtpRef.current?.value || "";
+         const digits = rawValue.replace(/\D/g, "").slice(0, OTP_LENGTH);
          if (digits.length === OTP_LENGTH) {
             applyOtpCode(digits);
          }
@@ -212,51 +199,53 @@ export function OTPVerificationForm({
       // eslint-disable-next-line react-hooks/exhaustive-deps
    }, [otp, verifying, isVerified]);
 
-   // Keep the first visible OTP input focused so Chrome autofill targets a real field.
+   // Keep the single OTP input focused on mount so Chrome autofill has a target.
    useEffect(() => {
-      focusInput(0);
+      // Small delay to let the page settle before focusing
+      const t = setTimeout(() => focusInput(), 200);
+      return () => clearTimeout(t);
    }, [focusInput]);
 
-   const handleChange = (value: string, idx: number) => {
-      setHasError(false);
-      const digits = value.replace(/\D/g, "");
+   // Handle input on the single real input.
+   // Two cases:
+   // 1. Autofill / paste: browser injects all 6 digits at once → use applyOtpCode
+   // 2. Manual typing: user types one digit → append it to the next empty slot
+   const handleSingleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = e.target.value;
+      const digits = raw.replace(/\D/g, "");
 
-      if (digits.length <= 1) {
-         const newOtp = [...otp];
-         newOtp[idx] = digits;
-         setOtp(newOtp);
-         if (digits && idx < OTP_LENGTH - 1) {
-            focusInput(idx + 1);
+      if (digits.length === OTP_LENGTH) {
+         // Full code in one shot (autofill / paste via onChange)
+         applyOtpCode(digits);
+      } else if (digits.length >= 1) {
+         // Single (or partial) digit typed manually — append at next empty slot
+         const lastDigit = digits[digits.length - 1]; // take last typed char
+         const currentFilled = otp.findIndex((d) => d === "");
+         const insertAt = currentFilled === -1 ? OTP_LENGTH - 1 : currentFilled;
+         if (insertAt < OTP_LENGTH) {
+            const newOtp = [...otp];
+            newOtp[insertAt] = lastDigit;
+            setHasError(false);
+            setOtp(newOtp);
          }
-         return;
       }
 
-      // Handle paste
-      applyOtpCode(digits);
+      // Always clear the real input after reading so the next event is a fresh value
+      if (singleOtpRef.current) {
+         singleOtpRef.current.value = "";
+      }
    };
 
-   const handleKeyDown = (
-      e: React.KeyboardEvent<HTMLInputElement>,
-      idx: number
-   ) => {
+   const handleSingleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Backspace") {
          e.preventDefault();
-         if (otp[idx]) {
+         const currentFilled = otp.join("").length;
+         if (currentFilled > 0) {
             const newOtp = [...otp];
-            newOtp[idx] = "";
-            setOtp(newOtp);
-         } else if (idx > 0) {
-            focusInput(idx - 1);
-            const newOtp = [...otp];
-            newOtp[idx - 1] = "";
+            newOtp[currentFilled - 1] = "";
+            setHasError(false);
             setOtp(newOtp);
          }
-      } else if (e.key === "ArrowLeft" && idx > 0) {
-         e.preventDefault();
-         focusInput(idx - 1);
-      } else if (e.key === "ArrowRight" && idx < OTP_LENGTH - 1) {
-         e.preventDefault();
-         focusInput(idx + 1);
       }
    };
 
@@ -626,85 +615,72 @@ export function OTPVerificationForm({
                   <CardContent className="space-y-6 px-4 lg:px-6">
                      {/* OTP Input */}
                      <div className="space-y-4">
+                        {/*
+                         * OTP Input: Single real <input> + visual digit boxes (divs).
+                         *
+                         * WHY THIS APPROACH:
+                         * React controlled inputs conflict with browser autofill — React
+                         * re-renders reset the DOM value before the app can read it.
+                         * Using an uncontrolled single input + visual divs lets Chrome
+                         * inject the 6-digit code freely. The WebOTP API and the poll
+                         * both read from this single input's real DOM value.
+                         */}
                         <div
                            className={cn(
-                              "relative flex gap-2 justify-center",
+                              "relative flex gap-2 justify-center cursor-text",
                               hasError && "animate-shake"
                            )}
+                           onClick={() => singleOtpRef.current?.focus()}
                         >
                            {/*
-                            * Real autofill input: positioned absolutely over all OTP boxes.
-                            * Chrome on Android requires the target input to be interactable
-                            * (not opacity-0 / pointer-events-none) to inject the one-time-code.
-                            * We make it transparent via color/bg so the individual digit boxes
-                            * remain visible, while this input captures the full 6-digit code.
+                            * THE REAL INPUT — Chrome autofill targets this.
+                            * • Not pointer-events-none (Chrome skips unfocusable inputs)
+                            * • Not tabIndex=-1 (prevents Chrome from autofocusing for autofill)
+                            * • opacity-[0.01] not opacity-0 (some Chrome builds check visibility)
+                            * • uncontrolled (value not bound to React state) so browser can write freely
+                            * • positioned absolutely over the full row so any tap focuses it
                             */}
                            <input
-                              ref={autofillInputRef}
+                              ref={singleOtpRef}
                               type="text"
                               inputMode="numeric"
                               autoComplete="one-time-code"
                               name="one-time-code"
-                              id="otp-autofill-input"
+                              id="otp-single-input"
                               maxLength={OTP_LENGTH}
-                              onChange={(e) => applyOtpCode(e.target.value)}
-                              onInput={(e) =>
-                                 applyOtpCode((e.target as HTMLInputElement).value)
-                              }
+                              onChange={handleSingleInputChange}
+                              onKeyDown={handleSingleKeyDown}
+                              onPaste={handlePaste}
                               onAnimationStart={handleAutofillAnimation}
-                              className="absolute inset-0 h-full w-full z-10 bg-transparent text-transparent caret-transparent border-0 outline-none select-none"
-                              style={{ WebkitTextFillColor: "transparent" }}
-                              aria-label="OTP auto-fill"
-                              tabIndex={-1}
-                           />
-                           {/* Hidden bridge for extra browser compat */}
-                           <input
-                              ref={hiddenOtpInputRef}
-                              type="text"
-                              inputMode="numeric"
-                              autoComplete="one-time-code"
-                              maxLength={OTP_LENGTH}
-                              onChange={(e) => applyOtpCode(e.target.value)}
-                              onInput={(e) =>
-                                 applyOtpCode((e.target as HTMLInputElement).value)
-                              }
-                              className="sr-only"
-                              aria-hidden="true"
-                              tabIndex={-1}
+                              autoFocus
+                              aria-label="Enter 6-digit OTP"
+                              className="absolute inset-0 w-full h-full z-10 border-0 outline-none"
+                              style={{
+                                 opacity: 0.01,
+                                 background: "transparent",
+                                 color: "transparent",
+                                 caretColor: "transparent",
+                                 WebkitTextFillColor: "transparent",
+                                 fontSize: "1px",
+                              }}
                            />
 
+                           {/* Visual digit boxes — purely decorative divs, no interaction */}
                            {otp.map((digit, idx) => (
-                              <Input
+                              <div
                                  key={idx}
-                                 ref={(el) => {
-                                    inputRefs.current[idx] = el;
-                                 }}
-                                 type="text"
-                                 inputMode="numeric"
-                                 autoComplete={idx === 0 ? "one-time-code" : "off"}
-                                 name={idx === 0 ? "otp" : undefined}
-                                 maxLength={idx === 0 ? OTP_LENGTH : 1}
-                                 value={digit}
-                                 autoFocus={idx === 0}
-                                 onChange={(e) =>
-                                    handleChange(e.target.value, idx)
-                                 }
-                                 onInput={(e) =>
-                                    handleChange(
-                                       (e.target as HTMLInputElement).value,
-                                       idx
-                                    )
-                                 }
-                                 onAnimationStart={handleAutofillAnimation}
-                                 onKeyDown={(e) => handleKeyDown(e, idx)}
-                                 onPaste={handlePaste}
                                  className={cn(
-                                    "w-12 h-14 text-center text-xl font-semibold",
-                                    hasError &&
-                                       "border-red-500 focus-visible:ring-red-500"
+                                    "w-12 h-14 flex items-center justify-center rounded-md border-2 text-xl font-semibold transition-all duration-150 select-none",
+                                    hasError
+                                       ? "border-red-500 text-red-600 bg-red-50"
+                                       : digit
+                                       ? "border-primary-500 bg-primary-50 text-gray-900"
+                                       : "border-gray-300 bg-white text-gray-400"
                                  )}
-                                 aria-label={`Digit ${idx + 1}`}
-                              />
+                                 aria-hidden="true"
+                              >
+                                 {digit || ""}
+                              </div>
                            ))}
                         </div>
 
