@@ -1327,6 +1327,8 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
       if (!transaction) return;
       const taskId =
          typeof transaction.taskId === "string" ? transaction.taskId : "";
+      const posterUid =
+         typeof transaction.posterUid === "string" ? transaction.posterUid : "";
 
       let cancelled = false;
 
@@ -1352,33 +1354,50 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
                   setTaskStatus((task as any).status);
                   setTaskCategory((task as any).categoryLabel || (task as any).category);
 
-                  const taskerNameFromTask =
-                     (task as any).assignedToName ||
-                     (task as any).assigneeName ||
-                     (task as any).performerName ||
-                     (task as any).assignedUser?.name ||
-                     (task as any).assignedTo?.name;
-
-                  const taskerUidOrId =
-                     (task as any).assigneeUid ||
-                     (task as any).assignedTo ||
-                     (task as any).assignedUser?._id ||
-                     (task as any).assignedUser?.uid;
-
-                  if (taskerNameFromTask) {
-                     setPaidToName(taskerNameFromTask);
-                  } else if (typeof taskerUidOrId === "string" && taskerUidOrId.trim()) {
-                     const profile = await profilesApi
-                        .getPublicProfile(taskerUidOrId)
+                  // For payouts, we want the poster's name (who issued payment)
+                  // For payments/refunds, we want the tasker's name
+                  if (transaction.type === "payout" && posterUid) {
+                     const posterProfile = await profilesApi
+                        .getPublicProfile(posterUid)
                         .catch(() => null);
 
-                     const profileName =
-                        (profile as any)?.name ||
-                        (profile as any)?.displayName ||
-                        (profile as any)?.fullName;
+                     const posterName =
+                        (posterProfile as any)?.name ||
+                        (posterProfile as any)?.displayName ||
+                        (posterProfile as any)?.fullName;
 
-                     if (profileName) {
-                        setPaidToName(profileName);
+                     if (posterName) {
+                        setPaidToName(posterName);
+                     }
+                  } else {
+                     const taskerNameFromTask =
+                        (task as any).assignedToName ||
+                        (task as any).assigneeName ||
+                        (task as any).performerName ||
+                        (task as any).assignedUser?.name ||
+                        (task as any).assignedTo?.name;
+
+                     const taskerUidOrId =
+                        (task as any).assigneeUid ||
+                        (task as any).assignedTo ||
+                        (task as any).assignedUser?._id ||
+                        (task as any).assignedUser?.uid;
+
+                     if (taskerNameFromTask) {
+                        setPaidToName(taskerNameFromTask);
+                     } else if (typeof taskerUidOrId === "string" && taskerUidOrId.trim()) {
+                        const profile = await profilesApi
+                           .getPublicProfile(taskerUidOrId)
+                           .catch(() => null);
+
+                        const profileName =
+                           (profile as any)?.name ||
+                           (profile as any)?.displayName ||
+                           (profile as any)?.fullName;
+
+                        if (profileName) {
+                           setPaidToName(profileName);
+                        }
                      }
                   }
                }

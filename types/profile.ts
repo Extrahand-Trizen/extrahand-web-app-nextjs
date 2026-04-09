@@ -157,6 +157,7 @@ export interface Transaction {
       | "cancelled";
    assignedToName?: string;
    paidToName?: string;
+   posterUid?: string;
    escrowStatus?: "pending" | "held" | "released" | "refunded" | "cancelled";
    taskAmount?: number;
    platformFee?: number;

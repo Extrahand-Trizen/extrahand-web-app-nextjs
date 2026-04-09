@@ -28,7 +28,7 @@ const footerColumns = [
       { label: 'Terms & Conditions', href: '/terms-and-conditions' },
       { label: 'Privacy Policy', href: '/privacy-policy' },
       { label: 'Refund Policy', href: '/refund-policy' },
-      { label: 'Tasker Agreement', href: '/provider-agreement' },
+      { label: 'Tasker Agreement', href: '/tasker-agreement' },
       { label: 'Contact Us', href: 'https://extrhand-support-frontend.apps.extrahand.in/contact' },
     ],
   },

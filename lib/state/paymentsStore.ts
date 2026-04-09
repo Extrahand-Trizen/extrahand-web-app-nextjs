@@ -215,6 +215,7 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
               metadata.assignedToName || metadata.task?.assignedToName,
             paidToName:
               metadata.paidToName || metadata.performerName || metadata.taskerName,
+            posterUid: metadata.posterUid,
             escrowStatus: metadata.escrowStatus || metadata.escrow?.status,
             taskAmount,
             platformFee,

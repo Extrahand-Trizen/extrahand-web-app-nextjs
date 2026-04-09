@@ -50,7 +50,7 @@ const footerLinks = {
       { label: "Privacy Policy", href: "/privacy-policy" },
       { label: "Terms and Conditions", href: "/terms-and-conditions" },
       { label: "Refund Policy", href: "/refund-policy" },
-      { label: "Tasker Agreement", href: "/provider-agreement" },
+      { label: "Tasker Agreement", href: "/tasker-agreement" },
       { label: "Community Guidelines", href: "/community-guidelines" },
       { label: "Report an Issue", href: "/report-an-issue" },
     ],

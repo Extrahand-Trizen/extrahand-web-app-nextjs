@@ -103,20 +103,19 @@ export default function TaskerAgreementPage() {
           </p>
           <ul className="list-disc pl-6 mb-6 space-y-2 text-gray-700">
             <li>
-              You may propose your own price for a task or accept the price
-              displayed to you.
+              You may propose your own price for a task or accept the price displayed to you.
             </li>
             <li>
-              Payments from customers are collected by our payment gateway
-              partners and may be held in escrow until completion of the task.
+              Payments from customers are collected by our payment gateway partners and may be held in escrow until completion of the task.
             </li>
             <li>
-              We will deduct a platform commission and any applicable charges
-              before paying out the balance to your registered bank account.
+              You will receive the task amount after deduction of the applicable platform fee and taxes/GST, as displayed on the platform.
             </li>
             <li>
-              Payout timelines may vary based on bank and gateway processing and
-              compliance checks.
+              We may deduct applicable cancellation charges, dispute adjustments, refunds, penalties, or other charges from your payout in accordance with our policies.
+            </li>
+            <li>
+              Payout timelines may vary depending on banking partners, payment gateway processing, and compliance checks.
             </li>
           </ul>
 
@@ -196,4 +195,3 @@ export default function TaskerAgreementPage() {
     </div>
   );
 }
-

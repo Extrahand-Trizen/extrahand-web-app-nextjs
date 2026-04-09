@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronRight, CheckCircle, Shield, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -156,6 +157,7 @@ function createVerificationItem({
 
 export function VerificationSection({ user }: VerificationSectionProps) {
   const router = useRouter();
+  const shownToastKeysRef = useRef<Set<string>>(new Set());
 
   const isBusiness = user.userType === "business";
   const isTaskerRole = user.roles?.includes("tasker") || user.roles?.includes("both");
@@ -251,25 +253,53 @@ export function VerificationSection({ user }: VerificationSectionProps) {
     return messages[item.id] ?? `${item.title} is already verified`;
   };
 
+  const showToastOnce = (
+    key: string,
+    variant: "info" | "success",
+    message: string,
+    description: string
+  ) => {
+    if (shownToastKeysRef.current.has(key)) {
+      return;
+    }
+    shownToastKeysRef.current.add(key);
+
+    if (variant === "info") {
+      toast.info(message, { description });
+      return;
+    }
+
+    toast.success(message, { description });
+  };
+
   const handleNavigate = (item: VerificationItem) => {
     if (item.comingSoon && !item.isVerified) {
-      toast.info("Coming Soon", {
-        description: `${item.title} verification for business profiles will be available soon.`,
-      });
+      showToastOnce(
+        `coming-soon:${item.id}`,
+        "info",
+        "Coming Soon",
+        `${item.title} verification for business profiles will be available soon.`
+      );
       return;
     }
 
     if (item.isVerified) {
       if (alreadyVerifiedIds.includes(item.id)) {
-        toast.info(getAlreadyVerifiedMessage(item), {
-          description: "No further action needed.",
-        });
+        showToastOnce(
+          `already-verified:${item.id}`,
+          "info",
+          getAlreadyVerifiedMessage(item),
+          "No further action needed."
+        );
         return;
       }
       if (item.lockAfterVerification) {
-        toast.success("Already verified", {
-          description: "This verification has already been completed and cannot be changed.",
-        });
+        showToastOnce(
+          `locked-verified:${item.id}`,
+          "success",
+          "Already verified",
+          "This verification has already been completed and cannot be changed."
+        );
         return;
       }
     }

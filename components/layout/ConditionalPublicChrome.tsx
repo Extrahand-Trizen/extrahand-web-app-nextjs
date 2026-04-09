@@ -17,7 +17,7 @@ const INFO_ROUTES_WITH_PUBLIC_CHROME = new Set([
    "/privacy-policy",
    "/terms-and-conditions",
    "/refund-policy",
-   "/provider-agreement",
+   "/tasker-agreement",
    "/community-guidelines",
    "/report-an-issue",
 ]);
