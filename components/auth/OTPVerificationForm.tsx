@@ -99,6 +99,7 @@ export function OTPVerificationForm({
 
    const [isVerified, setIsVerified] = useState(false);
    const [hasError, setHasError] = useState(false);
+   const [isFocused, setIsFocused] = useState(false);
    const isVerifyingRef = useRef(false); // Prevent duplicate verification attempts
    const verificationCompletedRef = useRef(false); // Track if verification succeeded
 
@@ -652,6 +653,8 @@ export function OTPVerificationForm({
                               onKeyDown={handleSingleKeyDown}
                               onPaste={handlePaste}
                               onAnimationStart={handleAutofillAnimation}
+                              onFocus={() => setIsFocused(true)}
+                              onBlur={() => setIsFocused(false)}
                               autoFocus
                               aria-label="Enter 6-digit OTP"
                               className="absolute inset-0 w-full h-full z-10 border-0 outline-none"
@@ -665,23 +668,41 @@ export function OTPVerificationForm({
                               }}
                            />
 
-                           {/* Visual digit boxes — purely decorative divs, no interaction */}
-                           {otp.map((digit, idx) => (
-                              <div
-                                 key={idx}
-                                 className={cn(
-                                    "w-12 h-14 flex items-center justify-center rounded-md border-2 text-xl font-semibold transition-all duration-150 select-none",
-                                    hasError
-                                       ? "border-red-500 text-red-600 bg-red-50"
-                                       : digit
-                                       ? "border-primary-500 bg-primary-50 text-gray-900"
-                                       : "border-gray-300 bg-white text-gray-400"
-                                 )}
-                                 aria-hidden="true"
-                              >
-                                 {digit || ""}
-                              </div>
-                           ))}
+                           {(() => {
+                              // Which box should show the blinking cursor?
+                              const firstEmpty = otp.findIndex((d) => d === "");
+                              const cursorAt = firstEmpty === -1 ? -1 : firstEmpty;
+
+                              return otp.map((digit, idx) => {
+                                 const showCursor = isFocused && !hasError && cursorAt === idx;
+                                 return (
+                                    <div
+                                       key={idx}
+                                       className={cn(
+                                          "w-12 h-14 flex items-center justify-center rounded-md border-2 text-xl font-semibold transition-all duration-150 select-none relative overflow-hidden",
+                                          hasError
+                                             ? "border-red-500 text-red-600 bg-red-50"
+                                             : digit
+                                             ? "border-primary-500 bg-primary-50 text-gray-900"
+                                             : showCursor
+                                             ? "border-primary-500 bg-white shadow-sm shadow-primary-200"
+                                             : isFocused && cursorAt > idx
+                                             ? "border-primary-400 bg-primary-50 text-gray-900"
+                                             : "border-gray-300 bg-white text-gray-400"
+                                       )}
+                                       aria-hidden="true"
+                                    >
+                                       {digit ? (
+                                          digit
+                                       ) : showCursor ? (
+                                          <span className="otp-cursor" />
+                                       ) : (
+                                          ""
+                                       )}
+                                    </div>
+                                 );
+                              });
+                           })()}
                         </div>
 
                         <Button
@@ -780,6 +801,19 @@ export function OTPVerificationForm({
             }
             .animate-scale-in {
                animation: scale-in 0.5s ease-out;
+            }
+            /* Blinking cursor inside the active OTP box */
+            .otp-cursor {
+               display: inline-block;
+               width: 2px;
+               height: 1.5rem;
+               background-color: var(--color-primary-500, #f59e0b);
+               border-radius: 1px;
+               animation: otp-blink 1s step-start infinite;
+            }
+            @keyframes otp-blink {
+               0%, 100% { opacity: 1; }
+               50% { opacity: 0; }
             }
             input:-webkit-autofill {
                animation-name: onAutoFillStart;
