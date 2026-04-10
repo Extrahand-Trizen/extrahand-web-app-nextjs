@@ -18,6 +18,148 @@ function formatDateTime(value?: Date | string): string {
   return format(dt, "dd MMM yyyy, HH:mm");
 }
 
+function getMetadata(t: Transaction): Record<string, unknown> {
+  if (!t.metadata || typeof t.metadata !== "object" || Array.isArray(t.metadata)) {
+    return {};
+  }
+  return t.metadata as Record<string, unknown>;
+}
+
+function getStringField(value: unknown): string {
+  if (typeof value === "string" && value.trim().length > 0) return value.trim();
+  return "";
+}
+
+function getTransactionTypeLabel(t: Transaction): "Payment" | "Refund" | "Earning" | "Payout" {
+  if (t.type === "payment") return "Payment";
+  if (t.type === "refund") return "Refund";
+
+  if (t.type === "payout") {
+    const meta = getMetadata(t);
+    const payoutHints = [
+      meta.destination,
+      meta.destinationBank,
+      meta.bankName,
+      meta.maskedAccount,
+      meta.accountNumber,
+      meta.upiId,
+      meta.payoutMode,
+      meta.transferType,
+    ];
+
+    const hasPayoutHint = payoutHints.some((v) => getStringField(v).length > 0);
+    if (hasPayoutHint || Boolean(t.payoutMethodId)) return "Payout";
+    return "Earning";
+  }
+
+  return "Earning";
+}
+
+function getFeeAmount(t: Transaction): number {
+  const platformFee = typeof t.platformFee === "number" ? t.platformFee : 0;
+  const gstAmount = typeof t.gstAmount === "number" ? t.gstAmount : 0;
+  const penalty = typeof t.penaltyDeducted === "number" ? t.penaltyDeducted : 0;
+  const fee = platformFee + gstAmount + penalty;
+  return Number.isFinite(fee) ? fee : 0;
+}
+
+function getGrossFeeNet(t: Transaction): { gross: number; fee: number; net: number } {
+  const normalizedType = getTransactionTypeLabel(t);
+
+  if (normalizedType === "Earning") {
+    const gross = typeof t.taskAmount === "number" ? t.taskAmount : t.amount;
+    const fee = getFeeAmount(t);
+    const net = typeof t.totalPaid === "number" ? t.totalPaid : gross - fee;
+    return { gross, fee, net };
+  }
+
+  if (normalizedType === "Payout") {
+    const gross = t.amount;
+    const fee = getFeeAmount(t);
+    return { gross, fee, net: gross - fee };
+  }
+
+  return { gross: t.amount, fee: 0, net: t.amount };
+}
+
+function normalizeStatus(raw: string): string {
+  const value = raw.trim().toLowerCase();
+  if (!value) return "Pending";
+  if (value.includes("escrow") || value.includes("held")) return "Pending";
+  if (value.includes("pending")) return "Pending";
+  if (value.includes("failed")) return "Failed";
+  if (value.includes("cancel")) return "Cancelled";
+  if (value.includes("processing")) return "Pending";
+  if (value.includes("complete") || value.includes("success") || value.includes("processed")) return "Completed";
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function getDisplayStatus(t: Transaction): string {
+  const typeLabel = getTransactionTypeLabel(t);
+  const meta = getMetadata(t);
+  const metaStatus = getStringField(meta.status) || getStringField(meta.payoutStatus) || getStringField(meta.refundStatus);
+  const raw = normalizeStatus(metaStatus || t.rawStatus || t.status || "pending");
+
+  if (typeLabel === "Refund") {
+    return raw === "Completed" ? "Refunded" : "Pending";
+  }
+
+  if (typeLabel === "Earning") {
+    return raw === "Completed" ? "Available" : "Pending Release";
+  }
+
+  if (typeLabel === "Payout") {
+    return raw === "Completed" ? "Processed" : "Pending";
+  }
+
+  return raw === "Completed" ? "Pending" : raw;
+}
+
+function getTaskOrDestination(t: Transaction): string {
+  const typeLabel = getTransactionTypeLabel(t);
+  const meta = getMetadata(t);
+  if (typeLabel === "Payout") {
+    const destination =
+      getStringField(meta.destination) ||
+      getStringField(meta.destinationBank) ||
+      getStringField(meta.bankName) ||
+      getStringField(meta.maskedAccount) ||
+      getStringField(meta.accountNumber) ||
+      getStringField(meta.upiId);
+    return destination || "Bank Transfer";
+  }
+
+  return t.taskTitle || t.description || "—";
+}
+
+function getCounterparty(t: Transaction): string {
+  const typeLabel = getTransactionTypeLabel(t);
+  if (typeLabel === "Refund") return "Customer";
+  if (typeLabel === "Payment") return t.assignedToName || t.paidToName || "Worker/Platform";
+  if (typeLabel === "Earning") return t.paidToName || t.assignedToName || "Customer";
+  return t.paidToName || t.assignedToName || "Bank";
+}
+
+function getPaymentMethodLabel(t: Transaction): string {
+  const meta = getMetadata(t);
+  const value =
+    getStringField(meta.paymentMethod) ||
+    getStringField(meta.method) ||
+    getStringField(meta.paymentMode) ||
+    getStringField(meta.payoutMode) ||
+    getStringField(meta.transferType) ||
+    getStringField(meta.upiId) ||
+    getStringField(meta.maskedCard) ||
+    getStringField(meta.cardType) ||
+    getStringField(t.paymentMethodId) ||
+    getStringField(t.payoutMethodId);
+
+  if (value) return value;
+  if (getTransactionTypeLabel(t) === "Refund") return "Original Method";
+  if (getTransactionTypeLabel(t) === "Earning") return "Wallet";
+  return "—";
+}
+
 function toCellValue(value: unknown): string | number {
   if (value === null || value === undefined) return "";
   if (typeof value === "number" || typeof value === "string") return value;
@@ -66,13 +208,16 @@ export async function exportTransactionsToPdf(
 
   const tableStartY = 46;
 
-  const headers = ["Date", "Type", "Description", "Amount", "Status"];
+  const headers = ["Date", "Transaction ID", "Task / Destination", "Type", "Gross", "Fee", "Net", "Status"];
   const rows = transactions.map((t) => [
     formatDate(t.createdAt),
-    t.type.charAt(0).toUpperCase() + t.type.slice(1),
-    (t.description || t.taskTitle || "—").slice(0, 40),
-    formatAmount(t.amount, t.currency),
-    t.status,
+    t.id,
+    getTaskOrDestination(t).slice(0, 28),
+    getTransactionTypeLabel(t),
+    formatAmount(getGrossFeeNet(t).gross, t.currency),
+    getGrossFeeNet(t).fee > 0 ? formatAmount(getGrossFeeNet(t).fee, t.currency) : "—",
+    formatAmount(getGrossFeeNet(t).net, t.currency),
+    getDisplayStatus(t),
   ]);
 
   autoTable(doc, {
@@ -83,11 +228,14 @@ export async function exportTransactionsToPdf(
     headStyles: { fillColor: [41, 128, 185], fontSize: 9 },
     bodyStyles: { fontSize: 8 },
     columnStyles: {
-      0: { cellWidth: 24 },
-      1: { cellWidth: 22 },
-      2: { cellWidth: 70 },
-      3: { cellWidth: 28 },
-      4: { cellWidth: 22 },
+      0: { cellWidth: 18 },
+      1: { cellWidth: 28 },
+      2: { cellWidth: 34 },
+      3: { cellWidth: 18 },
+      4: { cellWidth: 18 },
+      5: { cellWidth: 14 },
+      6: { cellWidth: 18 },
+      7: { cellWidth: 24 },
     },
   });
 
@@ -128,95 +276,44 @@ export async function exportTransactionsToExcel(
   ];
 
   const headers = [
+    "Date",
     "Transaction ID",
-    "Payout ID",
-    "Created At",
-    "Completed At",
+    "Task",
     "Type",
+    "Gross",
+    "Fee",
+    "Net",
     "Status",
-    "Raw Status",
-    "Currency",
-    "Amount",
-    "Description",
-    "Task ID",
-    "Task Title",
-    "Task Category",
-    "Task Status",
-    "Assigned To",
-    "Paid To",
-    "Poster UID",
-    "Payment Method ID",
-    "Payout Method ID",
-    "Escrow Status",
-    "Task Amount",
-    "Platform Fee",
-    "GST Amount",
-    "Total Paid",
-    "Penalty Deducted",
-    "Penalty Lines",
-    "Metadata",
+    "Counterparty",
+    "Payment Method",
   ];
   const dataRows = transactions.map((t) => [
+    formatDate(t.createdAt),
     toCellValue(t.id),
-    toCellValue(t.payoutId),
-    formatDateTime(t.createdAt),
-    formatDateTime(t.completedAt),
-    toCellValue(t.type),
-    toCellValue(t.status),
-    toCellValue(t.rawStatus),
-    toCellValue(t.currency),
-    t.amount,
-    toCellValue(t.description || t.taskTitle || ""),
-    toCellValue(t.taskId),
-    toCellValue(t.taskTitle),
-    toCellValue(t.taskCategory),
-    toCellValue(t.taskStatus),
-    toCellValue(t.assignedToName),
-    toCellValue(t.paidToName),
-    toCellValue(t.posterUid),
-    toCellValue(t.paymentMethodId),
-    toCellValue(t.payoutMethodId),
-    toCellValue(t.escrowStatus),
-    toCellValue(t.taskAmount),
-    toCellValue(t.platformFee),
-    toCellValue(t.gstAmount),
-    toCellValue(t.totalPaid),
-    toCellValue(t.penaltyDeducted),
-    toCellValue(t.penaltyLines),
-    toCellValue(t.metadata),
+    toCellValue(getTaskOrDestination(t)),
+    toCellValue(getTransactionTypeLabel(t)),
+    getGrossFeeNet(t).gross,
+    getGrossFeeNet(t).fee > 0 ? getGrossFeeNet(t).fee : "—",
+    getGrossFeeNet(t).net,
+    toCellValue(getDisplayStatus(t)),
+    toCellValue(getCounterparty(t)),
+    toCellValue(getPaymentMethodLabel(t)),
   ]);
 
   const wsData = [...summaryRows, headers, ...dataRows];
   const ws = XLSX.utils.aoa_to_sheet(wsData);
 
   const colWidths = [
-    { wch: 24 },
-    { wch: 24 },
-    { wch: 20 },
-    { wch: 20 },
-    { wch: 12 },
-    { wch: 12 },
     { wch: 14 },
-    { wch: 10 },
-    { wch: 14 },
+    { wch: 24 },
     { wch: 45 },
-    { wch: 20 },
-    { wch: 35 },
-    { wch: 18 },
-    { wch: 15 },
-    { wch: 20 },
-    { wch: 20 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 12 },
+    { wch: 12 },
     { wch: 20 },
     { wch: 22 },
-    { wch: 22 },
-    { wch: 14 },
-    { wch: 14 },
-    { wch: 14 },
-    { wch: 14 },
-    { wch: 14 },
-    { wch: 16 },
-    { wch: 40 },
-    { wch: 50 },
+    { wch: 24 },
   ];
   ws["!cols"] = colWidths;
 
