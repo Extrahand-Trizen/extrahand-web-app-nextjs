@@ -180,7 +180,7 @@ function formatDate(d: Date): string {
 
 function formatAmount(amount: number, currency: string = "INR"): string {
   const sign = amount >= 0 ? "" : "-";
-  return `${sign}${currency === "INR" ? "₹" : ""}${Math.abs(amount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
+  return `${sign}${Math.abs(amount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
 }
 
 /**
