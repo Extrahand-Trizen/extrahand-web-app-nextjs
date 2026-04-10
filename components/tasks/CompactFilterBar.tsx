@@ -239,20 +239,14 @@ export const LocationFilter = ({ filters, onFilterChange }) => {
    };
 
    const apply = (v: string) => {
+      const nextLocation = v.trim();
       onFilterChange({
          ...filters,
-         suburb: v,
-         address: v,
+         suburb: nextLocation,
+         address: nextLocation,
          maxDistance: distanceSearch
       });
       setOpen(false);
-   };
-
-   const applyDistance = () => {
-      onFilterChange({
-         ...filters,
-         maxDistance: distanceSearch
-      });
    };
 
    return (
@@ -401,12 +395,7 @@ export const LocationFilter = ({ filters, onFilterChange }) => {
                <Button
                   className="flex-1 bg-primary-600 hover:bg-primary-700 text-white text-sm rounded-full font-semibold"
                   onClick={() => {
-                     if (suburbSearch) {
-                        apply(suburbSearch);
-                     } else {
-                        applyDistance();
-                        setOpen(false);
-                     }
+                     apply(suburbSearch);
                   }}
                >
                   Apply

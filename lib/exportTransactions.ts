@@ -55,27 +55,47 @@ function getTransactionTypeLabel(t: Transaction): "Payment" | "Refund" | "Earnin
   return "Earning";
 }
 
-function getFeeAmount(t: Transaction): number {
+function getFeeBreakdown(t: Transaction): { platformFee: number; gst: number; penalty: number; total: number } {
   const platformFee = typeof t.platformFee === "number" ? t.platformFee : 0;
-  const gstAmount = typeof t.gstAmount === "number" ? t.gstAmount : 0;
+  const gst = typeof t.gstAmount === "number" ? t.gstAmount : 0;
   const penalty = typeof t.penaltyDeducted === "number" ? t.penaltyDeducted : 0;
-  const fee = platformFee + gstAmount + penalty;
-  return Number.isFinite(fee) ? fee : 0;
+
+  let total = platformFee + gst + penalty;
+
+  // Some records only persist gross and net. Derive total fee from that delta.
+  if (total <= 0 && getTransactionTypeLabel(t) === "Earning") {
+    const gross = typeof t.taskAmount === "number" ? t.taskAmount : t.amount;
+    const net = typeof t.totalPaid === "number" ? t.totalPaid : undefined;
+    if (typeof net === "number") {
+      const derived = gross - net;
+      if (Number.isFinite(derived) && derived > 0) {
+        total = derived;
+      }
+    }
+  }
+
+  return {
+    platformFee,
+    gst,
+    penalty,
+    total: Number.isFinite(total) ? total : 0,
+  };
 }
 
 function getGrossFeeNet(t: Transaction): { gross: number; fee: number; net: number } {
   const normalizedType = getTransactionTypeLabel(t);
+  const feeBreakdown = getFeeBreakdown(t);
 
   if (normalizedType === "Earning") {
     const gross = typeof t.taskAmount === "number" ? t.taskAmount : t.amount;
-    const fee = getFeeAmount(t);
+    const fee = feeBreakdown.total;
     const net = typeof t.totalPaid === "number" ? t.totalPaid : gross - fee;
     return { gross, fee, net };
   }
 
   if (normalizedType === "Payout") {
     const gross = t.amount;
-    const fee = getFeeAmount(t);
+    const fee = feeBreakdown.total;
     return { gross, fee, net: gross - fee };
   }
 
@@ -140,26 +160,6 @@ function getCounterparty(t: Transaction): string {
   return t.paidToName || t.assignedToName || "Bank";
 }
 
-function getPaymentMethodLabel(t: Transaction): string {
-  const meta = getMetadata(t);
-  const value =
-    getStringField(meta.paymentMethod) ||
-    getStringField(meta.method) ||
-    getStringField(meta.paymentMode) ||
-    getStringField(meta.payoutMode) ||
-    getStringField(meta.transferType) ||
-    getStringField(meta.upiId) ||
-    getStringField(meta.maskedCard) ||
-    getStringField(meta.cardType) ||
-    getStringField(t.paymentMethodId) ||
-    getStringField(t.payoutMethodId);
-
-  if (value) return value;
-  if (getTransactionTypeLabel(t) === "Refund") return "Original Method";
-  if (getTransactionTypeLabel(t) === "Earning") return "Wallet";
-  return "—";
-}
-
 function toCellValue(value: unknown): string | number {
   if (value === null || value === undefined) return "";
   if (typeof value === "number" || typeof value === "string") return value;
@@ -178,7 +178,7 @@ function formatDate(d: Date): string {
   return format(new Date(d), "dd MMM yyyy");
 }
 
-function formatAmount(amount: number, currency: string = "INR"): string {
+function formatAmount(amount: number): string {
   const sign = amount >= 0 ? "" : "-";
   return `${sign}${Math.abs(amount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
 }
@@ -214,9 +214,9 @@ export async function exportTransactionsToPdf(
     t.id,
     getTaskOrDestination(t).slice(0, 28),
     getTransactionTypeLabel(t),
-    formatAmount(getGrossFeeNet(t).gross, t.currency),
-    formatAmount(getGrossFeeNet(t).fee, t.currency),
-    formatAmount(getGrossFeeNet(t).net, t.currency),
+    formatAmount(getGrossFeeNet(t).gross),
+    formatAmount(getGrossFeeNet(t).fee),
+    formatAmount(getGrossFeeNet(t).net),
     getDisplayStatus(t),
   ]);
 
@@ -239,7 +239,7 @@ export async function exportTransactionsToPdf(
     },
   });
 
-  const finalY = (doc as any).lastAutoTable?.finalY ?? tableStartY;
+  const finalY = (doc as unknown as { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY ?? tableStartY;
   doc.setFontSize(8);
   doc.text(
     `Showing ${transactions.length} transaction(s).`,
@@ -258,8 +258,17 @@ export async function exportTransactionsToExcel(
   transactions: Transaction[],
   summary: ExportSummary
 ): Promise<void> {
+  type XlsxLike = {
+    utils: {
+      aoa_to_sheet: (data: Array<Array<string | number>>) => unknown;
+      book_new: () => unknown;
+      book_append_sheet: (workbook: unknown, worksheet: unknown, name: string) => void;
+    };
+    writeFile: (workbook: unknown, fileName: string) => void;
+  };
+
   const xlsxModule = await import("xlsx");
-  const XLSX = (xlsxModule as unknown as { default?: any }).default ?? xlsxModule;
+  const XLSX = ((xlsxModule as unknown as { default?: XlsxLike }).default ?? xlsxModule) as XlsxLike;
 
   if (!XLSX?.utils?.aoa_to_sheet || typeof XLSX.writeFile !== "function") {
     throw new Error("Excel exporter is unavailable");
@@ -282,21 +291,41 @@ export async function exportTransactionsToExcel(
     "Type",
     "Gross",
     "Fee",
+    "Platform Fee",
+    "GST",
     "Net",
     "Status",
     "Counterparty",
   ];
-  const dataRows = transactions.map((t) => [
-    formatDate(t.createdAt),
-    toCellValue(t.id),
-    toCellValue(getTaskOrDestination(t)),
-    toCellValue(getTransactionTypeLabel(t)),
-    getGrossFeeNet(t).gross,
-    getGrossFeeNet(t).fee,
-    getGrossFeeNet(t).net,
-    toCellValue(getDisplayStatus(t)),
-    toCellValue(getCounterparty(t)),
-  ]);
+  const includePenaltyColumn = transactions.some((t) => getFeeBreakdown(t).penalty > 0);
+  if (includePenaltyColumn) {
+    headers.splice(8, 0, "Penalty");
+  }
+
+  const dataRows = transactions.map((t) => {
+    const grossFeeNet = getGrossFeeNet(t);
+    const feeBreakdown = getFeeBreakdown(t);
+
+    const row: Array<string | number> = [
+      formatDate(t.createdAt),
+      toCellValue(t.id),
+      toCellValue(getTaskOrDestination(t)),
+      toCellValue(getTransactionTypeLabel(t)),
+      grossFeeNet.gross,
+      grossFeeNet.fee,
+      feeBreakdown.platformFee,
+      feeBreakdown.gst,
+      grossFeeNet.net,
+      toCellValue(getDisplayStatus(t)),
+      toCellValue(getCounterparty(t)),
+    ];
+
+    if (includePenaltyColumn) {
+      row.splice(8, 0, feeBreakdown.penalty > 0 ? feeBreakdown.penalty : "");
+    }
+
+    return row;
+  });
 
   const wsData = [...summaryRows, headers, ...dataRows];
   const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -309,9 +338,13 @@ export async function exportTransactionsToExcel(
     { wch: 14 },
     { wch: 12 },
     { wch: 12 },
+    { wch: 10 },
     { wch: 20 },
     { wch: 22 },
   ];
+  if (includePenaltyColumn) {
+    colWidths.splice(8, 0, { wch: 10 });
+  }
   ws["!cols"] = colWidths;
 
   const wb = XLSX.utils.book_new();

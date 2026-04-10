@@ -321,6 +321,66 @@ function ProfilePageContent() {
 
    // Fetch reviews
    useEffect(() => {
+      const targetIds = new Set(
+         [user?.uid, user?._id]
+            .filter(Boolean)
+            .map((value) => String(value))
+      );
+
+      const toObject = (value: unknown): Record<string, unknown> | null => {
+         if (typeof value === "object" && value !== null) {
+            return value as Record<string, unknown>;
+         }
+         return null;
+      };
+
+      const extractIds = (candidate: unknown): string[] => {
+         const obj = toObject(candidate);
+
+         return [
+            candidate,
+            obj?._id,
+            obj?.id,
+            obj?.uid,
+            obj?.userId,
+         ]
+            .filter(Boolean)
+            .map((value) => String(value));
+      };
+
+      const isReceivedReview = (review: unknown): boolean => {
+         const reviewObj = toObject(review);
+         if (!reviewObj) return false;
+
+         const revieweeIds = [
+            ...extractIds(reviewObj.reviewee),
+            ...extractIds(reviewObj.revieweeId),
+            ...extractIds(reviewObj.revieweeUid),
+            ...extractIds(reviewObj.toUser),
+            ...extractIds(reviewObj.toUserId),
+            ...extractIds(reviewObj.recipient),
+            ...extractIds(reviewObj.recipientId),
+         ];
+
+         const reviewerIds = [
+            ...extractIds(reviewObj.reviewer),
+            ...extractIds(reviewObj.reviewerId),
+            ...extractIds(reviewObj.reviewerUid),
+            ...extractIds(reviewObj.fromUser),
+            ...extractIds(reviewObj.fromUserId),
+            ...extractIds(reviewObj.author),
+            ...extractIds(reviewObj.authorId),
+         ];
+
+         const matchesReviewee = revieweeIds.some((id) => targetIds.has(id));
+         const matchesReviewer = reviewerIds.some((id) => targetIds.has(id));
+
+         if (matchesReviewee) return true;
+         if (matchesReviewer) return false;
+
+         return false;
+      };
+
       const fetchReviews = async () => {
          if (!user?.uid) return;
 
@@ -338,24 +398,30 @@ function ProfilePageContent() {
 
             // Map API reviews to profile review format with safe fallbacks.
             const mappedReviews: Review[] = response.data
-               .filter((review: any) => Number(review?.rating) > 0)
-               .map((review: any, index: number) => ({
-                  id:
-                     review._id ||
-                     review.id ||
-                     `${review.taskId || review.reviewerUid || "review"}-${index}`,
-                  taskId: review.taskId || "",
-                  taskTitle: review.taskTitle || review.title || "Task",
-                  reviewerId: review.reviewerUid || review.reviewerId || "unknown",
-                  reviewerName:
-                     (typeof review.reviewerName === "string" && review.reviewerName.trim()) ||
-                     "Verified user",
-                  reviewerPhoto: review.reviewerPhoto,
-                  rating: Number(review.rating) || 0,
-                  comment: review.comment || "",
-                  createdAt: new Date(review.createdAt || review.updatedAt || Date.now()),
-                  role: "poster" as const,
-               }))
+               .filter((review) => Number((review as { rating?: unknown })?.rating) > 0)
+               .filter((review) => isReceivedReview(review))
+               .map((review, index: number) => {
+                  const r = (review || {}) as Record<string, unknown>;
+                  return {
+                     id:
+                        String(
+                           r._id ||
+                              r.id ||
+                              `${r.taskId || r.reviewerUid || "review"}-${index}`
+                        ),
+                     taskId: String(r.taskId || ""),
+                     taskTitle: String(r.taskTitle || r.title || "Task"),
+                     reviewerId: String(r.reviewerUid || r.reviewerId || "unknown"),
+                     reviewerName:
+                        (typeof r.reviewerName === "string" && r.reviewerName.trim()) ||
+                        "Verified user",
+                     reviewerPhoto: typeof r.reviewerPhoto === "string" ? r.reviewerPhoto : undefined,
+                     rating: Number(r.rating) || 0,
+                     comment: typeof r.comment === "string" ? r.comment : "",
+                     createdAt: new Date(String(r.createdAt || r.updatedAt || Date.now())),
+                     role: "poster" as const,
+                  };
+               })
                .filter((review) => review.rating > 0);
 
             console.log("✅ Reviews loaded (with real data only):", mappedReviews.length);
@@ -372,7 +438,7 @@ function ProfilePageContent() {
       if (user?.uid) {
          fetchReviews();
       }
-   }, [user?.uid]);
+   }, [user]);
 
    // Extract work history from profile data - filter out dummy/empty entries
    useEffect(() => {
