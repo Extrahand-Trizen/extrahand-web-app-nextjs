@@ -215,7 +215,7 @@ export async function exportTransactionsToPdf(
     getTaskOrDestination(t).slice(0, 28),
     getTransactionTypeLabel(t),
     formatAmount(getGrossFeeNet(t).gross, t.currency),
-    getGrossFeeNet(t).fee > 0 ? formatAmount(getGrossFeeNet(t).fee, t.currency) : "—",
+    formatAmount(getGrossFeeNet(t).fee, t.currency),
     formatAmount(getGrossFeeNet(t).net, t.currency),
     getDisplayStatus(t),
   ]);
@@ -285,7 +285,6 @@ export async function exportTransactionsToExcel(
     "Net",
     "Status",
     "Counterparty",
-    "Payment Method",
   ];
   const dataRows = transactions.map((t) => [
     formatDate(t.createdAt),
@@ -293,11 +292,10 @@ export async function exportTransactionsToExcel(
     toCellValue(getTaskOrDestination(t)),
     toCellValue(getTransactionTypeLabel(t)),
     getGrossFeeNet(t).gross,
-    getGrossFeeNet(t).fee > 0 ? getGrossFeeNet(t).fee : "—",
+    getGrossFeeNet(t).fee,
     getGrossFeeNet(t).net,
     toCellValue(getDisplayStatus(t)),
     toCellValue(getCounterparty(t)),
-    toCellValue(getPaymentMethodLabel(t)),
   ]);
 
   const wsData = [...summaryRows, headers, ...dataRows];
@@ -313,7 +311,6 @@ export async function exportTransactionsToExcel(
     { wch: 12 },
     { wch: 20 },
     { wch: 22 },
-    { wch: 24 },
   ];
   ws["!cols"] = colWidths;
 
