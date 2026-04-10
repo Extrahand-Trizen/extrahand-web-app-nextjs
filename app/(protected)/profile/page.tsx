@@ -424,13 +424,13 @@ function ProfilePageContent() {
 
    const handleSaveProfile = async (data: Partial<UserProfile>) => {
       try {
-         await profilesApi.upsertProfile(data);
-         toast.success("Profile updated successfully");
-         await refreshUserData();
+         const savedProfile = await profilesApi.updateMyProfile(data);
 
-         // Refresh profile data
-         const updatedProfile = await profilesApi.me();
-         setUser(updatedProfile as UserProfile);
+         // Refresh canonical profile state right after save so reload reflects latest About text.
+         const refreshedProfile = await refreshProfile();
+         setUser((refreshedProfile || savedProfile) as UserProfile);
+
+         toast.success("Profile updated successfully");
       } catch (error: any) {
          console.error("Failed to update profile:", error);
          toast.error("Failed to update profile", {

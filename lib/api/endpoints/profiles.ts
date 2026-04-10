@@ -9,6 +9,7 @@ import { UserProfile } from '@/types/user';
 function normalizeProfile(raw: any): any {
   const normalized = {
     ...raw,
+    profession: typeof raw?.profession === 'string' ? raw.profession : undefined,
     // PAN: backend may return either isPanVerified or isPANVerified.
     isPanVerified:
       typeof raw?.isPanVerified === 'boolean'

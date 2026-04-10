@@ -32,6 +32,7 @@ interface ProfileEditFormProps {
 interface FormData {
    firstName: string;
    lastName: string;
+   profession: string;
    bio: string;
    email: string;
    phone: string;
@@ -69,9 +70,54 @@ export function ProfileEditForm({
       return digitsOnly.slice(0, 10);
    };
 
+   const getBioWordMetrics = (value: string) => {
+      const words = value
+         .trim()
+         .toLowerCase()
+         .split(/\s+/)
+         .map((word) => word.replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, ""))
+         .filter(Boolean);
+
+      const stopWords = new Set([
+         "a",
+         "an",
+         "and",
+         "as",
+         "at",
+         "be",
+         "for",
+         "from",
+         "in",
+         "is",
+         "it",
+         "my",
+         "of",
+         "on",
+         "or",
+         "that",
+         "the",
+         "to",
+         "with",
+         "i",
+         "am",
+         "we",
+         "you",
+      ]);
+
+      const meaningfulWords = words.filter(
+         (word) => word.length > 2 && !stopWords.has(word)
+      );
+
+      return {
+         totalWords: words.length,
+         meaningfulWords: meaningfulWords.length,
+      };
+   };
+
    const [formData, setFormData] = useState<FormData>({
       firstName: nameParts[0] || "",
       lastName: nameParts.slice(1).join(" ") || "",
+      profession: user.profession || "",
       // Prefer the main profile bio for individuals; fall back to business description.
       bio: user.bio || user.business?.description || "",
       email: user.email || "",
@@ -88,9 +134,28 @@ export function ProfileEditForm({
    const [errors, setErrors] = useState<Record<string, string>>({});
    const [newSkill, setNewSkill] = useState("");
    const [skillsInputFocused, setSkillsInputFocused] = useState(false);
+   const [professionInputFocused, setProfessionInputFocused] = useState(false);
    const [hasChanges, setHasChanges] = useState(false);
    const [activeSaveSection, setActiveSaveSection] = useState<string | null>(null);
    const fileInputRef = useRef<HTMLInputElement>(null);
+   const existingSkills = useMemo(() => {
+      return Array.isArray(user.skills?.list) ? user.skills.list : [];
+   }, [user.skills?.list]);
+   const allProfessions = useMemo(
+      () =>
+         Array.from(new Set(postTaskCategories.map((item) => item.label))).sort(
+            (a, b) => a.localeCompare(b)
+         ),
+      []
+   );
+   const suggestedProfessions = useMemo(() => {
+      const query = formData.profession.trim().toLowerCase();
+      const filtered = allProfessions.filter((name) => {
+         if (!query) return true;
+         return name.toLowerCase().includes(query);
+      });
+      return filtered.slice(0, 20);
+   }, [allProfessions, formData.profession]);
    const suggestedSkills = useMemo(() => {
       const query = newSkill.trim().toLowerCase();
       return postTaskCategories
@@ -165,6 +230,15 @@ export function ProfileEditForm({
          newErrors.phone = "Please enter a valid 10-digit phone number";
       }
 
+      const trimmedBio = formData.bio.trim();
+      if (trimmedBio) {
+         const { totalWords, meaningfulWords } = getBioWordMetrics(trimmedBio);
+         if (totalWords < 8 || meaningfulWords < 5) {
+            newErrors.bio =
+               "Please write at least 8 words with clear, meaningful details.";
+         }
+      }
+
       setErrors(newErrors);
       return Object.keys(newErrors).length === 0;
    };
@@ -198,6 +272,7 @@ export function ProfileEditForm({
 
          await onSave({
             name: `${formData.firstName} ${formData.lastName}`.trim(),
+            profession: formData.profession.trim() || undefined,
             email: formData.email,
             phone: formData.phone,
             userType: formData.userType,
@@ -209,7 +284,21 @@ export function ProfileEditForm({
                   ? { description: formData.bio }
                   : undefined,
             skills: {
-               list: formData.skills.map((name) => ({ name })),
+               list: formData.skills.map((name) => {
+                  const normalizedName = name.trim().toLowerCase();
+                  const matchedSkill = existingSkills.find((skill) => {
+                     return (skill.name || "").trim().toLowerCase() === normalizedName;
+                  });
+
+                  if (matchedSkill) {
+                     return {
+                        ...matchedSkill,
+                        name,
+                     };
+                  }
+
+                  return { name };
+               }),
             },
             photoURL: savedPhotoURL,
          });
@@ -263,6 +352,11 @@ export function ProfileEditForm({
          "skills",
          formData.skills.filter((s) => s !== skillToRemove)
       );
+   };
+
+   const selectProfession = (profession: string) => {
+      updateField("profession", profession);
+      setProfessionInputFocused(false);
    };
 
    const handlePhotoUpload = () => {
@@ -420,6 +514,47 @@ export function ProfileEditForm({
                </div>
             </div>
 
+            <div className="relative">
+               <Label
+                  htmlFor="profession"
+                  className="text-xs sm:text-sm text-gray-700"
+               >
+                  Profession
+               </Label>
+               <Input
+                  id="profession"
+                  value={formData.profession}
+                  onChange={(e) => updateField("profession", e.target.value.slice(0, 100))}
+                  onFocus={() => setProfessionInputFocused(true)}
+                  onBlur={() => {
+                     setTimeout(() => setProfessionInputFocused(false), 120);
+                  }}
+                  className="mt-1.5 h-9 sm:h-10 text-xs md:text-sm"
+                  placeholder="e.g. IT Support / Laptop Repair"
+                  maxLength={100}
+               />
+               {professionInputFocused && suggestedProfessions.length > 0 && (
+                  <div className="absolute z-20 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg max-h-56 overflow-y-auto">
+                     {suggestedProfessions.map((profession) => (
+                        <button
+                           key={profession}
+                           type="button"
+                           className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                           onMouseDown={(e) => {
+                              e.preventDefault();
+                              selectProfession(profession);
+                           }}
+                        >
+                           {profession}
+                        </button>
+                     ))}
+                  </div>
+               )}
+               <p className="text-[10px] sm:text-xs text-gray-500 mt-1">
+                  Add one profession that best describes what you do.
+               </p>
+            </div>
+
             <div>
                <Label
                   htmlFor="bio"
@@ -438,6 +573,12 @@ export function ProfileEditForm({
                <p className="text-[10px] sm:text-xs text-gray-400 mt-1 text-right">
                   {formData.bio.length}/500
                </p>
+               {errors.bio && (
+                  <p className="text-[10px] sm:text-xs text-red-500 mt-1 flex items-center gap-1">
+                     <AlertCircle className="w-3 h-3" />
+                     {errors.bio}
+                  </p>
+               )}
             </div>
          </div>
 

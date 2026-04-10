@@ -106,7 +106,7 @@ export function PublicProfile({
 
   const availability = getAvailabilityInfo(user);
 
-   const headline = buildHeadline(user);
+   const professionLabel = getNormalizedProfession(user.profession);
    const meetCardRatingNode = buildMeetCardRatingLabel({
       rating: actualStats.rating,
       totalReviews: actualStats.totalReviews,
@@ -120,7 +120,7 @@ export function PublicProfile({
                <PublicProfileMeetCard
                   user={user}
                   isAvailable={availability.isAvailable}
-                  headline={headline}
+                  professionLabel={professionLabel}
                   badge={badge?.currentBadge || null}
                   ratingLabel={meetCardRatingNode}
                />
@@ -162,22 +162,15 @@ export function PublicProfile({
    );
 }
 
-function buildHeadline(user: UserProfile): string {
-   const years = (user.skills?.list ?? [])
-      .map((s) => s.yearsOfExperience)
-      .filter((y): y is number => typeof y === "number" && y > 0);
-   const maxYears = years.length > 0 ? Math.max(...years) : null;
-   const topSkills = (user.skills?.list ?? []).map((s) => s.name).filter(Boolean).slice(0, 3);
-   const city = user.location?.city || user.location?.state || "";
+function getNormalizedProfession(profession?: string): string {
+   const clean = (profession || "").trim();
+   if (!clean) return "";
 
-   if (topSkills.length > 0) {
-      const skillsLabel = topSkills.join(" | ");
-      const yearsLabel = maxYears ? ` | ${maxYears}+ Years Experience` : "";
-      return `${skillsLabel}${yearsLabel}${city ? ` • ${city}` : ""}`;
-   }
-
-   if (city) return `Helping with home tasks in ${city}`;
-   return "Helping with home tasks";
+   return clean
+      .split(" ")
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
 }
 
 export default PublicProfile;

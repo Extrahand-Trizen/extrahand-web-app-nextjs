@@ -7,6 +7,7 @@ export interface UserProfile {
    _id: string;
    uid: string;
    name: string;
+   profession?: string;
    email?: string;
    phone?: string;
    roles: ("tasker" | "requester" | "poster" | "both")[];
@@ -42,6 +43,12 @@ export interface UserProfile {
             issuedBy: string;
             issuedDate: Date;
             documentUrl: string;
+            verificationType?: "certified" | "licensed";
+            certificateType?: string;
+            issuingAuthority?: string;
+            certificateNumber?: string;
+            issueDate?: Date;
+            expiryDate?: Date;
          }>;
          verified?: boolean;
       }>;

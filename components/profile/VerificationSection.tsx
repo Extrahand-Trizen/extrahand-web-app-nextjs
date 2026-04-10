@@ -113,6 +113,52 @@ function formatVerificationDate(date?: Date | string): string | null {
   }).format(d);
 }
 
+function getCertificateVerificationMeta(user: UserProfile): {
+  isVerified: boolean;
+  description: string;
+  verifiedAt?: Date;
+} {
+  const skills = Array.isArray(user.skills?.list) ? user.skills.list : [];
+
+  const certificateItems = skills.flatMap((skill) => {
+    const certs = Array.isArray(skill?.certificates) ? skill.certificates : [];
+    return certs.filter((cert) => Boolean(cert?.documentUrl));
+  });
+
+  const hasVerifiedSkill = skills.some(
+    (skill) => skill?.verified === true || skill?.certified === true
+  );
+
+  const isVerified = certificateItems.length > 0 && hasVerifiedSkill;
+  const latestCert = certificateItems.reduce<
+    { issuedDate?: Date; title?: string } | undefined
+  >((latest, cert) => {
+    if (!cert?.issuedDate) return latest || cert;
+    if (!latest?.issuedDate) return cert;
+    return new Date(cert.issuedDate).getTime() > new Date(latest.issuedDate).getTime()
+      ? cert
+      : latest;
+  }, undefined);
+
+  if (!isVerified) {
+    return {
+      isVerified: false,
+      description: "Upload your professional certificate",
+    };
+  }
+
+  const countLabel =
+    certificateItems.length === 1
+      ? "1 certificate uploaded"
+      : `${certificateItems.length} certificates uploaded`;
+
+  return {
+    isVerified: true,
+    description: latestCert?.title ? `Verified ${latestCert.title}` : countLabel,
+    verifiedAt: latestCert?.issuedDate,
+  };
+}
+
 /** Factory: one contract for all verification items. DRY, testable, easy to extend. */
 function createVerificationItem({
   id,
@@ -169,6 +215,7 @@ export function VerificationSection({ user }: VerificationSectionProps) {
         panVerifiedAt: user.panVerifiedAt,
       };
   const isPANVerified = panData?.isPANVerified ?? false;
+  const certificateMeta = getCertificateVerificationMeta(user);
   const trustMeta = getTrustMeta(user);
 
   // Individual verifications – single source of truth via factory
@@ -223,6 +270,15 @@ export function VerificationSection({ user }: VerificationSectionProps) {
       defaultText: isBusiness ? "Coming soon for business accounts" : "Verify your PAN card",
       route: isBusiness ? "" : "/profile/verify/pan",
       comingSoon: isBusiness,
+    }),
+    createVerificationItem({
+      id: "certificate",
+      title: "Certificates",
+      isVerified: certificateMeta.isVerified,
+      verifiedAt: certificateMeta.verifiedAt,
+      verifiedText: certificateMeta.description,
+      defaultText: "Upload your professional certificate",
+      route: "/profile/verify/certificate",
     }),
   ];
 

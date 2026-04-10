@@ -18,23 +18,25 @@ function isRecentlyJoined(createdAt?: Date | string): boolean {
 export function PublicProfileMeetCard({
   user,
   isAvailable,
-  headline,
+  professionLabel,
   badge,
   ratingLabel,
 }: {
   user: UserProfile;
   isAvailable: boolean;
-  headline: string;
+  professionLabel?: string;
   badge?: string | null;
   ratingLabel: React.ReactNode;
 }) {
   const resolvedBadge = String(badge || user.verificationBadge || "none").toLowerCase();
+  const city = (user.location?.city || "").trim();
+  const state = (user.location?.state || "").trim();
   const locationLabel =
-    user.location?.city || user.location?.state
-      ? `${user.location?.city || ""}${user.location?.city && user.location?.state ? ", " : ""}${
-          user.location?.state || ""
-        }`
-      : null;
+    city && state
+      ? city.toLowerCase() === state.toLowerCase()
+        ? city
+        : `${city}, ${state}`
+      : city || state || null;
 
   const recentlyJoined = isRecentlyJoined(user.createdAt);
 
@@ -49,6 +51,15 @@ export function PublicProfileMeetCard({
             <div className="mt-1 flex items-center gap-2">
               <h2 className="text-2xl font-semibold text-slate-900 truncate">{user.name}</h2>
             </div>
+
+            {professionLabel ? (
+              <div className="mt-1 flex items-center gap-2 flex-wrap">
+                <span className="text-sm font-medium text-slate-700">{professionLabel}</span>
+                <Badge className="shrink-0 border border-emerald-200 bg-emerald-100 text-emerald-800">
+                  Professional
+                </Badge>
+              </div>
+            ) : null}
 
             <div className="mt-2 flex items-center gap-2 flex-wrap">
               {resolvedBadge !== "none" ? (
@@ -71,11 +82,11 @@ export function PublicProfileMeetCard({
           </Avatar>
         </div>
 
-        <p className="mt-3 text-sm text-slate-700">{headline}</p>
-
-        <div className="mt-3 flex items-center gap-2">
-          <div className="flex items-center gap-1.5">{ratingLabel}</div>
-        </div>
+        {ratingLabel ? (
+          <div className="mt-3 flex items-center gap-2">
+            <div className="flex items-center gap-1.5">{ratingLabel}</div>
+          </div>
+        ) : null}
 
         {locationLabel ? (
           <div className="mt-3 flex items-center gap-2 text-sm text-slate-600">
@@ -110,13 +121,6 @@ export function buildMeetCardRatingLabel({
     );
   }
 
-  return (
-    <Badge
-      variant="secondary"
-      className="rounded-full bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1 text-sm font-medium"
-    >
-      New
-    </Badge>
-  );
+  return null;
 }
 
