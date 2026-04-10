@@ -93,34 +93,113 @@ export default function UserProfilePage() {
 
    // Extract reviews from profile response (already included by backend)
    useEffect(() => {
-      const mapReviews = (rawReviews: any[]): Review[] => {
+      const targetIds = new Set(
+         [userId, user?.uid, user?._id]
+            .filter(Boolean)
+            .map((value) => String(value))
+      );
+
+      const toObject = (value: unknown): Record<string, unknown> | null => {
+         if (typeof value === "object" && value !== null) {
+            return value as Record<string, unknown>;
+         }
+         return null;
+      };
+
+      const extractIds = (candidate: unknown): string[] => {
+         const obj = toObject(candidate);
+
+         return [
+            candidate,
+            obj?._id,
+            obj?.id,
+            obj?.uid,
+            obj?.userId,
+         ]
+            .filter(Boolean)
+            .map((value) => String(value));
+      };
+
+      const isReceivedReview = (review: unknown): boolean => {
+         const reviewObj = toObject(review);
+         if (!reviewObj) return false;
+
+         const revieweeIds = [
+            ...extractIds(reviewObj.reviewee),
+            ...extractIds(reviewObj.revieweeId),
+            ...extractIds(reviewObj.revieweeUid),
+            ...extractIds(reviewObj.toUser),
+            ...extractIds(reviewObj.toUserId),
+            ...extractIds(reviewObj.recipient),
+            ...extractIds(reviewObj.recipientId),
+         ];
+
+         const reviewerIds = [
+            ...extractIds(reviewObj.reviewer),
+            ...extractIds(reviewObj.reviewerId),
+            ...extractIds(reviewObj.reviewerUid),
+            ...extractIds(reviewObj.fromUser),
+            ...extractIds(reviewObj.fromUserId),
+            ...extractIds(reviewObj.author),
+            ...extractIds(reviewObj.authorId),
+         ];
+
+         const matchesReviewee = revieweeIds.some((id) => targetIds.has(id));
+         const matchesReviewer = reviewerIds.some((id) => targetIds.has(id));
+
+         // Keep only reviews received by the profile owner.
+         if (matchesReviewee) return true;
+         if (matchesReviewer) return false;
+
+         // If ownership cannot be determined, hide it to avoid showing outgoing reviews.
+         return false;
+      };
+
+      const mapReviews = (rawReviews: unknown[]): Review[] => {
          return rawReviews
-            .filter((review: any) => Number(review?.rating) > 0)
-            .map((review: any, index: number) => ({
+            .filter((review) => Number((review as { rating?: unknown })?.rating) > 0)
+            .filter((review) => isReceivedReview(review))
+            .map((review, index: number) => {
+               const r = (review || {}) as Record<string, unknown>;
+
+               return {
                id:
-                  review._id ||
-                  review.id ||
-                  `${review.taskId || review.reviewerId || "review"}-${index}`,
-               taskId: review.taskId || "",
-               taskTitle: review.taskTitle || review.title || "Task",
+                  String(
+                     r._id ||
+                        r.id ||
+                        `${r.taskId || r.reviewerId || "review"}-${index}`
+                  ),
+               taskId: String(r.taskId || ""),
+               taskTitle: String(r.taskTitle || r.title || "Task"),
                reviewerId:
-                  review.reviewerId ||
-                  review.reviewerUid ||
-                  review.reviewer?.id ||
-                  "unknown",
+                  String(
+                     r.reviewerId ||
+                        r.reviewerUid ||
+                        toObject(r.reviewer)?.id ||
+                        "unknown"
+                  ),
                reviewerName:
-                  (typeof review.reviewerName === "string" && review.reviewerName.trim()) ||
-                  (typeof review.reviewer?.name === "string" && review.reviewer.name.trim()) ||
+                  (typeof r.reviewerName === "string" && r.reviewerName.trim()) ||
+                  (typeof toObject(r.reviewer)?.name === "string" && String(toObject(r.reviewer)?.name).trim()) ||
                   "Verified user",
                reviewerPhoto:
-                  review.reviewerPhoto ||
-                  review.reviewer?.photoURL ||
-                  review.reviewer?.photo,
-               rating: Number(review.rating) || 0,
-               comment: typeof review.comment === "string" ? review.comment : "",
-               createdAt: new Date(review.createdAt || review.updatedAt || Date.now()),
+                  typeof (
+                     r.reviewerPhoto ||
+                     toObject(r.reviewer)?.photoURL ||
+                     toObject(r.reviewer)?.photo
+                  ) === "string"
+                     ? String(
+                          r.reviewerPhoto ||
+                             toObject(r.reviewer)?.photoURL ||
+                             toObject(r.reviewer)?.photo
+                       )
+                     : undefined,
+               rating: Number(r.rating) || 0,
+               comment: typeof r.comment === "string" ? r.comment : "",
+               createdAt: new Date(String(r.createdAt || r.updatedAt || Date.now())),
                role: "poster" as const,
-            }))
+               };
+            })
             .filter((review) => review.rating > 0);
       };
 

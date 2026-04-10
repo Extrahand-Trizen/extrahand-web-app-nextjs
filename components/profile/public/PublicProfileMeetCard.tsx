@@ -42,14 +42,14 @@ export function PublicProfileMeetCard({
 
   return (
     <Card className="rounded-2xl">
-      <CardContent className="p-5">
+      <CardContent className="p-6 lg:p-7">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="text-[11px] font-semibold tracking-wider text-slate-500 uppercase">
               Meet
             </div>
             <div className="mt-1 flex items-center gap-2">
-              <h2 className="text-2xl font-semibold text-slate-900 truncate">{user.name}</h2>
+              <h2 className="text-[28px] leading-tight font-semibold text-slate-900 truncate">{user.name}</h2>
             </div>
 
             {professionLabel ? (
@@ -74,7 +74,7 @@ export function PublicProfileMeetCard({
             </div>
           </div>
 
-          <Avatar className="size-16 shrink-0">
+          <Avatar className="size-20 shrink-0">
             <AvatarImage src={user.photoURL || undefined} alt={user.name} />
             <AvatarFallback className="bg-slate-100 text-slate-600 text-lg font-medium">
               {user.name?.charAt(0).toUpperCase() || "U"}

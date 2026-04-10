@@ -20,6 +20,7 @@ import { PublicProfileWorkProof } from "@/components/profile/public/PublicProfil
 import { PublicProfileMeetCard, buildMeetCardRatingLabel } from "@/components/profile/public/PublicProfileMeetCard";
 import { PublicProfileAbout } from "@/components/profile/public/PublicProfileAbout";
 import { PublicProfilePerformanceBreakdown } from "@/components/profile/public/PublicProfilePerformanceBreakdown";
+import { PublicProfilePortfolio } from "@/components/profile/public/PublicProfilePortfolio";
 
 interface PublicProfileProps {
    user: UserProfile;
@@ -114,7 +115,7 @@ export function PublicProfile({
 
    return (
       <div className="max-w-7xl mx-auto">
-         <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] gap-6">
+         <div className="grid grid-cols-1 md:grid-cols-[360px_1fr] lg:grid-cols-[420px_1fr] gap-6 lg:gap-8">
             {/* Left column: Meet card (not sticky) */}
             <div className="md:self-start">
                <PublicProfileMeetCard
@@ -128,6 +129,8 @@ export function PublicProfile({
 
             {/* Right column: main content */}
             <div className="space-y-6 min-w-0">
+               <PublicProfilePortfolio user={user} />
+
                <PublicProfileAbout user={user} />
 
                <PublicProfileTrustMetrics

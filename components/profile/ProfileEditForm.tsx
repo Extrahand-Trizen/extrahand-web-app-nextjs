@@ -35,6 +35,9 @@ interface FormData {
    lastName: string;
    profession: string;
    bio: string;
+   portfolioTitle: string;
+   portfolioDescription: string;
+   portfolioUrl: string;
    email: string;
    phone: string;
    location: string;
@@ -121,6 +124,9 @@ export function ProfileEditForm({
       profession: user.profession || "",
       // Prefer the main profile bio for individuals; fall back to business description.
       bio: user.bio || user.business?.description || "",
+      portfolioTitle: user.portfolio?.[0]?.title || "",
+      portfolioDescription: user.portfolio?.[0]?.description || "",
+      portfolioUrl: user.portfolio?.[0]?.url || "",
       email: user.email || "",
       phone: extractPhoneDigits(user.phone || ""),
       location: user.location?.address || user.location?.city || "",
@@ -139,6 +145,14 @@ export function ProfileEditForm({
    const [hasChanges, setHasChanges] = useState(false);
    const [activeSaveSection, setActiveSaveSection] = useState<string | null>(null);
    const fileInputRef = useRef<HTMLInputElement>(null);
+   const portfolioFileInputRef = useRef<HTMLInputElement>(null);
+   const [portfolioImageUrls, setPortfolioImageUrls] = useState<string[]>(
+      Array.isArray(user.portfolio?.[0]?.images)
+         ? (user.portfolio?.[0]?.images || []).filter(Boolean)
+         : []
+   );
+   const [pendingPortfolioFiles, setPendingPortfolioFiles] = useState<File[]>([]);
+   const [portfolioPreviewUrls, setPortfolioPreviewUrls] = useState<string[]>([]);
    const existingSkills = useMemo(() => {
       return Array.isArray(user.skills?.list) ? user.skills.list : [];
    }, [user.skills?.list]);
@@ -190,8 +204,9 @@ export function ProfileEditForm({
          if (photoPreviewUrl) {
             URL.revokeObjectURL(photoPreviewUrl);
          }
+         portfolioPreviewUrls.forEach((url) => URL.revokeObjectURL(url));
       };
-   }, [photoPreviewUrl]);
+   }, [photoPreviewUrl, portfolioPreviewUrls]);
 
    const updateField = useCallback(
       (field: keyof FormData, value: any) => {
@@ -240,6 +255,38 @@ export function ProfileEditForm({
          }
       }
 
+      const portfolioTitle = formData.portfolioTitle.trim();
+      const portfolioUrl = formData.portfolioUrl.trim();
+      const hasPortfolioImages =
+         portfolioImageUrls.length > 0 || pendingPortfolioFiles.length > 0;
+      const hasAnyPortfolioInput =
+         !!portfolioTitle ||
+         !!portfolioUrl ||
+         hasPortfolioImages ||
+         !!formData.portfolioDescription.trim();
+
+      if (hasAnyPortfolioInput) {
+         if (!portfolioTitle) {
+            newErrors.portfolioTitle = "Portfolio title is required";
+         }
+
+         if (!portfolioUrl && !hasPortfolioImages) {
+            newErrors.portfolio =
+               "Add at least one portfolio photo or a website link";
+         }
+
+         if (portfolioUrl) {
+            try {
+               const parsed = new URL(portfolioUrl);
+               if (!(parsed.protocol === "http:" || parsed.protocol === "https:")) {
+                  newErrors.portfolioUrl = "Portfolio URL must start with http:// or https://";
+               }
+            } catch {
+               newErrors.portfolioUrl = "Please enter a valid website URL";
+            }
+         }
+      }
+
       setErrors(newErrors);
       return Object.keys(newErrors).length === 0;
    };
@@ -252,6 +299,7 @@ export function ProfileEditForm({
       setIsSaving(true);
       try {
          let savedPhotoURL: string | undefined = photoURL || undefined;
+         let savedPortfolioImages: string[] = [...portfolioImageUrls];
          if (pendingPhotoFile) {
             try {
                savedPhotoURL = await api.uploadImage(pendingPhotoFile);
@@ -270,6 +318,46 @@ export function ProfileEditForm({
                return;
             }
          }
+
+         if (pendingPortfolioFiles.length > 0) {
+            try {
+               const uploaded = await Promise.all(
+                  pendingPortfolioFiles.map((file) => api.uploadImage(file))
+               );
+               savedPortfolioImages = [...savedPortfolioImages, ...uploaded.filter(Boolean)];
+               portfolioPreviewUrls.forEach((url) => URL.revokeObjectURL(url));
+               setPortfolioPreviewUrls([]);
+               setPendingPortfolioFiles([]);
+               setPortfolioImageUrls(savedPortfolioImages);
+            } catch (uploadError: any) {
+               console.error("Portfolio image upload failed:", uploadError);
+               toast.error("Failed to upload portfolio images", {
+                  description: uploadError?.message || "Please try again.",
+               });
+               setIsSaving(false);
+               return;
+            }
+         }
+
+         const portfolioTitle = formData.portfolioTitle.trim();
+         const portfolioDescription = formData.portfolioDescription.trim();
+         const portfolioUrl = formData.portfolioUrl.trim();
+         const hasPortfolioData =
+            !!portfolioTitle ||
+            !!portfolioUrl ||
+            savedPortfolioImages.length > 0 ||
+            !!portfolioDescription;
+
+         const portfolioPayload = hasPortfolioData
+            ? [
+                 {
+                    title: portfolioTitle,
+                    url: portfolioUrl || undefined,
+                    images: savedPortfolioImages,
+                    description: portfolioDescription || undefined,
+                 },
+              ]
+            : [];
 
          await onSave({
             name: `${formData.firstName} ${formData.lastName}`.trim(),
@@ -302,6 +390,7 @@ export function ProfileEditForm({
                }),
             },
             photoURL: savedPhotoURL,
+            portfolio: portfolioPayload,
          });
          setHasChanges(false);
       } catch (error) {
@@ -387,6 +476,56 @@ export function ProfileEditForm({
       }
       setPhotoPreviewUrl(URL.createObjectURL(file));
       setPendingPhotoFile(file);
+      setHasChanges(true);
+   };
+
+   const handlePortfolioImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files || []);
+      e.target.value = "";
+      if (files.length === 0) return;
+
+      const validFiles: File[] = [];
+      const nextPreviewUrls: string[] = [];
+
+      for (const file of files) {
+         if (!isValidImageType(file.type)) {
+            toast.error("Invalid portfolio image type", {
+               description: "Please choose JPG, PNG, or WebP files.",
+            });
+            continue;
+         }
+
+         if (!isValidFileSize(file.size, MAX_PHOTO_MB)) {
+            toast.error("Portfolio image too large", {
+               description: `Each image must be under ${MAX_PHOTO_MB}MB.`,
+            });
+            continue;
+         }
+
+         validFiles.push(file);
+         nextPreviewUrls.push(URL.createObjectURL(file));
+      }
+
+      if (validFiles.length === 0) return;
+
+      setPendingPortfolioFiles((prev) => [...prev, ...validFiles].slice(0, 8));
+      setPortfolioPreviewUrls((prev) => [...prev, ...nextPreviewUrls].slice(0, 8));
+      setHasChanges(true);
+   };
+
+   const removeExistingPortfolioImage = (index: number) => {
+      setPortfolioImageUrls((prev) => prev.filter((_, i) => i !== index));
+      setHasChanges(true);
+   };
+
+   const removePendingPortfolioImage = (index: number) => {
+      setPendingPortfolioFiles((prev) => prev.filter((_, i) => i !== index));
+      setPortfolioPreviewUrls((prev) => {
+         const next = [...prev];
+         const removed = next[index];
+         if (removed) URL.revokeObjectURL(removed);
+         return next.filter((_, i) => i !== index);
+      });
       setHasChanges(true);
    };
 
@@ -580,6 +719,138 @@ export function ProfileEditForm({
                      {errors.bio}
                   </p>
                )}
+            </div>
+         </div>
+
+         {/* Portfolio */}
+         <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 space-y-3 sm:space-y-4">
+            <h3 className="text-xs sm:text-sm font-medium text-gray-900">
+               Portfolio
+            </h3>
+
+            <input
+               ref={portfolioFileInputRef}
+               type="file"
+               accept="image/jpeg,image/jpg,image/png,image/webp"
+               multiple
+               className="hidden"
+               aria-label="Upload portfolio photos"
+               onChange={handlePortfolioImageSelect}
+            />
+
+            <div>
+               <Label htmlFor="portfolioTitle" className="text-xs sm:text-sm text-gray-700">
+                  Portfolio Title
+               </Label>
+               <Input
+                  id="portfolioTitle"
+                  value={formData.portfolioTitle}
+                  onChange={(e) => updateField("portfolioTitle", e.target.value.slice(0, 120))}
+                  className={cn(
+                     "mt-1.5 h-9 sm:h-10 text-xs md:text-sm",
+                     errors.portfolioTitle && "border-red-300 focus:border-red-500"
+                  )}
+                  placeholder="e.g. Real estate lead generation dashboard"
+                  maxLength={120}
+               />
+               {errors.portfolioTitle && (
+                  <p className="text-[10px] sm:text-xs text-red-500 mt-1 flex items-center gap-1">
+                     <AlertCircle className="w-3 h-3" />
+                     {errors.portfolioTitle}
+                  </p>
+               )}
+            </div>
+
+            <div>
+               <Label htmlFor="portfolioUrl" className="text-xs sm:text-sm text-gray-700">
+                  Website Link
+               </Label>
+               <Input
+                  id="portfolioUrl"
+                  value={formData.portfolioUrl}
+                  onChange={(e) => updateField("portfolioUrl", e.target.value.slice(0, 500))}
+                  className={cn(
+                     "mt-1.5 h-9 sm:h-10 text-xs md:text-sm",
+                     errors.portfolioUrl && "border-red-300 focus:border-red-500"
+                  )}
+                  placeholder="https://your-portfolio-link.com"
+                  maxLength={500}
+               />
+               {errors.portfolioUrl && (
+                  <p className="text-[10px] sm:text-xs text-red-500 mt-1 flex items-center gap-1">
+                     <AlertCircle className="w-3 h-3" />
+                     {errors.portfolioUrl}
+                  </p>
+               )}
+            </div>
+
+            <div>
+               <div className="flex items-center justify-between gap-2">
+                  <Label className="text-xs sm:text-sm text-gray-700">Portfolio Photos</Label>
+                  <Button
+                     type="button"
+                     variant="outline"
+                     size="sm"
+                     className="text-xs h-8 px-3"
+                     onClick={() => portfolioFileInputRef.current?.click()}
+                  >
+                     Upload Photos
+                  </Button>
+               </div>
+
+               {(portfolioImageUrls.length > 0 || portfolioPreviewUrls.length > 0) && (
+                  <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                     {portfolioImageUrls.map((src, idx) => (
+                        <div key={`existing-${idx}`} className="relative rounded-md overflow-hidden border border-gray-200">
+                           <img src={src} alt={`Portfolio ${idx + 1}`} className="w-full h-24 object-cover" />
+                           <button
+                              type="button"
+                              onClick={() => removeExistingPortfolioImage(idx)}
+                              className="absolute top-1 right-1 bg-white/90 rounded p-1 shadow"
+                           >
+                              <X className="w-3 h-3 text-gray-700" />
+                           </button>
+                        </div>
+                     ))}
+
+                     {portfolioPreviewUrls.map((src, idx) => (
+                        <div key={`pending-${idx}`} className="relative rounded-md overflow-hidden border border-gray-200">
+                           <img src={src} alt={`Pending portfolio ${idx + 1}`} className="w-full h-24 object-cover" />
+                           <button
+                              type="button"
+                              onClick={() => removePendingPortfolioImage(idx)}
+                              className="absolute top-1 right-1 bg-white/90 rounded p-1 shadow"
+                           >
+                              <X className="w-3 h-3 text-gray-700" />
+                           </button>
+                        </div>
+                     ))}
+                  </div>
+               )}
+
+               <p className="text-[10px] sm:text-xs text-gray-500 mt-1">
+                  Add up to 8 images. Title + at least one image or website link is required.
+               </p>
+               {errors.portfolio && (
+                  <p className="text-[10px] sm:text-xs text-red-500 mt-1 flex items-center gap-1">
+                     <AlertCircle className="w-3 h-3" />
+                     {errors.portfolio}
+                  </p>
+               )}
+            </div>
+
+            <div>
+               <Label htmlFor="portfolioDescription" className="text-xs sm:text-sm text-gray-700">
+                  Portfolio Description (Optional)
+               </Label>
+               <Textarea
+                  id="portfolioDescription"
+                  value={formData.portfolioDescription}
+                  onChange={(e) => updateField("portfolioDescription", e.target.value.slice(0, 1000))}
+                  className="mt-1.5 min-h-20 sm:min-h-[90px] text-xs md:text-sm"
+                  placeholder="Explain this portfolio work (optional)"
+                  maxLength={1000}
+               />
             </div>
          </div>
 

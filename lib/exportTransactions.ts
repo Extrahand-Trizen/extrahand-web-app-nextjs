@@ -11,6 +11,27 @@ export interface ExportSummary {
   totalSpent: number;
 }
 
+function formatDateTime(value?: Date | string): string {
+  if (!value) return "";
+  const dt = new Date(value);
+  if (Number.isNaN(dt.getTime())) return "";
+  return format(dt, "dd MMM yyyy, HH:mm");
+}
+
+function toCellValue(value: unknown): string | number {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "number" || typeof value === "string") return value;
+  if (value instanceof Date) return formatDateTime(value);
+  if (typeof value === "object") {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+  return String(value);
+}
+
 function formatDate(d: Date): string {
   return format(new Date(d), "dd MMM yyyy");
 }
@@ -89,7 +110,12 @@ export async function exportTransactionsToExcel(
   transactions: Transaction[],
   summary: ExportSummary
 ): Promise<void> {
-  const XLSX = (await import("xlsx")).default;
+  const xlsxModule = await import("xlsx");
+  const XLSX = (xlsxModule as unknown as { default?: any }).default ?? xlsxModule;
+
+  if (!XLSX?.utils?.aoa_to_sheet || typeof XLSX.writeFile !== "function") {
+    throw new Error("Excel exporter is unavailable");
+  }
 
   const summaryRows = [
     ["ExtraHand – Transaction Statement"],
@@ -101,26 +127,96 @@ export async function exportTransactionsToExcel(
     [],
   ];
 
-  const headers = ["Date", "Type", "Description", "Amount", "Currency", "Status"];
+  const headers = [
+    "Transaction ID",
+    "Payout ID",
+    "Created At",
+    "Completed At",
+    "Type",
+    "Status",
+    "Raw Status",
+    "Currency",
+    "Amount",
+    "Description",
+    "Task ID",
+    "Task Title",
+    "Task Category",
+    "Task Status",
+    "Assigned To",
+    "Paid To",
+    "Poster UID",
+    "Payment Method ID",
+    "Payout Method ID",
+    "Escrow Status",
+    "Task Amount",
+    "Platform Fee",
+    "GST Amount",
+    "Total Paid",
+    "Penalty Deducted",
+    "Penalty Lines",
+    "Metadata",
+  ];
   const dataRows = transactions.map((t) => [
-    formatDate(t.createdAt),
-    t.type,
-    t.description || t.taskTitle || "",
+    toCellValue(t.id),
+    toCellValue(t.payoutId),
+    formatDateTime(t.createdAt),
+    formatDateTime(t.completedAt),
+    toCellValue(t.type),
+    toCellValue(t.status),
+    toCellValue(t.rawStatus),
+    toCellValue(t.currency),
     t.amount,
-    t.currency,
-    t.status,
+    toCellValue(t.description || t.taskTitle || ""),
+    toCellValue(t.taskId),
+    toCellValue(t.taskTitle),
+    toCellValue(t.taskCategory),
+    toCellValue(t.taskStatus),
+    toCellValue(t.assignedToName),
+    toCellValue(t.paidToName),
+    toCellValue(t.posterUid),
+    toCellValue(t.paymentMethodId),
+    toCellValue(t.payoutMethodId),
+    toCellValue(t.escrowStatus),
+    toCellValue(t.taskAmount),
+    toCellValue(t.platformFee),
+    toCellValue(t.gstAmount),
+    toCellValue(t.totalPaid),
+    toCellValue(t.penaltyDeducted),
+    toCellValue(t.penaltyLines),
+    toCellValue(t.metadata),
   ]);
 
   const wsData = [...summaryRows, headers, ...dataRows];
   const ws = XLSX.utils.aoa_to_sheet(wsData);
 
   const colWidths = [
+    { wch: 24 },
+    { wch: 24 },
+    { wch: 20 },
+    { wch: 20 },
     { wch: 12 },
-    { wch: 10 },
-    { wch: 45 },
+    { wch: 12 },
     { wch: 14 },
-    { wch: 8 },
     { wch: 10 },
+    { wch: 14 },
+    { wch: 45 },
+    { wch: 20 },
+    { wch: 35 },
+    { wch: 18 },
+    { wch: 15 },
+    { wch: 20 },
+    { wch: 20 },
+    { wch: 20 },
+    { wch: 22 },
+    { wch: 22 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 16 },
+    { wch: 40 },
+    { wch: 50 },
   ];
   ws["!cols"] = colWidths;
 

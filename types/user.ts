@@ -136,6 +136,14 @@ export interface UserProfile {
          lastVerifiedAt?: Date;
       };
    };
+   portfolio?: Array<{
+      title: string;
+      description?: string;
+      url?: string;
+      images?: string[];
+      createdAt?: Date;
+      updatedAt?: Date;
+   }>;
    photoURL?: string;
    profilePrivacy?: {
       profileVisibility: "public" | "registered_users" | "connections_only";
