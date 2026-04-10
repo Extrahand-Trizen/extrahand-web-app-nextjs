@@ -59,6 +59,9 @@ COPY . .
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV TMPDIR=/tmp
+
+RUN mkdir -p /tmp && chmod 1777 /tmp
 
 RUN npm run build
 

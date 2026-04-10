@@ -32,8 +32,8 @@ messaging.onBackgroundMessage((payload) => {
   const notificationTitle = payload.notification?.title || 'ExtraHand Notification';
   const notificationOptions = {
     body: payload.notification?.body || 'You have a new notification',
-    icon: '/logo.png',
-    badge: '/logo.png',
+    icon: '/logo.webp',
+    badge: '/logo.webp',
     tag: payload.data?.type || 'general',
     data: {
       url: payload.data?.actionUrl || payload.data?.url || payload.data?.taskUrl || '/',

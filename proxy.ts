@@ -1,5 +1,5 @@
 /**
- * Next.js Middleware for route protection
+ * Next.js Proxy for route protection
  */
 
 import { NextResponse } from "next/server";
@@ -101,7 +101,7 @@ function checkAuthenticated(req: NextRequest): boolean {
    );
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
    const { pathname } = request.nextUrl;
 
    const authenticated = checkAuthenticated(request);
