@@ -27,6 +27,7 @@ const TASK_CATEGORY_LABELS: Record<string, string> = {
    "driver-chauffeur": "Driver / Chauffeur",
    "cooking-home-chef": "Cooking / Home Chef",
    "laundry-ironing": "Laundry / Ironing",
+   "senior-care-elder-care": "Senior Care / Elder Care",
    other: "Other",
 };
 
