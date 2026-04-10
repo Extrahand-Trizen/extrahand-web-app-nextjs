@@ -22,6 +22,7 @@ import { UserProfile } from "@/types/user";
 import { api } from "@/lib/api";
 import { isValidImageType, isValidFileSize } from "@/lib/utils/sanitization";
 import { postTaskCategories } from "@/lib/data/categories";
+import { PROFESSION_OPTIONS } from "@/lib/data/professions";
 
 interface ProfileEditFormProps {
    user: UserProfile;
@@ -143,7 +144,7 @@ export function ProfileEditForm({
    }, [user.skills?.list]);
    const allProfessions = useMemo(
       () =>
-         Array.from(new Set(postTaskCategories.map((item) => item.label))).sort(
+         Array.from(new Set(PROFESSION_OPTIONS)).sort(
             (a, b) => a.localeCompare(b)
          ),
       []
@@ -551,7 +552,7 @@ export function ProfileEditForm({
                   </div>
                )}
                <p className="text-[10px] sm:text-xs text-gray-500 mt-1">
-                  Add one profession that best describes what you do.
+                  Pick a profession suggestion or type your own custom profession.
                </p>
             </div>
 
