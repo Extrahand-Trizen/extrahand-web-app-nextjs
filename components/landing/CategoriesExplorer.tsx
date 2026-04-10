@@ -42,7 +42,7 @@ const curatedCategories: Category[] = [
    {
       title: "Home Cleaning",
       description: "Book trusted cleaners for regular, deep, or move-in cleaning.",
-      image: "/assets/mobilescreens/cleaning.png",
+      image: "/assets/mobilescreens/cleaning.webp",
       color: colorPalette[0],
          slug: "cleaning-services",
       subcategories: [
@@ -54,7 +54,7 @@ const curatedCategories: Category[] = [
    {
       title: "Packers & Movers",
       description: "Get help with house shifting, loading, unloading, and packing.",
-      image: "/assets/mobilescreens/moving.png",
+      image: "/assets/mobilescreens/moving.webp",
       color: colorPalette[1],
       slug: "packers-movers",
       subcategories: [
@@ -66,7 +66,7 @@ const curatedCategories: Category[] = [
    {
       title: "Delivery & Pickup",
       description: "Same-day local pickup and drop for parcels, groceries, and items.",
-      image: "/assets/mobilescreens/delivery.png",
+      image: "/assets/mobilescreens/delivery.webp",
       color: colorPalette[2],
          slug: "delivery-services",
       subcategories: [
@@ -90,7 +90,7 @@ const curatedCategories: Category[] = [
    {
       title: "Electrical",
       description: "Electricians for wiring, switch boards, fittings, and fault fixes.",
-      image: "/assets/mobilescreens/electrical.png",
+      image: "/assets/mobilescreens/electrical.webp",
       color: colorPalette[4],
          slug: "electricians-services",
       subcategories: [
@@ -102,7 +102,7 @@ const curatedCategories: Category[] = [
    {
       title: "Plumbing",
       description: "Resolve leaks, clogs, pipe issues, and bathroom fitting jobs.",
-      image: "/assets/mobilescreens/plumbing.png",
+      image: "/assets/mobilescreens/plumbing.webp",
       color: colorPalette[5],
          slug: "plumbing-services",
       subcategories: [
@@ -114,7 +114,7 @@ const curatedCategories: Category[] = [
    {
       title: "Appliance Repair",
       description: "Repair and service support for fridge, washing machine, and more.",
-      image: "/assets/mobilescreens/handy.png",
+      image: "/assets/mobilescreens/handy.webp",
       color: colorPalette[6],
       slug: "appliance-repair",
       subcategories: [
@@ -126,7 +126,7 @@ const curatedCategories: Category[] = [
    {
       title: "Handyman",
       description: "Quick home fixes, fittings, and odd jobs handled efficiently.",
-      image: "/assets/mobilescreens/work.png",
+      image: "/assets/mobilescreens/work.webp",
       color: colorPalette[7],
       slug: "handyperson-general-repairs",
       subcategories: [
@@ -150,7 +150,7 @@ const curatedCategories: Category[] = [
    {
       title: "Pest Control",
       description: "Safe and reliable pest control solutions for home and office.",
-      image: "/assets/mobilescreens/garden.png",
+      image: "/assets/mobilescreens/garden.webp",
       color: colorPalette[9],
       slug: "pest-control",
       subcategories: [

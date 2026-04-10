@@ -10,7 +10,7 @@ export const size = {
 export const contentType = "image/png";
 
 export default async function OpenGraphImage() {
-  const logoUrl = new URL("../public/logo.png", import.meta.url);
+  const logoUrl = new URL("../public/logo.webp", import.meta.url);
 
   const logoArrayBuffer = await fetch(logoUrl).then((res) => res.arrayBuffer());
   const logoBase64 = arrayBufferToBase64(logoArrayBuffer);

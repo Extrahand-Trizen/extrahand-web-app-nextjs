@@ -50,7 +50,7 @@ export const cities: Record<string, CityInfo> = {
          "Santacruz",
          "Kurla",
       ],
-      heroImage: "/assets/cities/mumbai.png",
+      heroImage: "/assets/cities/mumbai.webp",
       coordinates: {
          lat: 19.076,
          lng: 72.8777,
@@ -84,7 +84,7 @@ export const cities: Record<string, CityInfo> = {
          "Janakpuri",
          "Mayur Vihar",
       ],
-      heroImage: "/assets/cities/delhi.png",
+      heroImage: "/assets/cities/delhi.webp",
       coordinates: {
          lat: 28.7041,
          lng: 77.1025,
@@ -118,7 +118,7 @@ export const cities: Record<string, CityInfo> = {
          "JP Nagar",
          "Yelahanka",
       ],
-      heroImage: "/assets/cities/bangalore.png",
+      heroImage: "/assets/cities/bangalore.webp",
       coordinates: {
          lat: 12.9716,
          lng: 77.5946,
@@ -152,7 +152,7 @@ export const cities: Record<string, CityInfo> = {
          "Jadavpur",
          "Alipore",
       ],
-      heroImage: "/assets/cities/kolkata.png",
+      heroImage: "/assets/cities/kolkata.webp",
       coordinates: {
          lat: 22.5726,
          lng: 88.3639,
@@ -186,7 +186,7 @@ export const cities: Record<string, CityInfo> = {
          "Ambattur",
          "Chromepet",
       ],
-      heroImage: "/assets/cities/chennai.png",
+      heroImage: "/assets/cities/chennai.webp",
       coordinates: {
          lat: 13.0827,
          lng: 80.2707,
@@ -220,7 +220,7 @@ export const cities: Record<string, CityInfo> = {
          "Miyapur",
          "Uppal",
       ],
-      heroImage: "/assets/cities/hyderabad.png",
+      heroImage: "/assets/cities/hyderabad.webp",
       coordinates: {
          lat: 17.385,
          lng: 78.4867,
@@ -254,7 +254,7 @@ export const cities: Record<string, CityInfo> = {
          "Magarpatta",
          "Kharadi",
       ],
-      heroImage: "/assets/cities/pune.png",
+      heroImage: "/assets/cities/pune.webp",
       coordinates: {
          lat: 18.5204,
          lng: 73.8567,
@@ -288,7 +288,7 @@ export const cities: Record<string, CityInfo> = {
          "Thaltej",
          "Prahlad Nagar",
       ],
-      heroImage: "/assets/cities/ahmedabad.png",
+      heroImage: "/assets/cities/ahmedabad.webp",
       coordinates: {
          lat: 23.0225,
          lng: 72.5714,

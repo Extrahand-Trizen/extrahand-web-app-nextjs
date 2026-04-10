@@ -22,7 +22,7 @@ export function CityHero({ city }: CityHeroProps) {
                className="absolute opacity-70 inset-0 bg-cover bg-center"
                style={{
                   backgroundImage: `url('${
-                     city.heroImage || "/assets/images/cities/default.jpg"
+                     city.heroImage || "/assets/images/cities/default.webp"
                   }')`,
                }}
             />

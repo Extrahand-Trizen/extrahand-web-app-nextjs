@@ -234,7 +234,7 @@ export const LandingHeader: React.FC = () => {
                   {/* Logo */}
                   <Link href="/" className="flex items-center gap-2 shrink-0">
                      <Image
-                        src="/assets/images/logo.png"
+                        src="/assets/images/logo.webp"
                         alt="ExtraHand"
                         width={32}
                         height={32}

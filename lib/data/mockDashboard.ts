@@ -22,7 +22,7 @@ export const mockUser = {
    name: "Rahul Sharma",
    email: "rahul.sharma@email.com",
    phone: "+91 98765 43210",
-   photoURL: "/assets/images/avatar.png",
+   photoURL: "/assets/images/avatar.webp",
    isPhoneVerified: true,
    isEmailVerified: false,
    isAadhaarVerified: false,

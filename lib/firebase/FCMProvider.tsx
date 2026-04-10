@@ -163,8 +163,8 @@ export const FCMProvider: React.FC<FCMProviderProps> = ({ children }) => {
       if (document.hidden) {
         const browserNotification = new Notification(notification.title, {
           body: notification.body,
-          icon: '/logo.png',
-          badge: '/logo.png',
+          icon: '/logo.webp',
+          badge: '/logo.webp',
           tag: notification.type || 'general',
         });
 

@@ -9,10 +9,10 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import Image from "next/image";
 
 const heroImages = [
-   "/assets/images/hero-bg1.png",
-   "/assets/images/hero-bg2.png",
-   "/assets/images/hero-bg3.png",
-   "/assets/images/hero-bg4.png",
+   "/assets/images/hero-bg1.webp",
+   "/assets/images/hero-bg2.webp",
+   "/assets/images/hero-bg3.webp",
+   "/assets/images/hero-bg4.webp",
 ];
 
 interface LocationSuggestion {

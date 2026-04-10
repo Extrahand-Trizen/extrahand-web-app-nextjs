@@ -15,7 +15,7 @@ export default async function ProfileOpenGraphImage({ params }: PageProps) {
   const { id } = await params;
   const safeHandle = (id || "").trim();
 
-  const logoUrl = new URL("../../../../public/logo.png", import.meta.url);
+  const logoUrl = new URL("../../../../public/logo.webp", import.meta.url);
   const logoArrayBuffer = await fetch(logoUrl).then((res) => res.arrayBuffer());
   const logoDataUrl = `data:image/png;base64,${arrayBufferToBase64(logoArrayBuffer)}`;
 

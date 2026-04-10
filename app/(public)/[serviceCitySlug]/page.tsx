@@ -48,7 +48,7 @@ function toAreaSlug(area: string) {
 
 const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
    "electrician-in-hyderabad": {
-      imagePath: "/assets/mobilescreens/electrical.png",
+      imagePath: "/assets/mobilescreens/electrical.webp",
       overview: "From minor fixture replacements to load-balancing checks, Hyderabad households and offices use this service for safe, standards-driven electrical work with clear issue diagnosis before repair.",
       bestFor: "Homes facing repeated power trips, old switchboard issues, or new appliance wiring needs.",
       serviceDeepDive: "Electrical service quality depends on safe diagnosis, correct load handling, and durable component selection. For Hyderabad homes, this often includes balancing modern appliance usage with older wiring points in apartments and independent houses.",
@@ -60,7 +60,7 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
       },
    },
    "plumber-in-hyderabad": {
-      imagePath: "/assets/mobilescreens/plumbing.png",
+      imagePath: "/assets/mobilescreens/plumbing.webp",
       overview: "Plumbing support covers kitchens, bathrooms, utility lines, and pressure concerns with practical solutions that prevent recurring leaks and avoid unnecessary wall or floor damage.",
       bestFor: "Leakage complaints, blocked drains, low pressure lines, and fitting replacements.",
       serviceDeepDive: "Plumbing outcomes improve when root-cause diagnosis is done before repair, especially for hidden leakage and pressure imbalance. Good service combines immediate fixes with preventive recommendations to reduce future water damage.",
@@ -72,7 +72,7 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
       },
    },
    "ac-repair-in-hyderabad": {
-      imagePath: "/assets/mobilescreens/tech.png",
+      imagePath: "/assets/mobilescreens/tech.webp",
       overview: "AC service requests in Hyderabad often need cooling restoration, airflow optimization, and preventive checks to reduce electricity waste during peak summer usage.",
       bestFor: "Split or window AC units with cooling drops, leakage, noise, or recurring shutdowns.",
       serviceDeepDive: "AC reliability in Hyderabad weather depends on airflow efficiency, cooling balance, and regular preventive servicing. A detailed inspection helps identify whether issues are due to filters, airflow blockages, or deeper component faults.",
@@ -84,7 +84,7 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
       },
    },
    "washing-machine-repair-in-hyderabad": {
-      imagePath: "/assets/mobilescreens/work.png",
+      imagePath: "/assets/mobilescreens/work.webp",
       overview: "This service focuses on spin, drum, water inlet, and drainage issues so daily laundry cycles are restored with minimal downtime and clear part-level diagnosis.",
       bestFor: "Machines that stop mid-cycle, do not drain, or show vibration and noise spikes.",
       serviceDeepDive: "Washing machine performance is best restored through complete cycle-based testing, not single-point checks. This includes load balance, water flow, drum behavior, and control response across wash and spin modes.",
@@ -96,7 +96,7 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
       },
    },
    "refrigerator-repair-in-hyderabad": {
-      imagePath: "/assets/mobilescreens/tech.png",
+      imagePath: "/assets/mobilescreens/tech.webp",
       overview: "Refrigerator support is tailored to preserve cooling consistency and food safety by addressing compressor behavior, thermostat mismatch, and seal-related losses.",
       bestFor: "Fridges with cooling inconsistency, unusual sounds, leakage, or frequent restart cycles.",
       serviceDeepDive: "Refrigerator service quality depends on cooling stability across both compartments and proper sealing efficiency. Detailed diagnosis prevents food spoilage by resolving intermittent faults before they become major failures.",
@@ -108,7 +108,7 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
       },
    },
    "tv-repair-in-hyderabad": {
-      imagePath: "/assets/mosted-booked-services/tv-mounting.png",
+      imagePath: "/assets/mosted-booked-services/tv-mounting.webp",
       overview: "TV repair assistance handles display, audio, power, and connectivity problems across popular LED and smart TV models used in Hyderabad homes.",
       bestFor: "Blank screens, boot loops, audio failure, HDMI/port issues, and power faults.",
       serviceDeepDive: "TV service works best with symptom-based diagnosis across screen, board, and connectivity layers. Accurate issue mapping reduces repeat visits and helps restore consistent viewing quality.",
@@ -120,7 +120,7 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
       },
    },
    "microwave-repair-in-hyderabad": {
-      imagePath: "/assets/mobilescreens/tech.png",
+      imagePath: "/assets/mobilescreens/tech.webp",
       overview: "Microwave repair prioritizes safe operation, stable heating output, and reliable controls so routine cooking is not disrupted by unpredictable appliance behavior.",
       bestFor: "Microwaves with heating failure, keypad errors, turntable issues, or safety concerns.",
       serviceDeepDive: "Microwave repair requires both safety and performance validation. A complete check ensures heating consistency, control reliability, and operational safety before normal kitchen use resumes.",
@@ -132,7 +132,7 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
       },
    },
    "geyser-repair-in-hyderabad": {
-      imagePath: "/assets/mobilescreens/electrical.png",
+      imagePath: "/assets/mobilescreens/electrical.webp",
       overview: "Geyser service helps restore safe hot-water output through element testing, thermostat checks, and leakage control, especially in high-usage family homes.",
       bestFor: "Units not heating water properly, leaking, or causing frequent electrical trips.",
       serviceDeepDive: "Geyser reliability depends on heating element health, thermostat response, and pressure control. Structured servicing prevents sudden failures and improves daily hot-water consistency.",
@@ -144,7 +144,7 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
       },
    },
    "ro-water-purifier-repair-in-hyderabad": {
-      imagePath: "/assets/mobilescreens/plumbing.png",
+      imagePath: "/assets/mobilescreens/plumbing.webp",
       overview: "RO purifier support is designed for Hyderabad water conditions, covering flow correction, leakage repairs, and consumable health checks for reliable drinking water.",
       bestFor: "Low-flow systems, leakage, filter warnings, and quality or taste complaints.",
       serviceDeepDive: "RO performance is closely linked to feed-water conditions, membrane health, and timely consumable replacement. Proper diagnostics help maintain safe water quality and steady output.",
@@ -156,7 +156,7 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
       },
    },
    "carpenter-in-hyderabad": {
-      imagePath: "/assets/mobilescreens/handy.png",
+      imagePath: "/assets/mobilescreens/handy.webp",
       overview: "Carpentry work covers functional repairs and utility upgrades, from cabinet alignment to furniture assembly and practical woodwork improvements.",
       bestFor: "Loose fittings, damaged furniture joints, shelf installations, and door alignment problems.",
       serviceDeepDive: "Good carpentry service combines structural repair with finish quality. Whether the need is maintenance or installation, precise measurements and stable fitting are key to long-lasting results.",
@@ -168,7 +168,7 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
       },
    },
    "home-cleaning-in-hyderabad": {
-      imagePath: "/assets/mobilescreens/cleaning.png",
+      imagePath: "/assets/mobilescreens/cleaning.webp",
       overview: "Full-home cleaning emphasizes deep hygiene, dust reduction, and surface care for apartments and villas preparing for occupancy, events, or routine maintenance.",
       bestFor: "Seasonal deep cleaning, move-in readiness, and complete post-renovation cleanup.",
       serviceDeepDive: "Home cleaning quality improves with area-wise planning and material-safe methods. Deep cleaning helps remove hidden dust and accumulated grime from high-use zones and difficult corners.",
@@ -180,7 +180,7 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
       },
    },
    "sofa-cleaning-in-hyderabad": {
-      imagePath: "/assets/mosted-booked-services/homeclean.png",
+      imagePath: "/assets/mosted-booked-services/homeclean.webp",
       overview: "Sofa cleaning improves upholstery hygiene through targeted stain treatment, odor control, and fabric-safe methods that preserve comfort and finish.",
       bestFor: "Homes with visible stains, pet odor, heavy usage marks, and periodic hygiene cleaning needs.",
       serviceDeepDive: "Sofa cleaning effectiveness depends on upholstery type, stain profile, and cleaning method suitability. Controlled treatment helps refresh fabric look while protecting texture and comfort.",
@@ -192,7 +192,7 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
       },
    },
    "bathroom-cleaning-in-hyderabad": {
-      imagePath: "/assets/mobilescreens/cleaning.png",
+      imagePath: "/assets/mobilescreens/cleaning.webp",
       overview: "Bathroom deep cleaning targets hard-water deposits, scale, and hygiene-sensitive surfaces to improve freshness, look, and day-to-day usability.",
       bestFor: "Bathrooms with scaling, stains, odor, or persistent soap and mineral buildup.",
       serviceDeepDive: "Bathroom cleaning is most effective when descaling and sanitation are done together. This restores hygiene and improves finish quality across tiles, fittings, and moisture-prone areas.",
@@ -204,7 +204,7 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
       },
    },
    "kitchen-cleaning-in-hyderabad": {
-      imagePath: "/assets/mobilescreens/cleaning.png",
+      imagePath: "/assets/mobilescreens/cleaning.webp",
       overview: "Kitchen cleaning focuses on grease-heavy zones, utility surfaces, and frequently touched areas to restore hygiene and improve cooking-space comfort.",
       bestFor: "Homes with grease buildup, frequent cooking residue, and pre-event kitchen cleanup needs.",
       serviceDeepDive: "Kitchen deep cleaning requires targeted degreasing and surface-safe treatment for counters, utility zones, and frequently touched sections. Proper cleaning improves hygiene and supports easier daily maintenance.",
@@ -216,7 +216,7 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
       },
    },
    "pest-control-in-hyderabad": {
-      imagePath: "/assets/images/home.png",
+      imagePath: "/assets/images/home.webp",
       overview: "Pest treatment combines inspection and targeted application to address active infestations and reduce repeat activity in residential and office environments.",
       bestFor: "Recurring cockroach, ant, termite, and mosquito concerns in homes or commercial spaces.",
       serviceDeepDive: "Effective pest control is built on accurate infestation mapping and targeted treatment. When combined with preventive steps, it reduces recurrence and improves indoor hygiene confidence.",
@@ -228,7 +228,7 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
       },
    },
    "painting-services-in-hyderabad": {
-      imagePath: "/assets/mobilescreens/painting.png",
+      imagePath: "/assets/mobilescreens/painting.webp",
       overview: "Painting support includes surface preparation, clean execution, and finish consistency for interior refreshes, exterior touchups, and selective repaint work.",
       bestFor: "Room refreshes, rental handovers, and full-house repainting projects.",
       serviceDeepDive: "Painting quality relies on proper surface preparation and finish planning. Whether for aesthetic upgrades or maintenance, well-executed painting improves appearance and protects wall surfaces for longer.",
@@ -240,7 +240,7 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
       },
    },
    "packers-and-movers-in-hyderabad": {
-      imagePath: "/assets/mobilescreens/moving.png",
+      imagePath: "/assets/mobilescreens/moving.webp",
       overview: "Packers and movers support safe packing, loading logistics, and controlled transport so fragile and high-use household items are shifted with care.",
       bestFor: "Families and individuals planning local moves with complete packing support.",
       serviceDeepDive: "Packers and movers service quality depends on packing discipline, loading order, and handling precision. Proper planning reduces breakage risk and keeps relocation timelines predictable.",
@@ -252,7 +252,7 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
       },
    },
    "house-shifting-in-hyderabad": {
-      imagePath: "/assets/mobilescreens/moving.png",
+      imagePath: "/assets/mobilescreens/moving.webp",
       overview: "House shifting assistance is built for end-to-end residential relocation, including route planning, safe handling, and coordinated unloading.",
       bestFor: "Apartment-to-apartment or villa relocations within Hyderabad.",
       serviceDeepDive: "House shifting outcomes improve when packing, loading, transit, and unloading are coordinated as one workflow. This helps avoid delays and reduces handling risk for high-use household items.",
@@ -264,7 +264,7 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
       },
    },
    "office-relocation-in-hyderabad": {
-      imagePath: "/assets/images/office.png",
+      imagePath: "/assets/images/office.webp",
       overview: "Office relocation services are structured for business continuity, with careful movement of furniture, equipment, and operational essentials.",
       bestFor: "Startups, teams, and businesses planning branch or floor-level office movement.",
       serviceDeepDive: "Office relocation is most effective when workstation movement, equipment handling, and sequencing are planned to minimize operational downtime and maintain business continuity.",
@@ -312,7 +312,7 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
       },
    },
    "deep-cleaning-in-hyderabad": {
-      imagePath: "/assets/mobilescreens/cleaning.png",
+      imagePath: "/assets/mobilescreens/cleaning.webp",
       overview: "Deep cleaning covers high-use rooms and difficult corners for better hygiene and comfort.",
       bestFor: "Homes preparing for festivals, move-ins, or periodic full-space hygiene resets.",
       serviceDeepDive: "Deep cleaning outcomes improve with room-wise planning and targeted treatment of buildup zones.",
@@ -336,7 +336,7 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
       },
    },
    "driver-services-in-hyderabad": {
-      imagePath: "/assets/mobilescreens/delivery.png",
+      imagePath: "/assets/mobilescreens/delivery.webp",
       overview: "Driver services are suited for flexible city travel, office commutes, and daily mobility support.",
       bestFor: "Users needing part-day, full-day, or schedule-based chauffeur assistance.",
       serviceDeepDive: "Reliable driver support depends on clear route planning, time scheduling, and requirement communication before pickup.",
@@ -372,7 +372,7 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
       },
    },
    "furniture-assembly-in-hyderabad": {
-      imagePath: "/assets/mobilescreens/furniture.png",
+      imagePath: "/assets/mobilescreens/furniture.webp",
       overview: "Furniture assembly services focus on stable fitting, alignment, and safe setup at home or office.",
       bestFor: "Flat-pack furniture setup, relocation reassembly, and fixing loose assembled units.",
       serviceDeepDive: "Furniture assembly quality depends on measurement accuracy, component fitting, and hardware tightening for long-term stability.",
@@ -384,7 +384,7 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
       },
    },
    "cctv-installation-in-hyderabad": {
-      imagePath: "/assets/mobilescreens/mounting.png",
+      imagePath: "/assets/mobilescreens/mounting.webp",
       overview: "CCTV setup focuses on practical camera placement, stable wiring, and visibility optimization for homes, stores, and office premises.",
       bestFor: "Properties requiring entrance monitoring, indoor surveillance, and remote-viewing setup.",
       serviceDeepDive: "CCTV effectiveness depends on placement logic, field-of-view planning, and stable connectivity. Proper installation improves usable coverage and helps avoid blind spots.",
@@ -405,7 +405,7 @@ function getServicePageEnhancement(servicePage: HyderabadServicePage): ServicePa
    }
 
    return {
-      imagePath: "/assets/images/default.png",
+      imagePath: "/assets/images/default.webp",
       overview: `${servicePage.serviceName} in Hyderabad is tailored for local needs with quick booking and dependable service support.`,
       bestFor: servicePage.commonNeeds[0] || `Common ${servicePage.serviceName.toLowerCase()} requests in Hyderabad.`,
       serviceDeepDive: `This service focuses on practical diagnosis, quality execution, and clear next steps so users can get reliable outcomes for ${servicePage.serviceName.toLowerCase()} requirements.`,

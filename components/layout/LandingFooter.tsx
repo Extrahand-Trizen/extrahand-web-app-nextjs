@@ -115,7 +115,7 @@ export const LandingFooter: React.FC = () => {
           <div className="max-w-md">
           <Link href="/" className="flex items-center gap-2 mb-4">
               <Image
-                src="/assets/images/logo.png"
+                src="/assets/images/logo.webp"
                 alt="ExtraHand"
                 width={48}
                 height={48}

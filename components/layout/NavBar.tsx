@@ -97,7 +97,7 @@ export const NavBar: React.FC<NavBarProps> = ({
                      className="flex items-center cursor-pointer"
                   >
                      <Image
-                        src="/assets/images/logo.png"
+                        src="/assets/images/logo.webp"
                         alt="Extrahand Logo"
                         width={32}
                         height={32}
@@ -159,7 +159,7 @@ export const NavBar: React.FC<NavBarProps> = ({
                            className="flex items-center cursor-pointer"
                         >
                            <Image
-                              src="/assets/images/logo.png"
+                              src="/assets/images/logo.webp"
                               alt="Extrahand Logo"
                               width={32}
                               height={32}

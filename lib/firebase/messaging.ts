@@ -411,7 +411,7 @@ export const sendTestNotification = (): void => {
   if ('Notification' in window && Notification.permission === 'granted') {
     new Notification('Test Notification', {
       body: 'This is a test notification from ExtraHand',
-      icon: '/logo.png'
+      icon: '/logo.webp'
     });
   } else {
     console.warn('⚠️ Notifications not available or permission denied');

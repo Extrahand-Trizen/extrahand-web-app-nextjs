@@ -54,7 +54,7 @@ export default async function TaskOpenGraphImage({ params }: PageProps) {
   // If user shares /tasks/<id>, we still want the canonical-looking handle rendered on the card.
   const handle = task?._id && task?.title ? buildPublicTaskHandle(task.title, task._id) : null;
 
-  const logoUrl = new URL("../../../../public/logo.png", import.meta.url);
+  const logoUrl = new URL("../../../../public/logo.webp", import.meta.url);
   const logoArrayBuffer = await fetch(logoUrl).then((res) => res.arrayBuffer());
   const logoDataUrl = `data:image/png;base64,${arrayBufferToBase64(logoArrayBuffer)}`;
 

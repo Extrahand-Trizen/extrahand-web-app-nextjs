@@ -17,74 +17,74 @@ const serviceCategories = [
   {
     id: 1,
     title: 'Home Services',
-    image: '/assets/images/home.png',
+    image: '/assets/images/home.webp',
     color: '#f4f4f4',
   },
   {
     id: 2,
     title: 'General Errands & Delivery',
-    image: '/assets/images/delivery.png',
+    image: '/assets/images/delivery.webp',
     color: '#f4f4f4',
   },
   {
     id: 3,
     title: 'Beauty & Personal Care',
-    image: '/assets/images/beauty.png',
+    image: '/assets/images/beauty.webp',
     color: '#f4f4f4',
   },
   {
     id: 4,
     title: 'Installation & Smart Solutions',
-    image: '/assets/images/smart.png',
+    image: '/assets/images/smart.webp',
     color: '#f4f4f4',
   },
   {
     id: 5,
     title: 'Daily Help & Assistants',
-    image: '/assets/images/assist.png',
+    image: '/assets/images/assist.webp',
     color: '#f4f4f4',
   },
   {
     id: 6,
     title: 'Tutoring & Education',
-    image: '/assets/images/tutor.png',
+    image: '/assets/images/tutor.webp',
     color: '#f4f4f4',
   },
   {
     id: 7,
     title: 'Creative & Technical Tasks',
-    image: '/assets/images/creative.png',
+    image: '/assets/images/creative.webp',
     color: '#f4f4f4',
   },
   {
     id: 8,
     title: 'Administrative / Office Tasks',
-    image: '/assets/images/office.png',
+    image: '/assets/images/office.webp',
     color: '#f4f4f4',
   },
   {
     id: 9,
     title: 'Event Support',
-    image: '/assets/images/events.png',
+    image: '/assets/images/events.webp',
     color: '#f4f4f4',
   },
 ];
 
 const bannerImages = [
-  '/assets/images/banner1.png',
-  '/assets/images/banner2.png',
-  '/assets/images/banner3.png',
-  '/assets/images/banner4.png',
-  '/assets/images/banner5.png',
-  '/assets/images/banner6.png',
-  '/assets/images/banner7.png',
+  '/assets/images/banner1.webp',
+  '/assets/images/banner2.webp',
+  '/assets/images/banner3.webp',
+  '/assets/images/banner4.webp',
+  '/assets/images/banner5.webp',
+  '/assets/images/banner6.webp',
+  '/assets/images/banner7.webp',
 ];
 
 const mostBookedServices = [
   {
     id: 1,
     title: 'Parcel Pickup & Delivery',
-    image: '/assets/mosted-booked-services/delivery.png',
+    image: '/assets/mosted-booked-services/delivery.webp',
     rating: '4.76',
     reviews: '98K',
     price: '₹199',
@@ -92,7 +92,7 @@ const mostBookedServices = [
   {
     id: 2,
     title: 'At-Home Haircut (Women)',
-    image: '/assets/mosted-booked-services/homefacial.png',
+    image: '/assets/mosted-booked-services/homefacial.webp',
     rating: '4.88',
     reviews: '132K',
     price: '₹699',
@@ -100,7 +100,7 @@ const mostBookedServices = [
   {
     id: 3,
     title: 'Home Deep Cleaning',
-    image: '/assets/mosted-booked-services/homeclean.png',
+    image: '/assets/mosted-booked-services/homeclean.webp',
     rating: '4.82',
     reviews: '45K',
     price: '₹399',
@@ -108,7 +108,7 @@ const mostBookedServices = [
   {
     id: 4,
     title: 'TV Mounting Service',
-    image: '/assets/mosted-booked-services/tv-mounting.png',
+    image: '/assets/mosted-booked-services/tv-mounting.webp',
     rating: '4.91',
     reviews: '67K',
     price: '₹299',
@@ -116,7 +116,7 @@ const mostBookedServices = [
   {
     id: 5,
     title: 'Online Tuition Classes',
-    image: '/assets/mosted-booked-services/online-tution.png',
+    image: '/assets/mosted-booked-services/online-tution.webp',
     rating: '4.85',
     reviews: '89K',
     price: '₹499',
@@ -124,7 +124,7 @@ const mostBookedServices = [
   {
     id: 6,
     title: 'Logo Design Service',
-    image: '/assets/mosted-booked-services/logo-design.png',
+    image: '/assets/mosted-booked-services/logo-design.webp',
     rating: '4.79',
     reviews: '34K',
     price: '₹899',
@@ -270,7 +270,7 @@ export default function PosterPage() {
               </div>
               <div className="w-[120px] h-[120px] relative">
                 <Image
-                  src="/assets/images/refer.png"
+                  src="/assets/images/refer.webp"
                   alt="Refer"
                   fill
                   className="object-contain"
@@ -407,7 +407,7 @@ export default function PosterPage() {
             </div>
             <div className="w-[140px] h-[140px] relative">
               <Image
-                src="/assets/images/refer.png"
+                src="/assets/images/refer.webp"
                 alt="Refer"
                 fill
                 className="object-contain"

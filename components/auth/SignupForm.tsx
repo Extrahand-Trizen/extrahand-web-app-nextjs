@@ -175,7 +175,7 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
                <div className="hidden lg:block space-y-6">
                   <div className="space-y-3">
                      <Image
-                        src="/assets/images/logo.png"
+                        src="/assets/images/logo.webp"
                         alt="Extrahand"
                         width={40}
                         height={40}
@@ -210,7 +210,7 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
                      {/* Logo */}
                      <div className="flex items-center justify-center mb-2">
                         <Image
-                           src="/assets/images/logo.png"
+                           src="/assets/images/logo.webp"
                            alt="Extrahand"
                            width={55}
                            height={55}
