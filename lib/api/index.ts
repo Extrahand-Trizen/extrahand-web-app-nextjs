@@ -81,6 +81,65 @@ export const api = {
       }
    },
 
+   async uploadTaskImage(file: File, taskId?: string): Promise<string> {
+      // Upload generic images without mutating profile photoURL.
+      const formData = new FormData();
+      formData.append("image", file);
+      if (taskId) {
+         formData.append("taskId", taskId);
+      }
+
+      try {
+         const data = await fetchWithAuth("uploads/task-image", {
+            method: "POST",
+            body: formData,
+         });
+
+         if (data?.success && data?.data?.url) {
+            return data.data.url;
+         }
+         if (data?.url) {
+            return data.url;
+         }
+
+         throw new Error(data?.message || "Failed to upload image");
+      } catch (error) {
+         console.error("Task image upload error:", error);
+         if (error instanceof Error) {
+            throw error;
+         }
+         throw new Error("Failed to upload image");
+      }
+   },
+
+   async uploadCertificateImage(file: File): Promise<string> {
+      // Upload certificate images through dedicated endpoint.
+      const formData = new FormData();
+      formData.append("image", file);
+
+      try {
+         const data = await fetchWithAuth("uploads/certificate", {
+            method: "POST",
+            body: formData,
+         });
+
+         if (data?.success && data?.data?.url) {
+            return data.data.url;
+         }
+         if (data?.url) {
+            return data.url;
+         }
+
+         throw new Error(data?.message || "Failed to upload certificate image");
+      } catch (error) {
+         console.error("Certificate image upload error:", error);
+         if (error instanceof Error) {
+            throw error;
+         }
+         throw new Error("Failed to upload certificate image");
+      }
+   },
+
    // User statistics
    async getUserStats() {
       const [myTasks, myApplications] = await Promise.all([

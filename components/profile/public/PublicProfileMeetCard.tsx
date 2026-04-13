@@ -15,6 +15,15 @@ function isRecentlyJoined(createdAt?: Date | string): boolean {
   return days <= 30;
 }
 
+/** Check if user has verified certificates (both verified and certified flags must be true) */
+function hasVerifiedCertificates(user: UserProfile): boolean {
+  const skills = Array.isArray(user.skills?.list) ? user.skills.list : [];
+  const verifiedSkill = skills.some(
+    (skill) => skill?.verified === true && skill?.certified === true
+  );
+  return verifiedSkill;
+}
+
 export function PublicProfileMeetCard({
   user,
   isAvailable,
@@ -52,7 +61,7 @@ export function PublicProfileMeetCard({
               <h2 className="text-[28px] leading-tight font-semibold text-slate-900 truncate">{user.name}</h2>
             </div>
 
-            {professionLabel ? (
+            {professionLabel && hasVerifiedCertificates(user) ? (
               <div className="mt-1 flex items-center gap-2 flex-wrap">
                 <span className="text-sm font-medium text-slate-700">{professionLabel}</span>
                 <Badge className="shrink-0 border border-emerald-200 bg-emerald-100 text-emerald-800">

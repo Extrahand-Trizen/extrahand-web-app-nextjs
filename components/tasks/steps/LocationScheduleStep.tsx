@@ -102,6 +102,9 @@ export function LocationScheduleStep({
       "pet-services",
       "car-washing",
       "water-tanker-services",
+      "event-services",
+      "senior-care-elder-care",
+      "elderly-services",
    ];
 
    const canUseRecurring = recurringEligibleCategories.includes(category || "");

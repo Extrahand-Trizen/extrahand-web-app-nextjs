@@ -260,13 +260,21 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                                  )}
                               >
                                  {category.subcategories.map((subcategory) => {
+                                    const subcategoryWithCategoryPage = subcategory as typeof subcategory & {
+                                       categoryPageSlug?: string;
+                                    };
                                     let subcategorySlug = subcategory.slug || "";
+                                    const directCategoryPageSlug = (
+                                       subcategoryWithCategoryPage.categoryPageSlug || ""
+                                    ).trim();
+                                    const parentSlugForSubcategory =
+                                       (subcategory.categorySlug || category.slug || "").trim();
 
                                     // If API returns slugs like "category/subcategory",
                                     // strip the duplicated category prefix once so
                                     // URLs don't contain "category/category/subcategory".
-                                    const prefix = `${category.slug}/`;
-                                    if (subcategorySlug.startsWith(prefix)) {
+                                    const prefix = `${parentSlugForSubcategory}/`;
+                                    if (!directCategoryPageSlug && subcategorySlug.startsWith(prefix)) {
                                        subcategorySlug = subcategorySlug.slice(
                                           prefix.length
                                        );
@@ -275,14 +283,22 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                                     const hasSubcategorySlug = Boolean(
                                        subcategorySlug?.trim()
                                     );
-                                    const subcategoryHref =
-                                       viewType === "jobs"
-                                          ? `/task/${category.slug}/${subcategorySlug}`
+                                    const subcategoryHref = directCategoryPageSlug
+                                       ? viewType === "jobs"
+                                          ? `/task/${directCategoryPageSlug}`
                                           : viewType === "services"
-                                          ? `/services/${category.slug}/${subcategorySlug}`
-                                          : `/categories/${category.slug}/${subcategorySlug}`;
+                                          ? `/services/${directCategoryPageSlug}`
+                                          : `/categories/${directCategoryPageSlug}`
+                                       : viewType === "jobs"
+                                       ? `/task/${parentSlugForSubcategory}/${subcategorySlug}`
+                                       : viewType === "services"
+                                       ? `/services/${parentSlugForSubcategory}/${subcategorySlug}`
+                                       : `/categories/${parentSlugForSubcategory}/${subcategorySlug}`;
 
-                                    if (!hasSubcategorySlug || !hasCategorySlug) {
+                                    if (
+                                       (!directCategoryPageSlug && !hasSubcategorySlug) ||
+                                       (!directCategoryPageSlug && !parentSlugForSubcategory)
+                                    ) {
                                        return (
                                           <div
                                              key={subcategory._id || subcategory.slug || subcategory.name}

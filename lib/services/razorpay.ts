@@ -8,34 +8,48 @@ import type { RazorpayOrder, RazorpayPaymentResponse } from '@/types/payment';
 // Razorpay script URL
 const RAZORPAY_SCRIPT_URL = 'https://checkout.razorpay.com/v1/checkout.js';
 
-/** Cached key ID from API (avoids repeated fetches) */
+/** Cached key ID from backend API (avoids repeated fetches) */
 let cachedKeyId: string | null = null;
 
 /**
- * Get Razorpay key ID: fetch from server API first (runtime env), then fall back to build-time NEXT_PUBLIC_.
- * This allows setting RAZORPAY_KEY_ID only on the server without rebuilding the frontend.
+ * Get Razorpay key ID: fetch from backend API via web app endpoint.
+ * The web app endpoint (/api/razorpay-key) acts as a gateway to the backend.
+ * This ensures the key is always fetched from the authoritative backend source.
  */
 async function getRazorpayKeyId(): Promise<string> {
-  if (cachedKeyId) return cachedKeyId;
-  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID) {
-    cachedKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+  // Return cached key if available
+  if (cachedKeyId) {
+    console.log('[getRazorpayKeyId] Returning cached key');
     return cachedKeyId;
   }
+
   try {
-    const res = await fetch('/api/razorpay-key', { cache: 'no-store' });
-    const data = await res.json();
-    if (res.ok && data?.keyId) {
-      cachedKeyId = data.keyId;
-      return cachedKeyId;
+    console.log('[getRazorpayKeyId] Fetching from /api/razorpay-key');
+    const res = await fetch('/api/razorpay-key', { 
+      cache: 'no-store',
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to fetch Razorpay key: ${res.status} ${res.statusText}`);
     }
-  } catch {
-    // Fall through to build-time env or throw
-  }
-  if (process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID) {
-    cachedKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+
+    const data = await res.json();
+    if (!data?.keyId) {
+      throw new Error('No keyId returned from backend');
+    }
+
+    // Cache the key for subsequent requests
+    cachedKeyId = data.keyId;
+    console.log('[getRazorpayKeyId] Successfully fetched and cached key');
     return cachedKeyId;
+  } catch (error) {
+    console.error('[getRazorpayKeyId] Error fetching Razorpay key:', error);
+    throw new Error(`Failed to get Razorpay key: ${error instanceof Error ? error.message : String(error)}`);
   }
-  throw new Error('Razorpay key not configured');
 }
 
 // Declare Razorpay global type
@@ -129,7 +143,7 @@ export async function initiateRazorpayPayment(
       throw new Error('Failed to load Razorpay SDK');
     }
 
-    // Get Razorpay key: from server API (RAZORPAY_KEY_ID) or build-time NEXT_PUBLIC_RAZORPAY_KEY_ID
+    // Get Razorpay key from backend via web app gateway endpoint
     const razorpayKey = await getRazorpayKeyId();
 
     // Prepare Razorpay options

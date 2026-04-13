@@ -58,6 +58,7 @@ interface CertificateEntry {
    issuedBy: string;
    issuedDate: Date;
    documentUrl: string;
+   status?: "pending" | "verified" | "rejected";
    verificationType: VerificationType;
    certificateType: string;
    issuingAuthority: string;
@@ -285,7 +286,11 @@ export default function CertificateVerificationPage() {
 
    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0] || null;
+      // Clear the file input value to prevent any reuse or carrying over
       event.target.value = "";
+      // Also reset the file attribute explicitly
+      (event.target as any).files = null;
+      
       if (!file) return;
 
       if (!isValidImageType(file.type)) {
@@ -334,6 +339,7 @@ export default function CertificateVerificationPage() {
       issuedBy: state.issuingAuthority.trim(),
       issuedDate: new Date(state.issueDate),
       documentUrl,
+      status: "pending",
       verificationType: state.verificationType || "certified",
       certificateType: state.certificateType.trim(),
       issuingAuthority: state.issuingAuthority.trim(),
@@ -356,8 +362,9 @@ export default function CertificateVerificationPage() {
          certificates.push(certificateEntry);
          return {
             ...skill,
-            verified: true,
-            certified: true,
+            // Do NOT set verified:true on upload - only after admin verification in DB
+            // verified: true,
+            // certified: true,
             certificates,
          };
       };
@@ -369,8 +376,9 @@ export default function CertificateVerificationPage() {
       } else {
          nextSkills.push({
             name: professionLabel,
-            verified: true,
-            certified: true,
+            // Do NOT set verified:true on upload - only after admin verification in DB
+            // verified: true,
+            // certified: true,
             certificates: [certificateEntry],
          });
       }
@@ -413,12 +421,15 @@ export default function CertificateVerificationPage() {
       setState((prev) => ({ ...prev, error: undefined, step: "processing" }));
 
       try {
-         const uploadedUrl = await api.uploadImage(state.file as File);
+         const uploadedUrl = await api.uploadCertificateImage(state.file as File);
          const baseProfile = user || userData;
 
          if (!baseProfile) {
             throw new Error("Profile data is unavailable");
          }
+
+         // Preserve the original photoURL before any profile updates
+         const originalPhotoURL = baseProfile.photoURL;
 
          const certificateEntry = buildCertificateEntry(uploadedUrl);
          const updatedSkills = updateSkillsWithCertificate(baseProfile, certificateEntry);
@@ -431,21 +442,36 @@ export default function CertificateVerificationPage() {
          });
 
          const updatedProfile = response.profile || response;
+         
+         // CRITICAL: Always preserve the original photoURL 
+         // The certificate upload should NEVER modify the profile picture
          setUser({
             ...(updatedProfile as UserProfile),
-            photoURL: baseProfile.photoURL,
+            photoURL: originalPhotoURL || (updatedProfile as any)?.photoURL,
          });
+         
          setState((prev) => ({
             ...prev,
             step: "success",
             uploadedUrl,
          }));
 
-         toast.success("Certificate verified successfully", {
-            description: "Your certificate has been uploaded and linked to your profile.",
+         toast.success("Certificate uploaded successfully", {
+            description: "Your certificate is now under review. You'll receive a notification once verified.",
          });
 
+         // Refresh user data but ensure photoURL is preserved
          await refreshUserData();
+         
+         // After refreshUserData, ensure photoURL is still correct
+         const refreshedUser = userData;
+         if (refreshedUser && refreshedUser.photoURL !== originalPhotoURL) {
+            // If backend returned wrong photoURL, correct it in UI
+            setUser((prev) => ({
+               ...prev,
+               photoURL: originalPhotoURL || prev?.photoURL,
+            }));
+         }
       } catch (error: any) {
          const errorMessage = error?.message || "Certificate verification failed";
          setState((prev) => ({
@@ -551,10 +577,23 @@ export default function CertificateVerificationPage() {
 
                {existingCertificate ? (
                   <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
-                     <p className="font-medium text-slate-900">Existing verified certificate</p>
-                     <p className="mt-1 text-slate-600">
-                        {existingCertificate.title || "Professional Certificate"} is already linked to your profile.
-                     </p>
+                     {(() => {
+                        const statusMeta = getCertificateStatusMeta(existingCertificate.status);
+                        return (
+                           <>
+                              <div className="flex items-center gap-2">
+                                 <p className="font-medium text-slate-900">Existing certificate</p>
+                                 <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium", statusMeta.className)}>
+                                    {statusMeta.label}
+                                 </span>
+                              </div>
+                              <p className="mt-1 text-slate-600">
+                                 {existingCertificate.title || "Professional Certificate"} is already linked to your profile.
+                              </p>
+                              <p className="mt-1 text-xs text-slate-500">{statusMeta.subtitle}</p>
+                           </>
+                        );
+                     })()}
                   </div>
                ) : null}
 
@@ -898,10 +937,22 @@ export default function CertificateVerificationPage() {
          </div>
 
          <div className="space-y-2">
-            <h2 className="text-xl font-bold text-slate-900">Certificate verified</h2>
+            <h2 className="text-xl font-bold text-slate-900">Certificate uploaded successfully</h2>
             <p className="text-slate-600">
                Your {state.verificationType === "certified" ? "certified" : "licensed"} certificate has been saved and linked to {professionLabel} on your profile.
             </p>
+         </div>
+
+         <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 space-y-2">
+            <div className="flex items-start gap-3">
+               <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+               <div className="text-sm">
+                  <p className="font-semibold text-amber-900 mb-1">Under review</p>
+                  <p className="text-amber-800">
+                     Your certificate is now under review by our team. Once verified, you'll see the Professional badge on your profile and in public verifications.
+                  </p>
+               </div>
+            </div>
          </div>
 
          <div className="rounded-2xl bg-slate-50 p-4 text-left space-y-2">
@@ -915,8 +966,8 @@ export default function CertificateVerificationPage() {
                   </div>
                ))}
             </div>
-            <p className="pt-2 text-sm text-slate-600">
-               Public verifications will now show this certificate as verified.
+            <p className="pt-2 text-xs text-slate-500">
+               Once verified by our team, this certificate will display publicly.
             </p>
             {state.uploadedUrl ? (
                <a
@@ -1046,4 +1097,28 @@ export default function CertificateVerificationPage() {
          ) : null}
       </div>
    );
+}
+
+function getCertificateStatusMeta(status?: "pending" | "verified" | "rejected") {
+   if (status === "verified") {
+      return {
+         label: "Verified",
+         className: "bg-emerald-100 text-emerald-800",
+         subtitle: "This certificate is already verified on your profile.",
+      };
+   }
+
+   if (status === "rejected") {
+      return {
+         label: "Rejected",
+         className: "bg-red-100 text-red-800",
+         subtitle: "This certificate was rejected. Please upload a new document.",
+      };
+   }
+
+   return {
+      label: "Under Review",
+      className: "bg-amber-100 text-amber-800",
+      subtitle: "This certificate is under review.",
+   };
 }

@@ -49,6 +49,7 @@ export interface UserProfile {
             certificateNumber?: string;
             issueDate?: Date;
             expiryDate?: Date;
+            status?: "pending" | "verified" | "rejected";
          }>;
          verified?: boolean;
       }>;

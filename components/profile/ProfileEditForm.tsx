@@ -455,7 +455,11 @@ export function ProfileEditForm({
 
    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
+      // Clear the file input value immediately to prevent any carry-over
+      // This is especially important to prevent mixing with other file uploads (e.g., certificate verification)
       e.target.value = "";
+      (e.target as any).files = null;
+      
       if (!file) return;
 
       if (!isValidImageType(file.type)) {
@@ -481,7 +485,10 @@ export function ProfileEditForm({
 
    const handlePortfolioImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(e.target.files || []);
+      // Clear file input immediately to prevent carry-over to other uploads
       e.target.value = "";
+      (e.target as any).files = null;
+      
       if (files.length === 0) return;
 
       const validFiles: File[] = [];

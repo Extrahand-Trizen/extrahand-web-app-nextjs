@@ -34,7 +34,7 @@ export function PublicProfileSkills({ user }: { user: UserProfile }) {
       }
       return null;
     })
-    .filter((skill): skill is { name: string; verified?: boolean; yearsOfExperience?: number } => {
+    .filter((skill): skill is { name: string; verified?: boolean; certified?: boolean; yearsOfExperience?: number } => {
       return Boolean(skill?.name && skill.name.trim().length > 0);
     });
   if (skills.length === 0) return null;
@@ -53,7 +53,7 @@ export function PublicProfileSkills({ user }: { user: UserProfile }) {
               className="bg-gray-100 text-sm text-gray-700 hover:bg-gray-200"
             >
               {skill.name}
-              {skill.verified && <CheckCircle2 className="w-3 h-3 ml-1.5 text-green-500" />}
+              {skill.verified === true && skill.certified === true && <CheckCircle2 className="w-3 h-3 ml-1.5 text-green-500" />}
               {skill.yearsOfExperience ? (
                 <span className="ml-1.5 text-xs text-gray-500">• {skill.yearsOfExperience}y</span>
               ) : null}

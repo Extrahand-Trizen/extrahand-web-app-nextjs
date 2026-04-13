@@ -19,6 +19,7 @@ interface VerificationItem {
   description: string;
   route: string;
   isVerified: boolean;
+  statusTag?: "pending" | "rejected";
   verifiedAt?: Date;
   required?: boolean;
   businessOnly?: boolean;
@@ -116,6 +117,7 @@ function formatVerificationDate(date?: Date | string): string | null {
 function getCertificateVerificationMeta(user: UserProfile): {
   isVerified: boolean;
   description: string;
+  statusTag?: "pending" | "rejected";
   verifiedAt?: Date;
 } {
   const skills = Array.isArray(user.skills?.list) ? user.skills.list : [];
@@ -125,8 +127,21 @@ function getCertificateVerificationMeta(user: UserProfile): {
     return certs.filter((cert) => Boolean(cert?.documentUrl));
   });
 
+  const pendingCertificates = certificateItems.filter((cert) => {
+    const status = cert?.status;
+    // Backward compatibility: legacy certificates without status are treated as pending.
+    return !status || status === "pending";
+  });
+
+  const rejectedCertificates = certificateItems.filter(
+    (cert) => cert?.status === "rejected"
+  );
+
+  // Only consider verified if skill has BOTH:
+  // 1. Certificates uploaded (documentUrl exists)
+  // 2. verified:true flag set in database (by admin/backend verification)
   const hasVerifiedSkill = skills.some(
-    (skill) => skill?.verified === true || skill?.certified === true
+    (skill) => skill?.verified === true && skill?.certified === true
   );
 
   const isVerified = certificateItems.length > 0 && hasVerifiedSkill;
@@ -141,6 +156,22 @@ function getCertificateVerificationMeta(user: UserProfile): {
   }, undefined);
 
   if (!isVerified) {
+    if (pendingCertificates.length > 0) {
+      return {
+        isVerified: false,
+        description: "Certificate under review",
+        statusTag: "pending",
+      };
+    }
+
+    if (rejectedCertificates.length > 0) {
+      return {
+        isVerified: false,
+        description: "Certificate rejected. Re-upload required",
+        statusTag: "rejected",
+      };
+    }
+    
     return {
       isVerified: false,
       description: "Upload your professional certificate",
@@ -164,6 +195,7 @@ function createVerificationItem({
   id,
   title,
   isVerified,
+  statusTag,
   verifiedAt,
   verifiedText,
   defaultText,
@@ -176,6 +208,7 @@ function createVerificationItem({
   id: string;
   title: string;
   isVerified?: boolean;
+  statusTag?: "pending" | "rejected";
   verifiedAt?: Date;
   verifiedText?: string;
   defaultText: string;
@@ -193,6 +226,7 @@ function createVerificationItem({
     description: verified ? (verifiedText ?? "Verified") : defaultText,
     route,
     isVerified: verified,
+    statusTag,
     verifiedAt,
     required,
     ...(businessOnly !== undefined && { businessOnly }),
@@ -275,6 +309,7 @@ export function VerificationSection({ user }: VerificationSectionProps) {
       id: "certificate",
       title: "Certificates",
       isVerified: certificateMeta.isVerified,
+      statusTag: certificateMeta.statusTag,
       verifiedAt: certificateMeta.verifiedAt,
       verifiedText: certificateMeta.description,
       defaultText: "Upload your professional certificate",
@@ -368,6 +403,12 @@ export function VerificationSection({ user }: VerificationSectionProps) {
     if (item.isVerified) {
       return <CheckCircle className="w-5 h-5 text-green-600" />;
     }
+    if (item.statusTag === "rejected") {
+      return <AlertCircle className="w-5 h-5 text-red-600" />;
+    }
+    if (item.statusTag === "pending") {
+      return <AlertCircle className="w-5 h-5 text-amber-600" />;
+    }
     if (item.comingSoon) {
       return <Shield className="w-5 h-5 text-gray-400" />;
     }
@@ -382,6 +423,20 @@ export function VerificationSection({ user }: VerificationSectionProps) {
       return (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
           Verified
+        </span>
+      );
+    }
+    if (item.statusTag === "pending") {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+          Under Review
+        </span>
+      );
+    }
+    if (item.statusTag === "rejected") {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+          Rejected
         </span>
       );
     }
