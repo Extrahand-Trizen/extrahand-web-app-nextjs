@@ -16,6 +16,7 @@ import {
    ChevronDown,
    ChevronUp,
    Info,
+   AlertTriangle,
 } from "lucide-react";
 import {
    PrivacySettingsState,
@@ -23,6 +24,7 @@ import {
    DEFAULT_PRIVACY_SETTINGS,
 } from "@/types/consent";
 import { toast } from "sonner";
+import { privacyApi } from "@/lib/api/endpoints/privacy";
 
 interface PrivacySectionProps {
    settings?: PrivacySettingsState;
@@ -63,9 +65,39 @@ export function PrivacySection({
       useState<PrivacySettingsState>(settings);
    const [isSaving, setIsSaving] = useState(false);
    const [hasChanges, setHasChanges] = useState(false);
+   const [isDeleting, setIsDeleting] = useState(false);
+   const [isCancellingDeletion, setIsCancellingDeletion] = useState(false);
+   const [deletionRequested, setDeletionRequested] = useState(false);
+   const [deletionScheduledFor, setDeletionScheduledFor] = useState<string | null>(null);
    const [expandedSections, setExpandedSections] = useState<string[]>([
       "visibility",
    ]);
+
+   useEffect(() => {
+      let isMounted = true;
+
+      const loadDeletionStatus = async () => {
+         try {
+            const result = await privacyApi.getDashboard();
+            const deletionStatus = (result as any)?.dashboard?.deletionStatus;
+
+            if (!isMounted || !deletionStatus) {
+               return;
+            }
+
+            setDeletionRequested(Boolean(deletionStatus.requested));
+            setDeletionScheduledFor(deletionStatus.scheduledFor || null);
+         } catch {
+            // Non-blocking: privacy settings should render even if status fetch fails.
+         }
+      };
+
+      void loadDeletionStatus();
+
+      return () => {
+         isMounted = false;
+      };
+   }, []);
 
    useEffect(() => {
       setLocalSettings(settings);
@@ -107,6 +139,50 @@ export function PrivacySection({
          console.error("Failed to save privacy settings:", error);
       } finally {
          setIsSaving(false);
+      }
+   };
+
+   const handleDeleteAccount = async () => {
+      const reason = window.prompt(
+         "Optional: Tell us why you are deleting your account (you can leave this blank)."
+      );
+
+      const confirmed = window.confirm(
+         "Delete account request will be scheduled with a 24-48 hour window. You can cancel during this window. Continue?"
+      );
+
+      if (!confirmed) {
+         return;
+      }
+
+      setIsDeleting(true);
+      try {
+         const response = await privacyApi.requestDeletion(true, reason || undefined);
+         setDeletionRequested(true);
+         setDeletionScheduledFor(
+            response?.deletionScheduledFor
+               ? new Date(response.deletionScheduledFor as unknown as string).toISOString()
+               : null
+         );
+         toast.success("Account deletion requested. You can cancel until the scheduled time.");
+      } catch (error: any) {
+         toast.error(error?.message || "Failed to request account deletion");
+      } finally {
+         setIsDeleting(false);
+      }
+   };
+
+   const handleCancelDeletion = async () => {
+      setIsCancellingDeletion(true);
+      try {
+         await privacyApi.cancelDeletion();
+         setDeletionRequested(false);
+         setDeletionScheduledFor(null);
+         toast.success("Account deletion request cancelled");
+      } catch (error: any) {
+         toast.error(error?.message || "Failed to cancel deletion request");
+      } finally {
+         setIsCancellingDeletion(false);
       }
    };
 
@@ -216,9 +292,61 @@ export function PrivacySection({
             icon={<Shield className="w-4 h-4 sm:w-5 sm:h-5" />}
             isExpanded={expandedSections.includes("advanced")}
             onToggle={() => toggleSection("advanced")}
-            badge="Coming Soon"
+            badge="Account Controls"
          >
-            <ComingSoonNotice description="Data export and account management controls are under development and will be available soon." />
+            <div className="space-y-3">
+               <div className="rounded-lg border border-red-200 bg-red-50 p-3">
+                  <p className="text-sm font-medium text-red-900 flex items-center gap-2">
+                     <AlertTriangle className="w-4 h-4" />
+                     Delete Account
+                  </p>
+                  <p className="text-xs text-red-800 mt-1">
+                     Account deletion removes personal profile data and anonymizes your name. Legal and transaction records are retained for compliance.
+                  </p>
+               </div>
+
+               {deletionRequested ? (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-3">
+                     <p className="text-xs font-medium text-amber-900">Deletion is scheduled</p>
+                     <p className="text-xs text-amber-800">
+                        Scheduled for: {deletionScheduledFor ? new Date(deletionScheduledFor).toLocaleString() : "Not available"}
+                     </p>
+                     <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleCancelDeletion}
+                        disabled={isCancellingDeletion}
+                        className="w-full sm:w-auto"
+                     >
+                        {isCancellingDeletion ? (
+                           <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Cancelling...
+                           </>
+                        ) : (
+                           "Cancel Deletion Request"
+                        )}
+                     </Button>
+                  </div>
+               ) : (
+                  <Button
+                     type="button"
+                     variant="destructive"
+                     onClick={handleDeleteAccount}
+                     disabled={isDeleting}
+                     className="w-full sm:w-auto"
+                  >
+                     {isDeleting ? (
+                        <>
+                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                           Requesting...
+                        </>
+                     ) : (
+                        "Request Account Deletion"
+                     )}
+                  </Button>
+               )}
+            </div>
          </CollapsibleSection>
 
          {/* Info Box */}

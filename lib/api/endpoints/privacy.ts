@@ -123,6 +123,7 @@ export const privacyApi = {
   /**
    * Cancel account deletion request
    * POST /api/v1/privacy/cancel-deletion
+    * Works only until scheduled deletion time (24-48 hour window)
    */
   async cancelDeletion(): Promise<{
     success: boolean;

@@ -28,11 +28,11 @@ export default function DeleteAccountPage() {
             
             {/* Warning Alert */}
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex gap-3">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-red-900 mb-1">This action cannot be undone</h3>
                 <p className="text-red-800 text-sm">
-                  Deleting your account will permanently remove all your data from ExtraHand.
+                  Deletion is processed after a 24-48 hour grace period, during which you can cancel the request.
                 </p>
               </div>
             </div>
@@ -43,19 +43,15 @@ export default function DeleteAccountPage() {
               <ul className="space-y-3 text-gray-700">
                 <li className="flex gap-3">
                   <span className="text-red-600 font-bold">•</span>
-                  <span>Your profile information and account details</span>
+                  <span>Your personal profile data (name, phone, email, address, photo)</span>
                 </li>
                 <li className="flex gap-3">
                   <span className="text-red-600 font-bold">•</span>
-                  <span>All personal data and preferences</span>
+                  <span>Sensitive verification/payment profile details (PAN/bank related profile fields)</span>
                 </li>
                 <li className="flex gap-3">
                   <span className="text-red-600 font-bold">•</span>
-                  <span>Your task history and ratings</span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="text-red-600 font-bold">•</span>
-                  <span>Payment and transaction records associated with your account</span>
+                  <span>Public identity on existing records, replaced with &quot;Tasker (account deleted)&quot; or &quot;Customer (account deleted)&quot;</span>
                 </li>
               </ul>
             </div>
@@ -64,7 +60,7 @@ export default function DeleteAccountPage() {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
               <h3 className="font-semibold text-blue-900 mb-2">What we retain:</h3>
               <p className="text-blue-800 text-sm mb-2">
-                We may retain some information for legal, compliance, and fraud prevention purposes, as required by law.
+                Task history and payment/transaction records are retained for legal compliance, audits, payouts, refunds, and dispute handling.
               </p>
             </div>
 
@@ -78,7 +74,7 @@ export default function DeleteAccountPage() {
                   className="w-5 h-5 text-red-600 rounded mt-0.5"
                 />
                 <span className="text-gray-700">
-                  I understand that deleting my account is permanent and all my data will be removed.
+                  I understand account deletion is scheduled with a 24-48 hour cancellation window and that legal transaction records are retained.
                 </span>
               </label>
             </div>
@@ -112,7 +108,7 @@ export default function DeleteAccountPage() {
             
             {/* Final Warning */}
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex gap-3">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-red-900 mb-1">Final confirmation required</h3>
                 <p className="text-red-800 text-sm">

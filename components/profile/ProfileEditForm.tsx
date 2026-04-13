@@ -964,15 +964,16 @@ export function ProfileEditForm({
                </button>
                <button
                   type="button"
-                  onClick={() => updateField("userType", "business")}
+                  disabled
                   className={cn(
-                     "py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg border text-xs sm:text-sm font-medium transition-colors",
+                     "py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg border text-xs sm:text-sm font-medium transition-colors cursor-not-allowed",
                      formData.userType === "business"
                         ? "border-primary-600 bg-primary-600 text-white"
-                        : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+                        : "border-gray-200 bg-gray-50 text-gray-400"
                   )}
+                  title="Business account type is coming soon"
                >
-                  Business
+                  Business (Coming Soon)
                </button>
             </div>
          </div>

@@ -687,7 +687,7 @@ function ProfilePageContent() {
          try {
             if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
                await privacyApi.requestDeletion(true, reason);
-               toast.success("Account deletion requested. You have 30 days to cancel.");
+               toast.success("Account deletion requested. You have up to 48 hours to cancel.");
                // Logout after deletion request
                await logout();
             }
