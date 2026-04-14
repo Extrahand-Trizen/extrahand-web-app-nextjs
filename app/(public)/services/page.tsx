@@ -2,7 +2,6 @@ import React from "react";
 import { categoriesApi } from "@/lib/api/endpoints/categories";
 import CategoriesClient from "@/components/categories/CategoriesClient";
 import { Category } from "@/types/category";
-import { mergeCarCategories } from "@/lib/utils/mergeCarCategories";
 
 /**
  * Services Page (Server Component) - For Posters looking to hire
@@ -59,7 +58,8 @@ export default async function ServicesPage() {
             })
          );
 
-         categories = mergeCarCategories(categories);
+         // Keep categories as-is on poster services "view all" page so
+         // car-related categories remain separate with their own subcategories.
       }
    } catch (error) {
       console.error("Error fetching categories from content-admin");
