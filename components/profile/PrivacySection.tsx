@@ -377,7 +377,7 @@ export function PrivacySection({
     }
 
     const timeout = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error("Open tasks count request timed out")), 4500);
+      setTimeout(() => reject(new Error("Open tasks count request timed out")), 12000);
     });
 
     const res = await Promise.race([privacyApi.checkOpenTasks(), timeout]);
@@ -405,9 +405,9 @@ export function PrivacySection({
         void fetchExactOpenTasksCount(false);
       }
     } catch (err) {
-      console.warn("API checkOpenTasks failed", err);
-      setShowDeleteDialog(false);
-      toast.error("Unable to fetch your open tasks count. Please try again.");
+      console.warn("API checkOpenTasks failed, defaulting to 0 open tasks", err);
+      // Don't close the dialog — fall back to 0 open tasks so the user can still proceed
+      setOpenTasksCount(0);
     }
   };
 
