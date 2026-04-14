@@ -27,8 +27,8 @@ export function CategorySubservicesSection({
 
    const title =
       variant === "poster"
-         ? "Available Services"
-         : "Available Tasks";
+         ? "Choose a Service"
+         : "Choose a Task Type";
 
    return (
       <section
@@ -47,8 +47,8 @@ export function CategorySubservicesSection({
             </h2>
             <p className="mt-2 max-w-2xl text-sm text-gray-600 md:text-base">
                {variant === "poster"
-                  ? "Browse the services in this category and choose the one you need."
-                  : "Browse the task types in this category and pick work that matches your skills."}
+                  ? "Select a service to view details, pricing, and availability in your area."
+                  : "Select a task type to explore opportunities that match your skills."}
             </p>
             <ul className="mt-8 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
                {subcategories.map((sub) => {
