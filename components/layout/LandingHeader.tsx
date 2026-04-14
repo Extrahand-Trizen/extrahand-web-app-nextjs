@@ -43,14 +43,41 @@ import { NotificationCenter } from "@/components/home";
 import { categoriesApi } from "@/lib/api/endpoints/categories";
 import type { CategoriesListItem } from "@/lib/api/endpoints/categories";
 import type { UserCurrentStatus } from "@/types/dashboard";
-import type { Category, Subcategory } from "@/types/category";
+import type { Category } from "@/types/category";
 import { mergeCarCategories } from "@/lib/utils/mergeCarCategories";
 
-const navItems = [
+const navItems: Array<{
+   label: string;
+   href: string;
+   hasDropdown?: boolean;
+}> = [
    { label: "Categories", href: "#categories", hasDropdown: true },
    { label: "Browse tasks", href: "/discover" },
    { label: "How it works", href: "#how-it-works" },
 ];
+
+const filterCategoriesByRole = (
+   source: CategoriesListItem[],
+   role: "poster" | "tasker"
+) => {
+   return source.filter((cat) => {
+      const type = (cat.categoryType || "").toLowerCase();
+      if (!type) return true;
+      if (role === "tasker") {
+         return type.includes("tasker") || type.includes("both");
+      }
+      return type.includes("poster") || type.includes("both");
+   });
+};
+
+/** Strip role-specific suffix from CMS labels: poster → no "Services", tasker → no "Tasks". */
+const getCategoryDisplayName = (name: string, role: "poster" | "tasker") => {
+   const trimmed = (name || "").trim();
+   if (role === "poster") {
+      return trimmed.replace(/\s+\bServices\b\s*$/i, "").trim();
+   }
+   return trimmed.replace(/\s+\bTasks\b\s*$/i, "").trim();
+};
 
 const GuestCtaButtons = ({ onBecomeTasker }: { onBecomeTasker: () => void }) => (
    <>
@@ -90,54 +117,6 @@ const emptyStatus: UserCurrentStatus = {
    pendingPayments: [],
 };
 
-type HeaderCategory = CategoriesListItem;
-
-const filterCategoriesByRole = (
-   source: HeaderCategory[],
-   role: "poster" | "tasker"
-) => {
-   return source.filter((cat) => {
-      const type = (cat.categoryType || "").toLowerCase();
-      if (!type) return true;
-      if (role === "tasker") {
-         return type.includes("tasker") || type.includes("both");
-      }
-      return type.includes("poster") || type.includes("both");
-   });
-};
-
-const getSubcategorySlugForRoute = (
-   categorySlug: string,
-   subcategorySlug?: string
-) => {
-   const normalized = (subcategorySlug || "").trim();
-   if (!normalized) return "";
-   const prefix = `${categorySlug}/`;
-   return normalized.startsWith(prefix)
-      ? normalized.slice(prefix.length)
-      : normalized;
-};
-
-/** After mergeCarCategories, subs may belong to a different parent than the merged row */
-function getParentCategorySlugForSub(
-   category: Pick<HeaderCategory, "slug">,
-   sub: Subcategory & { categoryPageSlug?: string }
-): string {
-   return sub.categoryPageSlug || sub.categorySlug || category.slug || "";
-}
-
-/** Strip role-specific suffix from CMS labels: poster → no "Services", tasker → no "Tasks". */
-const getCategoryDisplayName = (
-   name: string,
-   role: "poster" | "tasker"
-) => {
-   const trimmed = (name || "").trim();
-   if (role === "poster") {
-      return trimmed.replace(/\s+\bServices\b\s*$/i, "").trim();
-   }
-   return trimmed.replace(/\s+\bTasks\b\s*$/i, "").trim();
-};
-
 export const LandingHeader: React.FC = () => {
    const router = useRouter();
    const pathname = usePathname();
@@ -148,14 +127,10 @@ export const LandingHeader: React.FC = () => {
    const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
    const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false);
    const [activeRole, setActiveRole] = useState<"poster" | "tasker">("poster");
-   const [mobileActiveRole, setMobileActiveRole] = useState<
-      "poster" | "tasker"
-   >("poster");
-   const [selectedDesktopCategory, setSelectedDesktopCategory] =
-      useState<HeaderCategory | null>(null);
-   const [selectedMobileCategory, setSelectedMobileCategory] =
-      useState<HeaderCategory | null>(null);
-   const [categories, setCategories] = useState<HeaderCategory[]>([]);
+   const [mobileActiveRole, setMobileActiveRole] = useState<"poster" | "tasker">(
+      "poster"
+   );
+   const [categories, setCategories] = useState<CategoriesListItem[]>([]);
    const [categoriesLoading, setCategoriesLoading] = useState(true);
 
    const categoriesRef = useRef<HTMLDivElement>(null);
@@ -176,7 +151,6 @@ export const LandingHeader: React.FC = () => {
       .toUpperCase();
    const tasksRoute = activeRole === "tasker" ? "/tasks?tab=myapplications" : "/tasks?tab=mytasks";
 
-   /** Match /services page: one merged "Car Services" group instead of many car rows */
    const desktopCategoriesForNav = useMemo(
       () =>
          mergeCarCategories(
@@ -202,27 +176,12 @@ export const LandingHeader: React.FC = () => {
       return () => window.removeEventListener("scroll", handleScroll);
    }, []);
 
-   // Hover handlers for dropdown
-   const handleMouseEnter = () => {
-      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-      setIsUserMenuOpen(false);
-      setIsCategoriesOpen(true);
-   };
-   const handleMouseLeave = () => {
-      hoverTimeoutRef.current = setTimeout(
-         () => {
-            setIsCategoriesOpen(false);
-            setSelectedDesktopCategory(null);
-         },
-         150
-      );
-   };
-
    // Close mobile menu on resize
    useEffect(() => {
       const handleResize = () => {
          if (window.innerWidth >= 768) {
             setIsMobileMenuOpen(false);
+            setIsMobileCategoriesOpen(false);
          }
       };
       window.addEventListener("resize", handleResize);
@@ -241,7 +200,18 @@ export const LandingHeader: React.FC = () => {
       };
    }, [isMobileMenuOpen]);
 
-   // Fetch categories from API
+   const handleMouseEnter = () => {
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+      setIsUserMenuOpen(false);
+      setIsCategoriesOpen(true);
+   };
+
+   const handleMouseLeave = () => {
+      hoverTimeoutRef.current = setTimeout(() => {
+         setIsCategoriesOpen(false);
+      }, 150);
+   };
+
    useEffect(() => {
       const fetchCategories = async () => {
          try {
@@ -260,8 +230,8 @@ export const LandingHeader: React.FC = () => {
       fetchCategories();
    }, []);
 
-   const handleNavClick = (href: string, hasDropdown?: boolean) => {
-      if (hasDropdown) {
+   const handleNavClick = (href: string, openMobileCategories?: boolean) => {
+      if (openMobileCategories) {
          setIsMobileCategoriesOpen(true);
          return;
       }
@@ -430,14 +400,18 @@ export const LandingHeader: React.FC = () => {
                                                    No categories available
                                                 </div>
                                              ) : (
-                                                (() => {
-                                                   return desktopCategoriesForNav.map((cat) => (
-                                                      <button
+                                                desktopCategoriesForNav.map((cat) => {
+                                                   const primaryHref =
+                                                      activeRole === "poster"
+                                                         ? `/services/${encodeURIComponent(cat.slug)}`
+                                                         : `/jobs/${encodeURIComponent(cat.slug)}`;
+                                                   return (
+                                                      <Link
                                                          key={cat.slug}
-                                                         type="button"
-                                                         className="w-full h-full text-left py-2 px-2 rounded-lg border border-secondary-200 hover:bg-secondary-50 transition-colors"
+                                                         href={primaryHref}
+                                                         className="block w-full h-full text-left py-2 px-2 rounded-lg border border-secondary-200 hover:bg-secondary-50 transition-colors"
                                                          onClick={() =>
-                                                            setSelectedDesktopCategory(cat)
+                                                            setIsCategoriesOpen(false)
                                                          }
                                                       >
                                                          <span className="block text-sm font-semibold text-secondary-800 wrap-break-word">
@@ -446,9 +420,9 @@ export const LandingHeader: React.FC = () => {
                                                                activeRole
                                                             )}
                                                          </span>
-                                                      </button>
-                                                   ));
-                                                })()
+                                                      </Link>
+                                                   );
+                                                })
                                              )}
                                           </div>
                                        </div>
@@ -466,101 +440,6 @@ export const LandingHeader: React.FC = () => {
                                           >
                                              View All
                                           </Link>
-                                       </div>
-                                    </div>
-                                 </div>
-                              )}
-
-                              {isCategoriesOpen && selectedDesktopCategory && (
-                                 <div className="absolute left-0 top-full pt-2 z-60">
-                                    <div className="w-[720px] bg-white rounded-xl shadow-2xl border border-secondary-200 p-5">
-                                       <div className="flex items-center justify-between mb-4">
-                                          <button
-                                             type="button"
-                                             onClick={() =>
-                                                setSelectedDesktopCategory(null)
-                                             }
-                                             className="flex items-center gap-2 text-sm font-medium text-secondary-700 hover:text-secondary-900"
-                                          >
-                                             <ChevronDown className="w-4 h-4 rotate-90" />
-                                             Back
-                                          </button>
-                                          <button
-                                             type="button"
-                                             onClick={() => {
-                                                setSelectedDesktopCategory(null);
-                                                setIsCategoriesOpen(false);
-                                             }}
-                                             className="p-2 hover:bg-secondary-100 rounded-lg transition-colors"
-                                             aria-label="Close categories"
-                                          >
-                                             <X className="w-4 h-4 text-secondary-700" />
-                                          </button>
-                                       </div>
-
-                                       <h4 className="text-base font-semibold text-secondary-900 mb-2">
-                                          {getCategoryDisplayName(
-                                             selectedDesktopCategory.name,
-                                             activeRole
-                                          )}
-                                       </h4>
-                                       <div className="max-h-[300px] overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-1">
-                                          {Array.isArray(
-                                             selectedDesktopCategory.subcategories
-                                          ) &&
-                                          selectedDesktopCategory.subcategories
-                                             .length > 0 ? (
-                                             selectedDesktopCategory.subcategories.map(
-                                                (sub) => {
-                                                   const parentSlug =
-                                                      getParentCategorySlugForSub(
-                                                         selectedDesktopCategory,
-                                                         sub
-                                                      );
-                                                   const subSlug =
-                                                      getSubcategorySlugForRoute(
-                                                         parentSlug,
-                                                         sub.slug
-                                                      );
-                                                   const subPath =
-                                                      activeRole === "poster"
-                                                         ? `/services/${encodeURIComponent(
-                                                              parentSlug
-                                                           )}/${encodeURIComponent(
-                                                              subSlug
-                                                           )}`
-                                                         : `/jobs/${encodeURIComponent(
-                                                              parentSlug
-                                                           )}/${encodeURIComponent(
-                                                              subSlug
-                                                           )}`;
-                                                   return (
-                                                      <Link
-                                                         key={`${parentSlug}-${sub.slug}`}
-                                                         href={subPath}
-                                                         className="block py-2 px-2 text-sm text-secondary-700 hover:bg-secondary-50 rounded wrap-break-word"
-                                                         onClick={() => {
-                                                            setSelectedDesktopCategory(
-                                                               null
-                                                            );
-                                                            setIsCategoriesOpen(
-                                                               false
-                                                            );
-                                                         }}
-                                                      >
-                                                         {getCategoryDisplayName(
-                                                            sub.name,
-                                                            activeRole
-                                                         )}
-                                                      </Link>
-                                                   );
-                                                }
-                                             )
-                                          ) : (
-                                             <div className="text-sm text-secondary-500 px-2 py-2">
-                                                No subcategories available
-                                             </div>
-                                          )}
                                        </div>
                                     </div>
                                  </div>
@@ -915,31 +794,32 @@ export const LandingHeader: React.FC = () => {
                         <div className="max-h-[50vh] overflow-y-auto space-y-1 mb-4">
                            {categoriesLoading ? (
                               <div className="py-2 px-3 text-sm text-secondary-500">Loading categories...</div>
-                           ) : (() => {
-                              return mobileCategoriesForNav.length === 0 ? (
-                                 <div className="py-2 px-3 text-sm text-secondary-500">No categories available</div>
-                              ) : (
-                                 mobileCategoriesForNav.map((cat) => (
-                                    <div
+                           ) : mobileCategoriesForNav.length === 0 ? (
+                              <div className="py-2 px-3 text-sm text-secondary-500">No categories available</div>
+                           ) : (
+                              mobileCategoriesForNav.map((cat) => {
+                                 const primaryHref =
+                                    mobileActiveRole === "poster"
+                                       ? `/services/${encodeURIComponent(cat.slug)}`
+                                       : `/jobs/${encodeURIComponent(cat.slug)}`;
+                                 return (
+                                    <Link
                                        key={cat.slug}
-                                       className="rounded-lg border border-secondary-200 p-2"
+                                       href={primaryHref}
+                                       className="block rounded-lg border border-secondary-200 p-2 text-left text-sm font-semibold text-secondary-800 hover:bg-secondary-50 transition-colors"
+                                       onClick={() => {
+                                          setIsMobileCategoriesOpen(false);
+                                          setIsMobileMenuOpen(false);
+                                       }}
                                     >
-                                       <button
-                                          type="button"
-                                          className="w-full text-left py-1.5 px-2 text-sm font-semibold text-secondary-800 hover:bg-secondary-50 rounded"
-                                          onClick={() =>
-                                             setSelectedMobileCategory(cat)
-                                          }
-                                       >
-                                          {getCategoryDisplayName(
-                                             cat.name,
-                                             mobileActiveRole
-                                          )}
-                                       </button>
-                                    </div>
-                                 ))
-                              );
-                           })()}
+                                       {getCategoryDisplayName(
+                                          cat.name,
+                                          mobileActiveRole
+                                       )}
+                                    </Link>
+                                 );
+                              })
+                           )}
                         </div>
 
                         {/* View All Button */}
@@ -957,105 +837,6 @@ export const LandingHeader: React.FC = () => {
                         >
                            View All Categories
                         </Link>
-
-                        {selectedMobileCategory && (
-                           <div className="fixed inset-0 z-110 bg-black/40 flex items-end">
-                              <div className="w-full bg-white rounded-t-2xl p-4 max-h-[70vh] overflow-y-auto">
-                                 <div className="flex items-center justify-between mb-3">
-                                    <button
-                                       type="button"
-                                       className="flex items-center gap-2 text-secondary-700 font-medium"
-                                       onClick={() =>
-                                          setSelectedMobileCategory(null)
-                                       }
-                                    >
-                                       <ChevronDown className="w-5 h-5 rotate-90" />
-                                       Back
-                                    </button>
-                                    <button
-                                       type="button"
-                                       className="p-2 hover:bg-secondary-100 rounded-lg transition-colors"
-                                       onClick={() => {
-                                          setSelectedMobileCategory(null);
-                                          setIsMobileCategoriesOpen(false);
-                                          setIsMobileMenuOpen(false);
-                                       }}
-                                       aria-label="Close categories"
-                                    >
-                                       <X className="w-5 h-5 text-secondary-700" />
-                                    </button>
-                                 </div>
-
-                                 <h4 className="text-base font-semibold text-secondary-900 mb-2">
-                                    {getCategoryDisplayName(
-                                       selectedMobileCategory.name,
-                                       mobileActiveRole
-                                    )}
-                                 </h4>
-                                 <div className="space-y-1">
-                                    {Array.isArray(
-                                       selectedMobileCategory.subcategories
-                                    ) &&
-                                    selectedMobileCategory.subcategories.length >
-                                       0 ? (
-                                       selectedMobileCategory.subcategories.map(
-                                          (sub) => {
-                                             const parentSlug =
-                                                getParentCategorySlugForSub(
-                                                   selectedMobileCategory,
-                                                   sub
-                                                );
-                                             const subSlug =
-                                                getSubcategorySlugForRoute(
-                                                   parentSlug,
-                                                   sub.slug
-                                                );
-                                             const subPath =
-                                                mobileActiveRole === "poster"
-                                                   ? `/services/${encodeURIComponent(
-                                                        parentSlug
-                                                     )}/${encodeURIComponent(
-                                                        subSlug
-                                                     )}`
-                                                   : `/jobs/${encodeURIComponent(
-                                                        parentSlug
-                                                     )}/${encodeURIComponent(
-                                                        subSlug
-                                                     )}`;
-                                             return (
-                                                <Link
-                                                   key={`${parentSlug}-${sub.slug}`}
-                                                   href={subPath}
-                                                   className="block py-2 px-2 text-sm text-secondary-700 hover:bg-secondary-50 rounded"
-                                                   onClick={() => {
-                                                      setSelectedMobileCategory(
-                                                         null
-                                                      );
-                                                      setIsMobileCategoriesOpen(
-                                                         false
-                                                      );
-                                                      setIsMobileMenuOpen(
-                                                         false
-                                                      );
-                                                   }}
-                                                >
-                                                   {getCategoryDisplayName(
-                                                      sub.name,
-                                                      mobileActiveRole
-                                                   )}
-                                                </Link>
-                                             );
-                                          }
-                                       )
-                                    ) : (
-                                       <div className="text-sm text-secondary-500 px-2 py-2">
-                                          No subcategories available
-                                       </div>
-                                    )}
-                                 </div>
-                              </div>
-                           </div>
-                        )}
                      </div>
                   )}
                </div>

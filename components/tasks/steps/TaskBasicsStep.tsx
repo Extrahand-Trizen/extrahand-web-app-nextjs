@@ -21,8 +21,12 @@ import {
    DialogHeader,
    DialogTitle,
 } from "@/components/ui/dialog";
+import { ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { postTaskCategories } from "@/lib/data/categories";
+import {
+   postTaskCategories,
+   postTaskSubcategories,
+} from "@/lib/data/categories";
 
 interface TaskBasicsStepProps {
    form: UseFormReturn<TaskFormData>;
@@ -43,95 +47,206 @@ const DISPLAY_CATEGORIES = [...postTaskCategories].sort((a, b) => {
    return a.label.localeCompare(b.label);
 });
 
-const CATEGORY_TAGS: Record<string, string[]> = {
-   "home-cleaning": ["dusting", "mopping", "vacuuming", "bathrooms", "kitchens", "pet-friendly", "eco-friendly"],
-   "deep-cleaning": ["carpets", "windows", "bathrooms", "kitchens", "walls", "move-in", "move-out"],
-   "delivery-pickup-services": ["delivery", "pickup", "drop-off", "courier", "parcel", "same-day", "document"],
-   "plumbing": ["leaks", "repairs", "installation", "drains", "faucets", "emergency", "licensed"],
-   "water-tanker-services": ["water-supply", "tanker", "drinking-water", "bulk", "emergency", "residential", "commercial"],
-   "electrical": ["wiring", "fixtures", "repairs", "switchboards", "emergency", "licensed", "solar"],
-   "carpenter": ["doors", "windows", "shelves", "cabinets", "repairs", "custom-work", "modular"],
-   "painting": ["interior", "exterior", "walls", "doors", "furniture", "touch-up", "eco-friendly"],
-   "ac-repair": ["repair", "servicing", "installation", "cleaning", "gas-refill", "emergency", "warranty"],
-   "appliance-repair": ["washing-machine", "refrigerator", "oven", "microwave", "dishwasher", "emergency"],
-   "pest-control": ["mosquitoes", "termites", "cockroaches", "rats", "bedbugs", "eco-friendly", "chemical-free"],
-   "car-washing": ["exterior", "interior", "polishing", "detailing", "deep-clean", "waterless", "mobile"],
-   "gardening": ["landscaping", "trimming", "planting", "watering", "pest-control", "maintenance", "design"],
-   "handyperson": ["repairs", "maintenance", "installation", "small-jobs", "tools-needed", "emergency"],
-   "furniture-assembly": ["ikea", "branded", "modular", "wardrobes", "beds", "shelves", "installation"],
-   "security-patrol": ["residential", "commercial", "night-duty", "event-security", "armed", "trained"],
-   "beauty-services": ["hair", "makeup", "nails", "facial", "threading", "bridal", "eco-friendly"],
-   "massage-spa": ["body-massage", "facial-massage", "head-massage", "aromatherapy", "reflexology", "couples"],
-   "packers-movers": ["packing", "moving", "relocation", "shifting", "loading", "unloading", "transport"],
-   "fitness-trainers": ["cardio", "strength", "yoga", "pilates", "functional", "at-home", "group-classes"],
-   "tutors": ["math", "english", "science", "languages", "coding", "competitive-exams", "online"],
-   "it-support": ["hardware", "software", "virus-removal", "data-recovery", "networking", "troubleshooting"],
-   "photographer-videographer": ["wedding", "events", "portraits", "product", "editing", "drone", "streaming"],
-   "event-services": ["catering", "decoration", "dj", "venue", "planning", "coordination", "setup"],
-   "pet-services": ["grooming", "walking", "training", "sitting", "boarding", "health-check"],
-   "driver-chauffeur": ["daily-commute", "airport-drop", "intercity", "event-driver", "experienced"],
-   "cooking-home-chef": ["daily-meals", "meal-prep", "diet-specific", "vegan", "party-catering", "healthy"],
-   "laundry-ironing": ["regular", "dry-clean", "ironing", "pressing", "delicate", "express-service"],
-   "other": [],
-};
+const SUBCATEGORIES = postTaskSubcategories;
 
-const SUBCATEGORIES: Record<string, string[]> = {
+const CATEGORY_TAGS: Record<string, string[]> = {
+   "it-computer-support": [
+      "laptop",
+      "desktop",
+      "wifi",
+      "router",
+      "virus",
+      "malware",
+      "backup",
+      "server",
+      "windows",
+      "mac",
+      "office-it",
+   ],
+   design: [
+      "logo",
+      "graphic",
+      "ui",
+      "ux",
+      "branding",
+      "brochure",
+      "illustration",
+      "3d",
+      "animation",
+      "landing-page",
+   ],
+   events: [
+      "wedding",
+      "birthday",
+      "corporate",
+      "decoration",
+      "dj",
+      "catering",
+      "photography",
+      "balloon",
+      "festival",
+   ],
+   "repair-maintenance": [
+      "carpenter",
+      "furniture",
+      "appliance",
+      "locksmith",
+      "windows",
+      "doors",
+      "assembly",
+   ],
+   "personal-lifestyle": [
+      "beauty",
+      "massage",
+      "spa",
+      "fitness",
+      "hair",
+      "makeup",
+      "wellness",
+   ],
+   "care-services": [
+      "senior",
+      "elder",
+      "childcare",
+      "babysitting",
+      "pet",
+      "dog",
+      "cat",
+   ],
+   "education-training": [
+      "tutor",
+      "coaching",
+      "dance",
+      "music",
+      "fitness",
+      "lessons",
+   ],
+   "professional-services": [
+      "accounting",
+      "legal",
+      "real-estate",
+      "consulting",
+      "business",
+   ],
    other: [],
 };
 
 const CATEGORY_KEYWORDS: Record<string, string[]> = {
-   "ac-repair": ["ac", "air conditioner", "cooling", "gas refill", "split ac", "window ac", "ac servicing"],
-   "appliance-repair": ["appliance", "washing machine", "fridge", "refrigerator", "microwave", "oven", "geyser", "repair"],
-   "beauty-services": ["beauty", "makeup", "salon", "facial", "threading", "bridal", "hair styling"],
-   "car-washing": ["car wash", "car cleaning", "vehicle cleaning", "detailing", "polish", "interior cleaning"],
-   carpenter: ["carpenter", "woodwork", "furniture repair", "shelf", "cabinet", "wardrobe", "door repair"],
-   "cooking-home-chef": ["cook", "home chef", "meal prep", "food", "kitchen help", "daily meals", "catering"],
-   "deep-cleaning": ["deep clean", "move out clean", "move in clean", "intensive cleaning", "sanitize"],
-   "delivery-pickup-services": [
-      "delivery",
-      "pickup",
-      "pick up",
-      "drop",
-      "drop off",
-      "courier",
-      "parcel",
-      "package",
-      "document delivery",
-      "grocery pickup",
-      "send package",
-      "collect item",
+   "it-computer-support": [
+      "laptop",
+      "desktop",
+      "computer",
+      "pc",
+      "mac",
+      "windows",
+      "slow",
+      "virus",
+      "malware",
+      "wifi",
+      "router",
+      "internet",
+      "network",
+      "software",
+      "install",
+      "backup",
+      "recovery",
+      "it support",
+      "amc",
+      "server",
+      "office it",
    ],
-   "driver-chauffeur": ["driver", "chauffeur", "airport drop", "pickup", "intercity", "driving"],
-   electrical: ["electrician", "electrical", "wiring", "switch", "fan", "light", "power issue"],
-   "event-services": ["event", "decoration", "dj", "wedding", "party", "planner", "setup"],
-   "fitness-trainers": ["fitness", "trainer", "gym", "workout", "yoga", "pilates", "cardio"],
-   "furniture-assembly": ["furniture assembly", "assemble", "ikea", "bed assembly", "table assembly"],
-   gardening: ["gardening", "garden", "plant", "landscape", "lawn", "trimming", "watering"],
-   handyperson: ["handyman", "handyperson", "general repair", "fix", "small jobs", "maintenance"],
-   "home-cleaning": ["home cleaning", "house cleaning", "maid", "cleaning", "cleaner", "room cleaning", "dusting", "mopping"],
-   "it-support": ["laptop", "computer", "it support", "printer", "wifi", "network", "software", "virus"],
-   "laundry-ironing": ["laundry", "ironing", "press", "clothes wash", "dry clean"],
-   "massage-spa": ["massage", "spa", "relaxation", "therapy", "aromatherapy"],
-   "packers-movers": [
-      "packers",
-      "movers",
-      "packers movers",
-      "moving service",
-      "house shifting",
-      "office shifting",
-      "relocation",
-      "pack and move",
-      "load unload",
-      "transport household",
-      "move furniture",
+   design: [
+      "logo",
+      "graphic design",
+      "ui",
+      "ux",
+      "branding",
+      "brochure",
+      "flyer",
+      "poster",
+      "social media",
+      "illustration",
+      "3d",
+      "animation",
+      "motion",
+      "landing page",
+      "packaging",
+      "business card",
    ],
-   painting: ["paint", "painting", "wall paint", "interior paint", "exterior paint"],
-   "pest-control": ["pest", "termite", "cockroach", "mosquito", "rat", "bedbug", "fumigation"],
-   "photographer-videographer": ["photographer", "videographer", "photo shoot", "video shoot", "wedding shoot", "editing"],
-   plumbing: ["plumber", "plumbing", "leak", "tap", "pipe", "drain", "toilet", "water issue"],
-   "security-patrol": ["security", "guard", "watchman", "patrol", "night guard"],
-   tutors: ["tutor", "tuition", "teacher", "home tuition", "maths", "science", "english classes"],
-   "water-tanker-services": ["water tanker", "water supply", "tanker", "water delivery", "tank refill"],
+   events: [
+      "wedding",
+      "birthday",
+      "party",
+      "engagement",
+      "housewarming",
+      "anniversary",
+      "festival",
+      "diwali",
+      "corporate event",
+      "balloon",
+      "flower",
+      "decoration",
+      "dj",
+      "catering",
+      "photography",
+      "videography",
+      "anchor",
+      "event",
+   ],
+   "repair-maintenance": [
+      "carpenter",
+      "furniture",
+      "repair",
+      "assembly",
+      "appliance",
+      "electronic",
+      "locksmith",
+      "glazier",
+      "window",
+      "door",
+      "handyman",
+   ],
+   "personal-lifestyle": [
+      "beauty",
+      "salon",
+      "massage",
+      "spa",
+      "fitness",
+      "trainer",
+      "hair",
+      "hairdresser",
+      "makeup",
+      "wellness",
+   ],
+   "care-services": [
+      "senior care",
+      "elder",
+      "childcare",
+      "babysit",
+      "pet care",
+      "dog",
+      "cat",
+      "nanny",
+   ],
+   "education-training": [
+      "tutor",
+      "tuition",
+      "coaching",
+      "dance class",
+      "music lesson",
+      "fitness coaching",
+      "teacher",
+   ],
+   "professional-services": [
+      "accounting",
+      "accountant",
+      "legal",
+      "lawyer",
+      "real estate",
+      "property",
+      "consulting",
+      "business",
+   ],
    other: ["other", "misc", "custom"],
 };
 
@@ -230,11 +345,18 @@ function isHighConfidence(suggestions: CategorySuggestion[]): boolean {
 
 export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
    const [showAllCategories, setShowAllCategories] = useState(false);
+   const [categoryModalStep, setCategoryModalStep] = useState<
+      "primary" | "secondary"
+   >("primary");
+   const [categoryModalParentId, setCategoryModalParentId] = useState<
+      string | null
+   >(null);
    const [categoryEditedManually, setCategoryEditedManually] = useState(
       Boolean(form.getValues("category"))
    );
    const autoSelectedCategoryRef = useRef<string | null>(null);
    const category = form.watch("category");
+   const subcategory = form.watch("subcategory");
    const title = form.watch("title");
    const description = form.watch("description");
 
@@ -250,6 +372,13 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
       : [];
    const displayedCategoryChips =
       selectedCategoryChip.length > 0 ? selectedCategoryChip : categorySuggestions;
+
+   useEffect(() => {
+      if (showAllCategories) {
+         setCategoryModalStep("primary");
+         setCategoryModalParentId(null);
+      }
+   }, [showAllCategories]);
 
    useEffect(() => {
       const autoSelectedCategory = autoSelectedCategoryRef.current;
@@ -423,50 +552,147 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
                   })}
                </div>
 
-               <Dialog open={showAllCategories} onOpenChange={setShowAllCategories}>
-                  <DialogContent className="max-h-[80vh] overflow-y-auto">
-                     <DialogHeader>
-                        <DialogTitle>Select Category</DialogTitle>
+               <Dialog
+                  open={showAllCategories}
+                  onOpenChange={(open) => {
+                     setShowAllCategories(open);
+                     if (!open) {
+                        setCategoryModalStep("primary");
+                        setCategoryModalParentId(null);
+                     }
+                  }}
+               >
+                  <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-lg">
+                     <DialogHeader className="space-y-1">
+                        {categoryModalStep === "secondary" &&
+                        categoryModalParentId ? (
+                           <>
+                              <button
+                                 type="button"
+                                 onClick={() => {
+                                    setCategoryModalStep("primary");
+                                    setCategoryModalParentId(null);
+                                 }}
+                                 className="mb-2 flex items-center gap-1 text-sm font-medium text-primary-700 hover:text-primary-800 -ml-1"
+                              >
+                                 <ChevronLeft className="h-4 w-4" />
+                                 Back
+                              </button>
+                              <DialogTitle className="text-left">
+                                 {CATEGORIES.find(
+                                    (c) => c.id === categoryModalParentId
+                                 )?.label || "Select type"}
+                              </DialogTitle>
+                              <p className="text-left text-xs text-muted-foreground">
+                                 Choose a specific type (required)
+                              </p>
+                           </>
+                        ) : (
+                           <>
+                              <DialogTitle>Select category</DialogTitle>
+                              <p className="text-left text-xs text-muted-foreground">
+                                 Pick a category, then choose a specific type
+                              </p>
+                           </>
+                        )}
                      </DialogHeader>
-                     <div className="grid grid-cols-2 gap-3 py-4">
-                        {DISPLAY_CATEGORIES.map((cat) => (
-                           <button
-                              key={cat.id}
-                              type="button"
-                              onClick={() => {
-                                 selectCategory(cat.id, true);
-                                 setShowAllCategories(false);
-                              }}
-                              className={cn(
-                                 "relative h-20 rounded-xl border-2 p-3 text-left transition-all",
-                                 category === cat.id
-                                    ? "border-primary-600 bg-primary-50"
-                                    : "border-gray-200 bg-white hover:border-gray-300"
-                              )}
-                           >
-                              <div className="flex items-center">
-                                 <span className="text-sm font-medium text-gray-900">
+
+                     {categoryModalStep === "primary" ? (
+                        <div className="grid grid-cols-2 gap-3 py-4">
+                           {DISPLAY_CATEGORIES.map((cat) => (
+                              <button
+                                 key={cat.id}
+                                 type="button"
+                                 onClick={() => {
+                                    if (cat.id === "other") {
+                                       form.setValue("category", "other", {
+                                          shouldValidate: true,
+                                          shouldDirty: true,
+                                       });
+                                       form.setValue("subcategory", "", {
+                                          shouldValidate: true,
+                                          shouldDirty: true,
+                                       });
+                                       setCategoryEditedManually(true);
+                                       setShowAllCategories(false);
+                                       return;
+                                    }
+                                    const subs = SUBCATEGORIES[cat.id];
+                                    if (subs && subs.length > 0) {
+                                       setCategoryModalParentId(cat.id);
+                                       setCategoryModalStep("secondary");
+                                       return;
+                                    }
+                                    selectCategory(cat.id, true);
+                                    setShowAllCategories(false);
+                                 }}
+                                 className={cn(
+                                    "relative min-h-[4.5rem] rounded-xl border-2 p-3 text-left transition-all",
+                                    category === cat.id
+                                       ? "border-primary-600 bg-primary-50"
+                                       : "border-gray-200 bg-white hover:border-gray-300"
+                                 )}
+                              >
+                                 <span className="text-sm font-medium text-gray-900 leading-snug">
                                     {cat.label}
                                  </span>
-                              </div>
-                              {category === cat.id && (
-                                 <div className="absolute top-2 right-2">
-                                    <svg
-                                       className="w-5 h-5 text-primary-600"
-                                       fill="currentColor"
-                                       viewBox="0 0 20 20"
-                                    >
-                                       <path
-                                          fillRule="evenodd"
-                                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                          clipRule="evenodd"
-                                       />
-                                    </svg>
-                                 </div>
-                              )}
-                           </button>
-                        ))}
-                     </div>
+                                 {category === cat.id && (
+                                    <div className="absolute top-2 right-2">
+                                       <svg
+                                          className="w-5 h-5 text-primary-600"
+                                          fill="currentColor"
+                                          viewBox="0 0 20 20"
+                                       >
+                                          <path
+                                             fillRule="evenodd"
+                                             d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                             clipRule="evenodd"
+                                          />
+                                       </svg>
+                                    </div>
+                                 )}
+                              </button>
+                           ))}
+                        </div>
+                     ) : (
+                        categoryModalParentId && (
+                           <div className="grid grid-cols-1 gap-2 py-4 sm:grid-cols-2">
+                              {(
+                                 SUBCATEGORIES[categoryModalParentId] || []
+                              ).map((sub) => (
+                                 <button
+                                    key={sub}
+                                    type="button"
+                                    onClick={() => {
+                                       form.setValue(
+                                          "category",
+                                          categoryModalParentId,
+                                          {
+                                             shouldValidate: true,
+                                             shouldDirty: true,
+                                          }
+                                       );
+                                       form.setValue("subcategory", sub, {
+                                          shouldValidate: true,
+                                          shouldDirty: true,
+                                       });
+                                       setCategoryEditedManually(true);
+                                       setShowAllCategories(false);
+                                    }}
+                                    className={cn(
+                                       "rounded-xl border-2 px-3 py-3 text-left text-sm font-medium transition-all",
+                                       category === categoryModalParentId &&
+                                          subcategory === sub
+                                          ? "border-primary-600 bg-primary-50 text-primary-900"
+                                          : "border-gray-200 bg-white text-gray-900 hover:border-gray-300"
+                                    )}
+                                 >
+                                    {sub}
+                                 </button>
+                              ))}
+                           </div>
+                        )
+                     )}
                   </DialogContent>
                </Dialog>
             </div>
@@ -485,39 +711,33 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
             )}
          />
 
-         {/* Subcategory (conditional) */}
-         {category && SUBCATEGORIES[category]?.length > 0 && (
-            <FormField
-               control={form.control}
-               name="subcategory"
-               render={({ field }) => (
-                  <FormItem className="animate-in slide-in-from-top duration-200">
-                     <FormLabel className="text-xs md:text-sm">
-                        Type of{" "}
-                        {CATEGORIES.find(
-                           (c) => c.id === category
-                        )?.label.toLowerCase()}
-                     </FormLabel>
-                     <FormControl>
-                        <select
-                           {...field}
-                           className="w-full text-sm h-10 px-4 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-primary-600 focus:border-transparent"
-                        >
-                           <option value="" className="rounded-md text-sm text-muted-foreground">
-                              Select specific type (optional)
-                           </option>
-                           {SUBCATEGORIES[category].map((sub) => (
-                              <option key={sub} value={sub} className="rounded-md text-sm">
-                                 {sub}
-                              </option>
-                           ))}
-                        </select>
-                     </FormControl>
-                     <FormMessage />
-                  </FormItem>
-               )}
-            />
-         )}
+         {/* Subcategory: chosen in two-step modal; hidden field for validation */}
+         {category &&
+            category !== "other" &&
+            SUBCATEGORIES[category]?.length > 0 && (
+               <FormField
+                  control={form.control}
+                  name="subcategory"
+                  render={({ field }) => (
+                     <FormItem className="animate-in slide-in-from-top duration-200">
+                        <FormControl>
+                           <input type="hidden" {...field} />
+                        </FormControl>
+                        <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm">
+                           <span className="text-gray-500">Specific type: </span>
+                           <span className="font-medium text-gray-900">
+                              {field.value?.trim() || (
+                                 <span className="text-amber-700">
+                                    Tap &quot;Change&quot; above to choose
+                                 </span>
+                              )}
+                           </span>
+                        </div>
+                        <FormMessage />
+                     </FormItem>
+                  )}
+               />
+            )}
 
          {/* Custom Category Input (for "Other" category) */}
          {category === "other" && (

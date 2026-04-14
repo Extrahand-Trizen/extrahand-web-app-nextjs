@@ -28,6 +28,21 @@ function normalizeIncomeOpportunitiesData(data: CategoryDetail): CategoryDetail 
    return data;
 }
 
+async function withSubcategoriesFromApi(
+   slug: string,
+   category: CategoryDetail
+): Promise<CategoryDetail> {
+   const embedded = category.subcategories;
+   if (Array.isArray(embedded) && embedded.length > 0) {
+      return category;
+   }
+   const fetched = await categoriesApi.getSubcategories(slug);
+   return {
+      ...category,
+      subcategories: Array.isArray(fetched) ? fetched : [],
+   };
+}
+
 export default async function JobPage({ params }: JobPageProps) {
    const { slug } = await params;
 
@@ -48,7 +63,8 @@ export default async function JobPage({ params }: JobPageProps) {
       );
    }
 
-   const normalizedData = normalizeIncomeOpportunitiesData(categoryData);
+   let normalizedData = normalizeIncomeOpportunitiesData(categoryData);
+   normalizedData = await withSubcategoriesFromApi(slug, normalizedData);
 
    return (
       <CategoryDetailClient

@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CategoryDetail } from "@/types/category";
+import { CategorySubservicesSection } from "@/components/shared/CategorySubservicesSection";
+import { useScrollToHash } from "@/hooks/useScrollToHash";
 import { EarningsCard } from "@/components/categories/EarningsCard";
 import { WhyJoinSection } from "@/components/categories/WhyJoinSection";
 import { TasksSection } from "@/components/categories/TasksSection";
@@ -39,6 +41,7 @@ const CategoryDetailClient: React.FC<CategoryDetailClientProps> = ({
    breadcrumbCategoryLink,
 }) => {
    const router = useRouter();
+   useScrollToHash();
    const [selectedTasks, setSelectedTasks] = useState("1-2 tasks per week");
    const [selectedPeriod, setSelectedPeriod] = useState<
       "weekly" | "monthly" | "yearly"
@@ -216,6 +219,11 @@ const CategoryDetailClient: React.FC<CategoryDetailClientProps> = ({
          category.earnings5plus || category.earningsCard?.weekly?.["5+"] || "",
    };
 
+   const parentSlugForSubs =
+      category.slug && category.slug.includes("/")
+         ? category.slug.split("/").filter(Boolean)[0] || ""
+         : category.slug || "";
+
    return (
       <>
          {/* Error Modal using shadcn Dialog */}
@@ -252,6 +260,12 @@ const CategoryDetailClient: React.FC<CategoryDetailClientProps> = ({
                   onGetStarted={handleTaskerGetStarted}
                />
             }
+         />
+
+         <CategorySubservicesSection
+            parentSlug={parentSlugForSubs}
+            subcategories={category.subcategories ?? []}
+            variant="tasker"
          />
 
          {/* Why Join Extrahand Section */}

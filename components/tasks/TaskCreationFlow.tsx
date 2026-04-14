@@ -117,6 +117,16 @@ const URGENCY_SURCHARGES: Record<string, number> = {
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
+   "it-computer-support": "IT & Computer Support",
+   design: "Design",
+   events: "Events",
+   "repair-maintenance": "Repair & Maintenance",
+   "personal-lifestyle": "Personal & Lifestyle Services",
+   "care-services": "Care Services",
+   "education-training": "Education & Training",
+   "professional-services": "Professional Services",
+   other: "Other",
+   // Legacy task category slugs (drafts / older tasks)
    "home-cleaning": "Home Cleaning",
    "deep-cleaning": "Deep Cleaning",
    plumbing: "Plumbing",
@@ -143,7 +153,9 @@ const CATEGORY_LABELS: Record<string, string> = {
    "driver-chauffeur": "Driver / Chauffeur",
    "cooking-home-chef": "Cooking / Home Chef",
    "laundry-ironing": "Laundry / Ironing",
-   other: "Other",
+   accounting: "Accounting",
+   "packers-movers": "Packers & Movers",
+   "senior-care-elder-care": "Senior Care / Elder Care",
 };
 
 // ============================================================================
@@ -268,15 +280,24 @@ const transformFormDataToTask = (
          ? 0
          : baseBudget + urgencySurcharge;
 
+   const baseCategoryLabel =
+      CATEGORY_LABELS[formData.category] || formData.category;
+   const subTrim = formData.subcategory?.trim();
+   let resolvedCategoryLabel: string | undefined;
+   if (formData.category === "other") {
+      resolvedCategoryLabel = subTrim || CATEGORY_LABELS.other;
+   } else if (subTrim) {
+      resolvedCategoryLabel = `${baseCategoryLabel} – ${subTrim}`;
+   } else {
+      resolvedCategoryLabel = baseCategoryLabel;
+   }
+
    return {
       title: formData.title,
       description: formData.description,
       category: formData.category,
       categorySlug: formData.category,
-      categoryLabel:
-         formData.category === "other"
-         ? formData.subcategory || CATEGORY_LABELS.other
-         : CATEGORY_LABELS[formData.category] || undefined,
+      categoryLabel: resolvedCategoryLabel,
       subcategory: formData.subcategory || undefined,
       requirements: (formData.requirements || []).filter((req: string) => Boolean(req && req.trim())),
       estimatedDuration: formData.estimatedDuration || undefined,

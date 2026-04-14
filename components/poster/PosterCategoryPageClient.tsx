@@ -25,6 +25,8 @@ import {
    DEFAULT_FOOTER,
 } from "@/lib/posterCategoryDefaults";
 import type { PosterCategoryDetail, PosterTopTasker, PosterReview, PosterWhyBookFeature, Question, PosterStaticTask } from "@/types/category";
+import { CategorySubservicesSection } from "@/components/shared/CategorySubservicesSection";
+import { useScrollToHash } from "@/hooks/useScrollToHash";
 
 interface PosterCategoryPageClientProps {
    category: PosterCategoryDetail;
@@ -39,6 +41,7 @@ function textToSlug(text: string): string {
 
 export default function PosterCategoryPageClient({ category }: PosterCategoryPageClientProps) {
    const router = useRouter();
+   useScrollToHash();
 
   const categoryName = category?.name || "Service";
   const serviceLabel = (categoryName || "").replace(/\s*Services?\s*$/i, "").trim() || "service";
@@ -73,9 +76,20 @@ export default function PosterCategoryPageClient({ category }: PosterCategoryPag
       router.push(`/services/${slug}`);
    };
 
+   const parentSlugForSubs =
+      category.slug && category.slug.includes("/")
+         ? category.slug.split("/").filter(Boolean)[0] || ""
+         : category.slug || "";
+
    return (
       <div className="flex flex-col">
          <PosterHeroSection category={category} serviceLabel={serviceLabel} whyBookFeatures={whyBookFeatures} />
+
+         <CategorySubservicesSection
+            parentSlug={parentSlugForSubs}
+            subcategories={category.subcategories ?? []}
+            variant="poster"
+         />
 
          <PosterBestRatedAndReviewsSection
             serviceLabel={serviceLabel}
