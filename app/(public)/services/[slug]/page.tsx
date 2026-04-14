@@ -32,6 +32,22 @@ function normalizeIncomeOpportunitiesData(data: CategoryDetail): CategoryDetail 
    return data;
 }
 
+/** Same as /services index: detail API often omits subs — load from task-subcategories. */
+async function withSubcategoriesFromApi(
+   slug: string,
+   category: PosterCategoryDetail
+): Promise<PosterCategoryDetail> {
+   const embedded = category.subcategories;
+   if (Array.isArray(embedded) && embedded.length > 0) {
+      return category;
+   }
+   const fetched = await categoriesApi.getSubcategories(slug);
+   return {
+      ...category,
+      subcategories: Array.isArray(fetched) ? fetched : [],
+   };
+}
+
 export default async function ServicePage({ params }: ServicePageProps) {
    const { slug } = await params;
 
@@ -62,7 +78,10 @@ export default async function ServicePage({ params }: ServicePageProps) {
       );
    }
 
-   const normalizedData = normalizeIncomeOpportunitiesData(categoryData) as PosterCategoryDetail;
+   let normalizedData = normalizeIncomeOpportunitiesData(
+      categoryData
+   ) as PosterCategoryDetail;
+   normalizedData = await withSubcategoriesFromApi(slug, normalizedData);
 
    // Services pages are poster-facing by design: always use the poster category layout
    return <PosterCategoryPageClient category={normalizedData} />;

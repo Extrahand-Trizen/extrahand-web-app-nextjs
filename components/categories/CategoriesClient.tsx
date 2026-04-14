@@ -290,7 +290,7 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                                           ? `/services/${directCategoryPageSlug}`
                                           : `/categories/${directCategoryPageSlug}`
                                        : viewType === "jobs"
-                                       ? `/task/${parentSlugForSubcategory}/${subcategorySlug}`
+                                       ? `/jobs/${parentSlugForSubcategory}/${subcategorySlug}`
                                        : viewType === "services"
                                        ? `/services/${parentSlugForSubcategory}/${subcategorySlug}`
                                        : `/categories/${parentSlugForSubcategory}/${subcategorySlug}`;

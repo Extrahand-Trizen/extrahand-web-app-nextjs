@@ -336,9 +336,10 @@ export const manualServiceEntries: ManualServiceEntry[] = [
    },
 ];
 
-export const manualServiceRoutePaths = manualServiceEntries.map(
-   (service) => `/services/${service.categorySlug}/${service.subcategorySlug}`
-);
+/** One URL per primary category (subs are sections on that page with hash links). */
+export const manualServicePrimaryPaths = [
+   ...new Set(manualServiceEntries.map((service) => `/services/${service.categorySlug}`)),
+];
 
 export function getManualServiceBySlugs(
    categorySlug: string,
@@ -625,6 +626,10 @@ export function buildManualPosterCategoryOverview(
       _id: `manual-category-${representative.categorySlug}`,
       name: representative.categoryName,
       slug: representative.categorySlug,
+      subcategories: services.map((s) => ({
+         name: s.subcategoryName,
+         slug: s.subcategorySlug,
+      })),
       heroTitle: `Find ${representative.categoryName.toLowerCase()} near you`,
       heroDescription: `Browse ${representative.categoryName.toLowerCase()} and hire verified professionals on ExtraHand.`,
       whyBookTitle: `Why hire ${representative.categoryName.toLowerCase()} near you through Extrahand?`,

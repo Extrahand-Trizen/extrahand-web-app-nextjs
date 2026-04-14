@@ -89,6 +89,11 @@ export function LocationScheduleStep({
    const calendarDays = getCalendarDays(calendarMonth);
 
    const recurringEligibleCategories = [
+      "personal-lifestyle",
+      "care-services",
+      "education-training",
+      "repair-maintenance",
+      // Legacy category slugs
       "home-cleaning",
       "deep-cleaning",
       "gardening",

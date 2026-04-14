@@ -1621,18 +1621,23 @@ function buildPaymentBreakdown(transaction: Transaction) {
    // Calculate fees from the difference if not explicitly provided
    const inferredFees = Math.max(totalPaid - normalizedTaskAmount, 0);
    
-   // Use explicit fee values if available, otherwise infer from total
+   // Use explicit fee values if available, otherwise infer from total.
+   // Policy baseline: platform fee = 5%, GST on platform fee = 18%.
+   const PLATFORM_FEE_RATE = 0.05;
+   const GST_ON_PLATFORM_FEE_RATE = 0.18;
    if (platformFeeFromMeta === 0 && inferredFees > 0) {
-      // If no explicit platform fee, estimate it as ~5-6% of task amount or infer from difference
-      platformFeeFromMeta = Math.round(normalizedTaskAmount * 0.05); // 5% estimate
+      // If no explicit platform fee, estimate from 5% baseline and cap by inferred fee pool.
+      platformFeeFromMeta = Math.round(normalizedTaskAmount * PLATFORM_FEE_RATE);
       if (platformFeeFromMeta > inferredFees) {
          platformFeeFromMeta = Math.max(Math.floor(inferredFees * 0.7), 0); // Use ~70% of inferred fees
       }
    }
    
    if (gstAmountFromMeta === 0 && inferredFees > 0) {
-      // If no explicit GST, estimate remainder after platform fee
-      gstAmountFromMeta = Math.max(inferredFees - platformFeeFromMeta, 0);
+      // If no explicit GST, estimate at 18% on inferred platform fee, then cap to remaining inferred fees.
+      const expectedGst = Math.round(platformFeeFromMeta * GST_ON_PLATFORM_FEE_RATE);
+      const remainingFees = Math.max(inferredFees - platformFeeFromMeta, 0);
+      gstAmountFromMeta = Math.min(expectedGst, remainingFees);
    }
    
    const platformFee = platformFeeFromMeta > 0 ? platformFeeFromMeta : inferredFees > 0 ? Math.round(inferredFees * 0.6) : 0;

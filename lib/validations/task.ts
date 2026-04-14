@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { postTaskSubcategories } from "@/lib/data/categories";
 import { containsPhoneNumber, PHONE_NUMBER_ERROR } from "@/lib/utils/phoneDetection";
 import { getMeaningfulTextError } from "@/lib/utils/textValidation";
 
@@ -78,6 +79,20 @@ export const taskBasicsSchema = z
       {
          message:
             "Please describe your task type (3-50 characters) for 'Other' category",
+         path: ["subcategory"],
+      }
+   )
+   .refine(
+      (data) => {
+         if (data.category === "other") return true;
+         const subs = postTaskSubcategories[data.category];
+         if (subs && subs.length > 0) {
+            return Boolean(data.subcategory?.trim());
+         }
+         return true;
+      },
+      {
+         message: "Please choose a specific type for this category",
          path: ["subcategory"],
       }
    );

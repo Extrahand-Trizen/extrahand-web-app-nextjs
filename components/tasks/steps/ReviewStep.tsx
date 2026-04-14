@@ -29,6 +29,7 @@ import {
    Edit2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { postTaskCategories } from "@/lib/data/categories";
 
 interface ReviewStepProps {
    form: UseFormReturn<TaskFormData>;
@@ -37,6 +38,10 @@ interface ReviewStepProps {
 }
 
 const CATEGORIES: Record<string, { label: string }> = {
+   ...Object.fromEntries(
+      postTaskCategories.map((c) => [c.id, { label: c.label }])
+   ),
+   // Legacy slugs (drafts / older tasks)
    "home-cleaning": { label: "Home Cleaning" },
    "deep-cleaning": { label: "Deep Cleaning" },
    plumbing: { label: "Plumbing" },
@@ -63,7 +68,9 @@ const CATEGORIES: Record<string, { label: string }> = {
    "driver-chauffeur": { label: "Driver / Chauffeur" },
    "cooking-home-chef": { label: "Cooking / Home Chef" },
    "laundry-ironing": { label: "Laundry / Ironing" },
-   other: { label: "Other" },
+   accounting: { label: "Accounting" },
+   "packers-movers": { label: "Packers & Movers" },
+   "senior-care-elder-care": { label: "Senior Care / Elder Care" },
 };
 
 const URGENCY_OPTIONS: Record<string, { label: string; surcharge: number }> = {

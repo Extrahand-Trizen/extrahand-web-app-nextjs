@@ -424,6 +424,32 @@ export const hyderabadServicePageSlugs = hyderabadServicePages.map(
    (servicePage) => servicePage.slug
 );
 
+export const HYDERABAD_CITY_SLUG = "hyderabad";
+
+const HYDERABAD_LEGACY_SUFFIX = `-in-${HYDERABAD_CITY_SLUG}`;
+
+export function getCanonicalServiceCityPathFromLegacySlug(
+   legacySlug: string
+): string | null {
+   if (!legacySlug?.endsWith(HYDERABAD_LEGACY_SUFFIX)) {
+      return null;
+   }
+   const serviceSlug = legacySlug
+      .slice(0, -HYDERABAD_LEGACY_SUFFIX.length)
+      .trim();
+   if (!serviceSlug) return null;
+   return `/services/${serviceSlug}/${HYDERABAD_CITY_SLUG}`;
+}
+
+export function getLegacyServiceCitySlug(
+   serviceSlug: string,
+   citySlug: string
+): string | null {
+   if (!serviceSlug?.trim()) return null;
+   if (citySlug !== HYDERABAD_CITY_SLUG) return null;
+   return `${serviceSlug}-in-${citySlug}`;
+}
+
 export function getHyderabadServicePageBySlug(slug: string) {
    return hyderabadServicePages.find((servicePage) => servicePage.slug === slug);
 }

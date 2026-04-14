@@ -15,6 +15,7 @@ import React, {
    useEffect,
    useRef,
    useCallback,
+   useMemo,
 } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -40,13 +41,43 @@ import { useAuth } from "@/lib/auth/context";
 import { UserMenu } from "./UserMenu";
 import { NotificationCenter } from "@/components/home";
 import { categoriesApi } from "@/lib/api/endpoints/categories";
+import type { CategoriesListItem } from "@/lib/api/endpoints/categories";
 import type { UserCurrentStatus } from "@/types/dashboard";
+import type { Category } from "@/types/category";
+import { mergeCarCategories } from "@/lib/utils/mergeCarCategories";
 
-const navItems = [
+const navItems: Array<{
+   label: string;
+   href: string;
+   hasDropdown?: boolean;
+}> = [
    { label: "Categories", href: "#categories", hasDropdown: true },
    { label: "Browse tasks", href: "/discover" },
    { label: "How it works", href: "#how-it-works" },
 ];
+
+const filterCategoriesByRole = (
+   source: CategoriesListItem[],
+   role: "poster" | "tasker"
+) => {
+   return source.filter((cat) => {
+      const type = (cat.categoryType || "").toLowerCase();
+      if (!type) return true;
+      if (role === "tasker") {
+         return type.includes("tasker") || type.includes("both");
+      }
+      return type.includes("poster") || type.includes("both");
+   });
+};
+
+/** Strip role-specific suffix from CMS labels: poster → no "Services", tasker → no "Tasks". */
+const getCategoryDisplayName = (name: string, role: "poster" | "tasker") => {
+   const trimmed = (name || "").trim();
+   if (role === "poster") {
+      return trimmed.replace(/\s+\bServices\b\s*$/i, "").trim();
+   }
+   return trimmed.replace(/\s+\bTasks\b\s*$/i, "").trim();
+};
 
 const GuestCtaButtons = ({ onBecomeTasker }: { onBecomeTasker: () => void }) => (
    <>
@@ -96,10 +127,10 @@ export const LandingHeader: React.FC = () => {
    const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
    const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false);
    const [activeRole, setActiveRole] = useState<"poster" | "tasker">("poster");
-   const [mobileActiveRole, setMobileActiveRole] = useState<
-      "poster" | "tasker"
-   >("poster");
-   const [categories, setCategories] = useState<any[]>([]);
+   const [mobileActiveRole, setMobileActiveRole] = useState<"poster" | "tasker">(
+      "poster"
+   );
+   const [categories, setCategories] = useState<CategoriesListItem[]>([]);
    const [categoriesLoading, setCategoriesLoading] = useState(true);
 
    const categoriesRef = useRef<HTMLDivElement>(null);
@@ -120,6 +151,22 @@ export const LandingHeader: React.FC = () => {
       .toUpperCase();
    const tasksRoute = activeRole === "tasker" ? "/tasks?tab=myapplications" : "/tasks?tab=mytasks";
 
+   const desktopCategoriesForNav = useMemo(
+      () =>
+         mergeCarCategories(
+            filterCategoriesByRole(categories, activeRole) as Category[]
+         ),
+      [categories, activeRole]
+   );
+
+   const mobileCategoriesForNav = useMemo(
+      () =>
+         mergeCarCategories(
+            filterCategoriesByRole(categories, mobileActiveRole) as Category[]
+         ),
+      [categories, mobileActiveRole]
+   );
+
    // Handle scroll for sticky header styling
    useEffect(() => {
       const handleScroll = () => {
@@ -129,24 +176,12 @@ export const LandingHeader: React.FC = () => {
       return () => window.removeEventListener("scroll", handleScroll);
    }, []);
 
-   // Hover handlers for dropdown
-   const handleMouseEnter = () => {
-      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-      setIsUserMenuOpen(false);
-      setIsCategoriesOpen(true);
-   };
-   const handleMouseLeave = () => {
-      hoverTimeoutRef.current = setTimeout(
-         () => setIsCategoriesOpen(false),
-         150
-      );
-   };
-
    // Close mobile menu on resize
    useEffect(() => {
       const handleResize = () => {
          if (window.innerWidth >= 768) {
             setIsMobileMenuOpen(false);
+            setIsMobileCategoriesOpen(false);
          }
       };
       window.addEventListener("resize", handleResize);
@@ -165,7 +200,18 @@ export const LandingHeader: React.FC = () => {
       };
    }, [isMobileMenuOpen]);
 
-   // Fetch categories from API
+   const handleMouseEnter = () => {
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+      setIsUserMenuOpen(false);
+      setIsCategoriesOpen(true);
+   };
+
+   const handleMouseLeave = () => {
+      hoverTimeoutRef.current = setTimeout(() => {
+         setIsCategoriesOpen(false);
+      }, 150);
+   };
+
    useEffect(() => {
       const fetchCategories = async () => {
          try {
@@ -184,8 +230,8 @@ export const LandingHeader: React.FC = () => {
       fetchCategories();
    }, []);
 
-   const handleNavClick = (href: string, hasDropdown?: boolean) => {
-      if (hasDropdown) {
+   const handleNavClick = (href: string, openMobileCategories?: boolean) => {
+      if (openMobileCategories) {
          setIsMobileCategoriesOpen(true);
          return;
       }
@@ -344,50 +390,39 @@ export const LandingHeader: React.FC = () => {
                                           </div>
 
                                           {/* Task types grid */}
-                                          <div className="flex-1 grid grid-cols-4 gap-x-4 gap-y-0.5 text-sm max-h-[360px] overflow-y-auto">
+                                          <div className="flex-1 text-sm max-h-[360px] overflow-y-auto overflow-x-hidden pr-1 grid grid-cols-2 xl:grid-cols-3 gap-2 content-start">
                                              {categoriesLoading ? (
-                                                <div className="col-span-4 text-secondary-500">Loading categories...</div>
+                                                <div className="text-secondary-500">
+                                                   Loading categories...
+                                                </div>
                                              ) : categories.length === 0 ? (
-                                                <div className="col-span-4 text-secondary-500">No categories available</div>
+                                                <div className="text-secondary-500">
+                                                   No categories available
+                                                </div>
                                              ) : (
-                                                (() => {
-                                                   // Filter categories by role
-                                                   const filteredCategories = categories.filter((cat) => {
-                                                      const type = (cat.categoryType || "").toLowerCase();
-                                                      if (!type) return true; // Show all if no type set
-                                                      if (activeRole === "tasker") {
-                                                         return type.includes("tasker") || type.includes("both");
-                                                      }
-                                                      return type.includes("poster") || type.includes("both");
-                                                   });
-
-                                                   // Build a 4-column layout
-                                                   const cols = [[], [], [], []] as any[];
-                                                   filteredCategories.forEach((cat, idx) => {
-                                                      cols[idx % 4].push(cat);
-                                                   });
-
-                                                   return cols.map((col, colIdx) => (
-                                                      <div key={colIdx} className="space-y-0.5">
-                                                         {col.map((cat) => (
-                                                            <Link
-                                                               key={cat.slug}
-                                                               href={
-                                                                  activeRole === "poster"
-                                                                     ? `/services/${encodeURIComponent(cat.slug)}`
-                                                                     : `/jobs/${encodeURIComponent(cat.slug)}`
-                                                               }
-                                                               className="block py-1 text-secondary-600 hover:text-secondary-900 hover:underline"
-                                                               onClick={() =>
-                                                                  setIsCategoriesOpen(false)
-                                                               }
-                                                            >
-                                                               {cat.name}
-                                                            </Link>
-                                                         ))}
-                                                      </div>
-                                                   ));
-                                                })()
+                                                desktopCategoriesForNav.map((cat) => {
+                                                   const primaryHref =
+                                                      activeRole === "poster"
+                                                         ? `/services/${encodeURIComponent(cat.slug)}`
+                                                         : `/jobs/${encodeURIComponent(cat.slug)}`;
+                                                   return (
+                                                      <Link
+                                                         key={cat.slug}
+                                                         href={primaryHref}
+                                                         className="block w-full h-full text-left py-2 px-2 rounded-lg border border-secondary-200 hover:bg-secondary-50 transition-colors"
+                                                         onClick={() =>
+                                                            setIsCategoriesOpen(false)
+                                                         }
+                                                      >
+                                                         <span className="block text-sm font-semibold text-secondary-800 wrap-break-word">
+                                                            {getCategoryDisplayName(
+                                                               cat.name,
+                                                               activeRole
+                                                            )}
+                                                         </span>
+                                                      </Link>
+                                                   );
+                                                })
                                              )}
                                           </div>
                                        </div>
@@ -759,38 +794,32 @@ export const LandingHeader: React.FC = () => {
                         <div className="max-h-[50vh] overflow-y-auto space-y-1 mb-4">
                            {categoriesLoading ? (
                               <div className="py-2 px-3 text-sm text-secondary-500">Loading categories...</div>
-                           ) : (() => {
-                              const filteredCategories = categories.filter((cat) => {
-                                 const type = (cat.categoryType || "").toLowerCase();
-                                 if (!type) return true;
-                                 if (mobileActiveRole === "tasker") {
-                                    return type.includes("tasker") || type.includes("both");
-                                 }
-                                 return type.includes("poster") || type.includes("both");
-                              });
-
-                              return filteredCategories.length === 0 ? (
-                                 <div className="py-2 px-3 text-sm text-secondary-500">No categories available</div>
-                              ) : (
-                                 filteredCategories.map((cat) => (
+                           ) : mobileCategoriesForNav.length === 0 ? (
+                              <div className="py-2 px-3 text-sm text-secondary-500">No categories available</div>
+                           ) : (
+                              mobileCategoriesForNav.map((cat) => {
+                                 const primaryHref =
+                                    mobileActiveRole === "poster"
+                                       ? `/services/${encodeURIComponent(cat.slug)}`
+                                       : `/jobs/${encodeURIComponent(cat.slug)}`;
+                                 return (
                                     <Link
                                        key={cat.slug}
-                                       href={
-                                          mobileActiveRole === "poster"
-                                             ? `/services/${encodeURIComponent(cat.slug)}`
-                                             : `/jobs/${encodeURIComponent(cat.slug)}`
-                                       }
-                                       className="block py-2 px-3 text-sm text-secondary-600 hover:bg-secondary-50 hover:text-secondary-900 rounded-lg"
+                                       href={primaryHref}
+                                       className="block rounded-lg border border-secondary-200 p-2 text-left text-sm font-semibold text-secondary-800 hover:bg-secondary-50 transition-colors"
                                        onClick={() => {
                                           setIsMobileCategoriesOpen(false);
                                           setIsMobileMenuOpen(false);
                                        }}
                                     >
-                                       {cat.name}
+                                       {getCategoryDisplayName(
+                                          cat.name,
+                                          mobileActiveRole
+                                       )}
                                     </Link>
-                                 ))
-                              );
-                           })()}
+                                 );
+                              })
+                           )}
                         </div>
 
                         {/* View All Button */}
