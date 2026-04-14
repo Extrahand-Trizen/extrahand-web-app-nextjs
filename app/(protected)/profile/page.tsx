@@ -681,9 +681,20 @@ function ProfilePageContent() {
             throw error;
          }
       },
-      onDeleteAccount: async (_reason?: string) => {
-         // Deletion is fully handled inside PrivacySection via the confirmation dialog.
-         // This prop is kept for type compatibility only.
+      onDeleteAccount: async (reason?: string) => {
+         //Account deletion is handled within PrivacySection component
+         // This is a fallback handler
+         try {
+            if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+               await privacyApi.requestDeletion(true, reason);
+               toast.success("Account deletion requested. You have up to 48 hours to cancel.");
+               // Logout after deletion request
+               await logout();
+            }
+         } catch (error: any) {
+            console.error("Failed to request account deletion:", error);
+            toast.error(error.message || "Failed to request account deletion");
+         }
       },
    };
 

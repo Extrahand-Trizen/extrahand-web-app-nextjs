@@ -1,16 +1,6 @@
 import type { Task } from "@/types/task";
 
 const TASK_CATEGORY_LABELS: Record<string, string> = {
-   "it-computer-support": "IT & Computer Support",
-   design: "Design",
-   events: "Events",
-   "repair-maintenance": "Repair & Maintenance",
-   "personal-lifestyle": "Personal & Lifestyle Services",
-   "care-services": "Care Services",
-   "education-training": "Education & Training",
-   "professional-services": "Professional Services",
-   other: "Other",
-   // Legacy slugs
    "home-cleaning": "Home Cleaning",
    "deep-cleaning": "Deep Cleaning",
    plumbing: "Plumbing",
@@ -38,8 +28,7 @@ const TASK_CATEGORY_LABELS: Record<string, string> = {
    "cooking-home-chef": "Cooking / Home Chef",
    "laundry-ironing": "Laundry / Ironing",
    "senior-care-elder-care": "Senior Care / Elder Care",
-   accounting: "Accounting",
-   "packers-movers": "Packers & Movers",
+   other: "Other",
 };
 
 function humanizeCategory(value: string): string {
