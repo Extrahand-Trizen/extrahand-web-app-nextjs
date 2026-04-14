@@ -15,6 +15,7 @@ import React, {
    useEffect,
    useRef,
    useCallback,
+   useMemo,
 } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -40,7 +41,10 @@ import { useAuth } from "@/lib/auth/context";
 import { UserMenu } from "./UserMenu";
 import { NotificationCenter } from "@/components/home";
 import { categoriesApi } from "@/lib/api/endpoints/categories";
+import type { CategoriesListItem } from "@/lib/api/endpoints/categories";
 import type { UserCurrentStatus } from "@/types/dashboard";
+import type { Category, Subcategory } from "@/types/category";
+import { mergeCarCategories } from "@/lib/utils/mergeCarCategories";
 
 const navItems = [
    { label: "Categories", href: "#categories", hasDropdown: true },
@@ -86,6 +90,54 @@ const emptyStatus: UserCurrentStatus = {
    pendingPayments: [],
 };
 
+type HeaderCategory = CategoriesListItem;
+
+const filterCategoriesByRole = (
+   source: HeaderCategory[],
+   role: "poster" | "tasker"
+) => {
+   return source.filter((cat) => {
+      const type = (cat.categoryType || "").toLowerCase();
+      if (!type) return true;
+      if (role === "tasker") {
+         return type.includes("tasker") || type.includes("both");
+      }
+      return type.includes("poster") || type.includes("both");
+   });
+};
+
+const getSubcategorySlugForRoute = (
+   categorySlug: string,
+   subcategorySlug?: string
+) => {
+   const normalized = (subcategorySlug || "").trim();
+   if (!normalized) return "";
+   const prefix = `${categorySlug}/`;
+   return normalized.startsWith(prefix)
+      ? normalized.slice(prefix.length)
+      : normalized;
+};
+
+/** After mergeCarCategories, subs may belong to a different parent than the merged row */
+function getParentCategorySlugForSub(
+   category: Pick<HeaderCategory, "slug">,
+   sub: Subcategory & { categoryPageSlug?: string }
+): string {
+   return sub.categoryPageSlug || sub.categorySlug || category.slug || "";
+}
+
+/** Strip role-specific suffix from CMS labels: poster → no "Services", tasker → no "Tasks". */
+const getCategoryDisplayName = (
+   name: string,
+   role: "poster" | "tasker"
+) => {
+   const trimmed = (name || "").trim();
+   if (role === "poster") {
+      return trimmed.replace(/\s+\bServices\b\s*$/i, "").trim();
+   }
+   return trimmed.replace(/\s+\bTasks\b\s*$/i, "").trim();
+};
+
 export const LandingHeader: React.FC = () => {
    const router = useRouter();
    const pathname = usePathname();
@@ -99,7 +151,11 @@ export const LandingHeader: React.FC = () => {
    const [mobileActiveRole, setMobileActiveRole] = useState<
       "poster" | "tasker"
    >("poster");
-   const [categories, setCategories] = useState<any[]>([]);
+   const [selectedDesktopCategory, setSelectedDesktopCategory] =
+      useState<HeaderCategory | null>(null);
+   const [selectedMobileCategory, setSelectedMobileCategory] =
+      useState<HeaderCategory | null>(null);
+   const [categories, setCategories] = useState<HeaderCategory[]>([]);
    const [categoriesLoading, setCategoriesLoading] = useState(true);
 
    const categoriesRef = useRef<HTMLDivElement>(null);
@@ -120,6 +176,23 @@ export const LandingHeader: React.FC = () => {
       .toUpperCase();
    const tasksRoute = activeRole === "tasker" ? "/tasks?tab=myapplications" : "/tasks?tab=mytasks";
 
+   /** Match /services page: one merged "Car Services" group instead of many car rows */
+   const desktopCategoriesForNav = useMemo(
+      () =>
+         mergeCarCategories(
+            filterCategoriesByRole(categories, activeRole) as Category[]
+         ),
+      [categories, activeRole]
+   );
+
+   const mobileCategoriesForNav = useMemo(
+      () =>
+         mergeCarCategories(
+            filterCategoriesByRole(categories, mobileActiveRole) as Category[]
+         ),
+      [categories, mobileActiveRole]
+   );
+
    // Handle scroll for sticky header styling
    useEffect(() => {
       const handleScroll = () => {
@@ -137,7 +210,10 @@ export const LandingHeader: React.FC = () => {
    };
    const handleMouseLeave = () => {
       hoverTimeoutRef.current = setTimeout(
-         () => setIsCategoriesOpen(false),
+         () => {
+            setIsCategoriesOpen(false);
+            setSelectedDesktopCategory(null);
+         },
          150
       );
    };
@@ -344,48 +420,33 @@ export const LandingHeader: React.FC = () => {
                                           </div>
 
                                           {/* Task types grid */}
-                                          <div className="flex-1 grid grid-cols-4 gap-x-4 gap-y-0.5 text-sm max-h-[360px] overflow-y-auto">
+                                          <div className="flex-1 text-sm max-h-[360px] overflow-y-auto overflow-x-hidden pr-1 grid grid-cols-2 xl:grid-cols-3 gap-2 content-start">
                                              {categoriesLoading ? (
-                                                <div className="col-span-4 text-secondary-500">Loading categories...</div>
+                                                <div className="text-secondary-500">
+                                                   Loading categories...
+                                                </div>
                                              ) : categories.length === 0 ? (
-                                                <div className="col-span-4 text-secondary-500">No categories available</div>
+                                                <div className="text-secondary-500">
+                                                   No categories available
+                                                </div>
                                              ) : (
                                                 (() => {
-                                                   // Filter categories by role
-                                                   const filteredCategories = categories.filter((cat) => {
-                                                      const type = (cat.categoryType || "").toLowerCase();
-                                                      if (!type) return true; // Show all if no type set
-                                                      if (activeRole === "tasker") {
-                                                         return type.includes("tasker") || type.includes("both");
-                                                      }
-                                                      return type.includes("poster") || type.includes("both");
-                                                   });
-
-                                                   // Build a 4-column layout
-                                                   const cols = [[], [], [], []] as any[];
-                                                   filteredCategories.forEach((cat, idx) => {
-                                                      cols[idx % 4].push(cat);
-                                                   });
-
-                                                   return cols.map((col, colIdx) => (
-                                                      <div key={colIdx} className="space-y-0.5">
-                                                         {col.map((cat) => (
-                                                            <Link
-                                                               key={cat.slug}
-                                                               href={
-                                                                  activeRole === "poster"
-                                                                     ? `/services/${encodeURIComponent(cat.slug)}`
-                                                                     : `/jobs/${encodeURIComponent(cat.slug)}`
-                                                               }
-                                                               className="block py-1 text-secondary-600 hover:text-secondary-900 hover:underline"
-                                                               onClick={() =>
-                                                                  setIsCategoriesOpen(false)
-                                                               }
-                                                            >
-                                                               {cat.name}
-                                                            </Link>
-                                                         ))}
-                                                      </div>
+                                                   return desktopCategoriesForNav.map((cat) => (
+                                                      <button
+                                                         key={cat.slug}
+                                                         type="button"
+                                                         className="w-full h-full text-left py-2 px-2 rounded-lg border border-secondary-200 hover:bg-secondary-50 transition-colors"
+                                                         onClick={() =>
+                                                            setSelectedDesktopCategory(cat)
+                                                         }
+                                                      >
+                                                         <span className="block text-sm font-semibold text-secondary-800 wrap-break-word">
+                                                            {getCategoryDisplayName(
+                                                               cat.name,
+                                                               activeRole
+                                                            )}
+                                                         </span>
+                                                      </button>
                                                    ));
                                                 })()
                                              )}
@@ -405,6 +466,101 @@ export const LandingHeader: React.FC = () => {
                                           >
                                              View All
                                           </Link>
+                                       </div>
+                                    </div>
+                                 </div>
+                              )}
+
+                              {isCategoriesOpen && selectedDesktopCategory && (
+                                 <div className="absolute left-0 top-full pt-2 z-60">
+                                    <div className="w-[720px] bg-white rounded-xl shadow-2xl border border-secondary-200 p-5">
+                                       <div className="flex items-center justify-between mb-4">
+                                          <button
+                                             type="button"
+                                             onClick={() =>
+                                                setSelectedDesktopCategory(null)
+                                             }
+                                             className="flex items-center gap-2 text-sm font-medium text-secondary-700 hover:text-secondary-900"
+                                          >
+                                             <ChevronDown className="w-4 h-4 rotate-90" />
+                                             Back
+                                          </button>
+                                          <button
+                                             type="button"
+                                             onClick={() => {
+                                                setSelectedDesktopCategory(null);
+                                                setIsCategoriesOpen(false);
+                                             }}
+                                             className="p-2 hover:bg-secondary-100 rounded-lg transition-colors"
+                                             aria-label="Close categories"
+                                          >
+                                             <X className="w-4 h-4 text-secondary-700" />
+                                          </button>
+                                       </div>
+
+                                       <h4 className="text-base font-semibold text-secondary-900 mb-2">
+                                          {getCategoryDisplayName(
+                                             selectedDesktopCategory.name,
+                                             activeRole
+                                          )}
+                                       </h4>
+                                       <div className="max-h-[300px] overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-1">
+                                          {Array.isArray(
+                                             selectedDesktopCategory.subcategories
+                                          ) &&
+                                          selectedDesktopCategory.subcategories
+                                             .length > 0 ? (
+                                             selectedDesktopCategory.subcategories.map(
+                                                (sub) => {
+                                                   const parentSlug =
+                                                      getParentCategorySlugForSub(
+                                                         selectedDesktopCategory,
+                                                         sub
+                                                      );
+                                                   const subSlug =
+                                                      getSubcategorySlugForRoute(
+                                                         parentSlug,
+                                                         sub.slug
+                                                      );
+                                                   const subPath =
+                                                      activeRole === "poster"
+                                                         ? `/services/${encodeURIComponent(
+                                                              parentSlug
+                                                           )}/${encodeURIComponent(
+                                                              subSlug
+                                                           )}`
+                                                         : `/jobs/${encodeURIComponent(
+                                                              parentSlug
+                                                           )}/${encodeURIComponent(
+                                                              subSlug
+                                                           )}`;
+                                                   return (
+                                                      <Link
+                                                         key={`${parentSlug}-${sub.slug}`}
+                                                         href={subPath}
+                                                         className="block py-2 px-2 text-sm text-secondary-700 hover:bg-secondary-50 rounded wrap-break-word"
+                                                         onClick={() => {
+                                                            setSelectedDesktopCategory(
+                                                               null
+                                                            );
+                                                            setIsCategoriesOpen(
+                                                               false
+                                                            );
+                                                         }}
+                                                      >
+                                                         {getCategoryDisplayName(
+                                                            sub.name,
+                                                            activeRole
+                                                         )}
+                                                      </Link>
+                                                   );
+                                                }
+                                             )
+                                          ) : (
+                                             <div className="text-sm text-secondary-500 px-2 py-2">
+                                                No subcategories available
+                                             </div>
+                                          )}
                                        </div>
                                     </div>
                                  </div>
@@ -760,34 +916,27 @@ export const LandingHeader: React.FC = () => {
                            {categoriesLoading ? (
                               <div className="py-2 px-3 text-sm text-secondary-500">Loading categories...</div>
                            ) : (() => {
-                              const filteredCategories = categories.filter((cat) => {
-                                 const type = (cat.categoryType || "").toLowerCase();
-                                 if (!type) return true;
-                                 if (mobileActiveRole === "tasker") {
-                                    return type.includes("tasker") || type.includes("both");
-                                 }
-                                 return type.includes("poster") || type.includes("both");
-                              });
-
-                              return filteredCategories.length === 0 ? (
+                              return mobileCategoriesForNav.length === 0 ? (
                                  <div className="py-2 px-3 text-sm text-secondary-500">No categories available</div>
                               ) : (
-                                 filteredCategories.map((cat) => (
-                                    <Link
+                                 mobileCategoriesForNav.map((cat) => (
+                                    <div
                                        key={cat.slug}
-                                       href={
-                                          mobileActiveRole === "poster"
-                                             ? `/services/${encodeURIComponent(cat.slug)}`
-                                             : `/jobs/${encodeURIComponent(cat.slug)}`
-                                       }
-                                       className="block py-2 px-3 text-sm text-secondary-600 hover:bg-secondary-50 hover:text-secondary-900 rounded-lg"
-                                       onClick={() => {
-                                          setIsMobileCategoriesOpen(false);
-                                          setIsMobileMenuOpen(false);
-                                       }}
+                                       className="rounded-lg border border-secondary-200 p-2"
                                     >
-                                       {cat.name}
-                                    </Link>
+                                       <button
+                                          type="button"
+                                          className="w-full text-left py-1.5 px-2 text-sm font-semibold text-secondary-800 hover:bg-secondary-50 rounded"
+                                          onClick={() =>
+                                             setSelectedMobileCategory(cat)
+                                          }
+                                       >
+                                          {getCategoryDisplayName(
+                                             cat.name,
+                                             mobileActiveRole
+                                          )}
+                                       </button>
+                                    </div>
                                  ))
                               );
                            })()}
@@ -808,6 +957,105 @@ export const LandingHeader: React.FC = () => {
                         >
                            View All Categories
                         </Link>
+
+                        {selectedMobileCategory && (
+                           <div className="fixed inset-0 z-110 bg-black/40 flex items-end">
+                              <div className="w-full bg-white rounded-t-2xl p-4 max-h-[70vh] overflow-y-auto">
+                                 <div className="flex items-center justify-between mb-3">
+                                    <button
+                                       type="button"
+                                       className="flex items-center gap-2 text-secondary-700 font-medium"
+                                       onClick={() =>
+                                          setSelectedMobileCategory(null)
+                                       }
+                                    >
+                                       <ChevronDown className="w-5 h-5 rotate-90" />
+                                       Back
+                                    </button>
+                                    <button
+                                       type="button"
+                                       className="p-2 hover:bg-secondary-100 rounded-lg transition-colors"
+                                       onClick={() => {
+                                          setSelectedMobileCategory(null);
+                                          setIsMobileCategoriesOpen(false);
+                                          setIsMobileMenuOpen(false);
+                                       }}
+                                       aria-label="Close categories"
+                                    >
+                                       <X className="w-5 h-5 text-secondary-700" />
+                                    </button>
+                                 </div>
+
+                                 <h4 className="text-base font-semibold text-secondary-900 mb-2">
+                                    {getCategoryDisplayName(
+                                       selectedMobileCategory.name,
+                                       mobileActiveRole
+                                    )}
+                                 </h4>
+                                 <div className="space-y-1">
+                                    {Array.isArray(
+                                       selectedMobileCategory.subcategories
+                                    ) &&
+                                    selectedMobileCategory.subcategories.length >
+                                       0 ? (
+                                       selectedMobileCategory.subcategories.map(
+                                          (sub) => {
+                                             const parentSlug =
+                                                getParentCategorySlugForSub(
+                                                   selectedMobileCategory,
+                                                   sub
+                                                );
+                                             const subSlug =
+                                                getSubcategorySlugForRoute(
+                                                   parentSlug,
+                                                   sub.slug
+                                                );
+                                             const subPath =
+                                                mobileActiveRole === "poster"
+                                                   ? `/services/${encodeURIComponent(
+                                                        parentSlug
+                                                     )}/${encodeURIComponent(
+                                                        subSlug
+                                                     )}`
+                                                   : `/jobs/${encodeURIComponent(
+                                                        parentSlug
+                                                     )}/${encodeURIComponent(
+                                                        subSlug
+                                                     )}`;
+                                             return (
+                                                <Link
+                                                   key={`${parentSlug}-${sub.slug}`}
+                                                   href={subPath}
+                                                   className="block py-2 px-2 text-sm text-secondary-700 hover:bg-secondary-50 rounded"
+                                                   onClick={() => {
+                                                      setSelectedMobileCategory(
+                                                         null
+                                                      );
+                                                      setIsMobileCategoriesOpen(
+                                                         false
+                                                      );
+                                                      setIsMobileMenuOpen(
+                                                         false
+                                                      );
+                                                   }}
+                                                >
+                                                   {getCategoryDisplayName(
+                                                      sub.name,
+                                                      mobileActiveRole
+                                                   )}
+                                                </Link>
+                                             );
+                                          }
+                                       )
+                                    ) : (
+                                       <div className="text-sm text-secondary-500 px-2 py-2">
+                                          No subcategories available
+                                       </div>
+                                    )}
+                                 </div>
+                              </div>
+                           </div>
+                        )}
                      </div>
                   )}
                </div>

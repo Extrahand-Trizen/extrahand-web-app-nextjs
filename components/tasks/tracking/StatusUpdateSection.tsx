@@ -116,7 +116,12 @@ export function StatusUpdateSection({
       let activeRowIndex = 0;
       let feeAmount = 0;
 
-      const platformFeeAndGst = budgetValue * 0.059;
+      // Platform fee policy: 5% fee + 18% GST on the platform fee.
+      // Effective combined deduction on task amount = 5.9%.
+      const PLATFORM_FEE_RATE = 0.05;
+      const GST_ON_PLATFORM_FEE_RATE = 0.18;
+      const platformFeeAndGst =
+         budgetValue * (PLATFORM_FEE_RATE + PLATFORM_FEE_RATE * GST_ON_PLATFORM_FEE_RATE);
 
       if (userRole === "poster") {
          if (minutesSinceAssigned <= 15) {
