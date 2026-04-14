@@ -101,6 +101,14 @@ export const privacyApi = {
   },
 
   /**
+   * Check how many open tasks the user has before account deletion
+   * GET /api/v1/privacy/open-tasks-count
+   */
+  async checkOpenTasks(): Promise<{ success: boolean; openTasksCount: number }> {
+    return fetchWithAuth('privacy/open-tasks-count');
+  },
+
+  /**
    * Request account deletion
    * DELETE /api/v1/privacy/delete-account
    */
