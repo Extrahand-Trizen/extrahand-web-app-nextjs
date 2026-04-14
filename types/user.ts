@@ -147,7 +147,11 @@ export interface UserProfile {
    }>;
    photoURL?: string;
    profilePrivacy?: {
-      profileVisibility: "public" | "registered_users" | "connections_only";
+      profileVisibility:
+         | "public"
+         | "registered_users"
+         | "connections_only"
+         | "private";
       showEarnings: boolean;
       showTaskHistory: boolean;
       showReviews: boolean;

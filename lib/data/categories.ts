@@ -19,6 +19,8 @@ export interface PostTaskCategory {
    label: string;
 }
 
+export type PostTaskSubcategories = Record<string, string[]>;
+
 // Keep this list in sync with the "Select Category" list in Post a Task flow.
 export const postTaskCategories: PostTaskCategory[] = [
    { id: "accounting", label: "Accounting" },
@@ -51,6 +53,39 @@ export const postTaskCategories: PostTaskCategory[] = [
    { id: "tutors", label: "Tutors" },
    { id: "water-tanker-services", label: "Water & Tanker Services" },
 ];
+
+// Keep these options aligned with postTaskCategories so task form and validation share one source.
+export const postTaskSubcategories: PostTaskSubcategories = {
+   accounting: ["Bookkeeping", "Tax Filing", "GST Support"],
+   "ac-repair": ["AC Service", "AC Repair", "AC Installation"],
+   "appliance-repair": ["Washing Machine", "Refrigerator", "Microwave"],
+   "beauty-services": ["Makeup", "Hair Styling", "Facial"],
+   "car-washing": ["Exterior Wash", "Interior Cleaning", "Foam Wash"],
+   carpenter: ["Furniture Repair", "Custom Woodwork", "Door/Window Fix"],
+   "cooking-home-chef": ["Daily Meal Prep", "Party Cooking", "Diet Meal Cooking"],
+   "deep-cleaning": ["Kitchen Deep Clean", "Bathroom Deep Clean", "Full Home Deep Clean"],
+   "driver-chauffeur": ["Local Driver", "Outstation Driver", "Pickup & Drop"],
+   electrical: ["Wiring", "Switch/Socket Repair", "Light/Fan Installation"],
+   "event-services": ["Decoration", "Photography/Videography", "Catering"],
+   "fitness-trainers": ["Weight Loss", "Strength Training", "Yoga"],
+   "furniture-assembly": ["Bed/Wardrobe Assembly", "Office Furniture", "Wall Mounting"],
+   gardening: ["Lawn Maintenance", "Plant Care", "Landscape Setup"],
+   handyperson: ["Minor Repairs", "Wall Fixtures", "General Maintenance"],
+   "home-cleaning": ["Regular Cleaning", "Kitchen Cleaning", "Bathroom Cleaning"],
+   "it-support": ["Laptop Repair", "Wi-Fi Setup", "Software Installation"],
+   "laundry-ironing": ["Wash & Fold", "Ironing", "Pickup & Delivery"],
+   "massage-spa": ["Body Massage", "Spa Therapy", "Home Salon"],
+   other: [],
+   "packers-movers": ["Home Shifting", "Office Relocation", "Loading/Unloading"],
+   painting: ["Interior Painting", "Exterior Painting", "Texture/Polish"],
+   "pest-control": ["Termite Control", "Cockroach Control", "Rodent Control"],
+   "photographer-videographer": ["Event Photography", "Portrait Shoot", "Video Editing"],
+   plumbing: ["Leak Repair", "Tap/Fitting Installation", "Drain Cleaning"],
+   "senior-care-elder-care": ["Companion Care", "Daily Assistance", "Medical Visit Support"],
+   "security-patrol": ["Residential Guard", "Night Watch", "Event Security"],
+   tutors: ["School Tuition", "Exam Prep", "Skill Coaching"],
+   "water-tanker-services": ["Domestic Tanker", "Commercial Supply", "Emergency Delivery"],
+};
 
 export const serviceCategories: ServiceCategory[] = [
    {

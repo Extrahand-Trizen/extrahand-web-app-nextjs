@@ -56,7 +56,8 @@ export type LocationScope = "task_matching" | "navigation" | "analytics";
 export type ProfileVisibilityLevel =
    | "public"
    | "registered_users"
-   | "connections_only";
+   | "connections_only"
+   | "private";
 
 // ============================================
 // Notification Channel Settings

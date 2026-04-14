@@ -76,11 +76,14 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN useradd -m nextjs
 
 # Copy required runtime artifacts (without standalone to reduce build disk pressure)
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/next.config.ts ./next.config.ts
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nextjs /app/package.json ./package.json
+COPY --from=builder --chown=nextjs:nextjs /app/next.config.ts ./next.config.ts
+COPY --from=builder --chown=nextjs:nextjs /app/public ./public
+COPY --from=builder --chown=nextjs:nextjs /app/.next ./.next
+COPY --from=deps --chown=nextjs:nextjs /app/node_modules ./node_modules
+
+# Next.js writes runtime image/fetch caches under .next/cache.
+RUN mkdir -p /app/.next/cache/images /app/.next/cache/fetch-cache
 
 USER nextjs
 
