@@ -376,7 +376,11 @@ export function PrivacySection({
       setOpenTasksCount(null);
     }
 
-    const res = await privacyApi.checkOpenTasks();
+    const timeout = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error("Open tasks count request timed out")), 4500);
+    });
+
+    const res = await Promise.race([privacyApi.checkOpenTasks(), timeout]);
     const parsedCount = Number(res?.openTasksCount);
     const exactCount = Number.isFinite(parsedCount) && parsedCount >= 0 ? parsedCount : 0;
     setOpenTasksCount(exactCount);
