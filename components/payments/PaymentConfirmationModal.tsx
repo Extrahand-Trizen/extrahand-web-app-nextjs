@@ -176,6 +176,29 @@ export function PaymentConfirmationModal({
   const selectedDatesCount = application.selectedDates?.length ?? 0;
   const baseAmount = application.proposedBudget.amount;
   const amount = baseAmount * (selectedDatesCount || 1);
+  const expectedAmountInPaise = Math.round(amount * 100);
+
+  const resolveRazorpayOrderId = (
+    order: unknown,
+    escrow: unknown
+  ): string | null => {
+    const orderObj = (order ?? {}) as Record<string, unknown>;
+    const escrowObj = (escrow ?? {}) as Record<string, unknown>;
+
+    const candidates = [
+      orderObj.id,
+      orderObj.orderId,
+      orderObj.razorpayOrderId,
+      escrowObj.razorpayOrderId,
+    ];
+
+    for (const candidate of candidates) {
+      const value = String(candidate ?? "").trim();
+      if (value.startsWith("order_")) return value;
+    }
+
+    return null;
+  };
 
   // Reset state when modal reopens
   useEffect(() => {
@@ -232,14 +255,38 @@ export function PaymentConfirmationModal({
         throw new Error(escrowResponse.error || "Failed to create payment order");
       }
 
-      const { order, escrow } = escrowResponse;
+      const { order, escrow } = escrowResponse as {
+        order?: Record<string, unknown>;
+        escrow?: Record<string, unknown>;
+        keyId?: string;
+      };
+
+      const razorpayOrderId = resolveRazorpayOrderId(order, escrow);
+      if (!razorpayOrderId) {
+        throw new Error("Payment order is invalid. Please try again.");
+      }
+
+      const normalizedOrderAmountRaw = Number(order?.amount);
+      const normalizedOrderAmount =
+        Number.isFinite(normalizedOrderAmountRaw) && normalizedOrderAmountRaw >= expectedAmountInPaise
+          ? normalizedOrderAmountRaw
+          : expectedAmountInPaise;
+
+      const normalizedOrder = {
+        ...(order || {}),
+        id: razorpayOrderId,
+        amount: normalizedOrderAmount,
+        currency: String(order?.currency || "INR"),
+      };
+
       setEscrowId(escrow?.escrowId || null);
 
       // Step 2: Open Razorpay checkout
       console.log("Opening Razorpay checkout...");
       await initiateRazorpayPayment(
-        order,
+        normalizedOrder as any,
         {
+          key: String((escrowResponse as any)?.keyId || ""),
           name: "ExtraHand",
           description: `Payment for: ${task.title}`,
           notes: {
