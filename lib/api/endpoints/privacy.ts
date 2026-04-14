@@ -44,6 +44,17 @@ export interface DataExportResponse {
 
 export const privacyApi = {
   /**
+   * Check how many open tasks the user has
+   * GET /api/v1/privacy/open-tasks-count
+   */
+  async checkOpenTasks(): Promise<{
+    success: boolean;
+    openTasksCount: number;
+  }> {
+    return fetchWithAuth('privacy/open-tasks-count');
+  },
+
+  /**
    * Get privacy dashboard with data tracking
    * GET /api/v1/privacy/dashboard
    */
