@@ -24,9 +24,12 @@ export const metadata: Metadata = {
    authors: [{ name: "ExtraHand" }],
    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://extrahand.in"),
    icons: {
-      icon: "/logo.webp",
-      shortcut: "/logo.webp",
-      apple: "/logo.webp",
+      icon: [
+         { url: "/favicon.ico?v=2", type: "image/x-icon" },
+         { url: "/logo.webp", type: "image/webp" },
+      ],
+      shortcut: "/favicon.ico?v=2",
+      apple: "/favicon.ico?v=2",
    },
    openGraph: {
       type: "website",
