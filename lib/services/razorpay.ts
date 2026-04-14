@@ -143,8 +143,8 @@ export async function initiateRazorpayPayment(
       throw new Error('Failed to load Razorpay SDK');
     }
 
-    // Get Razorpay key from backend via web app gateway endpoint
-    const razorpayKey = await getRazorpayKeyId();
+    // Prefer explicit key from caller (same source as created order), else fetch gateway key.
+    const razorpayKey = options.key?.trim() || (await getRazorpayKeyId());
 
     // Prepare Razorpay options
     const razorpayOptions: RazorpayOptions = {
