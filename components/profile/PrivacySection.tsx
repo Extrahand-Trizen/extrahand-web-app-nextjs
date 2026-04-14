@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +19,6 @@ import {
    Info,
    AlertTriangle,
    Trash2,
-   ClipboardList,
    X,
 } from "lucide-react";
 import {
@@ -61,6 +61,17 @@ const VISIBILITY_OPTIONS: {
 ];
 
 // ---------------------------------------------------------------------------
+// Portal wrapper – renders children directly on document.body so that parent
+// overflow:hidden / transform stacking contexts can never clip the dialog.
+// ---------------------------------------------------------------------------
+function Portal({ children }: { children: React.ReactNode }) {
+   const [mounted, setMounted] = useState(false);
+   useEffect(() => { setMounted(true); }, []);
+   if (!mounted) return null;
+   return createPortal(children, document.body);
+}
+
+// ---------------------------------------------------------------------------
 // Deletion confirmation dialog
 // ---------------------------------------------------------------------------
 interface DeleteDialogProps {
@@ -80,141 +91,149 @@ function DeleteConfirmDialog({
    onCancel,
    isDeleting,
 }: DeleteDialogProps) {
-   // Prevent scroll behind modal
+   // Lock body scroll while open
    useEffect(() => {
+      const prev = document.body.style.overflow;
       document.body.style.overflow = "hidden";
-      return () => { document.body.style.overflow = ""; };
+      return () => { document.body.style.overflow = prev; };
    }, []);
 
    return (
-      <div
-         className="fixed inset-0 z-50 flex items-center justify-center p-4"
-         role="dialog"
-         aria-modal="true"
-         aria-labelledby="delete-dialog-title"
-      >
-         {/* Backdrop */}
+      <Portal>
          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={!isDeleting ? onCancel : undefined}
-         />
+            style={{ zIndex: 9999 }}
+            className="fixed inset-0 flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="del-dlg-title"
+         >
+            {/* Backdrop */}
+            <div
+               className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+               onClick={!isDeleting ? onCancel : undefined}
+            />
 
-         {/* Panel */}
-         <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            {/* Red top bar */}
-            <div className="bg-red-600 px-6 py-4 flex items-center justify-between">
-               <div className="flex items-center gap-2 text-white">
-                  <Trash2 className="w-5 h-5 shrink-0" />
-                  <h2 id="delete-dialog-title" className="font-semibold text-base">
-                     Delete Account
-                  </h2>
+            {/* Card */}
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+               {/* Header */}
+               <div className="bg-red-600 px-5 py-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-white">
+                     <Trash2 className="w-5 h-5 shrink-0" />
+                     <h2
+                        id="del-dlg-title"
+                        className="font-semibold text-sm sm:text-base"
+                     >
+                        Delete Account
+                     </h2>
+                  </div>
+                  {!isDeleting && (
+                     <button
+                        onClick={onCancel}
+                        className="text-white/80 hover:text-white transition-colors p-1 rounded"
+                        aria-label="Close"
+                     >
+                        <X className="w-4 h-4" />
+                     </button>
+                  )}
                </div>
-               {!isDeleting && (
-                  <button
-                     onClick={onCancel}
-                     className="text-white/80 hover:text-white transition-colors"
-                     aria-label="Close"
-                  >
-                     <X className="w-5 h-5" />
-                  </button>
-               )}
-            </div>
 
-            <div className="px-6 py-5 space-y-4">
-               {/* Open tasks warning — only shown when > 0 */}
-               {openTasksCount > 0 && (
-                  <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
-                     <ClipboardList className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                     <div>
-                        <p className="text-sm font-semibold text-amber-900">
-                           You have {openTasksCount} open{" "}
-                           {openTasksCount === 1 ? "task" : "tasks"}
+               <div className="px-5 py-5 space-y-4">
+                  {/* Open-tasks warning — only shown when > 0 */}
+                  {openTasksCount > 0 && (
+                     <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                        <p className="text-sm font-semibold text-amber-900 mb-2">
+                           You have:
                         </p>
-                        <p className="text-xs text-amber-800 mt-1">
-                           {openTasksCount === 1
-                              ? "This task is currently open and visible to taskers."
-                              : `These ${openTasksCount} tasks are currently open and visible to taskers.`}{" "}
-                           If you continue, they will be{" "}
-                           <strong>permanently deleted</strong> before your account
-                           enters the deletion window.
+                        <ul className="list-disc list-inside space-y-1 mb-3">
+                           <li className="text-sm text-amber-800">
+                              <span className="font-semibold">{openTasksCount}</span>{" "}
+                              active{" "}
+                              {openTasksCount === 1 ? "task" : "tasks"}{" "}
+                              <span className="text-amber-700">(not started)</span>
+                           </li>
+                        </ul>
+                        <p className="text-xs text-amber-800 leading-relaxed">
+                           Your active tasks will be{" "}
+                           <strong>automatically deleted</strong> after deletion.
+                           Are you sure you want to continue?
                         </p>
                      </div>
-                  </div>
-               )}
+                  )}
 
-               {/* Standard warning */}
-               <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
-                  <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                  {/* Standard deletion warning */}
+                  <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+                     <div className="flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                        <div>
+                           <p className="text-sm font-semibold text-red-900">
+                              24–48 hour grace period
+                           </p>
+                           <p className="text-xs text-red-800 mt-1 leading-relaxed">
+                              Deletion is scheduled — not instant. You can cancel
+                              anytime before the scheduled time. Personal data is
+                              anonymised; legal records are retained for compliance.
+                           </p>
+                        </div>
+                     </div>
+                  </div>
+
+                  {/* Optional reason */}
                   <div>
-                     <p className="text-sm font-semibold text-red-900">
-                        This action is scheduled — not instant
-                     </p>
-                     <p className="text-xs text-red-800 mt-1">
-                        Your account will be permanently deleted after a{" "}
-                        <strong>24–48 hour grace period</strong>. You can cancel
-                        anytime before the scheduled time. Personal data will be
-                        anonymised; legal records are retained for compliance.
-                     </p>
+                     <label
+                        htmlFor="deletion-reason"
+                        className="block text-xs font-medium text-gray-700 mb-1.5"
+                     >
+                        Reason for leaving{" "}
+                        <span className="font-normal text-gray-400">(optional)</span>
+                     </label>
+                     <textarea
+                        id="deletion-reason"
+                        rows={3}
+                        value={reason}
+                        onChange={(e) => onReasonChange(e.target.value)}
+                        disabled={isDeleting}
+                        placeholder="Help us improve by telling us why you're leaving…"
+                        className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-red-400 resize-none disabled:opacity-60"
+                     />
                   </div>
-               </div>
 
-               {/* Optional reason */}
-               <div>
-                  <label
-                     htmlFor="deletion-reason"
-                     className="block text-xs font-medium text-gray-700 mb-1.5"
-                  >
-                     Reason for leaving{" "}
-                     <span className="font-normal text-gray-400">(optional)</span>
-                  </label>
-                  <textarea
-                     id="deletion-reason"
-                     rows={3}
-                     value={reason}
-                     onChange={(e) => onReasonChange(e.target.value)}
-                     disabled={isDeleting}
-                     placeholder="Help us improve by telling us why you're leaving…"
-                     className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-red-400 resize-none disabled:opacity-60"
-                  />
-               </div>
-
-               {/* Actions */}
-               <div className="flex flex-col-reverse sm:flex-row gap-2 pt-1">
-                  <Button
-                     type="button"
-                     variant="outline"
-                     className="flex-1"
-                     onClick={onCancel}
-                     disabled={isDeleting}
-                  >
-                     Cancel
-                  </Button>
-                  <Button
-                     type="button"
-                     variant="destructive"
-                     className="flex-1 gap-2"
-                     onClick={onConfirm}
-                     disabled={isDeleting}
-                     id="confirm-delete-account-btn"
-                  >
-                     {isDeleting ? (
-                        <>
-                           <Loader2 className="w-4 h-4 animate-spin" />
-                           Scheduling…
-                        </>
-                     ) : (
-                        <>
-                           <Trash2 className="w-4 h-4" />
-                           {openTasksCount > 0
-                              ? `Delete ${openTasksCount} task${openTasksCount > 1 ? "s" : ""} & schedule deletion`
-                              : "Yes, schedule deletion"}
-                        </>
-                     )}
-                  </Button>
+                  {/* Actions */}
+                  <div className="flex flex-col-reverse sm:flex-row gap-2 pt-1">
+                     <Button
+                        type="button"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={onCancel}
+                        disabled={isDeleting}
+                        id="cancel-delete-account-btn"
+                     >
+                        Cancel
+                     </Button>
+                     <Button
+                        type="button"
+                        variant="destructive"
+                        className="flex-1 gap-2"
+                        onClick={onConfirm}
+                        disabled={isDeleting}
+                        id="confirm-delete-account-btn"
+                     >
+                        {isDeleting ? (
+                           <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Scheduling…
+                           </>
+                        ) : (
+                           <>
+                              <Trash2 className="w-4 h-4" />
+                              Continue
+                           </>
+                        )}
+                     </Button>
+                  </div>
                </div>
             </div>
          </div>
-      </div>
+      </Portal>
    );
 }
 
@@ -230,7 +249,7 @@ export function PrivacySection({
    const [isSaving, setIsSaving] = useState(false);
    const [hasChanges, setHasChanges] = useState(false);
 
-   // Deletion states
+   // Deletion dialog states
    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
    const [deletionReason, setDeletionReason] = useState("");
    const [openTasksCount, setOpenTasksCount] = useState(0);
@@ -239,26 +258,30 @@ export function PrivacySection({
 
    const [isCancellingDeletion, setIsCancellingDeletion] = useState(false);
    const [deletionRequested, setDeletionRequested] = useState(false);
-   const [deletionScheduledFor, setDeletionScheduledFor] = useState<string | null>(null);
+   const [deletionScheduledFor, setDeletionScheduledFor] = useState<
+      string | null
+   >(null);
 
-   const [expandedSections, setExpandedSections] = useState<string[]>(["visibility"]);
+   const [expandedSections, setExpandedSections] = useState<string[]>([
+      "visibility",
+   ]);
 
    // Load deletion status on mount
    useEffect(() => {
-      let isMounted = true;
+      let mounted = true;
       const load = async () => {
          try {
             const result = await privacyApi.getDashboard();
             const status = (result as any)?.dashboard?.deletionStatus;
-            if (!isMounted || !status) return;
+            if (!mounted || !status) return;
             setDeletionRequested(Boolean(status.requested));
             setDeletionScheduledFor(status.scheduledFor || null);
          } catch {
-            // Non-blocking
+            // Non-critical
          }
       };
       void load();
-      return () => { isMounted = false; };
+      return () => { mounted = false; };
    }, []);
 
    useEffect(() => {
@@ -273,13 +296,10 @@ export function PrivacySection({
       settings.analyticsTracking,
    ]);
 
-   const toggleSection = (section: string) => {
+   const toggleSection = (s: string) =>
       setExpandedSections((prev) =>
-         prev.includes(section)
-            ? prev.filter((s) => s !== section)
-            : [...prev, section]
+         prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
       );
-   };
 
    const updateSetting = <K extends keyof PrivacySettingsState>(
       key: K,
@@ -294,41 +314,51 @@ export function PrivacySection({
       try {
          await onSave(localSettings);
          setHasChanges(false);
-      } catch (error) {
-         console.error("Failed to save privacy settings:", error);
+      } catch (e) {
+         console.error("Failed to save privacy settings:", e);
       } finally {
          setIsSaving(false);
       }
    };
 
-   // Step 1: Button click → preflight check
+   // ── Step 1: button click → fetch count → show dialog ──────────────────
    const handleDeleteButtonClick = async () => {
       setIsCheckingTasks(true);
+      let count = 0;
       try {
          const res = await privacyApi.checkOpenTasks();
-         setOpenTasksCount(res.openTasksCount ?? 0);
-      } catch {
-         setOpenTasksCount(0);
+         count = res?.openTasksCount ?? 0;
+      } catch (e) {
+         console.warn("Could not fetch open task count:", e);
+         count = 0;
       } finally {
          setIsCheckingTasks(false);
       }
+      setOpenTasksCount(count);
       setDeletionReason("");
-      setShowDeleteDialog(true);
+      setShowDeleteDialog(true); // ← always show, regardless of count
    };
 
-   // Step 2: User confirmed inside dialog
+   // ── Step 2: user clicked "Continue" inside dialog ──────────────────────
    const handleConfirmDeletion = async () => {
       setIsDeleting(true);
       try {
-         const response = await privacyApi.requestDeletion(true, deletionReason || undefined);
+         const res = await privacyApi.requestDeletion(
+            true,
+            deletionReason || undefined
+         );
          setDeletionRequested(true);
          setDeletionScheduledFor(
-            response?.deletionScheduledFor
-               ? new Date(response.deletionScheduledFor as unknown as string).toISOString()
+            res?.deletionScheduledFor
+               ? new Date(
+                    res.deletionScheduledFor as unknown as string
+                 ).toISOString()
                : null
          );
          setShowDeleteDialog(false);
-         toast.success("Account deletion scheduled. You can cancel until the scheduled time.");
+         toast.success(
+            "Account deletion scheduled. You can cancel until the scheduled time."
+         );
       } catch (error: any) {
          toast.error(error?.message || "Failed to request account deletion");
       } finally {
@@ -336,8 +366,11 @@ export function PrivacySection({
       }
    };
 
+   // ── Step 2b: user clicked "Cancel" inside dialog ───────────────────────
    const handleCancelDialog = () => {
-      if (!isDeleting) setShowDeleteDialog(false);
+      if (!isDeleting) {
+         setShowDeleteDialog(false);
+      }
    };
 
    const handleCancelDeletion = async () => {
@@ -356,7 +389,7 @@ export function PrivacySection({
 
    return (
       <>
-         {/* Deletion confirmation dialog (portal-like, rendered above everything) */}
+         {/* Dialog rendered via Portal — cannot be clipped by parent overflow */}
          {showDeleteDialog && (
             <DeleteConfirmDialog
                openTasksCount={openTasksCount}
@@ -403,7 +436,7 @@ export function PrivacySection({
                               updateSetting("profileVisibility", option.value)
                            }
                            className={cn(
-                              "w-full flex items-start gap-3 p-3 rounded-lg border text-left transition-colors relative",
+                              "w-full flex items-start gap-3 p-3 rounded-lg border text-left transition-colors",
                               isSelected
                                  ? "border-gray-900 bg-gray-50"
                                  : "border-gray-200 hover:border-gray-300"
@@ -420,18 +453,14 @@ export function PrivacySection({
                               {option.icon}
                            </div>
                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                 <p
-                                    className={cn(
-                                       "text-sm font-medium",
-                                       isSelected
-                                          ? "text-gray-900"
-                                          : "text-gray-700"
-                                    )}
-                                 >
-                                    {option.label}
-                                 </p>
-                              </div>
+                              <p
+                                 className={cn(
+                                    "text-sm font-medium",
+                                    isSelected ? "text-gray-900" : "text-gray-700"
+                                 )}
+                              >
+                                 {option.label}
+                              </p>
                               <p className="text-xs text-gray-500 mt-0.5">
                                  {option.description}
                               </p>
@@ -459,7 +488,7 @@ export function PrivacySection({
 
             {/* Location & Tracking */}
             <CollapsibleSection
-               title="Location & Tracking"
+               title="Location &amp; Tracking"
                description="Control location sharing and analytics"
                icon={<MapPin className="w-4 h-4 sm:w-5 sm:h-5" />}
                isExpanded={expandedSections.includes("location")}
@@ -485,11 +514,10 @@ export function PrivacySection({
                         Delete Account
                      </p>
                      <p className="text-xs text-red-800 mt-1">
-                        Account deletion removes personal profile data and
-                        anonymises your name. Legal and transaction records are
-                        retained for compliance. Open tasks are deleted
-                        automatically; active/in-progress tasks must be resolved
-                        first.
+                        Removes personal profile data and anonymises your name.
+                        Open tasks are cancelled. Active or in-progress tasks must
+                        be resolved first. Legal records are retained for
+                        compliance.
                      </p>
                   </div>
 
@@ -501,7 +529,9 @@ export function PrivacySection({
                         <p className="text-xs text-amber-800">
                            Scheduled for:{" "}
                            {deletionScheduledFor
-                              ? new Date(deletionScheduledFor).toLocaleString()
+                              ? new Date(
+                                   deletionScheduledFor
+                                ).toLocaleString()
                               : "Not available"}
                         </p>
                         <Button
@@ -546,7 +576,7 @@ export function PrivacySection({
                </div>
             </CollapsibleSection>
 
-            {/* Info Box */}
+            {/* Privacy Policy info */}
             <div className="bg-primary-50 rounded-lg p-4 flex items-start gap-3">
                <Info className="w-4 h-4 text-primary-600 shrink-0 mt-0.5" />
                <div className="text-xs text-primary-700">
