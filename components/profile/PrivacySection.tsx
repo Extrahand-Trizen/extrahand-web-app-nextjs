@@ -28,7 +28,6 @@ import {
 } from "@/types/consent";
 import { toast } from "sonner";
 import { privacyApi } from "@/lib/api/endpoints/privacy";
-import { useAuth } from "@/lib/auth/context";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -307,7 +306,6 @@ export function PrivacySection({
   const [deletionReason, setDeletionReason] = useState("");
   const [openTasksCount, setOpenTasksCount] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const { logout } = useAuth();
 
   const [isCancellingDeletion, setIsCancellingDeletion] = useState(false);
   const [deletionRequested, setDeletionRequested] = useState(false);
@@ -430,9 +428,6 @@ export function PrivacySection({
       toast.success(
         "Account deletion scheduled. You can cancel until the scheduled time."
       );
-      
-      // Sign the user out immediately so they don't continue with a soon-to-be-deleted account.
-      await logout();
     } catch (error: any) {
       toast.error(error?.message || "Failed to request account deletion");
     } finally {
