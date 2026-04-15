@@ -8,7 +8,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { HeroSection, HowItWorksSection } from "@/components/landing";
+import { HeroSection, HowItWorksSection, ServicesSection } from "@/components/landing";
 import { useAuth } from "@/lib/auth/context";
 
 // Defer below-the-fold marketing sections to reduce initial bundle size.
@@ -34,6 +34,10 @@ const TrustSection = dynamic(
 
 const TestimonialsSection = dynamic(
    () => import("@/components/landing/TestimonialsSection")
+);
+
+const FAQSection = dynamic(
+   () => import("@/components/landing/FAQSection")
 );
 
 const FinalCTASection = dynamic(
@@ -174,10 +178,12 @@ export default function LandingPageClient() {
       >
          <HeroSection />
          <SocialProofBar />
+         <ServicesSection />
          <HowItWorksSection />
          <CategoriesExplorer />
          <TrustSection />
          <TestimonialsSection />
+         <FAQSection />
          <FinalCTASection />
       </div>
    );

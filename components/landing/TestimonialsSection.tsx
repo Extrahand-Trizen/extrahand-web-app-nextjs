@@ -175,7 +175,7 @@ export const TestimonialsSection: React.FC = () => {
             {/* Section header */}
             <div className="text-center mb-8 md:mb-12">
                <h2 className="text-2xl md:text-4xl font-bold text-secondary-900 mb-4">
-                  Loved by Thousands
+                  What Our Customers Say
                </h2>
                <p className="text-sm md:text-lg text-secondary-600 max-w-2xl mx-auto">
                   Real stories from our community.

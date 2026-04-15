@@ -220,7 +220,7 @@ function DeleteConfirmDialog({
                     <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
                     <div>
                       <p className="text-sm font-semibold text-red-900">
-                        24–48 hour grace period
+                        24-48 hour grace period
                       </p>
                       <p className="text-xs text-red-800 mt-1 leading-relaxed">
                         Deletion is scheduled — not instant. You can cancel
