@@ -16,18 +16,6 @@ const SocialProofBar = dynamic(
    () => import("@/components/landing/SocialProofBar")
 );
 
-const CategoriesExplorer = dynamic(
-   () =>
-      import("@/components/landing/CategoriesExplorer").then(
-         (m) => m.CategoriesExplorer
-      ),
-   {
-      // Uses framer-motion; client-only is fine and keeps it out of the
-      // critical landing page JS on first paint.
-      ssr: false,
-   }
-);
-
 const TrustSection = dynamic(
    () => import("@/components/landing/TrustSection")
 );
@@ -180,7 +168,6 @@ export default function LandingPageClient() {
          <SocialProofBar />
          <ServicesSection />
          <HowItWorksSection />
-         <CategoriesExplorer />
          <TrustSection />
          <TestimonialsSection />
          <FAQSection />

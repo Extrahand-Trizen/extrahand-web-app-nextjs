@@ -82,16 +82,59 @@ function getDisplayProfession(user?: UserProfile | null): string {
    return firstSkill?.name?.trim() || "Professional";
 }
 
-function getExistingCertificate(user?: UserProfile | null): CertificateEntry | null {
+function getAllCertificates(user?: UserProfile | null): CertificateEntry[] {
+   const certificates: CertificateEntry[] = [];
    const skills = Array.isArray(user?.skills?.list) ? user.skills.list : [];
    for (const skill of skills) {
-      const certificates = Array.isArray(skill?.certificates) ? skill.certificates : [];
-      const match = certificates.find((certificate) => Boolean(certificate?.documentUrl));
-      if (match) {
-         return match as CertificateEntry;
+      const skillCerts = Array.isArray(skill?.certificates) ? skill.certificates : [];
+      for (const cert of skillCerts) {
+         if (cert?.documentUrl) {
+            certificates.push(cert as CertificateEntry);
+         }
       }
    }
-   return null;
+   return certificates;
+}
+
+function isMeaningfulText(text: string, minLength: number = 3): boolean {
+   if (!text || text.length < minLength) return false;
+   
+   // Check for meaningful words (at least 2 words or special patterns like "ABC-123")
+   const words = text.trim().split(/\s+/);
+   
+   // Allow single words with numbers/hyphens like "CCTV" or "CERT-2026-0192"
+   if (text.length >= 4 && /[A-Z0-9\-]/.test(text)) {
+      // If it has structure like acronyms or codes, it's meaningful
+      const hasLetters = /[a-zA-Z]/.test(text);
+      const hasNonLetters = /[^a-zA-Z]/.test(text);
+      if (hasLetters && (hasNonLetters || text.length >= 4)) return true;
+   }
+   
+   // Check if it has at least 2 words
+   if (words.length >= 2) {
+      // Ensure words aren't just gibberish repetition
+      const uniqueWordChars = new Set();
+      for (const word of words) {
+         for (const char of word) {
+            uniqueWordChars.add(char.toLowerCase());
+         }
+      }
+      // If too few unique characters, it's gibberish
+      if (uniqueWordChars.size < 5) return false;
+      return true;
+   }
+   
+   // Single word check: must have diverse characters or be a known acronym
+   if (words.length === 1) {
+      const uniqueChars = new Set();
+      for (const char of text.toLowerCase()) {
+         if (char !== " ") uniqueChars.add(char);
+      }
+      // At least 3 unique characters breaks the gibberish repetition pattern
+      return uniqueChars.size >= 3 && text.length >= 3;
+   }
+   
+   return false;
 }
 
 function parseDateInput(value: string): Date | undefined {
@@ -186,7 +229,7 @@ export default function CertificateVerificationPage() {
    }, [state.step]);
 
    const profileVerificationsUrl = "/profile?section=verifications";
-   const existingCertificate = useMemo(() => getExistingCertificate(user), [user]);
+   const allCertificates = useMemo(() => getAllCertificates(user), [user]);
    const professionLabel = useMemo(() => getDisplayProfession(user), [user]);
 
    const handleBack = () => {
@@ -240,13 +283,19 @@ export default function CertificateVerificationPage() {
 
    const validateDetails = (): boolean => {
       const fieldErrors: Partial<Record<CertificateField, string>> = {};
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
       if (!state.certificateType.trim()) {
          fieldErrors.certificateType = "Certificate Type is required.";
+      } else if (!isMeaningfulText(state.certificateType.trim())) {
+         fieldErrors.certificateType = "Please enter meaningful certificate type (e.g., 'CCTV Installation' or 'AWS Certification').";
       }
 
       if (!state.issuingAuthority.trim()) {
          fieldErrors.issuingAuthority = "Issuing Authority / Institute is required.";
+      } else if (!isMeaningfulText(state.issuingAuthority.trim())) {
+         fieldErrors.issuingAuthority = "Please enter a meaningful issuing authority (e.g., 'National Institute' or 'Google Academy').";
       }
 
       if (!state.issueDate) {
@@ -255,6 +304,16 @@ export default function CertificateVerificationPage() {
 
       const issueDate = parseDateInput(state.issueDate);
       const expiryDate = parseDateInput(state.expiryDate);
+
+      // Check if issue date is in the future
+      if (issueDate && issueDate > today) {
+         fieldErrors.issueDate = "Issue Date cannot be in the future.";
+      }
+
+      // Check if expiry date is in the future (for already-expired or soon-to-expire certificates)
+      if (state.expiryDate && expiryDate && expiryDate < today) {
+         fieldErrors.expiryDate = "Expiry Date has already passed. Please check the date.";
+      }
 
       if (state.expiryDate && issueDate && expiryDate && expiryDate < issueDate) {
          fieldErrors.expiryDate = "Expiry Date must be after the Issue Date.";
@@ -575,25 +634,42 @@ export default function CertificateVerificationPage() {
                   </p>
                ) : null}
 
-               {existingCertificate ? (
-                  <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
-                     {(() => {
-                        const statusMeta = getCertificateStatusMeta(existingCertificate.status);
-                        return (
-                           <>
-                              <div className="flex items-center gap-2">
-                                 <p className="font-medium text-slate-900">Existing certificate</p>
-                                 <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium", statusMeta.className)}>
-                                    {statusMeta.label}
-                                 </span>
-                              </div>
-                              <p className="mt-1 text-slate-600">
-                                 {existingCertificate.title || "Professional Certificate"} is already linked to your profile.
-                              </p>
-                              <p className="mt-1 text-xs text-slate-500">{statusMeta.subtitle}</p>
-                           </>
-                        );
-                     })()}
+               {allCertificates.length > 0 ? (
+                  <div className="space-y-3">
+                     <div className="border-b border-slate-200 pb-4">
+                        <h3 className="text-sm font-semibold text-slate-900 mb-3">Your uploaded certificates</h3>
+                        <div className="space-y-2">
+                           {allCertificates.map((cert, index) => {
+                              const statusMeta = getCertificateStatusMeta(cert.status);
+                              return (
+                                 <div
+                                    key={index}
+                                    className="rounded-lg border border-slate-200 bg-white p-3 flex items-start justify-between gap-3"
+                                 >
+                                    <div className="flex-1 min-w-0">
+                                       <p className="text-sm font-medium text-slate-900 truncate">
+                                          {cert.title || "Professional Certificate"}
+                                       </p>
+                                       <p className="text-xs text-slate-600 mt-1">
+                                          {cert.issuedBy || "Issuing Authority"}
+                                       </p>
+                                       <p className="text-xs text-slate-500 mt-0.5">
+                                          {formatDateLabel(cert.issueDate)}
+                                       </p>
+                                    </div>
+                                    <div className="shrink-0">
+                                       <span className={cn("inline-flex items-center rounded-full px-2 py-1 text-xs font-medium", statusMeta.className)}>
+                                          {statusMeta.label}
+                                       </span>
+                                    </div>
+                                 </div>
+                              );
+                           })}
+                        </div>
+                     </div>
+                     <p className="text-xs text-slate-500">
+                        You can upload additional certificates below.
+                     </p>
                   </div>
                ) : null}
 
@@ -693,6 +769,7 @@ export default function CertificateVerificationPage() {
                         type="date"
                         value={state.issueDate}
                         onChange={(event) => updateField("issueDate", event.target.value)}
+                        max={new Date().toISOString().split('T')[0]}
                         className={cn(
                            "mt-1.5 h-10 text-xs md:text-sm",
                            state.fieldErrors.issueDate && "border-red-300 focus:border-red-500"

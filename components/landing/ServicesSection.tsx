@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
    CheckCircle2,
@@ -21,63 +23,74 @@ import {
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-interface ServiceCategory {
-   icon: React.ComponentType<{ className?: string }>;
+interface TopCategoryCard {
    title: string;
-   iconTone: string;
-   iconBg: string;
+   description: string;
+   image: string;
+   tags: string[];
+   slug: string;
 }
 
-const categories = [
+const topCategoryCards: TopCategoryCard[] = [
    {
-      icon: Zap,
       title: "Electricians",
-      iconTone: "text-amber-600",
-      iconBg: "bg-amber-50",
+      description: "Wiring, switch board fitting, fan and light installation.",
+      image: "/assets/mobilescreens/electrical.webp",
+      tags: ["Fan Installation", "Light Fix", "Wiring"],
+      slug: "electricians",
    },
    {
-      icon: Wrench,
       title: "Plumbers",
-      iconTone: "text-sky-600",
-      iconBg: "bg-sky-50",
+      description: "Fix leaks, pipe blocks, bathroom fittings, and tap issues.",
+      image: "/assets/mobilescreens/plumbing.webp",
+      tags: ["Leak Repair", "Tap Fitting", "Drain Cleaning"],
+      slug: "plumbers",
    },
    {
-      icon: Sparkles,
       title: "Home Cleaning",
-      iconTone: "text-emerald-600",
-      iconBg: "bg-emerald-50",
+      description: "Book regular, deep, kitchen, and full-home cleaning.",
+      image: "/assets/mobilescreens/cleaning.webp",
+      tags: ["Deep Cleaning", "Kitchen", "Sofa"],
+      slug: "home-cleaning",
    },
    {
-      icon: Hammer,
       title: "Carpenters",
-      iconTone: "text-orange-600",
-      iconBg: "bg-orange-50",
+      description: "Furniture assembly, repair work, shelves, and fittings.",
+      image: "/assets/mobilescreens/work.webp",
+      tags: ["Furniture", "Repair", "Installation"],
+      slug: "carpenters",
    },
    {
-      icon: Layers,
       title: "Flooring Services",
-      iconTone: "text-violet-600",
-      iconBg: "bg-violet-50",
+      description: "Tile, wooden, and vinyl flooring support by professionals.",
+      image: "/assets/mobilescreens/garden.webp",
+      tags: ["Tiles", "Wooden", "Repairs"],
+      slug: "flooring-services",
    },
    {
-      icon: Truck,
       title: "Delivery & Pickup",
-      iconTone: "text-cyan-600",
-      iconBg: "bg-cyan-50",
+      description: "Same-day parcel, grocery, and item pickup/drop service.",
+      image: "/assets/mobilescreens/delivery.webp",
+      tags: ["Parcel", "Grocery", "Document"],
+      slug: "delivery-pickup",
    },
    {
-      icon: Briefcase,
       title: "General Handyman",
-      iconTone: "text-rose-600",
-      iconBg: "bg-rose-50",
+      description: "Quick help for minor repairs and home maintenance tasks.",
+      image: "/assets/mobilescreens/handy.webp",
+      tags: ["Curtain Rod", "Door Fix", "Small Jobs"],
+      slug: "general-handyman",
    },
    {
-      icon: PawPrint,
       title: "Pet Care Services",
-      iconTone: "text-fuchsia-600",
-      iconBg: "bg-fuchsia-50",
+      description: "Pet walking, grooming assistance, and day-care support.",
+      image: "/assets/mobilescreens/cleaning.webp",
+      tags: ["Pet Walk", "Pet Sitting", "Care"],
+      slug: "pet-care-services",
    },
 ];
+
+const CATEGORY_MARQUEE_DURATION_SECONDS = 48;
 
 const whyChoosePoints = [
    {
@@ -123,21 +136,6 @@ export const ServicesSection: React.FC = () => {
       <section className="relative py-14 md:py-24 bg-[radial-gradient(120%_70%_at_50%_0%,rgba(255,245,220,0.5),rgba(255,255,255,1))] overflow-hidden">
          <div className="pointer-events-none absolute -top-28 left-1/2 -translate-x-1/2 h-80 w-80 rounded-full bg-primary-200/25 blur-3xl" />
          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Main Hero Section - H1 */}
-            <div className="relative mb-12 md:mb-16 flex flex-col items-center text-center">
-               <h1
-                  className="text-3xl md:text-5xl lg:text-[3.5rem] font-extrabold leading-[1.12] text-secondary-900 mb-4 max-w-4xl mx-auto"
-                  style={{ textWrap: "balance" }}
-               >
-                  Find & Hire Services Near You at Your Budget
-               </h1>
-               <p className="text-base md:text-xl text-secondary-600 max-w-3xl mx-auto leading-relaxed text-center">
-                  Find trusted service providers for all your Service needs. Share your
-                  requirement, set your budget, and get matched with the right
-                  professional—only on ExtraHand.
-               </p>
-            </div>
-
             {/* One Platform Section - H2 */}
             <div className="mb-16 md:mb-24 bg-white/90 backdrop-blur rounded-3xl shadow-xl shadow-secondary-200/40 border border-secondary-100 p-6 md:p-12">
                <h2 className="text-2xl md:text-4xl font-bold text-secondary-900 mb-6 md:mb-8">
@@ -191,41 +189,96 @@ export const ServicesSection: React.FC = () => {
 
             {/* Categories Section - H2 */}
             <div className="mb-16 md:mb-24">
-               <h2 className="text-2xl md:text-4xl font-bold text-secondary-900 mb-2">
-                  Our Top Categories
-               </h2>
-               <p className="text-secondary-600 mb-8 text-base md:text-xl/8 max-w-5xl">
-                  Choose from a wide range of home and daily services. All services are
-                  handled by verified professionals to ensure quality and safety.
-               </p>
+               <div className="relative overflow-hidden rounded-3xl px-3 py-8 md:px-8 md:py-12 bg-linear-to-b from-primary-50/40 via-white to-primary-50/40">
+                  <div className="pointer-events-none absolute top-6 left-6 h-40 w-40 rounded-full bg-primary-200/20 blur-3xl" />
+                  <div className="pointer-events-none absolute bottom-4 right-6 h-52 w-52 rounded-full bg-primary-300/10 blur-3xl" />
 
-               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
-                  {categories.map((category, idx) => {
-                     const Icon = category.icon;
-                     const categorySlug = category.title
-                        .toLowerCase()
-                        .replace(/\s+/g, "-");
-                     return (
-                        <Link
-                           key={idx}
-                           href={`/tasks/new?category=${categorySlug}`}
+                  <div className="relative z-10 mx-auto max-w-4xl text-center mb-10 md:mb-12">
+                  <h2 className="text-2xl md:text-4xl font-bold text-secondary-900 mb-3">
+                     Our Top Categories
+                  </h2>
+                  <p className="text-secondary-600 text-base md:text-xl/8">
+                     Choose from a wide range of home and daily services. All services
+                     are handled by verified professionals to ensure quality and safety.
+                  </p>
+                  </div>
+
+                  <div className="relative overflow-hidden rounded-3xl">
+                     <div className="hidden md:block pointer-events-none absolute left-0 top-0 h-full w-24 bg-linear-to-r from-white via-white/80 to-transparent z-10" />
+                     <div className="hidden md:block pointer-events-none absolute right-0 top-0 h-full w-24 bg-linear-to-l from-white via-white/80 to-transparent z-10" />
+
+                     {Array.from({ length: 2 }).map((_, lane) => (
+                        <motion.div
+                           key={lane}
+                           className="flex w-max gap-4 md:gap-6 py-2 md:py-3"
+                           animate={
+                              lane === 0
+                                 ? { x: ["0%", "-33.333%"] }
+                                 : { x: ["-33.333%", "0%"] }
+                           }
+                           transition={{
+                              duration: CATEGORY_MARQUEE_DURATION_SECONDS,
+                              ease: "linear",
+                              repeat: Infinity,
+                           }}
                         >
-                           <div className="group bg-white rounded-2xl p-5 md:p-6 text-center border border-secondary-100 hover:shadow-lg hover:shadow-secondary-200/40 hover:border-primary-200 transition-all duration-300 cursor-pointer">
-                              <div
-                                 className={cn(
-                                    "mx-auto mb-4 inline-flex size-12 items-center justify-center rounded-xl transition-transform duration-300 group-hover:-translate-y-0.5",
-                                    category.iconBg
-                                 )}
+                           {[...topCategoryCards, ...topCategoryCards].map((category, idx) => (
+                              <Link
+                                 key={`${category.slug}-${lane}-${idx}`}
+                                 href={`/tasks/new?category=${category.slug}`}
+                                 className="group"
                               >
-                                 <Icon className={cn("size-6", category.iconTone)} />
-                              </div>
-                              <h3 className="font-semibold text-secondary-900 text-sm md:text-lg">
-                                 {category.title}
-                              </h3>
-                           </div>
-                        </Link>
-                     );
-                  })}
+                                 <article className="min-w-[300px] sm:min-w-[420px] lg:min-w-[520px] rounded-2xl bg-white border border-secondary-100 p-4 md:p-5 shadow-sm hover:shadow-xl hover:shadow-secondary-200/40 hover:border-primary-200 transition-all duration-300">
+                                    <div className="flex items-start gap-4">
+                                       <div className="relative size-20 md:size-24 shrink-0 overflow-hidden rounded-xl bg-secondary-100">
+                                          <Image
+                                             src={category.image}
+                                             alt={category.title}
+                                             fill
+                                             className="object-cover group-hover:scale-110 transition-transform duration-300"
+                                          />
+                                       </div>
+
+                                       <div className="min-w-0 flex-1">
+                                          <div className="flex items-center justify-between gap-3">
+                                             <h3 className="text-xl md:text-2xl font-bold text-secondary-900 group-hover:text-primary-700 transition-colors">
+                                                {category.title}
+                                             </h3>
+                                             <ArrowRight className="size-5 text-secondary-400 group-hover:text-primary-600 group-hover:translate-x-1 transition-all shrink-0" />
+                                          </div>
+
+                                          <p className="mt-2 text-secondary-600 text-sm md:text-base leading-relaxed">
+                                             {category.description}
+                                          </p>
+
+                                          <div className="mt-3 flex flex-wrap gap-2">
+                                             {category.tags.map((tag) => (
+                                                <span
+                                                   key={tag}
+                                                   className="inline-flex items-center rounded-full border border-primary-200 bg-primary-50 px-3 py-1 text-xs md:text-sm text-primary-700"
+                                                >
+                                                   {tag}
+                                                </span>
+                                             ))}
+                                          </div>
+                                       </div>
+                                    </div>
+                                 </article>
+                              </Link>
+                           ))}
+                        </motion.div>
+                     ))}
+                  </div>
+
+                  <div className="relative z-10 text-center mt-6 md:mt-10">
+                     <Link
+                        href="/services"
+                        className="inline-flex items-center gap-2 px-5 py-3 md:px-6 bg-primary-500 hover:bg-primary-600 transition-colors font-semibold rounded-xl text-sm md:text-lg shadow-lg text-white"
+                     >
+                        View all categories
+                        <ArrowRight className="h-5 w-5" />
+                     </Link>
+                  </div>
                </div>
             </div>
 
