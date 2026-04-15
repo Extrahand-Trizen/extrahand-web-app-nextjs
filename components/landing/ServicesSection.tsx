@@ -7,18 +7,11 @@ import { Button } from "@/components/ui/button";
 import {
    CheckCircle2,
    Zap,
-   Users,
-   Shield,
-   MessageCircle,
-   Gauge,
-   Wrench,
    Sparkles,
-   Hammer,
    Layers,
-   Truck,
-   PawPrint,
    ArrowRight,
    Briefcase,
+   Shield,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -94,40 +87,46 @@ const CATEGORY_MARQUEE_DURATION_SECONDS = 48;
 
 const whyChoosePoints = [
    {
-      icon: Users,
+      icon: Layers,
       title: "Compare Service Providers Easily",
+      description: "Compare profiles, ratings, and offers to pick the right pro.",
       color: "text-blue-600",
       iconBg: "bg-blue-50",
    },
    {
-      icon: Gauge,
+      icon: Shield,
       title: "Set Your Own Budget for Services",
+      description: "Post your task with your budget and receive matching quotes.",
       color: "text-green-600",
       iconBg: "bg-green-50",
    },
    {
-      icon: Shield,
+      icon: CheckCircle2,
       title: "Verified & Skilled Professionals",
+      description: "Work with trusted taskers verified for quality and reliability.",
+      color: "text-amber-600",
+      iconBg: "bg-amber-50",
+   },
+   {
+      icon: Sparkles,
+      title: "Transparent Communication",
+      description: "Clear in-app communication keeps you updated at every step.",
       color: "text-purple-600",
       iconBg: "bg-purple-50",
    },
    {
-      icon: MessageCircle,
-      title: "Transparent Communication",
+      icon: Zap,
+      title: "Quick Response & Booking",
+      description: "Get fast responses and confirm bookings in just a few taps.",
       color: "text-orange-600",
       iconBg: "bg-orange-50",
    },
    {
-      icon: Zap,
-      title: "Quick Response & Booking",
+      icon: Briefcase,
+      title: "All Services in One Platform",
+      description: "From home fixes to daily tasks, manage everything in one place.",
       color: "text-red-600",
       iconBg: "bg-red-50",
-   },
-   {
-      icon: Layers,
-      title: "All Services in One Platform",
-      color: "text-indigo-600",
-      iconBg: "bg-indigo-50",
    },
 ];
 
@@ -284,33 +283,46 @@ export const ServicesSection: React.FC = () => {
 
             {/* Why Choose ExtraHand - H2 */}
             <div>
-               <h2 className="text-2xl md:text-4xl font-bold text-secondary-900 mb-2">
-                  Why Choose ExtraHand
-               </h2>
-               <p className="text-secondary-600 mb-8 text-base md:text-xl/8 max-w-5xl">
-                  We make your life easier by connecting you with trusted service
-                  providers.
-               </p>
+               <div className="mx-auto max-w-4xl text-center mb-8 md:mb-10">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-green-200 bg-green-100 px-4 py-1.5 text-green-700 text-sm md:text-[15px] font-medium mb-4">
+                     <Shield className="size-4" />
+                     Your safety is our priority
+                  </div>
+                  <h2 className="text-2xl md:text-4xl font-bold text-secondary-900 mb-2">
+                     Why Choose ExtraHand
+                  </h2>
+                  <p className="text-secondary-600 text-base md:text-xl/8">
+                     We make your life easier by connecting you with trusted service
+                     providers.
+                  </p>
+               </div>
 
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {whyChoosePoints.map((point, idx) => {
                      const Icon = point.icon;
                      return (
                         <div
                            key={idx}
-                           className="group bg-white rounded-2xl p-6 border border-secondary-100 shadow-sm hover:shadow-lg hover:shadow-secondary-200/40 transition-all duration-300"
+                           className="group bg-white rounded-xl p-4 border border-secondary-100 shadow-sm hover:shadow-md hover:shadow-secondary-200/40 transition-all duration-300"
                         >
-                           <div
-                              className={cn(
-                                 "mb-4 inline-flex size-12 items-center justify-center rounded-xl transition-transform duration-300 group-hover:-translate-y-0.5",
-                                 point.iconBg
-                              )}
-                           >
-                              <Icon className={cn("size-7", point.color)} />
+                           <div className="flex items-start gap-3">
+                              <div
+                                 className={cn(
+                                    "inline-flex size-10 items-center justify-center rounded-lg shrink-0",
+                                    point.iconBg
+                                 )}
+                              >
+                                 <Icon className={cn("size-5", point.color)} />
+                              </div>
+                              <div>
+                                 <h3 className="font-bold text-secondary-900 text-base mb-1">
+                                    {point.title}
+                                 </h3>
+                                 <p className="text-secondary-600 text-sm/6">
+                                    {point.description}
+                                 </p>
+                              </div>
                            </div>
-                           <h3 className="font-semibold text-secondary-900 text-xl/7">
-                              {point.title}
-                           </h3>
                         </div>
                      );
                   })}

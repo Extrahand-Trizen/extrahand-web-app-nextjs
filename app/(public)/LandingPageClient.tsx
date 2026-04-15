@@ -16,10 +16,6 @@ const SocialProofBar = dynamic(
    () => import("@/components/landing/SocialProofBar")
 );
 
-const TrustSection = dynamic(
-   () => import("@/components/landing/TrustSection")
-);
-
 const TestimonialsSection = dynamic(
    () => import("@/components/landing/TestimonialsSection")
 );
@@ -166,9 +162,8 @@ export default function LandingPageClient() {
       >
          <HeroSection />
          <SocialProofBar />
-         <ServicesSection />
          <HowItWorksSection />
-         <TrustSection />
+         <ServicesSection />
          <TestimonialsSection />
          <FAQSection />
          <FinalCTASection />
