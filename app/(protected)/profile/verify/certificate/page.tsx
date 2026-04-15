@@ -96,45 +96,24 @@ function getAllCertificates(user?: UserProfile | null): CertificateEntry[] {
    return certificates;
 }
 
-function isMeaningfulText(text: string, minLength: number = 3): boolean {
-   if (!text || text.length < minLength) return false;
-   
-   // Check for meaningful words (at least 2 words or special patterns like "ABC-123")
-   const words = text.trim().split(/\s+/);
-   
-   // Allow single words with numbers/hyphens like "CCTV" or "CERT-2026-0192"
-   if (text.length >= 4 && /[A-Z0-9\-]/.test(text)) {
-      // If it has structure like acronyms or codes, it's meaningful
-      const hasLetters = /[a-zA-Z]/.test(text);
-      const hasNonLetters = /[^a-zA-Z]/.test(text);
-      if (hasLetters && (hasNonLetters || text.length >= 4)) return true;
-   }
-   
-   // Check if it has at least 2 words
-   if (words.length >= 2) {
-      // Ensure words aren't just gibberish repetition
-      const uniqueWordChars = new Set();
-      for (const word of words) {
-         for (const char of word) {
-            uniqueWordChars.add(char.toLowerCase());
-         }
-      }
-      // If too few unique characters, it's gibberish
-      if (uniqueWordChars.size < 5) return false;
-      return true;
-   }
-   
-   // Single word check: must have diverse characters or be a known acronym
-   if (words.length === 1) {
-      const uniqueChars = new Set();
-      for (const char of text.toLowerCase()) {
-         if (char !== " ") uniqueChars.add(char);
-      }
-      // At least 3 unique characters breaks the gibberish repetition pattern
-      return uniqueChars.size >= 3 && text.length >= 3;
-   }
-   
-   return false;
+function isMeaningfulText(text: string): boolean {
+   const normalized = text.trim();
+   if (!normalized) return false;
+   if (/\d/.test(normalized)) return false;
+   if (!/^[A-Za-z][A-Za-z\s&.'/-]*$/.test(normalized)) return false;
+
+   const words = normalized.split(/\s+/).filter(Boolean);
+   if (words.length < 2) return false;
+
+   const alphabeticWords = words.filter((word) => word.replace(/[^A-Za-z]/g, "").length >= 2);
+   if (alphabeticWords.length < 2) return false;
+
+   const lettersOnly = normalized.replace(/[^A-Za-z]/g, "").toLowerCase();
+   if (lettersOnly.length < 6) return false;
+
+   if (/([a-zA-Z])\1{3,}/.test(normalized)) return false;
+
+   return true;
 }
 
 function parseDateInput(value: string): Date | undefined {
@@ -152,12 +131,6 @@ function formatDateLabel(value?: string | Date): string {
       month: "short",
       year: "numeric",
    }).format(date);
-}
-
-function getDefaultCertificateType(verificationType: VerificationType): string {
-   return verificationType === "certified"
-      ? "Professional Certification"
-      : "Professional License";
 }
 
 function getCertificateTypePlaceholder(verificationType: VerificationType): string {
@@ -252,7 +225,6 @@ export default function CertificateVerificationPage() {
       setState((prev) => ({
          ...prev,
          verificationType,
-         certificateType: prev.certificateType || getDefaultCertificateType(verificationType),
          error: undefined,
          fieldErrors: {
             ...prev.fieldErrors,
@@ -347,8 +319,6 @@ export default function CertificateVerificationPage() {
       const file = event.target.files?.[0] || null;
       // Clear the file input value to prevent any reuse or carrying over
       event.target.value = "";
-      // Also reset the file attribute explicitly
-      (event.target as any).files = null;
       
       if (!file) return;
 
@@ -500,13 +470,14 @@ export default function CertificateVerificationPage() {
             },
          });
 
-         const updatedProfile = response.profile || response;
+         const updatedProfileResponse = response as UserProfile & { profile?: UserProfile };
+         const updatedProfile = updatedProfileResponse.profile || updatedProfileResponse;
          
          // CRITICAL: Always preserve the original photoURL 
          // The certificate upload should NEVER modify the profile picture
          setUser({
-            ...(updatedProfile as UserProfile),
-            photoURL: originalPhotoURL || (updatedProfile as any)?.photoURL,
+            ...updatedProfile,
+            photoURL: originalPhotoURL || updatedProfile.photoURL,
          });
          
          setState((prev) => ({
@@ -531,8 +502,8 @@ export default function CertificateVerificationPage() {
                photoURL: originalPhotoURL || prev?.photoURL,
             }));
          }
-      } catch (error: any) {
-         const errorMessage = error?.message || "Certificate verification failed";
+      } catch (error: unknown) {
+         const errorMessage = error instanceof Error ? error.message : "Certificate verification failed";
          setState((prev) => ({
             ...prev,
             step: "error",
@@ -1022,11 +993,11 @@ export default function CertificateVerificationPage() {
 
          <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 space-y-2">
             <div className="flex items-start gap-3">
-               <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+               <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
                <div className="text-sm">
                   <p className="font-semibold text-amber-900 mb-1">Under review</p>
                   <p className="text-amber-800">
-                     Your certificate is now under review by our team. Once verified, you'll see the Professional badge on your profile and in public verifications.
+                     Your certificate is now under review by our team. Once verified, you&apos;ll see the Professional badge on your profile and in public verifications.
                   </p>
                </div>
             </div>

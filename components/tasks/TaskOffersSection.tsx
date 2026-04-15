@@ -76,6 +76,10 @@ const getApplicationAmount = (application?: TaskApplication | null) => {
    return application?.proposedBudget?.amount ?? 0;
 };
 
+const isDeletedAccountName = (name: string | undefined | null): boolean => {
+   return String(name || "").toLowerCase().includes("account deleted");
+};
+
 export function TaskOffersSection({
    taskId,
    isOwner = false,
@@ -621,7 +625,10 @@ export function TaskOffersSection({
                            <h3 className="font-bold text-green-800">Accepted Offers</h3>
                         </div>
                         <div className="space-y-3">
-                           {acceptedApplications.map((acceptedApplication) => (
+                           {acceptedApplications.map((acceptedApplication) => {
+                              const isDeletedApplicant = isDeletedAccountName(acceptedApplication.applicantProfile?.name);
+
+                              return (
                               <div
                                  key={acceptedApplication._id}
                                  className="p-4 md:p-6 rounded-xl bg-green-50 border-2 border-green-200"
@@ -629,50 +636,90 @@ export function TaskOffersSection({
                                  <div className="flex flex-col gap-4">
                                     {/* Header: Avatar + Name + Budget */}
                                     <div className="flex items-center justify-between gap-3">
-                                       <Link
-                                          href={buildPublicProfilePath(
-                                             acceptedApplication.applicantProfile?.name,
-                                             String(acceptedApplication.applicantId)
-                                          )}
-                                          className="flex gap-3 min-w-0 group"
-                                          aria-label={`View ${acceptedApplication.applicantProfile?.name || "user"}'s profile`}
-                                       >
-                                          <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-green-600 flex items-center justify-center text-white text-lg md:text-xl font-bold shrink-0 shadow-md transition-transform duration-200 group-hover:scale-[1.03]">
-                                             {((acceptedApplication.applicantProfile?.name) || "U").charAt(0)}
-                                          </div>
-                                          <div className="min-w-0">
-                                             <div className="flex items-center gap-2">
-                                                <h3 className="font-bold text-secondary-900 text-sm sm:text-base truncate group-hover:text-green-700 transition-colors">
-                                                   {acceptedApplication.applicantProfile?.name || "Unknown User"}
-                                                </h3>
-                                                {applicantBadges[String(acceptedApplication.applicantId)] &&
-                                                   applicantBadges[String(acceptedApplication.applicantId)] !== "none" && (
-                                                      <UserBadge
-                                                         badge={applicantBadges[String(acceptedApplication.applicantId)]}
-                                                         size="sm"
-                                                         showLabel
-                                                      />
-                                                   )}
-                                                <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-semibold">
-                                                   Assigned
-                                                </span>
+                                       {isDeletedApplicant ? (
+                                          <div className="flex gap-3 min-w-0">
+                                             <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-green-600 flex items-center justify-center text-white text-lg md:text-xl font-bold shrink-0 shadow-md">
+                                                {((acceptedApplication.applicantProfile?.name) || "U").charAt(0)}
                                              </div>
-                                             <div className="flex items-center gap-2 text-xs text-secondary-500 mt-1">
-                                                <div className="flex items-center gap-1">
-                                                   <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                                                   <span className="font-semibold text-secondary-900">
-                                                      {acceptedApplication.applicantProfile?.rating > 0
-                                                         ? acceptedApplication.applicantProfile.rating.toFixed(1)
-                                                         : "New"}
+                                             <div className="min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                   <h3 className="font-bold text-secondary-900 text-sm sm:text-base truncate">
+                                                      {acceptedApplication.applicantProfile?.name || "Unknown User"}
+                                                   </h3>
+                                                   {applicantBadges[String(acceptedApplication.applicantId)] &&
+                                                      applicantBadges[String(acceptedApplication.applicantId)] !== "none" && (
+                                                         <UserBadge
+                                                            badge={applicantBadges[String(acceptedApplication.applicantId)]}
+                                                            size="sm"
+                                                            showLabel
+                                                         />
+                                                      )}
+                                                   <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-semibold">
+                                                      Assigned
                                                    </span>
                                                 </div>
-                                                <span className="text-secondary-300">•</span>
-                                                <span>
-                                                   {acceptedApplication.applicantProfile?.totalReviews || 0} reviews
-                                                </span>
+                                                <div className="flex items-center gap-2 text-xs text-secondary-500 mt-1">
+                                                   <div className="flex items-center gap-1">
+                                                      <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                                                      <span className="font-semibold text-secondary-900">
+                                                         {acceptedApplication.applicantProfile?.rating > 0
+                                                            ? acceptedApplication.applicantProfile.rating.toFixed(1)
+                                                            : "New"}
+                                                      </span>
+                                                   </div>
+                                                   <span className="text-secondary-300">•</span>
+                                                   <span>
+                                                      {acceptedApplication.applicantProfile?.totalReviews || 0} reviews
+                                                   </span>
+                                                </div>
                                              </div>
                                           </div>
-                                       </Link>
+                                       ) : (
+                                          <Link
+                                             href={buildPublicProfilePath(
+                                                acceptedApplication.applicantProfile?.name,
+                                                String(acceptedApplication.applicantId)
+                                             )}
+                                             className="flex gap-3 min-w-0 group"
+                                             aria-label={`View ${acceptedApplication.applicantProfile?.name || "user"}'s profile`}
+                                          >
+                                             <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-green-600 flex items-center justify-center text-white text-lg md:text-xl font-bold shrink-0 shadow-md transition-transform duration-200 group-hover:scale-[1.03]">
+                                                {((acceptedApplication.applicantProfile?.name) || "U").charAt(0)}
+                                             </div>
+                                             <div className="min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                   <h3 className="font-bold text-secondary-900 text-sm sm:text-base truncate group-hover:text-green-700 transition-colors">
+                                                      {acceptedApplication.applicantProfile?.name || "Unknown User"}
+                                                   </h3>
+                                                   {applicantBadges[String(acceptedApplication.applicantId)] &&
+                                                      applicantBadges[String(acceptedApplication.applicantId)] !== "none" && (
+                                                         <UserBadge
+                                                            badge={applicantBadges[String(acceptedApplication.applicantId)]}
+                                                            size="sm"
+                                                            showLabel
+                                                         />
+                                                      )}
+                                                   <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-semibold">
+                                                      Assigned
+                                                   </span>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-xs text-secondary-500 mt-1">
+                                                   <div className="flex items-center gap-1">
+                                                      <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                                                      <span className="font-semibold text-secondary-900">
+                                                         {acceptedApplication.applicantProfile?.rating > 0
+                                                            ? acceptedApplication.applicantProfile.rating.toFixed(1)
+                                                            : "New"}
+                                                      </span>
+                                                   </div>
+                                                   <span className="text-secondary-300">•</span>
+                                                   <span>
+                                                      {acceptedApplication.applicantProfile?.totalReviews || 0} reviews
+                                                   </span>
+                                                </div>
+                                             </div>
+                                          </Link>
+                                       )}
                                        <div className="text-right">
                                           {/* Only show budget to task owner */}
                                           {isOwner && (
@@ -711,20 +758,22 @@ export function TaskOffersSection({
 
                                     {/* Actions */}
                                     <div className="flex gap-2 flex-wrap">
-                                       <Link
-                                          href={buildPublicProfilePath(
-                                             acceptedApplication.applicantProfile?.name,
-                                             acceptedApplication.applicantId
-                                          )}
-                                       >
-                                          <Button
-                                             size="sm"
-                                             variant="outline"
-                                             className="border-green-300 text-green-700 hover:bg-green-50 rounded-lg text-xs font-medium"
+                                       {!isDeletedApplicant && (
+                                          <Link
+                                             href={buildPublicProfilePath(
+                                                acceptedApplication.applicantProfile?.name,
+                                                acceptedApplication.applicantId
+                                             )}
                                           >
-                                             View Profile
-                                          </Button>
-                                       </Link>
+                                             <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="border-green-300 text-green-700 hover:bg-green-50 rounded-lg text-xs font-medium"
+                                             >
+                                                View Profile
+                                             </Button>
+                                          </Link>
+                                       )}
                                        <Link
                                           href={`/chat?taskId=${taskId}&otherUserId=${acceptedApplication.applicantId}`}
                                        >
@@ -739,7 +788,8 @@ export function TaskOffersSection({
                                     </div>
                                  </div>
                               </div>
-                           ))}
+                              );
+                           })}
                         </div>
                      </div>
                   )}
@@ -751,6 +801,7 @@ export function TaskOffersSection({
                            <h3 className="font-semibold text-secondary-700 text-sm mb-2">Other Offers</h3>
                         )}
                         {otherApplications.map((application) => {
+                     const isDeletedApplicant = isDeletedAccountName(application.applicantProfile?.name);
                      const user = {
                         name: application.applicantProfile?.name || (application.applicantId ? `User ${String(application.applicantId).slice(-4)}` : "Unknown User"),
                         photoURL: application.applicantProfile?.photoURL || null,
@@ -767,59 +818,108 @@ export function TaskOffersSection({
                            <div className="flex flex-col gap-4">
                               {/* Header: Avatar + Name + Time */}
                               <div className="flex items-center justify-between gap-3">
-                                 <Link
-                                    href={buildPublicProfilePath(
-                                       application.applicantProfile?.name,
-                                       String(application.applicantId)
-                                    )}
-                                    className="flex gap-3 min-w-0 group"
-                                    aria-label={`View ${user.name}'s profile`}
-                                 >
-                                    <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-full bg-primary-500 flex items-center justify-center text-white text-lg md:text-xl font-bold shrink-0 shadow-md overflow-hidden transition-transform duration-200 group-hover:scale-[1.03]">
-                                       {user.photoURL ? (
-                                          <Image
-                                             src={user.photoURL}
-                                             alt={user.name || "User"}
-                                             width={64}
-                                             height={64}
-                                             className="w-full h-full object-cover"
-                                          />
-                                       ) : (
-                                          <span>{(user.name || "U").charAt(0)}</span>
-                                       )}
-                                    </div>
-
-                                    <div className="min-w-0">
-                                       <div className="flex items-center gap-2">
-                                          <h3 className="font-bold text-secondary-900 text-sm sm:text-base truncate group-hover:text-primary-600 transition-colors">
-                                             {user.name}
-                                          </h3>
-                                          {applicantBadges[String(application.applicantId)] &&
-                                             applicantBadges[String(application.applicantId)] !== "none" && (
-                                                <UserBadge
-                                                   badge={applicantBadges[String(application.applicantId)]}
-                                                   size="sm"
-                                                   showLabel
-                                                />
-                                             )}
+                                 {isDeletedApplicant ? (
+                                    <div className="flex gap-3 min-w-0">
+                                       <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-full bg-primary-500 flex items-center justify-center text-white text-lg md:text-xl font-bold shrink-0 shadow-md overflow-hidden">
+                                          {user.photoURL ? (
+                                             <Image
+                                                src={user.photoURL}
+                                                alt={user.name || "User"}
+                                                width={64}
+                                                height={64}
+                                                className="w-full h-full object-cover"
+                                             />
+                                          ) : (
+                                             <span>{(user.name || "U").charAt(0)}</span>
+                                          )}
                                        </div>
 
-                                       <div className="flex items-center gap-2 text-xs text-secondary-500 mt-1">
-                                          <div className="flex items-center gap-1">
-                                             <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                                             <span className="font-semibold text-secondary-900">
-                                                {user.rating > 0 ? user.rating.toFixed(1) : "New"}
+                                       <div className="min-w-0">
+                                          <div className="flex items-center gap-2">
+                                             <h3 className="font-bold text-secondary-900 text-sm sm:text-base truncate">
+                                                {user.name}
+                                             </h3>
+                                             {applicantBadges[String(application.applicantId)] &&
+                                                applicantBadges[String(application.applicantId)] !== "none" && (
+                                                   <UserBadge
+                                                      badge={applicantBadges[String(application.applicantId)]}
+                                                      size="sm"
+                                                      showLabel
+                                                   />
+                                                )}
+                                          </div>
+
+                                          <div className="flex items-center gap-2 text-xs text-secondary-500 mt-1">
+                                             <div className="flex items-center gap-1">
+                                                <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                                                <span className="font-semibold text-secondary-900">
+                                                   {user.rating > 0 ? user.rating.toFixed(1) : "New"}
+                                                </span>
+                                             </div>
+                                             <span className="text-secondary-300">
+                                                •
+                                             </span>
+                                             <span>
+                                                {user.totalReviews} {user.totalReviews === 1 ? "review" : "reviews"}
                                              </span>
                                           </div>
-                                          <span className="text-secondary-300">
-                                             •
-                                          </span>
-                                          <span>
-                                             {user.totalReviews} {user.totalReviews === 1 ? "review" : "reviews"}
-                                          </span>
                                        </div>
                                     </div>
-                                 </Link>
+                                 ) : (
+                                    <Link
+                                       href={buildPublicProfilePath(
+                                          application.applicantProfile?.name,
+                                          String(application.applicantId)
+                                       )}
+                                       className="flex gap-3 min-w-0 group"
+                                       aria-label={`View ${user.name}'s profile`}
+                                    >
+                                       <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-full bg-primary-500 flex items-center justify-center text-white text-lg md:text-xl font-bold shrink-0 shadow-md overflow-hidden transition-transform duration-200 group-hover:scale-[1.03]">
+                                          {user.photoURL ? (
+                                             <Image
+                                                src={user.photoURL}
+                                                alt={user.name || "User"}
+                                                width={64}
+                                                height={64}
+                                                className="w-full h-full object-cover"
+                                             />
+                                          ) : (
+                                             <span>{(user.name || "U").charAt(0)}</span>
+                                          )}
+                                       </div>
+
+                                       <div className="min-w-0">
+                                          <div className="flex items-center gap-2">
+                                             <h3 className="font-bold text-secondary-900 text-sm sm:text-base truncate group-hover:text-primary-600 transition-colors">
+                                                {user.name}
+                                             </h3>
+                                             {applicantBadges[String(application.applicantId)] &&
+                                                applicantBadges[String(application.applicantId)] !== "none" && (
+                                                   <UserBadge
+                                                      badge={applicantBadges[String(application.applicantId)]}
+                                                      size="sm"
+                                                      showLabel
+                                                   />
+                                                )}
+                                          </div>
+
+                                          <div className="flex items-center gap-2 text-xs text-secondary-500 mt-1">
+                                             <div className="flex items-center gap-1">
+                                                <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                                                <span className="font-semibold text-secondary-900">
+                                                   {user.rating > 0 ? user.rating.toFixed(1) : "New"}
+                                                </span>
+                                             </div>
+                                             <span className="text-secondary-300">
+                                                •
+                                             </span>
+                                             <span>
+                                                {user.totalReviews} {user.totalReviews === 1 ? "review" : "reviews"}
+                                             </span>
+                                          </div>
+                                       </div>
+                                    </Link>
+                                 )}
 
                                  <div className="text-right">
                                     {/* Only show budget to task owner */}
@@ -953,20 +1053,22 @@ export function TaskOffersSection({
 
                               {isOwner && application.status === "pending" && application.negotiation?.status !== "countered_by_tasker" && (
                                  <div className="flex gap-2 w-full flex-wrap">
-                                    <Link
-                                       href={buildPublicProfilePath(
-                                          application.applicantProfile?.name,
-                                          application.applicantId
-                                       )}
-                                    >
-                                       <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          className="text-secondary-600 hover:bg-secondary-50 rounded-lg text-[10px] md:text-xs font-medium"
+                                    {!isDeletedApplicant && (
+                                       <Link
+                                          href={buildPublicProfilePath(
+                                             application.applicantProfile?.name,
+                                             application.applicantId
+                                          )}
                                        >
-                                          View Profile
-                                       </Button>
-                                    </Link>
+                                          <Button
+                                             size="sm"
+                                             variant="ghost"
+                                             className="text-secondary-600 hover:bg-secondary-50 rounded-lg text-[10px] md:text-xs font-medium"
+                                          >
+                                             View Profile
+                                          </Button>
+                                       </Link>
+                                    )}
 
                                     <Button
                                        size="sm"

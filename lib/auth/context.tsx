@@ -34,6 +34,18 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function isDeletedProfileError(error: any): boolean {
+   const message = String(
+      error?.data?.error || error?.message || ""
+   ).toLowerCase();
+
+   return (
+      message.includes("profile is no longer available") ||
+      message.includes("account is already deleted") ||
+      message.includes("account deleted")
+   );
+}
+
 export const useAuth = () => {
    const context = useContext(AuthContext);
    if (!context) {
@@ -187,7 +199,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             console.log("✅ User data refreshed successfully:", userData);
          } catch (error: any) {
             console.warn("❌ Failed to refresh user data:", error.message);
-            if (error?.status === 401) {
+            if (error?.status === 401 || isDeletedProfileError(error)) {
                resetLocalSession();
             }
          }
@@ -261,7 +273,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                         error.message
                      );
                      setUserData(null);
-                     if (error?.status === 401) {
+                     if (error?.status === 401 || isDeletedProfileError(error)) {
                         await resetLocalSession();
                      }
                   } finally {
@@ -349,7 +361,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                      error.message
                   );
                   setUserData(null);
-                  if (error?.status === 401) {
+                  if (error?.status === 401 || isDeletedProfileError(error)) {
                      await resetLocalSession();
                      return;
                   }

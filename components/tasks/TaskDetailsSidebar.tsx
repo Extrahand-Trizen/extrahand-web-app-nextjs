@@ -71,6 +71,7 @@ export function TaskDetailsSidebar({
    // Backend should enrich task with requester profile data (rating, reviews, etc.)
    const requesterRating = (task as any).requesterRating || 0;
    const requesterTotalReviews = (task as any).requesterTotalReviews || 0;
+   const isRequesterDeleted = (task.requesterName || "").toLowerCase().includes("account deleted");
 
    return (
       <div className="space-y-4 sticky top-24">
@@ -185,14 +186,16 @@ export function TaskDetailsSidebar({
                   </div>
                </div>
             </div>
-            <Link href={buildPublicProfilePath(task.requesterName, task.requesterId)}>
-               <Button
-                  variant="outline"
-                  className="w-full mt-4 border-secondary-300 text-secondary-700 hover:bg-secondary-50 text-sm font-medium rounded-xl h-10"
-               >
-                  View Profile
-               </Button>
-            </Link>
+            {!isRequesterDeleted && (
+               <Link href={buildPublicProfilePath(task.requesterName, task.requesterId)}>
+                  <Button
+                     variant="outline"
+                     className="w-full mt-4 border-secondary-300 text-secondary-700 hover:bg-secondary-50 text-sm font-medium rounded-xl h-10"
+                  >
+                     View Profile
+                  </Button>
+               </Link>
+            )}
          </div>
 
          {/* Trust & Safety Info */}

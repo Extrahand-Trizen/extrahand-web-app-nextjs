@@ -70,10 +70,20 @@ export default function UserProfilePage() {
                err?.data?.code === "PROFILE_PRIVATE" ||
                messageLower.includes("profile is private") ||
                messageLower.includes("visible only to");
+            const isDeletedProfile =
+               messageLower.includes("no longer available") ||
+               messageLower.includes("account deleted") ||
+               messageLower.includes("already deleted");
 
             if (isPrivateProfile) {
                setErrorTitle("Private account");
                setError(errorMessage);
+               return;
+            }
+
+            if (isDeletedProfile) {
+               setErrorTitle("Account deleted");
+               setError("This account has been deleted and the profile is no longer available.");
                return;
             }
 
