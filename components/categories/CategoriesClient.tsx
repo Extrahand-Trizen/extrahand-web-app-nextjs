@@ -29,11 +29,68 @@ const getCategoryAnchorKey = (category: Category): string => {
       .replace(/-+/g, "-");
 };
 
+   const getCategoryAnchorId = (category: Category, index: number): string => {
+      const key = getCategoryAnchorKey(category) || "item";
+      return `category-${key}-${index}`;
+   };
+
 const CategoriesClient: React.FC<CategoriesClientProps> = ({
    categories = [],
    viewType = "jobs",
 }) => {
    const isServicesView = viewType === "services" || viewType === "jobs";
+   const [activeCategoryId, setActiveCategoryId] = React.useState<string>("");
+
+   const scrollWithOffset = React.useCallback((id: string) => {
+      const el = document.getElementById(id);
+      if (!el) return false;
+
+      // Reliable across window-scrolling and nested scroll containers.
+      el.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+      return true;
+   }, []);
+
+   React.useEffect(() => {
+      if (!isServicesView) return;
+      
+      const handleScroll = () => {
+         let current = "";
+         const offset = window.innerHeight / 2; // threshold in middle of screen for better detection
+         categories.forEach((category, index) => {
+            const anchorId = getCategoryAnchorId(category, index);
+            const el = document.getElementById(anchorId);
+            if (el) {
+               const rect = el.getBoundingClientRect();
+               if (rect.top <= offset) {
+                  current = anchorId;
+               }
+            }
+         });
+         
+         // Highlight last one if bottom reached
+         if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 50) {
+            if (categories.length > 0) {
+               current = getCategoryAnchorId(
+                  categories[categories.length - 1],
+                  categories.length - 1
+               );
+            }
+         }
+         
+         // If none found and we are near top, pick first
+         if (!current && categories.length > 0 && window.scrollY < 200) {
+            current = getCategoryAnchorId(categories[0], 0);
+         }
+         
+         if (current && current !== activeCategoryId) {
+            setActiveCategoryId(current);
+         }
+      };
+
+      window.addEventListener("scroll", handleScroll, { passive: true });
+      handleScroll(); // init
+      return () => window.removeEventListener("scroll", handleScroll);
+   }, [categories, isServicesView]);
 
    return (
       <main
@@ -51,27 +108,61 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
             }
          >
          {/* Left Sidebar - Categories List with Images */}
+         {/* Left Sidebar - Categories List with Images */}
+         <div className={cn(
+            isServicesView
+               ? "sticky top-[56px] md:top-24 z-20 bg-white/95 backdrop-blur-sm md:bg-transparent py-2 md:py-0 border-b border-gray-100 md:border-none -mx-4 px-4 sm:-mx-6 sm:px-6 md:mx-0 md:px-0 self-start w-[calc(100%+2rem)] sm:w-[calc(100%+3rem)] md:w-auto overflow-hidden md:overflow-visible"
+               : "contents"
+         )}>
+            {/* Fades for mobile */}
+            {isServicesView && (
+               <>
+                  <div className="md:hidden absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-white via-white/80 to-transparent pointer-events-none z-10" />
+                  <div className="md:hidden absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white via-white/90 to-transparent pointer-events-none z-10" />
+               </>
+            )}
+
          <section
             className={cn(
-               "hidden md:flex self-start flex-col text-sm sm:text-base font-medium text-[#0a1f44]",
+               "flex overflow-x-auto scroll-smooth whitespace-nowrap md:flex-col md:whitespace-normal md:overflow-visible text-sm sm:text-base font-medium text-[#0a1f44] scrollbar-hide",
                isServicesView
-                  ? "sticky top-24 gap-2 pr-4"
-                  : "-mt-2 sm:-mt-5 gap-3 ml-2 sm:ml-4 md:ml-6 lg:ml-8"
+                  ? "gap-2 md:pr-4 pb-1"
+                  : "-mt-2 sm:-mt-5 gap-3 ml-2 sm:ml-4 md:ml-6 lg:ml-8 pb-4 md:pb-0 hidden md:flex self-start flex-col"
             )}
          >
-            {categories.map((category) => {
+            {categories.map((category, index) => {
                // Display category name directly from database
                const displayName = getCategoryDisplayName(category.name);
-               const anchorKey = getCategoryAnchorKey(category);
+               const anchorId = getCategoryAnchorId(category, index);
 
                return (
                   <a
                      key={category._id || category.slug}
-                     href={`#category-${anchorKey}`}
+                     href={`#${anchorId}`}
+                     onClick={(e) => {
+                        if (isServicesView) {
+                           e.preventDefault();
+                           setActiveCategoryId(anchorId);
+                           const target = document.getElementById(anchorId);
+                           if (target) {
+                              scrollWithOffset(anchorId);
+                              window.history.replaceState(null, "", `#${anchorId}`);
+                              return;
+                           }
+
+                           // Fallback to native hash navigation if target was not found at click time.
+                           window.location.hash = anchorId;
+                        }
+                     }}
                      className={cn(
-                        "transition-all duration-200 text-left w-full",
+                        "transition-all duration-200 text-left shrink-0 md:w-full",
                         isServicesView
-                           ? "py-1.5 text-[15px] text-[#0a1f44] hover:text-[#c07a00] truncate"
+                           ? cn(
+                              "py-1.5 px-3 md:px-0 md:bg-transparent rounded-full md:rounded-none border shadow-sm md:shadow-none md:border-transparent text-[14px] flex items-center justify-center hover:text-[#c07a00]",
+                              activeCategoryId === anchorId 
+                                 ? "bg-yellow-100 border-yellow-400 text-yellow-800 font-semibold" 
+                                 : "bg-white border-gray-200 text-[#0a1f44]"
+                             )
                            : "py-2 sm:py-3 px-3 sm:px-4 rounded-lg border border-transparent flex items-center gap-3 hover:border-yellow-500 hover:bg-yellow-50 group text-sm sm:text-base"
                      )}
                   >
@@ -98,7 +189,14 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                      )}
 
                      <div className="flex-1 min-w-0">
-                        <span className="whitespace-nowrap flex-1 truncate block">
+                        <span
+                           className={cn(
+                              "whitespace-nowrap block",
+                              isServicesView
+                                 ? "max-w-none"
+                                 : "flex-1 truncate max-w-[150px] md:max-w-none"
+                           )}
+                        >
                            {displayName}
                         </span>
                         {/* Show subcategory count */}
@@ -122,7 +220,26 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                   </a>
                );
             })}
+            
+            {isServicesView && (
+               <a 
+                  href="#all-categories"
+                  onClick={() => {
+                     setActiveCategoryId("");
+                     const didScroll = scrollWithOffset("all-categories");
+                     if (didScroll) {
+                        window.history.replaceState(null, "", "#all-categories");
+                     } else {
+                        window.location.hash = "all-categories";
+                     }
+                  }}
+                  className="transition-all duration-200 text-left shrink-0 md:hidden py-1.5 px-3 bg-white hover:bg-yellow-50 rounded-full border border-gray-200 text-[14px] text-[#0a1f44] hover:text-yellow-700 flex items-center justify-center font-semibold ml-1 shadow-sm"
+               >
+                  View All Categories
+               </a>
+            )}
          </section>
+         </div>
 
          {/* Right Content Area */}
          <div
@@ -134,8 +251,9 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
             )}
          >
             <h1
+               id="all-categories"
                className={cn(
-                  "text-[#0a1f44]",
+                  "text-[#0a1f44] scroll-mt-24",
                   isServicesView
                      ? "mb-4 text-3xl font-extrabold sm:text-4xl md:text-5xl"
                      : "mb-3 text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black"
@@ -164,9 +282,9 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
             </p>
 
             {/* All Categories List */}
-            {categories.map((category) => {
+            {categories.map((category, index) => {
                const categoryDisplayName = getCategoryDisplayName(category.name);
-               const anchorKey = getCategoryAnchorKey(category);
+               const anchorId = getCategoryAnchorId(category, index);
                const hasCategorySlug = Boolean(category.slug?.trim());
                const categoryHref =
                   viewType === "jobs"
@@ -178,8 +296,8 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                return (
                   <div
                      key={category._id || category.slug}
-                     id={`category-${anchorKey}`}
-                     className="mb-8 sm:mb-10 md:mb-12 scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32"
+                     id={anchorId}
+                     className="mb-8 sm:mb-10 md:mb-12 scroll-mt-32 sm:scroll-mt-32 md:scroll-mt-32"
                   >
                      {/* Category Name - Clickable Link */}
                      {hasCategorySlug ? (

@@ -22,6 +22,10 @@ export default function PrivacyPolicy() {
             ExtraHand is owned and operated by <strong>Naipunya AI Labs Private Limited</strong>, India.
           </p>
 
+          <p className="mb-6 text-gray-700">
+            <strong>Effective date:</strong> April 16, 2026
+          </p>
+
           <h2 className="text-2xl font-bold mt-8 mb-4 text-gray-900">Information We Collect</h2>
           <p className="mb-4 text-gray-700">
             We may collect the following personal information:
@@ -63,22 +67,40 @@ export default function PrivacyPolicy() {
             protect user data against unauthorized access, loss, or misuse.
           </p>
 
+          <h2 className="text-2xl font-bold mt-8 mb-4 text-gray-900">Data Retention</h2>
+          <p className="mb-6 text-gray-700">
+            We retain personal data only for as long as needed to provide services,
+            meet legal or regulatory obligations, resolve disputes, and enforce our terms.
+          </p>
+
+          <h2 className="text-2xl font-bold mt-8 mb-4 text-gray-900">Cookies and Consent</h2>
+          <p className="mb-6 text-gray-700">
+            We use essential cookies for core functionality and optional cookies for analytics
+            and map embeds only after consent. For details, see our <Link href="/cookie-policy" className="underline text-gray-800">Cookie Policy</Link>.
+          </p>
+
           <h2 className="text-2xl font-bold mt-8 mb-4 text-gray-900">Your Rights</h2>
           <p className="mb-4 text-gray-700">
-            Users may request access, correction, or deletion of their personal data 
-            by contacting us at support@extrahand.in.
+            Subject to applicable law, users may request access, correction, or deletion of
+            personal data by contacting us at support@extrahand.in.
           </p>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <p className="text-blue-900 font-medium mb-3">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+            <p className="text-gray-800 font-medium mb-3">
               Want to delete your account? You can request account deletion here:
             </p>
             <Link
               href="/delete-account"
-              className="inline-block px-6 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
+              className="inline-block px-6 py-3 border border-gray-300 text-gray-900 font-semibold rounded-lg hover:bg-gray-100 transition-colors"
             >
               Delete My Account
             </Link>
           </div>
+
+          <h2 className="text-2xl font-bold mt-8 mb-4 text-gray-900">Policy Updates</h2>
+          <p className="mb-6 text-gray-700">
+            We may update this Privacy Policy from time to time. The latest version will always
+            be posted on this page.
+          </p>
 
           <h2 className="text-2xl font-bold mt-8 mb-4 text-gray-900">Contact Us</h2>
           <p className="mb-4 text-gray-700">

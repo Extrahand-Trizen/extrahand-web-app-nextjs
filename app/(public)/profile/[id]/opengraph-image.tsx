@@ -60,7 +60,7 @@ export default async function ProfileOpenGraphImage({ params }: PageProps) {
             }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={logoDataUrl} width={118} height={118} alt="ExtraHand" />
+            <img src={logoDataUrl} width={118} height={118} alt="ExtraHand logo" />
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>

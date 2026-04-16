@@ -4,11 +4,13 @@ import { create } from "zustand";
 import { paymentApi } from "@/lib/api/endpoints/payment";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
 import type { Transaction } from "@/types/profile";
+import type { ExtraCoinsWallet } from "@/types/payment";
 
 type PaymentsState = {
   transactions: Transaction[];
   totalEarnings: number;
   totalSpent: number;
+  extraCoinsWallet: ExtraCoinsWallet | null;
   loading: boolean;
   error: string | null;
   lastFetchedAt: number | null;
@@ -22,6 +24,7 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
   transactions: [],
   totalEarnings: 0,
   totalSpent: 0,
+  extraCoinsWallet: null,
   loading: false,
   error: null,
   lastFetchedAt: null,
@@ -61,33 +64,37 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
       const summaryPromise = paymentApi.getTransactionSummary(userId, {
         linkedUserIds: linkedUserIds.length > 0 ? linkedUserIds.join(",") : undefined,
       });
+      const walletPromise = paymentApi.getExtraCoinsWallet(userId);
 
       const txRes = await txPromise;
       let mapped: Transaction[] = [];
 
       if (txRes && Array.isArray(txRes.transactions)) {
-        mapped = txRes.transactions.map((tx: any) => {
+        const transactionRows = txRes.transactions as unknown as Array<Record<string, unknown>>;
+        mapped = transactionRows.map((tx, index) => {
+          const asRecord = (value: unknown): Record<string, unknown> =>
+            value && typeof value === "object" && !Array.isArray(value)
+              ? (value as Record<string, unknown>)
+              : {};
+          const getString = (value: unknown): string | undefined => {
+            if (typeof value === "string") return value;
+            if (typeof value === "number" && Number.isFinite(value)) return String(value);
+            return undefined;
+          };
           let mappedType: Transaction["type"] = "payment";
-          if (tx.type === "refund") {
+          const txType = getString(tx.type) || "";
+          if (txType === "refund") {
             mappedType = "refund";
-          } else if (tx.type === "cancellation_penalty") {
+          } else if (txType === "cancellation_penalty") {
             // Keep penalty rows visible in history but out of customer spend totals.
             mappedType = "fee";
           } else if (
-            tx.type === "payout" ||
-            tx.type === "earning" ||
-            tx.type === "compensation"
+            txType === "payout" ||
+            txType === "earning" ||
+            txType === "compensation"
           ) {
             mappedType = "payout";
           }
-
-          const amount = Number.parseFloat(tx.amount);
-
-          const metadata = tx.metadata || {};
-          const descriptionText =
-            typeof tx.description === "string" ? tx.description.trim() : "";
-          const taskIdFromDescription =
-            descriptionText.match(/\b[a-f0-9]{24}\b/i)?.[0] || undefined;
 
           const toNumber = (value: unknown): number | undefined => {
             if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -98,35 +105,49 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
             return undefined;
           };
 
+          const amount = toNumber(tx.amount) || 0;
+
+          const metadata = asRecord(tx.metadata);
+          const metadataTask = asRecord(metadata.task);
+          const amountBreakdown = asRecord(metadata.amountBreakdown);
+          const fees = asRecord(metadata.fees);
+          const descriptionText =
+            typeof tx.description === "string" ? tx.description.trim() : "";
+          const taskIdFromDescription =
+            descriptionText.match(/\b[a-f0-9]{24}\b/i)?.[0] || undefined;
+
           const penaltyFromMetadata = toNumber(metadata.penaltyDeducted);
 
           const taskId =
-            tx.taskId ||
-            metadata.taskId ||
-            metadata.task?._id ||
-            metadata.task?.id ||
-            tx.relatedTaskId ||
+            getString(tx.taskId) ||
+            getString(metadata.taskId) ||
+            getString(metadataTask._id) ||
+            getString(metadataTask.id) ||
+            getString(tx.relatedTaskId) ||
             taskIdFromDescription;
           const payoutIdCandidate =
-            tx.transactionId ||
-            tx.relatedEntityId ||
-            metadata.payoutId ||
-            tx.id;
-          const payoutId = mappedType === "payout" ? String(payoutIdCandidate) : undefined;
+            getString(tx.transactionId) ||
+            getString(tx.relatedEntityId) ||
+            getString(metadata.payoutId) ||
+            getString(tx.id);
+          const payoutId =
+            mappedType === "payout" && payoutIdCandidate
+              ? String(payoutIdCandidate)
+              : undefined;
           const taskTitle =
-            tx.taskTitle ||
-            metadata.taskTitle ||
-            metadata.taskName ||
-            metadata.taskDescription ||
-            metadata.task?.title ||
-            metadata.title ||
-            tx.title;
+            getString(tx.taskTitle) ||
+            getString(metadata.taskTitle) ||
+            getString(metadata.taskName) ||
+            getString(metadata.taskDescription) ||
+            getString(metadataTask.title) ||
+            getString(metadata.title) ||
+            getString(tx.title);
 
           const taskAmount =
             toNumber(metadata.taskAmount) ||
             toNumber(metadata.grossAmount) ||
-            toNumber(metadata.amountBreakdown?.taskAmount) ||
-            toNumber(metadata.fees?.taskAmount) ||
+            toNumber(amountBreakdown.taskAmount) ||
+            toNumber(fees.taskAmount) ||
             (mappedType === "payout" && penaltyFromMetadata && penaltyFromMetadata > 0
               ? amount + penaltyFromMetadata
               : undefined);
@@ -134,37 +155,63 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
             toNumber(metadata.platformFee) ||
             toNumber(metadata.platformFeeAmount) ||
             toNumber(metadata.platformCommission) ||
-            toNumber(metadata.amountBreakdown?.platformFee) ||
-            toNumber(metadata.fees?.platformFee);
+            toNumber(amountBreakdown.platformFee) ||
+            toNumber(fees.platformFee);
           const gstAmount =
             toNumber(metadata.gstAmount) ||
             toNumber(metadata.platformFeeGst) ||
             toNumber(metadata.gstOnCommission) ||
             toNumber(metadata.gst) ||
-            toNumber(metadata.amountBreakdown?.gst) ||
-            toNumber(metadata.fees?.gst);
+            toNumber(amountBreakdown.gst) ||
+            toNumber(fees.gst);
           const totalPaid =
             mappedType === "payout"
               ? toNumber(metadata.totalPaid) ||
                 toNumber(metadata.grossAmount) ||
                 toNumber(metadata.taskAmount) ||
-                toNumber(metadata.amountBreakdown?.taskAmount) ||
+                toNumber(amountBreakdown.taskAmount) ||
                 amount
               : toNumber(metadata.totalPaid) ||
                 toNumber(metadata.grossAmount) ||
                 toNumber(metadata.totalAmount) ||
-                toNumber(metadata.amountBreakdown?.totalAmount) ||
+                toNumber(amountBreakdown.totalAmount) ||
                 amount;
 
-          const penaltyDeducted =
-            metadata.penaltyDeducted ||
-            (metadata.netAmount && metadata.grossAmount
-              ? toNumber(metadata.grossAmount) - toNumber(metadata.netAmount)
+          const grossAmount = toNumber(metadata.grossAmount);
+          const netAmount = toNumber(metadata.netAmount);
+          const penaltyDeducted = toNumber(metadata.penaltyDeducted) ||
+            (typeof grossAmount === "number" && typeof netAmount === "number"
+              ? grossAmount - netAmount
               : undefined);
           
           // Only include penaltyDeducted if it's actually > 0
           const effectivePenaltyDeducted = penaltyDeducted && toNumber(penaltyDeducted) > 0 ? penaltyDeducted : undefined;
-          const penaltyLines = Array.isArray(metadata.penaltyLines) && effectivePenaltyDeducted ? metadata.penaltyLines : undefined;
+          const penaltyLines =
+            Array.isArray(metadata.penaltyLines) && effectivePenaltyDeducted
+              ? metadata.penaltyLines
+                  .map((line) => {
+                    const row = asRecord(line);
+                    const penaltyId = getString(row.penaltyId);
+                    const lineTaskId = getString(row.taskId);
+                    if (!penaltyId || !lineTaskId) return null;
+                    return {
+                      penaltyId,
+                      taskId: lineTaskId,
+                      applied: getString(row.applied) || "0",
+                      remainingAfter: getString(row.remainingAfter) || "0",
+                    };
+                  })
+                  .filter(
+                    (
+                      line
+                    ): line is {
+                      penaltyId: string;
+                      taskId: string;
+                      applied: string;
+                      remainingAfter: string;
+                    } => Boolean(line)
+                  )
+              : undefined;
 
           const fallbackDescription =
             mappedType === "payment"
@@ -173,9 +220,9 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
               ? "Earnings"
               : "Transaction";
 
-          const rawStatus = String(tx.status || "").toLowerCase();
+          const rawStatus = String(getString(tx.status) || "").toLowerCase();
           const escrowStatusRaw = String(
-            metadata.escrowStatus || metadata.escrow?.status || ""
+            getString(metadata.escrowStatus) || getString(asRecord(metadata.escrow).status) || ""
           ).toLowerCase();
           const isCancelledFlow =
             (escrowStatusRaw === "cancelled" || escrowStatusRaw === "refunded") &&
@@ -195,28 +242,36 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
               ? "cancelled"
               : "completed";
 
+          const createdAtRaw = tx.date ?? tx.createdAt;
+          const createdAt =
+            typeof createdAtRaw === "string" ||
+            typeof createdAtRaw === "number" ||
+            createdAtRaw instanceof Date
+              ? new Date(createdAtRaw)
+              : new Date();
+
           return {
-            id: tx.transactionId || tx.id,
+            id: getString(tx.transactionId) || getString(tx.id) || `tx-${index}`,
             payoutId,
             type: mappedType,
             amount,
             currency: "INR",
             status: normalizedStatus,
-            description: tx.description || fallbackDescription,
-            createdAt: new Date(tx.date || tx.createdAt),
+            description: getString(tx.description) || fallbackDescription,
+            createdAt,
             taskId,
             taskTitle,
             metadata,
             rawStatus,
             taskCategory:
-              metadata.taskCategory || metadata.task?.category || metadata.category,
-            taskStatus: metadata.taskStatus || metadata.task?.status,
+              getString(metadata.taskCategory) || getString(metadataTask.category) || getString(metadata.category),
+            taskStatus: (getString(metadata.taskStatus) || getString(metadataTask.status)) as Transaction["taskStatus"],
             assignedToName:
-              metadata.assignedToName || metadata.task?.assignedToName,
+              getString(metadata.assignedToName) || getString(metadataTask.assignedToName),
             paidToName:
-              metadata.paidToName || metadata.performerName || metadata.taskerName,
-            posterUid: metadata.posterUid,
-            escrowStatus: metadata.escrowStatus || metadata.escrow?.status,
+              getString(metadata.paidToName) || getString(metadata.performerName) || getString(metadata.taskerName),
+            posterUid: getString(metadata.posterUid),
+            escrowStatus: (getString(metadata.escrowStatus) || getString(asRecord(metadata.escrow).status)) as Transaction["escrowStatus"],
             taskAmount,
             platformFee,
             gstAmount,
@@ -262,7 +317,11 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
           missingTitleTaskIds.map(async (taskId) => {
             try {
               const task = await tasksApi.getTask(taskId);
-              const title = (task as any)?.title;
+              const taskRecord =
+                task && typeof task === "object"
+                  ? (task as unknown as Record<string, unknown>)
+                  : undefined;
+              const title = taskRecord?.title;
               if (typeof title === "string" && title.trim()) {
                 taskTitleMap.set(taskId, title.trim());
               }
@@ -286,9 +345,10 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
         }
       }
 
-      const [earningsSettled, summarySettled] = await Promise.allSettled([
+      const [earningsSettled, summarySettled, walletSettled] = await Promise.allSettled([
         earningsPromise,
         summaryPromise,
+        walletPromise,
       ]);
 
       const totalEarnings =
@@ -314,17 +374,26 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
       // to Total Spent even before/without a refund row.
       const totalSpent = mapped.length > 0 ? mappedNetSpent : totalSpentFromSummary;
 
+      const resolvedWallet =
+        walletSettled.status === "fulfilled" &&
+        walletSettled.value?.success &&
+        walletSettled.value?.wallet
+          ? walletSettled.value.wallet
+          : get().extraCoinsWallet;
+
       set((state) => ({
         ...state,
         totalEarnings,
         totalSpent,
+        extraCoinsWallet: resolvedWallet,
         error: null,
         lastFetchedAt: now,
       }));
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to load payments";
       set({
         loading: false,
-        error: error?.message || "Failed to load payments",
+        error: message,
       });
     }
   },

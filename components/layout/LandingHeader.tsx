@@ -53,7 +53,7 @@ const navItems: Array<{
 }> = [
    { label: "Categories", href: "#categories", hasDropdown: true },
    { label: "Browse tasks", href: "/discover" },
-   { label: "How it works", href: "#how-it-works" },
+   { label: "How it works", href: "/how-it-works#how-it-works" },
 ];
 
 const filterCategoriesByRole = (
@@ -281,10 +281,11 @@ export const LandingHeader: React.FC = () => {
                   <Link href="/" className="flex items-center gap-2 shrink-0">
                      <Image
                         src="/assets/images/logo.webp"
-                        alt="ExtraHand"
+                        alt="ExtraHand logo"
                         width={32}
                         height={32}
                         className="size-7 md:size-8"
+                        unoptimized
                         priority
                      />
                      <span className="text-lg md:text-xl font-bold text-secondary-900">
@@ -453,7 +454,9 @@ export const LandingHeader: React.FC = () => {
                               size="sm"
                               className={cn(
                                  "font-semibold",
-                                 (pathname === item.href || (item.href === "#how-it-works" && pathname === "/"))
+                                 (pathname === item.href ||
+                                    (item.href === "/how-it-works#how-it-works" &&
+                                       pathname === "/how-it-works"))
                                     ? "bg-primary-500 hover:bg-primary-600 text-secondary-900 shadow-sm"
                                     : "text-secondary-600 hover:text-secondary-900 hover:bg-secondary-50"
                               )}
@@ -651,10 +654,12 @@ export const LandingHeader: React.FC = () => {
                                  <span className="text-sm font-medium">Browse Tasks</span>
                               </button>
                               <button
-                                 onClick={() => handleNavClick("#how-it-works")}
+                                 onClick={() =>
+                                    handleNavClick("/how-it-works#how-it-works")
+                                 }
                                  className={cn(
                                     "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors",
-                                    pathname === "/"
+                                    pathname === "/how-it-works"
                                        ? "text-primary-600 bg-primary-50 font-semibold"
                                        : "text-secondary-700 hover:bg-secondary-50"
                                  )}

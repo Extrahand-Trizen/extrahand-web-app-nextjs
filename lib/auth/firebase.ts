@@ -17,13 +17,12 @@ import {
    signInWithPhoneNumber,
    Auth,
 } from "firebase/auth";
-import { getAnalytics, Analytics } from "firebase/analytics";
 import { FIREBASE_CONFIG } from "@/lib/config";
+import { initializeAnalyticsIfConsented } from "@/lib/auth/firebase-analytics";
 
 // Initialize Firebase
 let app: FirebaseApp;
 let auth: Auth;
-let analytics: Analytics | null = null;
 
 if (typeof window !== "undefined") {
    // Only initialize if not already initialized
@@ -35,13 +34,8 @@ if (typeof window !== "undefined") {
 
    auth = getAuth(app);
 
-   // Initialize Analytics (only in browser environment)
-   try {
-      analytics = getAnalytics(app);
-   } catch (e) {
-      // Analytics not available
-      console.warn("Analytics initialization failed:", e);
-   }
+   // Initialize Analytics with consent gating (will be initialized when consent is given)
+   initializeAnalyticsIfConsented(app);
 } else {
    // Server-side: create minimal app instance
    if (getApps().length === 0) {
@@ -52,7 +46,8 @@ if (typeof window !== "undefined") {
    auth = getAuth(app);
 }
 
-export { app, auth, analytics };
+export { app, auth };
+export { initializeAnalyticsIfConsented };
 
 // Email/Password Sign Up
 export const signUpWithEmail = async (

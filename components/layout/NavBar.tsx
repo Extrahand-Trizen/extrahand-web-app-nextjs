@@ -98,10 +98,11 @@ export const NavBar: React.FC<NavBarProps> = ({
                   >
                      <Image
                         src="/assets/images/logo.webp"
-                        alt="Extrahand Logo"
+                        alt="ExtraHand logo"
                         width={32}
                         height={32}
                         className="mr-2"
+                        unoptimized
                      />
                      <span
                         className="text-lg font-bold"
@@ -160,10 +161,11 @@ export const NavBar: React.FC<NavBarProps> = ({
                         >
                            <Image
                               src="/assets/images/logo.webp"
-                              alt="Extrahand Logo"
+                              alt="ExtraHand logo"
                               width={32}
                               height={32}
                               className="mr-2"
+                              unoptimized
                            />
                            <span
                               className="text-lg font-bold"

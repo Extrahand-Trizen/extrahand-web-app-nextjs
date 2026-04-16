@@ -21,6 +21,10 @@ export default function CookiePolicyPage() {
             similar technologies on our website and applications.
           </p>
 
+          <p className="mb-6 text-gray-700">
+            <strong>Effective date:</strong> April 16, 2026
+          </p>
+
           <h2 className="text-2xl font-bold mt-8 mb-4 text-gray-900">
             1. What Are Cookies?
           </h2>
@@ -40,13 +44,14 @@ export default function CookiePolicyPage() {
               management).
             </li>
             <li>
-              <strong>Performance and analytics cookies:</strong> Help us
+              <strong>Analytics cookies (optional):</strong> Help us
               understand how users interact with our platform so we can improve
-              it.
+              it. We only enable analytics after your consent.
             </li>
             <li>
-              <strong>Preference cookies:</strong> Remember your settings and
-              choices (such as language or location preferences).
+              <strong>Map and third-party embed cookies (optional):</strong>
+              Used when you choose to load Google Maps and related location
+              embeds.
             </li>
           </ul>
 
@@ -64,9 +69,10 @@ export default function CookiePolicyPage() {
             4. Managing Cookies
           </h2>
           <p className="mb-6 text-gray-700">
-            You can manage or disable cookies through your browser settings. If
-            you disable certain cookies, some features of the ExtraHand platform
-            may not function correctly.
+            You can manage your optional cookie choices from the cookie banner
+            and preference controls. You can also manage cookies through your
+            browser settings. If you disable certain cookies, some features of
+            the ExtraHand platform may not function correctly.
           </p>
 
           <h2 className="text-2xl font-bold mt-8 mb-4 text-gray-900">

@@ -63,7 +63,7 @@ export default async function OpenGraphImage() {
               src={logoDataUrl}
               width={132}
               height={132}
-              alt="ExtraHand"
+              alt="ExtraHand logo"
               style={{ display: "block" }}
             />
           </div>

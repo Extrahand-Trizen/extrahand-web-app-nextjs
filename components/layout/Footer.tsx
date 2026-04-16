@@ -29,7 +29,7 @@ const footerColumns = [
       { label: 'Privacy Policy', href: '/privacy-policy' },
       { label: 'Refund Policy', href: '/refund-policy' },
       { label: 'Tasker Agreement', href: '/tasker-agreement' },
-      { label: 'Contact Us', href: 'https://extrhand-support-frontend.apps.extrahand.in/contact' },
+      { label: 'Contact Us', href: 'https://support.extrahand.in/contact' },
     ],
   },
   {
@@ -38,7 +38,7 @@ const footerColumns = [
       { label: 'Post a Task', href: '/tasks/new' },
       { label: 'Browse Tasks', href: '/discover' },
       { label: 'Login', href: '/login' },
-      { label: 'Support Centre', href: 'https://extrhand-support-frontend.apps.extrahand.in' },
+      { label: 'Support Centre', href: 'https://support.extrahand.in' },
       { label: 'Become a Tasker', href: '/earn-money#how-to-become-tasker' },
     ],
   },
@@ -172,7 +172,7 @@ export const Footer: React.FC = () => {
           {/* App Download Buttons */}
           <div className="flex flex-col md:flex-row gap-3 md:gap-6.5 items-center">
             <Link
-              href="/coming-soon"
+              href="/coming-soon/mobile-app"
               aria-label="Download on the App Store"
               className="inline-block no-underline"
             >
@@ -187,7 +187,7 @@ export const Footer: React.FC = () => {
               </div>
             </Link>
             <Link
-              href="/coming-soon"
+              href="/coming-soon/mobile-app"
               aria-label="Get it on Google Play"
               className="inline-block no-underline"
             >
