@@ -1,5 +1,40 @@
 import type { Metadata } from "next";
 
+const pressReleases = [
+  {
+    title: "ExtraHand Launches Android App",
+    date: "April 17, 2026",
+    summary:
+      "ExtraHand officially launched its Android app, making it easier for users to post tasks, browse services, and connect with taskers on mobile devices.",
+    href: "/press/releases/2026-04-17-android-app-launch.txt",
+  },
+  {
+    title: "ExtraHand Officially Launches Marketplace Platform",
+    date: "April 1, 2026",
+    summary:
+      "ExtraHand officially launched its platform for local services, enabling users to post tasks, discover verified taskers, and manage bookings more easily.",
+    href: "/press/releases/2026-04-01-marketplace-platform-launch.txt",
+  },
+];
+
+const brandAssets = [
+  {
+    name: "Primary Logo (WEBP)",
+    href: "/logo.webp",
+    fileName: "extrahand-logo-primary.webp",
+  },
+  {
+    name: "Logo Variant (WEBP)",
+    href: "/assets/images/logo.webp",
+    fileName: "extrahand-logo-variant.webp",
+  },
+  {
+    name: "ExtraHand Wordmark (WEBP)",
+    href: "/assets/images/extrahand-logo.webp",
+    fileName: "extrahand-wordmark.webp",
+  },
+];
+
 export const metadata: Metadata = {
   title: "Press | ExtraHand",
   description:
@@ -8,57 +43,68 @@ export const metadata: Metadata = {
 
 export default function PressPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8 md:py-12 max-w-3xl">
-        <h1 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900">
-          Press
-        </h1>
-
-        <p className="text-gray-700 mb-6">
-          Stay updated with the latest news and announcements from ExtraHand.
-          Here you&apos;ll find press releases, media coverage, and important
-          updates about our platform.
-        </p>
-
-        <div className="bg-white rounded-lg shadow-sm p-6 md:p-8 mb-8">
-          <h2 className="text-2xl font-semibold mb-3 text-gray-900">
-            For Journalists & Media
-          </h2>
-          <p className="text-gray-700 mb-4">
-            If you&apos;re a journalist or media outlet interested in covering
-            ExtraHand, we&apos;d love to help! Please reach out to our press
-            team.
+    <div className="min-h-screen bg-linear-to-b from-slate-100 via-white to-amber-50">
+      <div className="container mx-auto max-w-6xl px-4 py-8 md:py-12">
+        <header className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-10">
+          <p className="inline-flex rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">
+            Media Center
           </p>
-          <p className="text-gray-700">
-            Email:{' '}
+          <h1 className="mt-4 text-3xl font-bold text-slate-900 md:text-5xl">Press</h1>
+          <p className="mt-4 max-w-3xl text-slate-600">
+            Official press releases, media coverage references, and downloadable brand assets for editorial use.
+          </p>
+          <p className="mt-4 text-sm text-slate-700">
+            Press contact: <a href="mailto:press@extrahand.in" className="font-semibold text-slate-900 hover:underline">press@extrahand.in</a>
+          </p>
+        </header>
+
+        <section className="mt-8">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="text-2xl font-semibold text-slate-900">Press Releases</h2>
+            <span className="text-sm text-slate-500">Official announcements</span>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {pressReleases.map((release) => (
+              <article key={release.title} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-amber-700">{release.date}</p>
+                <h3 className="mt-2 text-lg font-semibold leading-snug text-slate-900">{release.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{release.summary}</p>
+                <a href={release.href} className="mt-4 inline-flex text-sm font-semibold text-slate-900 hover:underline" download>
+                  Download release
+                </a>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-10 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-2xl font-semibold text-slate-900">Brand Kit & Downloads</h2>
             <a
-              href="mailto:press@extrahand.in"
-              className="text-blue-600 hover:underline"
+              href="/press/media-kit/ExtraHand-Media-Kit.txt"
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+              download
             >
-              press@extrahand.in
+              Download media kit
             </a>
+          </div>
+          <p className="mt-3 text-slate-600">
+            Download approved logos and brand references for press coverage. For custom asset requests, contact the press team.
           </p>
-        </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-6 md:p-8 mb-8">
-          <h2 className="text-2xl font-semibold mb-3 text-gray-900">
-            Latest News
-          </h2>
-          <p className="text-gray-700">
-            Check back soon for the latest press releases and news updates from
-            ExtraHand. We&apos;re constantly growing and innovating!
-          </p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
-          <h2 className="text-2xl font-semibold mb-3 text-gray-900">
-            Brand Assets
-          </h2>
-          <p className="text-gray-700 mb-4">
-            Need our logo or other brand materials? Contact our press team to
-            request brand assets and media kits.
-          </p>
-        </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            {brandAssets.map((asset) => (
+              <a
+                key={asset.name}
+                href={asset.href}
+                download={asset.fileName}
+                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800 transition hover:border-slate-300 hover:bg-white"
+              >
+                {asset.name}
+              </a>
+            ))}
+          </div>
+        </section>
       </div>
     </div>
   );

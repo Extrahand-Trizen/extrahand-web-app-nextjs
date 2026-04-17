@@ -115,7 +115,9 @@ export default function RootLayout({
                         richColors
                      />
                      <PollingOtpToastBridge />
-                     {children}
+                     <div id="main-content" tabIndex={-1}>
+                        {children}
+                     </div>
                   </AuthProvider>
                </QueryProvider>
             </ErrorBoundary>

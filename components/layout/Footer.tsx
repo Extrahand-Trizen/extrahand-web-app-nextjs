@@ -187,7 +187,9 @@ export const Footer: React.FC = () => {
               </div>
             </Link>
             <Link
-              href="/coming-soon/mobile-app"
+              href="https://play.google.com/store/apps/details?id=com.extrahand&hl=en-US&ah=-LiX_ydghfYysaDwKhZu7amlJZ4"
+              target="_blank"
+              rel="noopener noreferrer"
               aria-label="Get it on Google Play"
               className="inline-block no-underline"
             >

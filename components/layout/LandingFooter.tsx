@@ -282,7 +282,9 @@ export const LandingFooter: React.FC = () => {
 
               {/* Google Play */}
               <Link
-                href="/coming-soon/mobile-app"
+                href="https://play.google.com/store/apps/details?id=com.extrahand&hl=en-US&ah=-LiX_ydghfYysaDwKhZu7amlJZ4"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center gap-3 bg-white rounded-xl px-3 py-2 md:px-4 md:py-2.5 hover:bg-secondary-100 transition-colors"
               >
                 <svg

@@ -1,0 +1,35 @@
+ExtraHand Media Kit
+Version: April 2026
+
+Company
+- Name: ExtraHand
+- Website: https://extrahand.in
+- Category: Local services marketplace
+- Contact: press@extrahand.in
+
+Company Description
+ExtraHand connects customers with verified local taskers for everyday service needs including home repair, cleaning, moving support, delivery, beauty, tutoring, and more. The platform is focused on trust, speed, and clear service outcomes across Indian cities.
+
+Boilerplate (Short)
+ExtraHand is a city-first local services platform helping users discover and book verified taskers quickly and safely.
+
+Boilerplate (Long)
+ExtraHand is building a reliable local services marketplace where users can discover, compare, and book trusted taskers for daily needs. The platform emphasizes transparent profiles, verified providers, localized discovery pages, and clear communication from posting to completion.
+
+Brand Usage Guidelines
+- Keep clear space around the logo equal to at least the height of the letter E.
+- Do not stretch, rotate, or recolor the logo.
+- Use high contrast placements for readability.
+- Prefer official logo files shared in this kit.
+
+Available Brand Files
+- /logo.webp
+- /assets/images/logo.webp
+- /assets/images/extrahand-logo.webp
+
+Spokesperson
+- ExtraHand Press Team
+- Email: press@extrahand.in
+
+Copyright
+Copyright (c) 2026 ExtraHand. All rights reserved.

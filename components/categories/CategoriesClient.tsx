@@ -11,6 +11,9 @@ interface CategoriesClientProps {
    viewType?: "jobs" | "services" | "task";
 }
 
+const INITIAL_VISIBLE_CATEGORIES = 12;
+const CATEGORY_BATCH_SIZE = 12;
+
 // Display category name as-is from database (no modification)
 const getCategoryDisplayName = (name: string): string => name;
 
@@ -40,6 +43,30 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
 }) => {
    const isServicesView = viewType === "services" || viewType === "jobs";
    const [activeCategoryId, setActiveCategoryId] = React.useState<string>("");
+   const [visibleCategoryCount, setVisibleCategoryCount] = React.useState<number>(() =>
+      isServicesView ? Math.min(INITIAL_VISIBLE_CATEGORIES, categories.length) : categories.length
+   );
+   const loadMoreTriggerRef = React.useRef<HTMLDivElement | null>(null);
+
+   React.useEffect(() => {
+      setVisibleCategoryCount(
+         isServicesView
+            ? Math.min(INITIAL_VISIBLE_CATEGORIES, categories.length)
+            : categories.length
+      );
+   }, [categories, isServicesView]);
+
+   const visibleCategories = React.useMemo(
+      () => (isServicesView ? categories.slice(0, visibleCategoryCount) : categories),
+      [categories, isServicesView, visibleCategoryCount]
+   );
+
+   const loadMoreCategories = React.useCallback(() => {
+      if (!isServicesView || visibleCategoryCount >= categories.length) return;
+      setVisibleCategoryCount((count) =>
+         Math.min(count + CATEGORY_BATCH_SIZE, categories.length)
+      );
+   }, [categories.length, isServicesView, visibleCategoryCount]);
 
    const scrollWithOffset = React.useCallback((id: string) => {
       const el = document.getElementById(id);
@@ -52,11 +79,47 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
 
    React.useEffect(() => {
       if (!isServicesView) return;
+
+      const hash = window.location.hash.replace(/^#/, "");
+      if (hash) {
+         const index = categories.findIndex(
+            (category, idx) => getCategoryAnchorId(category, idx) === hash
+         );
+         if (index >= 0) {
+            setVisibleCategoryCount((count) =>
+               Math.max(count, Math.min(index + CATEGORY_BATCH_SIZE, categories.length))
+            );
+         }
+      }
+   }, [categories, isServicesView]);
+
+   React.useEffect(() => {
+      if (!isServicesView || visibleCategoryCount >= categories.length) return;
+
+      const target = loadMoreTriggerRef.current;
+      if (!target) return;
+
+      const observer = new IntersectionObserver(
+         (entries) => {
+            const [entry] = entries;
+            if (entry?.isIntersecting) {
+               loadMoreCategories();
+            }
+         },
+         { root: null, rootMargin: "400px 0px", threshold: 0.01 }
+      );
+
+      observer.observe(target);
+      return () => observer.disconnect();
+   }, [categories.length, isServicesView, loadMoreCategories, visibleCategoryCount]);
+
+   React.useEffect(() => {
+      if (!isServicesView) return;
       
       const handleScroll = () => {
          let current = "";
          const offset = window.innerHeight / 2; // threshold in middle of screen for better detection
-         categories.forEach((category, index) => {
+         visibleCategories.forEach((category, index) => {
             const anchorId = getCategoryAnchorId(category, index);
             const el = document.getElementById(anchorId);
             if (el) {
@@ -69,28 +132,30 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
          
          // Highlight last one if bottom reached
          if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 50) {
-            if (categories.length > 0) {
+            if (visibleCategories.length > 0) {
                current = getCategoryAnchorId(
-                  categories[categories.length - 1],
-                  categories.length - 1
+                  visibleCategories[visibleCategories.length - 1],
+                  visibleCategories.length - 1
                );
             }
          }
          
          // If none found and we are near top, pick first
-         if (!current && categories.length > 0 && window.scrollY < 200) {
-            current = getCategoryAnchorId(categories[0], 0);
+         if (!current && visibleCategories.length > 0 && window.scrollY < 200) {
+            current = getCategoryAnchorId(visibleCategories[0], 0);
          }
          
-         if (current && current !== activeCategoryId) {
-            setActiveCategoryId(current);
+         if (current) {
+            setActiveCategoryId((previous) =>
+               previous === current ? previous : current
+            );
          }
       };
 
       window.addEventListener("scroll", handleScroll, { passive: true });
       handleScroll(); // init
       return () => window.removeEventListener("scroll", handleScroll);
-   }, [categories, isServicesView]);
+   }, [visibleCategories, isServicesView]);
 
    return (
       <main
@@ -111,14 +176,14 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
          {/* Left Sidebar - Categories List with Images */}
          <div className={cn(
             isServicesView
-               ? "sticky top-[56px] md:top-24 z-20 bg-white/95 backdrop-blur-sm md:bg-transparent py-2 md:py-0 border-b border-gray-100 md:border-none -mx-4 px-4 sm:-mx-6 sm:px-6 md:mx-0 md:px-0 self-start w-[calc(100%+2rem)] sm:w-[calc(100%+3rem)] md:w-auto overflow-hidden md:overflow-visible"
+               ? "sticky top-14 md:top-24 z-20 bg-white/95 backdrop-blur-sm md:bg-transparent py-2 md:py-0 border-b border-gray-100 md:border-none -mx-4 px-4 sm:-mx-6 sm:px-6 md:mx-0 md:px-0 self-start w-[calc(100%+2rem)] sm:w-[calc(100%+3rem)] md:w-auto overflow-hidden md:overflow-visible"
                : "contents"
          )}>
             {/* Fades for mobile */}
             {isServicesView && (
                <>
-                  <div className="md:hidden absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-white via-white/80 to-transparent pointer-events-none z-10" />
-                  <div className="md:hidden absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white via-white/90 to-transparent pointer-events-none z-10" />
+                  <div className="md:hidden absolute left-0 top-0 bottom-0 w-6 bg-linear-to-r from-white via-white/80 to-transparent pointer-events-none z-10" />
+                  <div className="md:hidden absolute right-0 top-0 bottom-0 w-12 bg-linear-to-l from-white via-white/90 to-transparent pointer-events-none z-10" />
                </>
             )}
 
@@ -142,6 +207,14 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                      onClick={(e) => {
                         if (isServicesView) {
                            e.preventDefault();
+                           if (index >= visibleCategoryCount) {
+                              setVisibleCategoryCount((count) =>
+                                 Math.max(
+                                    count,
+                                    Math.min(index + CATEGORY_BATCH_SIZE, categories.length)
+                                 )
+                              );
+                           }
                            setActiveCategoryId(anchorId);
                            const target = document.getElementById(anchorId);
                            if (target) {
@@ -169,22 +242,17 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                      {/* Category Image Thumbnail */}
                      {!isServicesView && category.heroImage && (
                         <div className="shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
-                           {category.heroImage.startsWith("data:") ||
-                           category.heroImage.startsWith("http") ? (
-                              <img
-                                 src={category.heroImage}
-                                 alt={displayName}
-                                 className="w-full h-full object-cover"
-                              />
-                           ) : (
-                              <Image
-                                 src={category.heroImage}
-                                 alt={displayName}
-                                 width={48}
-                                 height={48}
-                                 className="w-full h-full object-cover"
-                              />
-                           )}
+                           <Image
+                              src={category.heroImage}
+                              alt={displayName}
+                              width={48}
+                              height={48}
+                              unoptimized={
+                                 category.heroImage.startsWith("data:") ||
+                                 category.heroImage.startsWith("http")
+                              }
+                              className="w-full h-full object-cover"
+                           />
                         </div>
                      )}
 
@@ -275,14 +343,14 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                )}
             >
                {viewType === "jobs"
-                  ? "Extrahand is India's largest task marketplace. Browse all available tasks from handymen to cleaners to gardeners. Sign up now and get hired!"
+               ? "Extrahand is a fast-growing task marketplace. Browse available tasks from handymen to cleaners to gardeners, and sign up to get hired."
                   : viewType === "services"
-                  ? "Extrahand is India's largest service marketplace. Find and hire skilled professionals for all kinds of services from handymen to cleaners to gardeners."
-                  : "Extrahand is India's largest job marketplace for all kinds of Tasks from handymen to cleaners to gardeners. Sign up now and get hired!"}
+               ? "Extrahand helps you find and hire skilled professionals for many services, from handymen to cleaners to gardeners."
+               : "Extrahand is a local marketplace for many kinds of tasks, from handymen to cleaners to gardeners. Sign up now and get hired."}
             </p>
 
             {/* All Categories List */}
-            {categories.map((category, index) => {
+            {visibleCategories.map((category, index) => {
                const categoryDisplayName = getCategoryDisplayName(category.name);
                const anchorId = getCategoryAnchorId(category, index);
                const hasCategorySlug = Boolean(category.slug?.trim());
@@ -329,24 +397,7 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
 
                      {/* Category Hero Image (only if provided) */}
                      {category.heroImage &&
-                        (category.heroImage.startsWith("data:") ||
-                        category.heroImage.startsWith("http") ? (
-                           <img
-                              src={category.heroImage}
-                              alt={categoryDisplayName}
-                              className={cn(
-                                 "w-full object-cover font-extrabold border border-[#e5e7eb]",
-                                 isServicesView
-                                    ? "mb-8 mt-2 rounded-[22px]"
-                                    : "mb-8 sm:mb-10 mt-3 sm:mt-4 rounded-[14px]"
-                              )}
-                              style={{
-                                 width: "100%",
-                                 height: "auto",
-                                 maxHeight: isServicesView ? "360px" : "400px",
-                              }}
-                           />
-                        ) : (
+                        (
                            <Image
                               className={cn(
                                  "w-full object-cover font-extrabold border border-[#e5e7eb]",
@@ -358,8 +409,13 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                               alt={categoryDisplayName}
                               width={760}
                               height={isServicesView ? 360 : 400}
+                              unoptimized={
+                                 category.heroImage.startsWith("data:") ||
+                                 category.heroImage.startsWith("http")
+                              }
+                              sizes="(max-width: 768px) 100vw, 760px"
                            />
-                        ))}
+                        )}
 
                      {/* Subcategories List - Below Image */}
                      {category.subcategories &&
@@ -470,6 +526,22 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                   </div>
                );
             })}
+
+            {isServicesView && visibleCategoryCount < categories.length && (
+               <div className="mt-6 mb-2 flex flex-col items-center gap-3">
+                  <button
+                     type="button"
+                     onClick={loadMoreCategories}
+                     className="rounded-full border border-yellow-300 bg-yellow-50 px-5 py-2 text-sm font-semibold text-[#0a1f44] transition-colors hover:bg-yellow-100"
+                  >
+                     Load more categories
+                  </button>
+               </div>
+            )}
+
+            {isServicesView && visibleCategoryCount < categories.length && (
+               <div ref={loadMoreTriggerRef} aria-hidden className="h-1 w-full" />
+            )}
          </div>
          </div>
       </main>
