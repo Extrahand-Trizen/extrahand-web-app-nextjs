@@ -193,8 +193,9 @@ export const HeroSection: React.FC = () => {
 
          {/* 2. The Content Card */}
          <div className="relative z-10 w-full max-w-3xl px-4 text-center">
-            <h1 className="text-3xl md:text-4xl lg:text-6xl font-semibold text-white mb-3 leading-tight tracking-tight">
-               Find & Hire Services Near You at Your Budget
+            <h1 className="text-3xl md:text-4xl lg:text-6xl font-semibold text-white mb-3 leading-none tracking-tight">
+               <span className="block">Find &amp; Hire Services</span>
+               <span className="-mt-2 block md:-mt-3 lg:-mt-4">Near You at Your Budget</span>
             </h1>
 
             <p className="text-sm md:text-lg text-white/90 mb-5 font-medium">

@@ -1,89 +1,18 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
-import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
    CheckCircle2,
-   Zap,
    Sparkles,
-   Layers,
    ArrowRight,
-   Briefcase,
+   Layers,
    Shield,
+   Zap,
+   Briefcase,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-
-interface TopCategoryCard {
-   title: string;
-   description: string;
-   image: string;
-   tags: string[];
-   slug: string;
-}
-
-const topCategoryCards: TopCategoryCard[] = [
-   {
-      title: "Electricians",
-      description: "Wiring, switch board fitting, fan and light installation.",
-      image: "/assets/mobilescreens/electrical.webp",
-      tags: ["Fan Installation", "Light Fix", "Wiring"],
-      slug: "electricians",
-   },
-   {
-      title: "Plumbers",
-      description: "Fix leaks, pipe blocks, bathroom fittings, and tap issues.",
-      image: "/assets/mobilescreens/plumbing.webp",
-      tags: ["Leak Repair", "Tap Fitting", "Drain Cleaning"],
-      slug: "plumbers",
-   },
-   {
-      title: "Home Cleaning",
-      description: "Book regular, deep, kitchen, and full-home cleaning.",
-      image: "/assets/mobilescreens/cleaning.webp",
-      tags: ["Deep Cleaning", "Kitchen", "Sofa"],
-      slug: "home-cleaning",
-   },
-   {
-      title: "Carpenters",
-      description: "Furniture assembly, repair work, shelves, and fittings.",
-      image: "/assets/mobilescreens/work.webp",
-      tags: ["Furniture", "Repair", "Installation"],
-      slug: "carpenters",
-   },
-   {
-      title: "Flooring Services",
-      description: "Tile, wooden, and vinyl flooring support by professionals.",
-      image: "/assets/mobilescreens/garden.webp",
-      tags: ["Tiles", "Wooden", "Repairs"],
-      slug: "flooring-services",
-   },
-   {
-      title: "Delivery & Pickup",
-      description: "Same-day parcel, grocery, and item pickup/drop service.",
-      image: "/assets/mobilescreens/delivery.webp",
-      tags: ["Parcel", "Grocery", "Document"],
-      slug: "delivery-pickup",
-   },
-   {
-      title: "General Handyman",
-      description: "Quick help for minor repairs and home maintenance tasks.",
-      image: "/assets/mobilescreens/handy.webp",
-      tags: ["Curtain Rod", "Door Fix", "Small Jobs"],
-      slug: "general-handyman",
-   },
-   {
-      title: "Pet Care Services",
-      description: "Pet walking, grooming assistance, and day-care support.",
-      image: "/assets/mobilescreens/cleaning.webp",
-      tags: ["Pet Walk", "Pet Sitting", "Care"],
-      slug: "pet-care-services",
-   },
-];
-
-const CATEGORY_MARQUEE_DURATION_SECONDS = 48;
 
 const whyChoosePoints = [
    {
@@ -136,147 +65,73 @@ export const ServicesSection: React.FC = () => {
          <div className="pointer-events-none absolute -top-28 left-1/2 -translate-x-1/2 h-80 w-80 rounded-full bg-primary-200/25 blur-3xl" />
          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* One Platform Section - H2 */}
-            <div className="mb-16 md:mb-24 bg-white/90 backdrop-blur rounded-3xl shadow-xl shadow-secondary-200/40 border border-secondary-100 p-6 md:p-12">
-               <h2 className="text-2xl md:text-4xl font-bold text-secondary-900 mb-6 md:mb-8">
-                  One Platform to Book Home Services Within Your Budget
-               </h2>
-               <p className="text-secondary-600 mb-8 text-base md:text-2xl/9 max-w-5xl">
-                  ExtraHand is a smart home services platform that connects customers
-                  with verified service providers. Simply post your requirement, mention
-                  your budget, and get the best service at your price.
-               </p>
+            <div className="mb-16 md:mb-24 overflow-hidden rounded-2xl border border-secondary-200 bg-white shadow-sm">
+               <div className="grid grid-cols-1 lg:grid-cols-12">
+                  <div className="lg:col-span-7 px-6 py-8 md:px-10 md:py-12 lg:px-12">
+                     <div className="max-w-2xl">
+                        <div className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-primary-200 bg-primary-50 px-4 py-1.5 text-sm font-semibold text-primary-700">
+                           <Sparkles className="size-3.5" />
+                           India&apos;s Smart Home Services Platform
+                        </div>
 
-               {/* Process steps */}
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-5 mb-8">
-                  {[
-                     "Post Your Requirement",
-                     "Set Your Budget",
-                     "Get Matched with Experts",
-                     "Book Instantly",
-                  ].map((step, idx) => (
-                     <div
-                        key={idx}
-                        className="flex items-center gap-3 rounded-xl border border-secondary-100 bg-secondary-50/70 px-4 py-3"
-                     >
-                        <span className="inline-flex size-7 items-center justify-center rounded-full bg-green-100 shrink-0">
-                           <CheckCircle2 className="size-4 text-green-700" />
-                        </span>
-                        <span className="text-secondary-800 font-semibold">{step}</span>
-                     </div>
-                  ))}
-               </div>
+                        <h2 className="max-w-xl text-3xl font-extrabold leading-tight tracking-tight text-secondary-900 md:text-4xl xl:text-5xl">
+                           One Platform to Book{" "}
+                           <span className="text-primary-500">Home Services</span>{" "}
+                           Within Your Budget
+                        </h2>
 
-               {/* CTAs */}
-               <div className="flex flex-col sm:flex-row gap-4">
-                  <Link href="/tasks/new">
-                     <Button size="lg" className="w-full sm:w-auto px-7">
-                        Post Your Requirement
-                        <ArrowRight className="size-4 ml-2" />
-                     </Button>
-                  </Link>
-                  <Link href="/tasks">
-                     <Button
-                        size="lg"
-                        variant="outline"
-                        className="w-full sm:w-auto px-7 border-secondary-300 hover:bg-secondary-50"
-                     >
-                        Get Quotes Now
-                     </Button>
-                  </Link>
-               </div>
-            </div>
+                        <p className="mt-5 max-w-xl text-base leading-relaxed text-secondary-600 md:text-lg">
+                           ExtraHand connects customers with verified service providers.
+                           Post your requirement, set your budget, and get the best service
+                           at your price with no surprises.
+                        </p>
 
-            {/* Categories Section - H2 */}
-            <div className="mb-16 md:mb-24">
-               <div className="relative overflow-hidden rounded-3xl px-3 py-8 md:px-8 md:py-12 bg-linear-to-b from-primary-50/40 via-white to-primary-50/40">
-                  <div className="pointer-events-none absolute top-6 left-6 h-40 w-40 rounded-full bg-primary-200/20 blur-3xl" />
-                  <div className="pointer-events-none absolute bottom-4 right-6 h-52 w-52 rounded-full bg-primary-300/10 blur-3xl" />
-
-                  <div className="relative z-10 mx-auto max-w-4xl text-center mb-10 md:mb-12">
-                  <h2 className="text-2xl md:text-4xl font-bold text-secondary-900 mb-3">
-                     Our Top Categories
-                  </h2>
-                  <p className="text-secondary-600 text-base md:text-xl/8">
-                     Choose from a wide range of home and daily services. All services
-                     are handled by verified professionals to ensure quality and safety.
-                  </p>
-                  </div>
-
-                  <div className="relative overflow-hidden rounded-3xl">
-                     <div className="hidden md:block pointer-events-none absolute left-0 top-0 h-full w-24 bg-linear-to-r from-white via-white/80 to-transparent z-10" />
-                     <div className="hidden md:block pointer-events-none absolute right-0 top-0 h-full w-24 bg-linear-to-l from-white via-white/80 to-transparent z-10" />
-
-                     {Array.from({ length: 2 }).map((_, lane) => (
-                        <motion.div
-                           key={lane}
-                           className="flex w-max gap-4 md:gap-6 py-2 md:py-3"
-                           animate={
-                              lane === 0
-                                 ? { x: ["0%", "-33.333%"] }
-                                 : { x: ["-33.333%", "0%"] }
-                           }
-                           transition={{
-                              duration: CATEGORY_MARQUEE_DURATION_SECONDS,
-                              ease: "linear",
-                              repeat: Infinity,
-                           }}
-                        >
-                           {[...topCategoryCards, ...topCategoryCards].map((category, idx) => (
-                              <Link
-                                 key={`${category.slug}-${lane}-${idx}`}
-                                 href={`/tasks/new?category=${category.slug}`}
-                                 className="group"
+                        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+                           <Link href="/tasks/new" className="w-full sm:w-auto">
+                              <Button size="lg" className="group w-full gap-2 px-7">
+                                 Post Your Requirement
+                                 <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
+                              </Button>
+                           </Link>
+                           <Link href="/tasks" className="w-full sm:w-auto">
+                              <Button
+                                 size="lg"
+                                 variant="outline"
+                                 className="w-full border-secondary-300 bg-white px-7 hover:bg-secondary-50"
                               >
-                                 <article className="min-w-[300px] sm:min-w-[420px] lg:min-w-[520px] rounded-2xl bg-white border border-secondary-100 p-4 md:p-5 shadow-sm hover:shadow-xl hover:shadow-secondary-200/40 hover:border-primary-200 transition-all duration-300">
-                                    <div className="flex items-start gap-4">
-                                       <div className="relative size-20 md:size-24 shrink-0 overflow-hidden rounded-xl bg-secondary-100">
-                                          <Image
-                                             src={category.image}
-                                             alt={category.title}
-                                             fill
-                                             className="object-cover group-hover:scale-110 transition-transform duration-300"
-                                          />
-                                       </div>
-
-                                       <div className="min-w-0 flex-1">
-                                          <div className="flex items-center justify-between gap-3">
-                                             <h3 className="text-xl md:text-2xl font-bold text-secondary-900 group-hover:text-primary-700 transition-colors">
-                                                {category.title}
-                                             </h3>
-                                             <ArrowRight className="size-5 text-secondary-400 group-hover:text-primary-600 group-hover:translate-x-1 transition-all shrink-0" />
-                                          </div>
-
-                                          <p className="mt-2 text-secondary-600 text-sm md:text-base leading-relaxed">
-                                             {category.description}
-                                          </p>
-
-                                          <div className="mt-3 flex flex-wrap gap-2">
-                                             {category.tags.map((tag) => (
-                                                <span
-                                                   key={tag}
-                                                   className="inline-flex items-center rounded-full border border-primary-200 bg-primary-50 px-3 py-1 text-xs md:text-sm text-primary-700"
-                                                >
-                                                   {tag}
-                                                </span>
-                                             ))}
-                                          </div>
-                                       </div>
-                                    </div>
-                                 </article>
-                              </Link>
-                           ))}
-                        </motion.div>
-                     ))}
+                                 Get Quotes Now
+                              </Button>
+                           </Link>
+                        </div>
+                     </div>
                   </div>
 
-                  <div className="relative z-10 text-center mt-6 md:mt-10">
-                     <Link
-                        href="/services"
-                        className="inline-flex items-center gap-2 px-5 py-3 md:px-6 bg-primary-500 hover:bg-primary-600 transition-colors font-semibold rounded-xl text-sm md:text-lg shadow-lg text-white"
-                     >
-                        View all categories
-                        <ArrowRight className="h-5 w-5" />
-                     </Link>
+                  <div className="lg:col-span-5 border-t border-secondary-200 bg-secondary-50/40 px-6 py-8 md:px-10 md:py-12 lg:border-l lg:border-t-0 lg:px-10">
+                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-secondary-400">
+                        How it works
+                     </p>
+                     <p className="mt-1 text-lg font-bold text-secondary-900">
+                        Four steps, done simply
+                     </p>
+
+                     <div className="mt-6 space-y-3">
+                        {[
+                           "Post Your Requirement",
+                           "Set Your Budget",
+                           "Get Matched with Experts",
+                           "Book Instantly",
+                        ].map((step, idx) => (
+                           <div
+                              key={step}
+                              className="flex items-center gap-3 rounded-xl border border-secondary-200 bg-white px-4 py-3"
+                           >
+                              <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-100 text-sm font-bold text-primary-700">
+                                 {String(idx + 1).padStart(2, "0")}
+                              </span>
+                              <span className="font-semibold text-secondary-900">{step}</span>
+                           </div>
+                        ))}
+                     </div>
                   </div>
                </div>
             </div>
