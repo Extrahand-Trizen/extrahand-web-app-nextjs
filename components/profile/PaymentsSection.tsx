@@ -35,7 +35,6 @@ import {
    Smartphone,
    Plus,
    Trash2,
-   CheckCircle2,
    ArrowUpRight,
    ArrowDownLeft,
    Clock,
@@ -50,7 +49,6 @@ import {
    FileSpreadsheet,
 } from "lucide-react";
 import { PaymentMethod, PayoutMethod, Transaction } from "@/types/profile";
-import { mockTransactions } from "@/lib/data/payments";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { useAuth } from "@/lib/auth/context";
@@ -64,7 +62,6 @@ import {
    exportTransactionsToExcel,
 } from "@/lib/exportTransactions";
 import { AddBankAccountModal } from "./AddBankAccountModal";
-import { BankAccountBanner } from "./BankAccountBanner";
 import { PayoutHistory } from "./PayoutHistory";
 import { useBankAccounts } from "@/lib/hooks/usePayments";
 
@@ -83,13 +80,9 @@ interface PaymentsSectionProps {
 
 export function PaymentsSection({
    paymentMethods = [],
-   payoutMethods = [],
-   transactions: initialTransactions,
    userId,
    onRemovePaymentMethod,
-   onRemovePayoutMethod,
    onSetDefaultPayment,
-   onSetDefaultPayout,
    onSavePaymentMethod,
    onSavePayoutMethod,
 }: PaymentsSectionProps) {
@@ -111,6 +104,7 @@ export function PaymentsSection({
       transactions,
       totalEarnings,
       totalSpent,
+      extraCoinsWallet,
       loading,
       fetchPayments,
    } = usePaymentsStore();
@@ -234,7 +228,6 @@ export function PaymentsSection({
          t.metadata && typeof t.metadata === "object" && !Array.isArray(t.metadata)
             ? (t.metadata as Record<string, unknown>)
             : {};
-      const metaTag = String(meta.reason || meta.type || meta.category || meta.label || "").toLowerCase();
       const explicitPenalty = Boolean(
          (meta as { isPenalty?: boolean }).isPenalty ||
             (meta as { penalty?: boolean }).penalty ||
@@ -244,7 +237,7 @@ export function PaymentsSection({
       // If marked as penalty AND not a payout/refund/payment amount, treat as penalty.
       const isStandalonePenalty = explicitPenalty && t.type !== "payout" && t.type !== "refund";
 
-      return isStandalonePenalty || (desc.includes("penalty") && t.type === "fee");
+      return isStandalonePenalty || desc.includes("penalty");
    };
 
    // Filter transactions based on selected filter + range filters
@@ -317,6 +310,13 @@ export function PaymentsSection({
    // Show pending penalty exactly as returned by API; do not net against payouts here.
    const effectivePendingPenaltyTotal = Math.max(0, pendingPenaltyTotal);
 
+   const walletCoinRate = Number.parseFloat(extraCoinsWallet?.coinToRupee || "0.2");
+   const walletTotalCoins = Number.parseFloat(extraCoinsWallet?.totalCoins || "0");
+   const walletTotalRupees = Number.parseFloat(extraCoinsWallet?.totalRupeeValue || "0");
+   const walletEarnedHistory = extraCoinsWallet?.earnedHistory || [];
+   const walletUsedHistory = extraCoinsWallet?.usedHistory || [];
+   const walletExpiringSoon = extraCoinsWallet?.expiringSoon || [];
+
    return (
       <div className="max-w-4xl space-y-4 sm:space-y-6">
          {/* Header */}
@@ -380,7 +380,7 @@ export function PaymentsSection({
          </div>
 
          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4 bg-gray-100">
+            <TabsList className="grid w-full grid-cols-5 bg-gray-100">
                <TabsTrigger value="methods" className="text-xs sm:text-sm">
                   Payment Methods
                </TabsTrigger>
@@ -392,6 +392,9 @@ export function PaymentsSection({
                </TabsTrigger>
                <TabsTrigger value="transactions" className="text-xs sm:text-sm">
                   Transactions
+               </TabsTrigger>
+               <TabsTrigger value="wallet" className="text-xs sm:text-sm">
+                  ExtraCoins
                </TabsTrigger>
             </TabsList>
 
@@ -455,7 +458,7 @@ export function PaymentsSection({
             {/* Payouts History Tab */}
             <TabsContent value="payouts" className="space-y-4 mt-4">
                <div className="space-y-4">
-                  <div className="bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg p-4 border border-primary-200">
+                  <div className="bg-linear-to-r from-primary-50 to-primary-100 rounded-lg p-4 border border-primary-200">
                      <div className="flex items-start gap-3">
                         <div className="text-primary-600">
                            <Wallet className="w-5 h-5" />
@@ -731,7 +734,7 @@ export function PaymentsSection({
                                        totalSpent,
                                     });
                                     toast.success("PDF downloaded");
-                                 } catch (e) {
+                                 } catch {
                                     toast.error("Failed to download PDF");
                                  }
                               }}
@@ -747,7 +750,7 @@ export function PaymentsSection({
                                        totalSpent,
                                     });
                                     toast.success("Excel downloaded");
-                                 } catch (e) {
+                                 } catch {
                                     toast.error("Failed to download Excel");
                                  }
                               }}
@@ -980,6 +983,105 @@ export function PaymentsSection({
                   )}
                </div>
             </TabsContent>
+
+            {/* ExtraCoins Wallet Tab */}
+            <TabsContent value="wallet" className="space-y-4 mt-4">
+               <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 space-y-4">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                     <div>
+                        <h3 className="text-sm sm:text-base font-semibold text-gray-900">ExtraCoins Wallet</h3>
+                        <p className="text-xs text-gray-500 mt-1">1 Coin = ₹{walletCoinRate.toFixed(1)}</p>
+                     </div>
+                     <Badge className="bg-amber-100 text-amber-800 border-amber-200">Usable only at payout (up to platform fee)</Badge>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                     <div className="rounded-lg border border-gray-200 p-3">
+                        <p className="text-xs text-gray-500 mb-1">Total Coins</p>
+                        <p className="text-xl font-semibold text-gray-900">{walletTotalCoins.toFixed(2)}</p>
+                     </div>
+                     <div className="rounded-lg border border-gray-200 p-3">
+                        <p className="text-xs text-gray-500 mb-1">Total Value</p>
+                        <p className="text-xl font-semibold text-gray-900">₹{walletTotalRupees.toFixed(2)}</p>
+                     </div>
+                     <div className="rounded-lg border border-gray-200 p-3">
+                        <p className="text-xs text-gray-500 mb-1">Earned Message</p>
+                        <p className="text-sm font-medium text-gray-900">
+                           You earned {walletTotalCoins.toFixed(2)} ExtraCoins = ₹{walletTotalRupees.toFixed(2)}
+                        </p>
+                     </div>
+                  </div>
+
+                  <div className="rounded-lg border border-dashed border-gray-300 p-3 text-xs text-gray-600 space-y-1">
+                     <p>Cannot withdraw as bank cash directly.</p>
+                     <p>Any remaining balance is auto-applied on upcoming payouts.</p>
+                  </div>
+               </div>
+
+               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-3">
+                     <h4 className="text-sm font-semibold text-gray-900">Earned Coins History</h4>
+                     {walletEarnedHistory.length === 0 ? (
+                        <p className="text-xs text-gray-500">No earned coins history yet.</p>
+                     ) : (
+                        <div className="space-y-2 max-h-72 overflow-y-auto">
+                           {walletEarnedHistory.slice(0, 20).map((entry) => (
+                              <div key={entry.transactionId} className="rounded-md border border-gray-100 p-2.5">
+                                 <div className="flex items-center justify-between text-xs">
+                                    <span className="font-medium text-gray-900">+{Number.parseFloat(entry.coins || "0").toFixed(2)} coins</span>
+                                    <span className="text-gray-500">₹{Number.parseFloat(entry.rupeeValue || "0").toFixed(2)}</span>
+                                 </div>
+                                 <p className="text-[11px] text-gray-500 mt-1">{formatDateTime(entry.createdAt)}</p>
+                                 {entry.expiresAt && (
+                                    <p className="text-[11px] text-amber-700 mt-1">Expires: {formatDate(entry.expiresAt)}</p>
+                                 )}
+                              </div>
+                           ))}
+                        </div>
+                     )}
+                  </div>
+
+                  <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-3">
+                     <h4 className="text-sm font-semibold text-gray-900">Used Coins History</h4>
+                     {walletUsedHistory.length === 0 ? (
+                        <p className="text-xs text-gray-500">No used coins history yet.</p>
+                     ) : (
+                        <div className="space-y-2 max-h-72 overflow-y-auto">
+                           {walletUsedHistory.slice(0, 20).map((entry) => (
+                              <div key={entry.transactionId} className="rounded-md border border-gray-100 p-2.5">
+                                 <div className="flex items-center justify-between text-xs">
+                                    <span className="font-medium text-gray-900">-{Number.parseFloat(entry.coins || "0").toFixed(2)} coins</span>
+                                    <span className="text-gray-500">₹{Number.parseFloat(entry.rupeeValue || "0").toFixed(2)}</span>
+                                 </div>
+                                 <p className="text-[11px] text-gray-500 mt-1">{formatDateTime(entry.createdAt)}</p>
+                              </div>
+                           ))}
+                        </div>
+                     )}
+                  </div>
+               </div>
+
+               <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-900">Expiring Soon Coins</h4>
+                  {walletExpiringSoon.length === 0 ? (
+                     <p className="text-xs text-gray-500">No coins are expiring soon.</p>
+                  ) : (
+                     <div className="space-y-2">
+                        {walletExpiringSoon.slice(0, 20).map((entry) => (
+                           <div key={entry.transactionId} className="rounded-md border border-amber-200 bg-amber-50 p-2.5">
+                              <div className="flex items-center justify-between text-xs">
+                                 <span className="font-medium text-amber-900">
+                                    {Number.parseFloat(entry.coins || "0").toFixed(2)} coins
+                                 </span>
+                                 <span className="text-amber-800">₹{Number.parseFloat(entry.rupeeValue || "0").toFixed(2)}</span>
+                              </div>
+                              <p className="text-[11px] text-amber-800 mt-1">Expires: {formatDate(entry.expiresAt || entry.createdAt)}</p>
+                           </div>
+                        ))}
+                     </div>
+                  )}
+               </div>
+            </TabsContent>
          </Tabs>
 
          {/* Payment Method Form Modal */}
@@ -1087,108 +1189,6 @@ function PaymentMethodRow({
                      className="text-xs h-8 px-2 text-gray-600 hover:text-primary-600"
                   >
                      {isSettingDefault ? "Setting..." : "Set default"}
-                  </Button>
-               )}
-               {showConfirm ? (
-                  <div className="flex items-center gap-1">
-                     <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => {
-                           onRemove();
-                           setShowConfirm(false);
-                        }}
-                        className="text-xs h-8 px-2 sm:px-3"
-                     >
-                        Remove
-                     </Button>
-                     <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowConfirm(false)}
-                        className="text-xs h-8 px-2 sm:px-3"
-                     >
-                        Cancel
-                     </Button>
-                  </div>
-               ) : (
-                  <Button
-                     variant="ghost"
-                     size="icon"
-                     onClick={() => setShowConfirm(true)}
-                     className="text-gray-400 hover:text-red-500 h-8 w-8"
-                  >
-                     <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  </Button>
-               )}
-            </div>
-         </div>
-      </div>
-   );
-}
-
-interface PayoutMethodRowProps {
-   method: PayoutMethod;
-   onRemove: () => void;
-   onSetDefault: () => void;
-}
-
-function PayoutMethodRow({
-   method,
-   onRemove,
-   onSetDefault,
-}: PayoutMethodRowProps) {
-   const [showConfirm, setShowConfirm] = useState(false);
-
-   return (
-      <div className="px-4 py-3 sm:px-5 sm:py-4">
-         <div className="flex items-center gap-3 sm:gap-4">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
-               {method.type === "bank" && (
-                  <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
-               )}
-               {method.type === "upi" && (
-                  <Smartphone className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
-               )}
-            </div>
-
-            <div className="flex-1 min-w-0">
-               <div className="flex items-center gap-2">
-                  <span className="text-xs sm:text-sm font-medium text-gray-900 truncate">
-                     {method.type === "bank" &&
-                        `${method.bankName} •••• ${
-                           method.accountNumber?.slice(-4) || "****"
-                        }`}
-                     {method.type === "upi" && method.upiId}
-                  </span>
-                  {method.isDefault && (
-                     <Badge
-                        variant="secondary"
-                        className="text-[10px] bg-primary-100 text-primary-700"
-                     >
-                        Default
-                     </Badge>
-                  )}
-                  {method.isVerified && (
-                     <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
-                  )}
-               </div>
-               {method.type === "bank" && method.accountHolderName && (
-                  <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 truncate">
-                     {method.accountHolderName}
-                  </p>
-               )}
-            </div>
-
-            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-               {!method.isDefault && (
-                  <Button
-                     variant="ghost"
-                     size="sm"
-                     onClick={onSetDefault}
-                     className="text-xs h-8 px-2 text-gray-600 hover:text-primary-600"
-                  >
-                     Set default
                   </Button>
                )}
                {showConfirm ? (
@@ -1351,8 +1351,25 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
                if (cancelled) return;
 
                if (task) {
-                  setTaskStatus((task as any).status);
-                  setTaskCategory((task as any).categoryLabel || (task as any).category);
+                  const taskRecord = task as Record<string, unknown>;
+                  const assignedUser =
+                     taskRecord.assignedUser && typeof taskRecord.assignedUser === "object"
+                        ? (taskRecord.assignedUser as Record<string, unknown>)
+                        : undefined;
+                  const assignedTo =
+                     taskRecord.assignedTo && typeof taskRecord.assignedTo === "object"
+                        ? (taskRecord.assignedTo as Record<string, unknown>)
+                        : undefined;
+
+                  setTaskStatus(taskRecord.status as Transaction["taskStatus"]);
+                  setTaskCategory(
+                     (typeof taskRecord.categoryLabel === "string"
+                        ? taskRecord.categoryLabel
+                        : undefined) ||
+                        (typeof taskRecord.category === "string"
+                           ? taskRecord.category
+                           : undefined)
+                  );
 
                   // For payouts, we want the poster's name (who issued payment)
                   // For payments/refunds, we want the tasker's name
@@ -1361,27 +1378,56 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
                         .getPublicProfile(posterUid)
                         .catch(() => null);
 
+                     const posterProfileRecord =
+                        posterProfile && typeof posterProfile === "object"
+                           ? (posterProfile as Record<string, unknown>)
+                           : undefined;
+
                      const posterName =
-                        (posterProfile as any)?.name ||
-                        (posterProfile as any)?.displayName ||
-                        (posterProfile as any)?.fullName;
+                        (typeof posterProfileRecord?.name === "string"
+                           ? posterProfileRecord.name
+                           : undefined) ||
+                        (typeof posterProfileRecord?.displayName === "string"
+                           ? posterProfileRecord.displayName
+                           : undefined) ||
+                        (typeof posterProfileRecord?.fullName === "string"
+                           ? posterProfileRecord.fullName
+                           : undefined);
 
                      if (posterName) {
                         setPaidToName(posterName);
                      }
                   } else {
                      const taskerNameFromTask =
-                        (task as any).assignedToName ||
-                        (task as any).assigneeName ||
-                        (task as any).performerName ||
-                        (task as any).assignedUser?.name ||
-                        (task as any).assignedTo?.name;
+                        (typeof taskRecord.assignedToName === "string"
+                           ? taskRecord.assignedToName
+                           : undefined) ||
+                        (typeof taskRecord.assigneeName === "string"
+                           ? taskRecord.assigneeName
+                           : undefined) ||
+                        (typeof taskRecord.performerName === "string"
+                           ? taskRecord.performerName
+                           : undefined) ||
+                        (typeof assignedUser?.name === "string"
+                           ? assignedUser.name
+                           : undefined) ||
+                        (typeof assignedTo?.name === "string"
+                           ? assignedTo.name
+                           : undefined);
 
                      const taskerUidOrId =
-                        (task as any).assigneeUid ||
-                        (task as any).assignedTo ||
-                        (task as any).assignedUser?._id ||
-                        (task as any).assignedUser?.uid;
+                        (typeof taskRecord.assigneeUid === "string"
+                           ? taskRecord.assigneeUid
+                           : undefined) ||
+                        (typeof taskRecord.assignedTo === "string"
+                           ? taskRecord.assignedTo
+                           : undefined) ||
+                        (typeof assignedUser?._id === "string"
+                           ? assignedUser._id
+                           : undefined) ||
+                        (typeof assignedUser?.uid === "string"
+                           ? assignedUser.uid
+                           : undefined);
 
                      if (taskerNameFromTask) {
                         setPaidToName(taskerNameFromTask);
@@ -1390,10 +1436,21 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
                            .getPublicProfile(taskerUidOrId)
                            .catch(() => null);
 
+                        const profileRecord =
+                           profile && typeof profile === "object"
+                              ? (profile as Record<string, unknown>)
+                              : undefined;
+
                         const profileName =
-                           (profile as any)?.name ||
-                           (profile as any)?.displayName ||
-                           (profile as any)?.fullName;
+                           (typeof profileRecord?.name === "string"
+                              ? profileRecord.name
+                              : undefined) ||
+                           (typeof profileRecord?.displayName === "string"
+                              ? profileRecord.displayName
+                              : undefined) ||
+                           (typeof profileRecord?.fullName === "string"
+                              ? profileRecord.fullName
+                              : undefined);
 
                         if (profileName) {
                            setPaidToName(profileName);
@@ -1482,6 +1539,15 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
                   <DetailRow label="Task Amount" value={breakdown.taskAmount} />
                   <DetailRow label="Platform Fee" value={breakdown.platformFee} />
                   <DetailRow label="GST" value={breakdown.gstAmount} />
+                  {isIncoming && breakdown.extraCoinsBonus > 0 && (
+                     <div className="pt-2 mt-2 border-t border-gray-200">
+                        <DetailRow
+                           label={`ExtraCoins Bonus (+${safeCurrency(breakdown.extraCoinsBonusCoins)} coins)`}
+                           value={breakdown.extraCoinsBonus}
+                           strong
+                        />
+                     </div>
+                  )}
                   {isIncoming && breakdown.penaltyDeducted > 0 && (
                      <div className="pt-2 mt-2 border-t border-gray-200">
                         <DetailRow
@@ -1496,7 +1562,7 @@ function TransactionDetailsModal({ transaction, onClose }: TransactionDetailsMod
                   )}
                   <div className="pt-2 mt-2 border-t border-gray-200">
                      <DetailRow
-                        label={isIncoming ? "Amount Received" : "Total Paid"}
+                        label={isIncoming ? "Final Payout" : "Total Paid"}
                         value={breakdown.totalPaid}
                         strong
                      />
@@ -1575,6 +1641,16 @@ function buildPaymentBreakdown(transaction: Transaction) {
          : {};
 
    const penaltyDeducted = getPenaltyDeductedValue(transaction);
+   const extraCoinsBonus = safeNumber(
+      metadata.extraCoinsBonus ?? amountBreakdown.extraCoinsBonus
+   );
+   const extraCoinsMeta =
+      metadata.extraCoins && typeof metadata.extraCoins === "object" && !Array.isArray(metadata.extraCoins)
+         ? (metadata.extraCoins as Record<string, unknown>)
+         : {};
+   const extraCoinsBonusCoins = safeNumber(
+      metadata.extraCoinsBonusCoins ?? extraCoinsMeta.redeemedCoins
+   );
    const inferredNetAmount = safeNumber(transaction.amount ?? metadata.netAmount);
    const totalPaid = safeNumber(
       transaction.totalPaid ?? metadata.totalPaid ?? amountBreakdown.totalPaid ?? transaction.amount
@@ -1669,6 +1745,8 @@ function buildPaymentBreakdown(transaction: Transaction) {
       gstAmount,
       totalPaid: isIncomingPayout ? netReceived : totalPaid,
       penaltyDeducted,
+      extraCoinsBonus,
+      extraCoinsBonusCoins,
       refundBefore24h: Math.round(normalizedTaskAmount),
       refundBefore1hTo24h: Math.round(normalizedTaskAmount * 0.9),
       refundBefore1h: Math.round(normalizedTaskAmount * 0.8),

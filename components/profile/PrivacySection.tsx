@@ -99,7 +99,7 @@ function DeleteConfirmDialog({
   const [step, setStep] = useState<1 | 2>(1);
 
   // Once the count resolves to 0 (no open tasks), automatically move to step 2.
-  // null = still loading; -1 = unknown count; >0 = show specific warning.
+  // null = still loading; >0 = show specific warning.
   useEffect(() => {
     if (openTasksCount === 0) {
       setStep(2);
@@ -166,18 +166,6 @@ function DeleteConfirmDialog({
                       Checking your open tasks...
                     </p>
                   </div>
-                ) : openTasksCount === -1 ? (
-                  /* Count unknown (timeout / API error) — generic warning */
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                    <p className="text-sm font-semibold text-amber-900 mb-1">
-                      You may have open tasks
-                    </p>
-                    <p className="text-xs text-amber-800 leading-relaxed">
-                      Any open tasks (posted but not yet assigned) will be{" "}
-                      <strong>automatically deleted</strong> as part of the
-                      deletion process. Are you sure you want to continue?
-                    </p>
-                  </div>
                 ) : (
                   /* Count loaded and > 0 */
                   <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
@@ -232,7 +220,7 @@ function DeleteConfirmDialog({
                     <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
                     <div>
                       <p className="text-sm font-semibold text-red-900">
-                        24–48 hour grace period
+                        24-48 hour grace period
                       </p>
                       <p className="text-xs text-red-800 mt-1 leading-relaxed">
                         Deletion is scheduled — not instant. You can cancel
@@ -383,22 +371,44 @@ export function PrivacySection({
     }
   };
 
-  const handleDeleteButtonClick = () => {
+  const fetchExactOpenTasksCount = async (setLoadingState: boolean): Promise<number> => {
+    if (setLoadingState) {
+      setOpenTasksCount(null);
+    }
+
+    const timeout = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error("Open tasks count request timed out")), 4500);
+    });
+
+    const res = await Promise.race([privacyApi.checkOpenTasks(), timeout]);
+    const parsedCount = Number(res?.openTasksCount);
+    const exactCount = Number.isFinite(parsedCount) && parsedCount >= 0 ? parsedCount : 0;
+    setOpenTasksCount(exactCount);
+    return exactCount;
+  };
+
+  useEffect(() => {
+    // Warm this value early so delete dialog can render count quickly.
+    fetchExactOpenTasksCount(false).catch(() => {
+      // Non-blocking prefetch; click handler will retry and show user-facing error.
+    });
+  }, []);
+
+  const handleDeleteButtonClick = async () => {
     setDeletionReason("");
-    setOpenTasksCount(null); // null = loading
     setShowDeleteDialog(true);
 
-    // Race the API call against a 3-second timeout.
-    const timeout = new Promise<{ success: boolean; openTasksCount: number }>(
-      (resolve) => setTimeout(() => resolve({ success: true, openTasksCount: -1 }), 3000)
-    );
-
-    Promise.race([privacyApi.checkOpenTasks(), timeout])
-      .then((res) => setOpenTasksCount(res?.openTasksCount ?? -1))
-      .catch((err) => {
-         console.warn("API checkOpenTasks failed", err);
-         setOpenTasksCount(-1);
-      });
+    try {
+      if (openTasksCount === null) {
+        await fetchExactOpenTasksCount(true);
+      } else {
+        void fetchExactOpenTasksCount(false);
+      }
+    } catch (err) {
+      console.warn("API checkOpenTasks failed", err);
+      setShowDeleteDialog(false);
+      toast.error("Unable to fetch your open tasks count. Please try again.");
+    }
   };
 
   const handleConfirmDeletion = async () => {

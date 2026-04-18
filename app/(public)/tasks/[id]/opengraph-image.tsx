@@ -101,7 +101,7 @@ export default async function TaskOpenGraphImage({ params }: PageProps) {
               }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={logoDataUrl} width={48} height={48} alt="ExtraHand" />
+              <img src={logoDataUrl} width={48} height={48} alt="ExtraHand logo" />
             </div>
             <div style={{ display: "flex", flexDirection: "column" }}>
               <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: -0.6 }}>

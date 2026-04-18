@@ -1,82 +1,40 @@
 /**
- * How It Works Section - Clean 3-step flow
- *
- * Design principles:
- * - Separate flows for Posters and Taskers
- * - Visual connection between steps
- * - Clear, actionable descriptions
- * - Strong CTA at the end
+ * How It Works Section - Simple 4-step booking flow
  */
 
 "use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import {
-   FileText,
-   Users,
-   CheckCircle,
-   ArrowRight,
-   Briefcase,
-   MessageSquare,
-   Wallet,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import React from "react";
+import { FileText, Users, CheckCircle, CalendarCheck, Wallet } from "lucide-react";
 
-type UserRole = "poster" | "tasker";
-
-const posterSteps = [
+const bookingSteps = [
    {
       step: 1,
       icon: FileText,
-      title: "Post Your Task",
-      description:
-         "Describe what you need done, set a budget and choose when you need it.",
-      highlight: "Free to post",
+      title: "Post Your Task or Choose a Service",
+      description: "Share what you need and include your preferred budget.",
+      highlight: "Easy to start",
    },
    {
       step: 2,
       icon: Users,
-      title: "Get Quotes",
-      description:
-         "Taskers send quotes. Review ratings, experience and price before choosing.",
-      highlight: "Usually within minutes",
+      title: "Get Matched with Verified Experts",
+      description: "Review trusted professionals matched to your requirement.",
+      highlight: "Verified professionals",
    },
    {
       step: 3,
-      icon: CheckCircle,
-      title: "Get It Done",
-      description:
-         "Chat, coordinate and pay securely after the task is completed.",
-      highlight: "100% satisfaction guaranteed",
-   },
-];
-
-const taskerSteps = [
-   {
-      step: 1,
-      icon: Briefcase,
-      title: "Browse Tasks",
-      description:
-         "Find tasks that match your skills and availability in your city.",
-      highlight: "Flexible schedule",
+      icon: CalendarCheck,
+      title: "Select Time & Confirm Booking",
+      description: "Pick a convenient slot and confirm quickly.",
+      highlight: "Flexible scheduling",
    },
    {
-      step: 2,
-      icon: MessageSquare,
-      title: "Make Offers",
-      description:
-         "Set your rate and share a short message to improve your chances.",
-      highlight: "Set your own rates",
-   },
-   {
-      step: 3,
+      step: 4,
       icon: Wallet,
-      title: "Get Paid",
-      description:
-         "Finish the work and receive secure payment once it's approved.",
-      highlight: "Fast, secure payments",
+      title: "Get Work Done at Your Doorstep",
+      description: "Sit back while experts complete the job safely and on time.",
+      highlight: "Simple and budget-friendly",
    },
 ];
 
@@ -128,75 +86,28 @@ const StepCard: React.FC<StepCardProps> = ({
 );
 
 export const HowItWorksSection: React.FC = () => {
-   const [activeRole, setActiveRole] = useState<UserRole>("poster");
-   const steps = activeRole === "poster" ? posterSteps : taskerSteps;
-
    return (
       <section id="how-it-works" className="py-12 md:py-20 bg-white">
          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Section header */}
             <div className="text-center mb-12">
                <h2 className="text-2xl md:text-4xl font-bold text-secondary-900 mb-4">
-                  How ExtraHand Works
+                  How It Works
                </h2>
                <p className="text-sm md:text-lg text-secondary-600 max-w-2xl mx-auto">
-                  Whether you need help or want to earn, getting started takes
-                  just minutes.
+                  Simple, Smart & Budget-Friendly Booking
                </p>
             </div>
 
-            {/* Role toggle */}
-            <div className="flex justify-center mb-12">
-               <div className="inline-flex p-1.5 bg-secondary-100 rounded-xl">
-                  <button
-                     onClick={() => setActiveRole("poster")}
-                     className={cn(
-                        "px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold text-sm transition-all",
-                        activeRole === "poster"
-                           ? "bg-white text-secondary-900 shadow-md"
-                           : "text-secondary-600 hover:text-secondary-900"
-                     )}
-                  >
-                     I need help
-                  </button>
-                  <button
-                     onClick={() => setActiveRole("tasker")}
-                     className={cn(
-                        "px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold text-sm transition-all",
-                        activeRole === "tasker"
-                           ? "bg-white text-secondary-900 shadow-md"
-                           : "text-secondary-600 hover:text-secondary-900"
-                     )}
-                  >
-                     I want to earn
-                  </button>
-               </div>
-            </div>
-
             {/* Steps grid */}
-            <div className="grid md:grid-cols-3 gap-6 md:gap-12 mb-10 md:mb-16">
-               {steps.map((step, idx) => (
+            <div className="grid md:grid-cols-4 gap-6 md:gap-8">
+               {bookingSteps.map((step, idx) => (
                   <StepCard
-                     key={`${activeRole}-${step.step}`}
+                     key={step.step}
                      {...step}
-                     isLast={idx === steps.length - 1}
+                     isLast={idx === bookingSteps.length - 1}
                   />
                ))}
-            </div>
-
-            {/* CTA */}
-            <div className="text-center">
-               <Link href={activeRole === "poster" ? "/tasks/new" : "/signup"}>
-                  <Button
-                     size="lg"
-                     className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-bold text-sm md:text-lg px-6 py-3 md:px-10 md:py-6 rounded-xl shadow-lg shadow-primary-500/25 transition-all hover:shadow-xl hover:-translate-y-0.5"
-                  >
-                     {activeRole === "poster"
-                        ? "Post Your First Task"
-                        : "Start Earning Today"}
-                     <ArrowRight className="w-5 h-5 ml-2" />
-                  </Button>
-               </Link>
             </div>
          </div>
       </section>

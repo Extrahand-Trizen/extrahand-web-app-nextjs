@@ -5,7 +5,7 @@
  * Summary view of account status, stats, and quick actions
  */
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { buildPublicProfileHandle } from "@/lib/utils/profileHandle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -32,12 +32,14 @@ import {
    Landmark,
    Share2,
    Plus,
+   Wallet,
 } from "lucide-react";
 import { UserProfile } from "@/types/user";
 import { ProfileSection } from "@/types/profile";
 import { ShareModal } from "@/components/shared/ShareModal";
 import { toast } from "sonner";
 import { profilesApi } from "@/lib/api/endpoints/profiles";
+import { paymentApi } from "@/lib/api/endpoints/payment";
 import { postTaskCategories } from "@/lib/data/categories";
 
 interface ProfileOverviewProps {
@@ -57,6 +59,13 @@ export function ProfileOverview({ user, onNavigate, loading }: ProfileOverviewPr
    const [aboutInput, setAboutInput] = useState(
       user.business?.description || user.bio || ""
    );
+   const [extraCoinsSummary, setExtraCoinsSummary] = useState<{
+      totalCoins: number;
+      totalRupees: number;
+   }>({
+      totalCoins: 0,
+      totalRupees: 0,
+   });
    const [selectedSkills, setSelectedSkills] = useState<string[]>(
       (user.skills?.list || []).map((item) => item.name).filter(Boolean)
    );
@@ -84,6 +93,32 @@ export function ProfileOverview({ user, onNavigate, loading }: ProfileOverviewPr
          )
          .slice(0, 8);
    }, [selectedSkills, skillInput]);
+
+   useEffect(() => {
+      const walletUserId = user.uid || user._id;
+      if (!walletUserId) return;
+
+      let cancelled = false;
+      paymentApi
+         .getExtraCoinsWallet(walletUserId)
+         .then((res) => {
+            if (cancelled) return;
+            const totalCoins = Number.parseFloat(res?.wallet?.totalCoins || "0");
+            const totalRupees = Number.parseFloat(res?.wallet?.totalRupeeValue || "0");
+            setExtraCoinsSummary({
+               totalCoins: Number.isFinite(totalCoins) ? totalCoins : 0,
+               totalRupees: Number.isFinite(totalRupees) ? totalRupees : 0,
+            });
+         })
+         .catch(() => {
+            if (cancelled) return;
+            setExtraCoinsSummary({ totalCoins: 0, totalRupees: 0 });
+         });
+
+      return () => {
+         cancelled = true;
+      };
+   }, [user.uid, user._id]);
 
    const handleSkillsModalOpenChange = (open: boolean) => {
       setSkillsModalOpen(open);
@@ -300,6 +335,29 @@ export function ProfileOverview({ user, onNavigate, loading }: ProfileOverviewPr
                      </Button>
                   </div>
                </div>
+            </div>
+         </div>
+
+         <div className="bg-amber-50 rounded-lg border border-amber-200 p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+               <div>
+                  <p className="text-xs text-amber-800 font-medium">ExtraCoins</p>
+                  <p className="text-lg sm:text-xl font-semibold text-amber-900 mt-1">
+                     {extraCoinsSummary.totalCoins.toFixed(2)}
+                  </p>
+                  <p className="text-xs text-amber-700 mt-1">
+                     Worth ₹{extraCoinsSummary.totalRupees.toFixed(2)}
+                  </p>
+               </div>
+               <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onNavigate("payments")}
+                  className="text-xs h-8 px-3 border-amber-300 text-amber-900 hover:bg-amber-100"
+               >
+                  <Wallet className="w-3.5 h-3.5 mr-1.5" />
+                  View Wallet
+               </Button>
             </div>
          </div>
 

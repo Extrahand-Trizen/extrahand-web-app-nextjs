@@ -1,7 +1,9 @@
 export { HeroSection } from "./HeroSection";
 export { SocialProofBar } from "./SocialProofBar";
+export { ServicesSection } from "./ServicesSection";
 export { HowItWorksSection } from "./HowItWorksSection";
 export { TrustSection } from "./TrustSection";
 export { TestimonialsSection } from "./TestimonialsSection";
+export { FAQSection } from "./FAQSection";
 export { FinalCTASection } from "./FinalCTASection";
 export { CategoriesExplorer } from "./CategoriesExplorer";

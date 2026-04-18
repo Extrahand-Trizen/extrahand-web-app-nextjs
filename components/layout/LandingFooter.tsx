@@ -44,8 +44,8 @@ const footerLinks = {
       { label: "About Us", href: "/about-us" },
       { label: "Careers", href: "/careers" },
       { label: "Press", href: "/press" },
-      { label: "Contact Us", href: "https://extrhand-support-frontend.apps.extrahand.in/contact" },
-      { label: "Help Center", href: "https://extrhand-support-frontend.apps.extrahand.in" },
+      { label: "Contact Us", href: "https://support.extrahand.in/contact" },
+      { label: "Help Center", href: "https://support.extrahand.in" },
       { label: "FAQs", href: "/faqs" },
       { label: "Privacy Policy", href: "/privacy-policy" },
       { label: "Terms and Conditions", href: "/terms-and-conditions" },
@@ -114,14 +114,18 @@ export const LandingFooter: React.FC = () => {
         <div className="mb-4 md:mb-10">
           <div className="max-w-md">
           <Link href="/" className="flex items-center gap-2 mb-4">
-              <Image
-                src="/assets/images/logo.webp"
-                alt="ExtraHand"
-                width={48}
-                height={48}
-                className="size-8 md:size-12"
-                priority={false}
-              />
+              <div className="relative flex items-center justify-center size-8 md:size-12 shrink-0">
+                <div className="absolute w-[75%] h-[75%] bg-white rounded-full z-0"></div>
+                <Image
+                  src="/assets/images/logo.webp"
+                  alt="ExtraHand logo"
+                  width={48}
+                  height={48}
+                  className="relative z-10 size-8 md:size-12"
+                  unoptimized
+                  priority={false}
+                />
+              </div>
               <div className="flex flex-col">
                 <span className="text-lg md:text-xl font-bold">ExtraHand</span>
                 <span className="text-xs md:text-sm font-semibold text-secondary-400">
@@ -278,7 +282,9 @@ export const LandingFooter: React.FC = () => {
 
               {/* Google Play */}
               <Link
-                href="/coming-soon"
+                href="https://play.google.com/store/apps/details?id=com.extrahand&hl=en-US&ah=-LiX_ydghfYysaDwKhZu7amlJZ4"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center gap-3 bg-white rounded-xl px-3 py-2 md:px-4 md:py-2.5 hover:bg-secondary-100 transition-colors"
               >
                 <svg

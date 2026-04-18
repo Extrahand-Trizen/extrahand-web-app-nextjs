@@ -163,9 +163,10 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
                   <div className="flex items-center justify-center mb-2">
                      <Image
                         src="/assets/images/logo.webp"
-                        alt="Extrahand"
+                        alt="ExtraHand logo"
                         width={55}
                         height={55}
+                        unoptimized
                      />
                   </div>
                   <div className="space-y-2 text-center">

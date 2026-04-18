@@ -143,9 +143,9 @@ export default function HomePage() {
                            {getGreeting()},{" "}
                            {user?.name?.split(" ")[0] || "there"}
                         </h1>
-                        <p className="text-sm sm:text-base text-secondary-600">
-                           How can we help you today?
-                        </p>
+                        <h2 className="text-sm sm:text-base text-secondary-600 font-semibold">
+                           Find & Hire Services Near You at Your Budget
+                        </h2>
                      </div>
 
                      {/* Quick stats (from dashboard store) */}

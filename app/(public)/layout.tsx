@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { RouteChrome } from "@/components/layout/RouteChrome";
+import CookieConsentBanner from "@/components/layout/CookieConsentBanner";
+import { initializeAnalyticsIfConsented } from "@/lib/auth/firebase";
 
 export default function PublicLayout({
    children,
@@ -13,6 +15,8 @@ export default function PublicLayout({
 
    // Keep route scroll behavior predictable while respecting hash section navigation.
    useEffect(() => {
+      void initializeAnalyticsIfConsented();
+
       const scrollToHowItWorks = () => {
          if (window.location.hash !== "#how-it-works") return;
 
@@ -115,5 +119,10 @@ export default function PublicLayout({
       };
    }, [pathname]);
 
-   return <RouteChrome variant="public">{children}</RouteChrome>;
+   return (
+      <RouteChrome variant="public">
+         {children}
+         <CookieConsentBanner />
+      </RouteChrome>
+   );
 }

@@ -136,7 +136,7 @@ export const Header: React.FC = () => {
             <Link href="/" className="flex items-center gap-2">
                <img
                   src="/assets/images/logo.webp"
-                  alt="Extrahand Logo"
+                  alt="ExtraHand logo"
                   className="h-8 w-8"
                   onError={(e) => {
                      // Fallback if logo doesn't exist

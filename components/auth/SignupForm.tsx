@@ -176,9 +176,10 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
                   <div className="space-y-3">
                      <Image
                         src="/assets/images/logo.webp"
-                        alt="Extrahand"
+                        alt="ExtraHand logo"
                         width={40}
                         height={40}
+                        unoptimized
                      />
                      <h1 className="text-4xl font-bold text-gray-900">
                         Join ExtraHand Today
@@ -211,9 +212,10 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
                      <div className="flex items-center justify-center mb-2">
                         <Image
                            src="/assets/images/logo.webp"
-                           alt="Extrahand"
+                           alt="ExtraHand logo"
                            width={55}
                            height={55}
+                           unoptimized
                         />
                      </div>
                      <div className="space-y-2 text-center">

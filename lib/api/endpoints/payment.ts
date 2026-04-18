@@ -14,6 +14,7 @@ import type {
   UserPayments,
   TransactionHistory,
   FeeBreakdown,
+  ExtraCoinsWallet,
 } from '@/types/payment';
 
 export const paymentApi = {
@@ -195,6 +196,16 @@ export const paymentApi = {
     if (params?.linkedUserIds?.trim()) search.set('linkedUserIds', params.linkedUserIds.trim());
     const queryString = search.toString() ? `?${search.toString()}` : '';
     return fetchWithAuth(`/payment/transactions/user/${userId}/summary${queryString}`);
+  },
+
+  /**
+   * Get ExtraCoins wallet details for a user
+   * GET /api/v1/payment/transactions/user/:userId/wallet
+   */
+  async getExtraCoinsWallet(
+    userId: string
+  ): Promise<{ success: boolean; wallet?: ExtraCoinsWallet; error?: string }> {
+    return fetchWithAuth(`/payment/transactions/user/${userId}/wallet`);
   },
 
   /**

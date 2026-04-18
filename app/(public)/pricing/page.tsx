@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { BadgeCheck, Lock, ShieldCheck } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Pricing | ExtraHand",
@@ -69,6 +70,40 @@ export default function PricingPage() {
             <p className="text-sm text-gray-600 mt-4">
               These are processor fees charged by payment gateways for secure transactions.
             </p>
+          </div>
+
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-6 md:p-8 mb-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="max-w-2xl">
+                <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200 mb-3">
+                  <ShieldCheck className="size-4" />
+                  Secure checkout
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Payments are protected end to end
+                </h3>
+                <p className="text-sm md:text-base text-gray-700">
+                  We route payments through trusted third-party gateways, use HTTPS
+                  for checkout flows, and do not store sensitive card details on
+                  ExtraHand servers.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-medium text-gray-700 border border-emerald-200">
+                  <Lock className="size-3.5 text-emerald-600" />
+                  HTTPS enforced
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-medium text-gray-700 border border-emerald-200">
+                  <BadgeCheck className="size-3.5 text-emerald-600" />
+                  PCI-DSS compliant gateway
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-medium text-gray-700 border border-emerald-200">
+                  <ShieldCheck className="size-3.5 text-emerald-600" />
+                  Escrow protected funds
+                </span>
+              </div>
+            </div>
           </div>
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 md:p-8">
@@ -247,7 +282,7 @@ export default function PricingPage() {
         </div>
 
         {/* Need Help Section */}
-        <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-lg p-6 md:p-8 text-white">
+        <div className="bg-linear-to-r from-primary-600 to-primary-700 rounded-lg p-6 md:p-8 text-white">
           <h2 className="text-2xl font-bold mb-2">Still have questions?</h2>
           <p className="mb-4">Our support team is here to help</p>
           <a

@@ -25,11 +25,11 @@ export const metadata: Metadata = {
    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://extrahand.in"),
    icons: {
       icon: [
-         { url: "/favicon.ico?v=2", type: "image/x-icon" },
+         { url: "/icon.svg?v=3", type: "image/svg+xml" },
          { url: "/logo.webp", type: "image/webp" },
       ],
-      shortcut: "/favicon.ico?v=2",
-      apple: "/favicon.ico?v=2",
+      shortcut: "/icon.svg?v=3",
+      apple: "/logo.webp?v=3",
    },
    openGraph: {
       type: "website",
@@ -115,7 +115,9 @@ export default function RootLayout({
                         richColors
                      />
                      <PollingOtpToastBridge />
-                     {children}
+                     <div id="main-content" tabIndex={-1}>
+                        {children}
+                     </div>
                   </AuthProvider>
                </QueryProvider>
             </ErrorBoundary>

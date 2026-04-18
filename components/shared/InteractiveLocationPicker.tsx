@@ -16,6 +16,11 @@ import { cn } from "@/lib/utils";
 import { isValidCoordinate, sanitizeString } from "@/lib/utils/sanitization";
 import { GoogleMapPicker } from "@/components/maps/GoogleMapPicker";
 import { addressesApi } from "@/lib/api/endpoints/addresses";
+import { useMapsApiKey } from "@/lib/hooks/useMapsApiKey";
+import {
+   OPEN_CONSENT_PREFERENCES_EVENT,
+   updateConsentPreference,
+} from "@/lib/consent/cookieConsent";
 import type { SavedAddress } from "@/types/profile";
 
 // Query key for React Query caching
@@ -103,7 +108,7 @@ export function InteractiveLocationPicker({
    const [showSuggestions, setShowSuggestions] = useState(false);
    const [isSearching, setIsSearching] = useState(false);
    const sessionTokenRef = useRef<string>(Math.random().toString(36).substring(7));
-   const [mapsApiKey, setMapsApiKey] = useState<string | null>(null);
+   const { mapsApiKey, fetchApiKey, isFetching: isFetchingApiKey, mapsConsentBlocked } = useMapsApiKey();
    const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
    const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
    const [showAddNewAddressForm, setShowAddNewAddressForm] = useState(false);
@@ -173,18 +178,10 @@ export function InteractiveLocationPicker({
    const handleAddNewAddressClick = useCallback(async () => {
       setShowAddNewAddressForm(true);
       
-      if (!mapsApiKey) {
-         try {
-            const response = await fetch('/api/maps/key');
-            const data = await response.json();
-            if (data.apiKey) {
-               setMapsApiKey(data.apiKey);
-            }
-         } catch (error) {
-            console.error('Failed to fetch maps API key:', error);
-         }
+      if (!mapsApiKey && !mapsConsentBlocked) {
+         fetchApiKey();
       }
-   }, [mapsApiKey]);
+   }, [mapsApiKey, mapsConsentBlocked, fetchApiKey]);
 
    // Handle saved address selection
    const handleSelectSavedAddress = async (address: SavedAddress) => {
@@ -900,7 +897,37 @@ export function InteractiveLocationPicker({
 
                {/* Google Maps - Interactive */}
                <div className="relative w-full h-64 bg-gray-100 rounded-lg border-2 border-gray-200 overflow-hidden">
-                  {mapsApiKey ? (
+                  {mapsConsentBlocked ? (
+                     <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+                        <div className="text-center text-gray-600 px-4">
+                           <MapPin className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                           <p className="text-sm font-medium mb-2">Maps Not Enabled</p>
+                           <p className="text-xs text-gray-500 mb-3">Click to load map or adjust this anytime in cookie preferences.</p>
+                           <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
+                              <Button
+                                 type="button"
+                                 onClick={() => {
+                                    updateConsentPreference("maps", true);
+                                 }}
+                                 size="sm"
+                                 className="bg-primary-500 text-secondary-900 hover:bg-primary-600"
+                              >
+                                 Click to load map
+                              </Button>
+                              <Button
+                                 type="button"
+                                 onClick={() => {
+                                    window.dispatchEvent(new Event(OPEN_CONSENT_PREFERENCES_EVENT));
+                                 }}
+                                 variant="outline"
+                                 size="sm"
+                              >
+                                 Manage Preferences
+                              </Button>
+                           </div>
+                        </div>
+                     </div>
+                  ) : mapsApiKey ? (
                      <GoogleMapPicker
                         center={mapCenter}
                         markerPosition={markerPosition}

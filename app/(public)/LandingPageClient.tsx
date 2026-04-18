@@ -8,7 +8,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { HeroSection, HowItWorksSection } from "@/components/landing";
+import { HeroSection, HowItWorksSection, ServicesSection } from "@/components/landing";
 import { useAuth } from "@/lib/auth/context";
 
 // Defer below-the-fold marketing sections to reduce initial bundle size.
@@ -16,24 +16,12 @@ const SocialProofBar = dynamic(
    () => import("@/components/landing/SocialProofBar")
 );
 
-const CategoriesExplorer = dynamic(
-   () =>
-      import("@/components/landing/CategoriesExplorer").then(
-         (m) => m.CategoriesExplorer
-      ),
-   {
-      // Uses framer-motion; client-only is fine and keeps it out of the
-      // critical landing page JS on first paint.
-      ssr: false,
-   }
-);
-
-const TrustSection = dynamic(
-   () => import("@/components/landing/TrustSection")
-);
-
 const TestimonialsSection = dynamic(
    () => import("@/components/landing/TestimonialsSection")
+);
+
+const FAQSection = dynamic(
+   () => import("@/components/landing/FAQSection")
 );
 
 const FinalCTASection = dynamic(
@@ -175,9 +163,9 @@ export default function LandingPageClient() {
          <HeroSection />
          <SocialProofBar />
          <HowItWorksSection />
-         <CategoriesExplorer />
-         <TrustSection />
+         <ServicesSection />
          <TestimonialsSection />
+         <FAQSection />
          <FinalCTASection />
       </div>
    );

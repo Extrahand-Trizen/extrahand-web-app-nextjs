@@ -76,6 +76,7 @@ export function TaskDetailCard({ task, onClose }: TaskDetailCardProps) {
    // Determine if task is remote
    const isRemote = !displayTask.location?.coordinates || !displayTask.location?.address;
    const locationLabel = isRemote ? "Remote" : displayTask.location?.city?.trim() || "Remote";
+   const isRequesterDeleted = (displayTask.requesterName || "").toLowerCase().includes("account deleted");
 
    const getTimeAgo = (date: Date) => {
       const now = new Date();
@@ -217,13 +218,19 @@ export function TaskDetailCard({ task, onClose }: TaskDetailCardProps) {
                            <div className="text-[11px] uppercase tracking-wide text-secondary-500 font-normal">
                               Posted by
                            </div>
-                           <Link
-                              href={buildPublicProfilePath(displayTask.requesterName, displayTask.requesterId)}
-                              className="text-base font-normal text-secondary-900 truncate hover:text-primary-600 hover:underline transition-colors"
-                              onClick={(e) => e.stopPropagation()}
-                           >
-                              {displayTask.requesterName || "Task poster"}
-                           </Link>
+                           {isRequesterDeleted ? (
+                              <div className="text-base font-normal text-secondary-900 truncate">
+                                 {displayTask.requesterName || "Task poster"}
+                              </div>
+                           ) : (
+                              <Link
+                                 href={buildPublicProfilePath(displayTask.requesterName, displayTask.requesterId)}
+                                 className="text-base font-normal text-secondary-900 truncate hover:text-primary-600 hover:underline transition-colors"
+                                 onClick={(e) => e.stopPropagation()}
+                              >
+                                 {displayTask.requesterName || "Task poster"}
+                              </Link>
+                           )}
                         </div>
                      </div>
                      <div className="text-xs text-secondary-400 whitespace-nowrap pt-1 font-normal">

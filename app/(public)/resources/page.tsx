@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 const resourceLinks = [
-  { label: "Help Center", href: "/help-center" },
+  { label: "Help Center", href: "https://support.extrahand.in/" },
   { label: "FAQs", href: "/faqs" },
   { label: "Trust & Safety", href: "/trust-safety" },
   { label: "Community Guidelines", href: "/community-guidelines" },

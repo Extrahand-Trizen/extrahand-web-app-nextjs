@@ -11,6 +11,9 @@ interface CategoriesClientProps {
    viewType?: "jobs" | "services" | "task";
 }
 
+const INITIAL_VISIBLE_CATEGORIES = 12;
+const CATEGORY_BATCH_SIZE = 12;
+
 // Display category name as-is from database (no modification)
 const getCategoryDisplayName = (name: string): string => name;
 
@@ -29,11 +32,130 @@ const getCategoryAnchorKey = (category: Category): string => {
       .replace(/-+/g, "-");
 };
 
+   const getCategoryAnchorId = (category: Category, index: number): string => {
+      const key = getCategoryAnchorKey(category) || "item";
+      return `category-${key}-${index}`;
+   };
+
 const CategoriesClient: React.FC<CategoriesClientProps> = ({
    categories = [],
    viewType = "jobs",
 }) => {
    const isServicesView = viewType === "services" || viewType === "jobs";
+   const [activeCategoryId, setActiveCategoryId] = React.useState<string>("");
+   const [visibleCategoryCount, setVisibleCategoryCount] = React.useState<number>(() =>
+      isServicesView ? Math.min(INITIAL_VISIBLE_CATEGORIES, categories.length) : categories.length
+   );
+   const loadMoreTriggerRef = React.useRef<HTMLDivElement | null>(null);
+
+   React.useEffect(() => {
+      setVisibleCategoryCount(
+         isServicesView
+            ? Math.min(INITIAL_VISIBLE_CATEGORIES, categories.length)
+            : categories.length
+      );
+   }, [categories, isServicesView]);
+
+   const visibleCategories = React.useMemo(
+      () => (isServicesView ? categories.slice(0, visibleCategoryCount) : categories),
+      [categories, isServicesView, visibleCategoryCount]
+   );
+
+   const loadMoreCategories = React.useCallback(() => {
+      if (!isServicesView || visibleCategoryCount >= categories.length) return;
+      setVisibleCategoryCount((count) =>
+         Math.min(count + CATEGORY_BATCH_SIZE, categories.length)
+      );
+   }, [categories.length, isServicesView, visibleCategoryCount]);
+
+   const scrollWithOffset = React.useCallback((id: string) => {
+      const el = document.getElementById(id);
+      if (!el) return false;
+
+      // Reliable across window-scrolling and nested scroll containers.
+      el.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+      return true;
+   }, []);
+
+   React.useEffect(() => {
+      if (!isServicesView) return;
+
+      const hash = window.location.hash.replace(/^#/, "");
+      if (hash) {
+         const index = categories.findIndex(
+            (category, idx) => getCategoryAnchorId(category, idx) === hash
+         );
+         if (index >= 0) {
+            setVisibleCategoryCount((count) =>
+               Math.max(count, Math.min(index + CATEGORY_BATCH_SIZE, categories.length))
+            );
+         }
+      }
+   }, [categories, isServicesView]);
+
+   React.useEffect(() => {
+      if (!isServicesView || visibleCategoryCount >= categories.length) return;
+
+      const target = loadMoreTriggerRef.current;
+      if (!target) return;
+
+      const observer = new IntersectionObserver(
+         (entries) => {
+            const [entry] = entries;
+            if (entry?.isIntersecting) {
+               loadMoreCategories();
+            }
+         },
+         { root: null, rootMargin: "400px 0px", threshold: 0.01 }
+      );
+
+      observer.observe(target);
+      return () => observer.disconnect();
+   }, [categories.length, isServicesView, loadMoreCategories, visibleCategoryCount]);
+
+   React.useEffect(() => {
+      if (!isServicesView) return;
+      
+      const handleScroll = () => {
+         let current = "";
+         const offset = window.innerHeight / 2; // threshold in middle of screen for better detection
+         visibleCategories.forEach((category, index) => {
+            const anchorId = getCategoryAnchorId(category, index);
+            const el = document.getElementById(anchorId);
+            if (el) {
+               const rect = el.getBoundingClientRect();
+               if (rect.top <= offset) {
+                  current = anchorId;
+               }
+            }
+         });
+         
+         // Highlight last one if bottom reached
+         if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 50) {
+            if (visibleCategories.length > 0) {
+               current = getCategoryAnchorId(
+                  visibleCategories[visibleCategories.length - 1],
+                  visibleCategories.length - 1
+               );
+            }
+         }
+         
+         // If none found and we are near top, pick first
+         if (!current && visibleCategories.length > 0 && window.scrollY < 200) {
+            current = getCategoryAnchorId(visibleCategories[0], 0);
+         }
+         
+         if (current) {
+            setActiveCategoryId((previous) =>
+               previous === current ? previous : current
+            );
+         }
+      };
+
+      window.addEventListener("scroll", handleScroll, { passive: true });
+      handleScroll(); // init
+      return () => window.removeEventListener("scroll", handleScroll);
+   }, [visibleCategories, isServicesView]);
 
    return (
       <main
@@ -51,54 +173,98 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
             }
          >
          {/* Left Sidebar - Categories List with Images */}
+         {/* Left Sidebar - Categories List with Images */}
+         <div className={cn(
+            isServicesView
+               ? "sticky top-14 md:top-24 z-20 bg-white/95 backdrop-blur-sm md:bg-transparent py-2 md:py-0 border-b border-gray-100 md:border-none -mx-4 px-4 sm:-mx-6 sm:px-6 md:mx-0 md:px-0 self-start w-[calc(100%+2rem)] sm:w-[calc(100%+3rem)] md:w-auto overflow-hidden md:overflow-visible"
+               : "contents"
+         )}>
+            {/* Fades for mobile */}
+            {isServicesView && (
+               <>
+                  <div className="md:hidden absolute left-0 top-0 bottom-0 w-6 bg-linear-to-r from-white via-white/80 to-transparent pointer-events-none z-10" />
+                  <div className="md:hidden absolute right-0 top-0 bottom-0 w-12 bg-linear-to-l from-white via-white/90 to-transparent pointer-events-none z-10" />
+               </>
+            )}
+
          <section
             className={cn(
-               "hidden md:flex self-start flex-col text-sm sm:text-base font-medium text-[#0a1f44]",
+               "flex overflow-x-auto scroll-smooth whitespace-nowrap md:flex-col md:whitespace-normal md:overflow-visible text-sm sm:text-base font-medium text-[#0a1f44] scrollbar-hide",
                isServicesView
-                  ? "sticky top-24 gap-2 pr-4"
-                  : "-mt-2 sm:-mt-5 gap-3 ml-2 sm:ml-4 md:ml-6 lg:ml-8"
+                  ? "gap-2 md:pr-4 pb-1"
+                  : "-mt-2 sm:-mt-5 gap-3 ml-2 sm:ml-4 md:ml-6 lg:ml-8 pb-4 md:pb-0 hidden md:flex self-start flex-col"
             )}
          >
-            {categories.map((category) => {
+            {categories.map((category, index) => {
                // Display category name directly from database
                const displayName = getCategoryDisplayName(category.name);
-               const anchorKey = getCategoryAnchorKey(category);
+               const anchorId = getCategoryAnchorId(category, index);
 
                return (
                   <a
                      key={category._id || category.slug}
-                     href={`#category-${anchorKey}`}
+                     href={`#${anchorId}`}
+                     onClick={(e) => {
+                        if (isServicesView) {
+                           e.preventDefault();
+                           if (index >= visibleCategoryCount) {
+                              setVisibleCategoryCount((count) =>
+                                 Math.max(
+                                    count,
+                                    Math.min(index + CATEGORY_BATCH_SIZE, categories.length)
+                                 )
+                              );
+                           }
+                           setActiveCategoryId(anchorId);
+                           const target = document.getElementById(anchorId);
+                           if (target) {
+                              scrollWithOffset(anchorId);
+                              window.history.replaceState(null, "", `#${anchorId}`);
+                              return;
+                           }
+
+                           // Fallback to native hash navigation if target was not found at click time.
+                           window.location.hash = anchorId;
+                        }
+                     }}
                      className={cn(
-                        "transition-all duration-200 text-left w-full",
+                        "transition-all duration-200 text-left shrink-0 md:w-full",
                         isServicesView
-                           ? "py-1.5 text-[15px] text-[#0a1f44] hover:text-[#c07a00] truncate"
+                           ? cn(
+                              "py-1.5 px-3 md:px-0 md:bg-transparent rounded-full md:rounded-none border shadow-sm md:shadow-none md:border-transparent text-[14px] flex items-center justify-center hover:text-[#c07a00]",
+                              activeCategoryId === anchorId 
+                                 ? "bg-yellow-100 border-yellow-400 text-yellow-800 font-semibold" 
+                                 : "bg-white border-gray-200 text-[#0a1f44]"
+                             )
                            : "py-2 sm:py-3 px-3 sm:px-4 rounded-lg border border-transparent flex items-center gap-3 hover:border-yellow-500 hover:bg-yellow-50 group text-sm sm:text-base"
                      )}
                   >
                      {/* Category Image Thumbnail */}
                      {!isServicesView && category.heroImage && (
                         <div className="shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
-                           {category.heroImage.startsWith("data:") ||
-                           category.heroImage.startsWith("http") ? (
-                              <img
-                                 src={category.heroImage}
-                                 alt={displayName}
-                                 className="w-full h-full object-cover"
-                              />
-                           ) : (
-                              <Image
-                                 src={category.heroImage}
-                                 alt={displayName}
-                                 width={48}
-                                 height={48}
-                                 className="w-full h-full object-cover"
-                              />
-                           )}
+                           <Image
+                              src={category.heroImage}
+                              alt={displayName}
+                              width={48}
+                              height={48}
+                              unoptimized={
+                                 category.heroImage.startsWith("data:") ||
+                                 category.heroImage.startsWith("http")
+                              }
+                              className="w-full h-full object-cover"
+                           />
                         </div>
                      )}
 
                      <div className="flex-1 min-w-0">
-                        <span className="whitespace-nowrap flex-1 truncate block">
+                        <span
+                           className={cn(
+                              "whitespace-nowrap block",
+                              isServicesView
+                                 ? "max-w-none"
+                                 : "flex-1 truncate max-w-[150px] md:max-w-none"
+                           )}
+                        >
                            {displayName}
                         </span>
                         {/* Show subcategory count */}
@@ -122,7 +288,26 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                   </a>
                );
             })}
+            
+            {isServicesView && (
+               <a 
+                  href="#all-categories"
+                  onClick={() => {
+                     setActiveCategoryId("");
+                     const didScroll = scrollWithOffset("all-categories");
+                     if (didScroll) {
+                        window.history.replaceState(null, "", "#all-categories");
+                     } else {
+                        window.location.hash = "all-categories";
+                     }
+                  }}
+                  className="transition-all duration-200 text-left shrink-0 md:hidden py-1.5 px-3 bg-white hover:bg-yellow-50 rounded-full border border-gray-200 text-[14px] text-[#0a1f44] hover:text-yellow-700 flex items-center justify-center font-semibold ml-1 shadow-sm"
+               >
+                  View All Categories
+               </a>
+            )}
          </section>
+         </div>
 
          {/* Right Content Area */}
          <div
@@ -134,8 +319,9 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
             )}
          >
             <h1
+               id="all-categories"
                className={cn(
-                  "text-[#0a1f44]",
+                  "text-[#0a1f44] scroll-mt-24",
                   isServicesView
                      ? "mb-4 text-3xl font-extrabold sm:text-4xl md:text-5xl"
                      : "mb-3 text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black"
@@ -157,16 +343,16 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                )}
             >
                {viewType === "jobs"
-                  ? "Extrahand is India's largest task marketplace. Browse all available tasks from handymen to cleaners to gardeners. Sign up now and get hired!"
+               ? "Extrahand is a fast-growing task marketplace. Browse available tasks from handymen to cleaners to gardeners, and sign up to get hired."
                   : viewType === "services"
-                  ? "Extrahand is India's largest service marketplace. Find and hire skilled professionals for all kinds of services from handymen to cleaners to gardeners."
-                  : "Extrahand is India's largest job marketplace for all kinds of Tasks from handymen to cleaners to gardeners. Sign up now and get hired!"}
+               ? "Extrahand helps you find and hire skilled professionals for many services, from handymen to cleaners to gardeners."
+               : "Extrahand is a local marketplace for many kinds of tasks, from handymen to cleaners to gardeners. Sign up now and get hired."}
             </p>
 
             {/* All Categories List */}
-            {categories.map((category) => {
+            {visibleCategories.map((category, index) => {
                const categoryDisplayName = getCategoryDisplayName(category.name);
-               const anchorKey = getCategoryAnchorKey(category);
+               const anchorId = getCategoryAnchorId(category, index);
                const hasCategorySlug = Boolean(category.slug?.trim());
                const categoryHref =
                   viewType === "jobs"
@@ -178,8 +364,8 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                return (
                   <div
                      key={category._id || category.slug}
-                     id={`category-${anchorKey}`}
-                     className="mb-8 sm:mb-10 md:mb-12 scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32"
+                     id={anchorId}
+                     className="mb-8 sm:mb-10 md:mb-12 scroll-mt-32 sm:scroll-mt-32 md:scroll-mt-32"
                   >
                      {/* Category Name - Clickable Link */}
                      {hasCategorySlug ? (
@@ -211,24 +397,7 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
 
                      {/* Category Hero Image (only if provided) */}
                      {category.heroImage &&
-                        (category.heroImage.startsWith("data:") ||
-                        category.heroImage.startsWith("http") ? (
-                           <img
-                              src={category.heroImage}
-                              alt={categoryDisplayName}
-                              className={cn(
-                                 "w-full object-cover font-extrabold border border-[#e5e7eb]",
-                                 isServicesView
-                                    ? "mb-8 mt-2 rounded-[22px]"
-                                    : "mb-8 sm:mb-10 mt-3 sm:mt-4 rounded-[14px]"
-                              )}
-                              style={{
-                                 width: "100%",
-                                 height: "auto",
-                                 maxHeight: isServicesView ? "360px" : "400px",
-                              }}
-                           />
-                        ) : (
+                        (
                            <Image
                               className={cn(
                                  "w-full object-cover font-extrabold border border-[#e5e7eb]",
@@ -240,8 +409,13 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                               alt={categoryDisplayName}
                               width={760}
                               height={isServicesView ? 360 : 400}
+                              unoptimized={
+                                 category.heroImage.startsWith("data:") ||
+                                 category.heroImage.startsWith("http")
+                              }
+                              sizes="(max-width: 768px) 100vw, 760px"
                            />
-                        ))}
+                        )}
 
                      {/* Subcategories List - Below Image */}
                      {category.subcategories &&
@@ -352,6 +526,22 @@ const CategoriesClient: React.FC<CategoriesClientProps> = ({
                   </div>
                );
             })}
+
+            {isServicesView && visibleCategoryCount < categories.length && (
+               <div className="mt-6 mb-2 flex flex-col items-center gap-3">
+                  <button
+                     type="button"
+                     onClick={loadMoreCategories}
+                     className="rounded-full border border-yellow-300 bg-yellow-50 px-5 py-2 text-sm font-semibold text-[#0a1f44] transition-colors hover:bg-yellow-100"
+                  >
+                     Load more categories
+                  </button>
+               </div>
+            )}
+
+            {isServicesView && visibleCategoryCount < categories.length && (
+               <div ref={loadMoreTriggerRef} aria-hidden className="h-1 w-full" />
+            )}
          </div>
          </div>
       </main>

@@ -165,3 +165,28 @@ export interface Payout {
   createdAt: string;
   completedAt?: string;
 }
+
+export interface ExtraCoinsWalletEntry {
+  transactionId: string;
+  coins: string;
+  rupeeValue: string;
+  taskId?: string;
+  sourcePayoutId?: string;
+  createdAt: string;
+  expiresAt?: string;
+  remainingCoins?: string;
+  remainingRupees?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ExtraCoinsWallet {
+  coinToRupee: string;
+  totalCoins: string;
+  totalRupeeValue: string;
+  lifetimeEarnedCoins: string;
+  lifetimeUsedCoins: string;
+  lifetimeExpiredCoins: string;
+  earnedHistory: ExtraCoinsWalletEntry[];
+  usedHistory: ExtraCoinsWalletEntry[];
+  expiringSoon: ExtraCoinsWalletEntry[];
+}

@@ -193,12 +193,15 @@ export const HeroSection: React.FC = () => {
 
          {/* 2. The Content Card */}
          <div className="relative z-10 w-full max-w-3xl px-4 text-center">
-            <h1 className="text-3xl md:text-4xl lg:text-6xl font-semibold text-white mb-3 leading-tight tracking-tight">
-               How can we help you today?
+            <h1 className="text-3xl md:text-4xl lg:text-6xl font-semibold text-white mb-3 leading-none tracking-tight">
+               <span className="block">Find &amp; Hire Services</span>
+               <span className="-mt-2 block md:-mt-3 lg:-mt-4">Near You at Your Budget</span>
             </h1>
 
             <p className="text-sm md:text-lg text-white/90 mb-5 font-medium">
-               Join 50,000+ neighbours getting things done.
+               Find trusted service providers for all your Service needs. Share your
+               requirement, set your budget, and get matched with the right
+               professional only on ExtraHand.
             </p>
 
                {/* 3. The "Floating" Search Bar */}
