@@ -62,6 +62,8 @@ export interface CreateEscrowRequest {
   currency?: string;
   autoReleaseAfterDays?: number;
   taskCategory?: string;
+  /** Optional top-level title; merged into metadata.taskTitle by API if metadata omits it */
+  taskTitle?: string;
   metadata?: Record<string, any>;
 }
 

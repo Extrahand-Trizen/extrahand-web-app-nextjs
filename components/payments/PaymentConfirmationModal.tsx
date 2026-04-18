@@ -40,6 +40,8 @@ interface PaymentConfirmationModalProps {
     id: string;
     title: string;
     category?: string;
+    /** Optional; stored on escrow metadata for receipts if task is deleted later */
+    description?: string;
   };
   application: {
     id: string;
@@ -239,6 +241,9 @@ export function PaymentConfirmationModal({
         taskAmount: amount,
         metadata: {
           taskTitle: task.title,
+          ...(task.description && String(task.description).trim()
+            ? { taskDescription: String(task.description).trim().slice(0, 2000) }
+            : {}),
           amountBreakdown: {
             taskAmount: amount,
             platformFee: 0,
