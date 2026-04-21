@@ -248,7 +248,7 @@ export function PaymentConfirmationModal({
           ...(posterPhone ? { posterPhone } : {}),
         },
         autoReleaseAfterDays: 5 / (24 * 60), // 5 minutes for testing
-        taskCategory: task.category ?? undefined,
+        taskCategory: task.categorySlug ?? task.category ?? undefined,
       });
 
       if (!escrowResponse.success || !escrowResponse.order) {
