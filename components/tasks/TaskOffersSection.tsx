@@ -258,9 +258,15 @@ export function TaskOffersSection({
          });
          return;
       }
+      if (amount < 50) {
+         toast.error("Amount too low", {
+            description: "Counter amount must be between ₹50 and ₹50,000.",
+         });
+         return;
+      }
       if (amount > 50000) {
          toast.error("Amount too high", {
-            description: "Amount must be 50000 or less.",
+            description: "Counter amount must be between ₹50 and ₹50,000.",
          });
          return;
       }
@@ -1141,18 +1147,18 @@ export function TaskOffersSection({
                   <div className="space-y-1">
                      {(() => {
                         const inputAmount = Number(counterAmountInput) || 0;
-                        const isExceeded = inputAmount > 50000;
+                        const isOutOfRange = inputAmount > 0 && (inputAmount < 50 || inputAmount > 50000);
                         return (
                            <div className="relative">
-                              <span className={`absolute left-3 top-1/2 -translate-y-1/2 ${isExceeded ? 'text-red-500' : 'text-secondary-500'}`}>₹</span>
+                              <span className={`absolute left-3 top-1/2 -translate-y-1/2 ${isOutOfRange ? 'text-red-500' : 'text-secondary-500'}`}>₹</span>
                               <input
                                  value={counterAmountInput}
                                  onChange={(e) => handleCounterAmountChange(e.target.value)}
                                  inputMode="numeric"
                                  pattern="[0-9]*"
-                                 placeholder="Enter amount"
+                                 placeholder="Enter amount (₹50 – ₹50,000)"
                                  className={`w-full h-11 rounded-md border pl-8 pr-3 text-base focus:outline-none focus:ring-2 ${
-                                    isExceeded
+                                    isOutOfRange
                                        ? 'border-red-300 text-red-700 focus:ring-red-500'
                                        : 'border-secondary-300 focus:ring-primary-500'
                                  }`}
@@ -1160,9 +1166,17 @@ export function TaskOffersSection({
                            </div>
                         );
                      })()}
-                     {Number(counterAmountInput) > 50000 && (
-                        <p className="text-xs text-red-600 font-medium">Amount exceeds maximum of ₹50,000</p>
-                     )}
+                     {(() => {
+                        const n = Number(counterAmountInput);
+                        if (!counterAmountInput || !Number.isFinite(n) || n <= 0) return null;
+                        if (n < 50) {
+                           return <p className="text-xs text-red-600 font-medium">Minimum counter amount is ₹50</p>;
+                        }
+                        if (n > 50000) {
+                           return <p className="text-xs text-red-600 font-medium">Maximum counter amount is ₹50,000</p>;
+                        }
+                        return null;
+                     })()}
                   </div>
                </div>
                <DialogFooter>
@@ -1177,7 +1191,17 @@ export function TaskOffersSection({
                   </Button>
                   <Button
                      onClick={handleSubmitCounterOffer}
-                     disabled={isCounterSubmitting}
+                     disabled={
+                        isCounterSubmitting ||
+                        (() => {
+                           const n = Number(counterAmountInput);
+                           return (
+                              !Number.isInteger(n) ||
+                              n < 50 ||
+                              n > 50000
+                           );
+                        })()
+                     }
                      className="bg-primary-600 hover:bg-primary-700 text-white"
                   >
                      {isCounterSubmitting ? "Sending..." : "Send counter offer"}
@@ -1203,6 +1227,14 @@ export function TaskOffersSection({
                         ? String((selectedApplication.taskId as { title?: string }).title || "Task")
                         : "Task",
                   category: taskCategory,
+                  description:
+                     typeof selectedApplication.taskId === "object" &&
+                     selectedApplication.taskId !== null &&
+                     "description" in selectedApplication.taskId &&
+                     typeof (selectedApplication.taskId as { description?: string }).description ===
+                        "string"
+                        ? (selectedApplication.taskId as { description: string }).description
+                        : undefined,
                }}
                application={{
                   id: selectedApplication._id,
