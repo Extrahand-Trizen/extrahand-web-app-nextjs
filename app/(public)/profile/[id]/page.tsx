@@ -227,16 +227,17 @@ export default function UserProfilePage() {
             return;
          }
 
-         if (!userId) {
-            console.log("ℹ️ No reviews in profile response");
+         if (!user?._id && !user?.uid) {
+            console.log("ℹ️ No user ID available for reviews fetch");
             setReviews([]);
             setLoadingReviews(false);
             return;
          }
 
          try {
-            console.log("🔄 Falling back to reviews API for user:", userId);
-            const response = await reviewsApi.getUserReviews(userId, { limit: 20 });
+            const profileId = user._id || user.uid;
+            console.log("🔄 Falling back to reviews API for user:", profileId);
+            const response = await reviewsApi.getUserReviews(profileId, { limit: 20 });
             const apiReviewsRaw = Array.isArray(response?.data) ? response.data : [];
             setReviews(mapReviews(apiReviewsRaw));
          } catch (reviewsError) {

@@ -382,12 +382,13 @@ function ProfilePageContent() {
       };
 
       const fetchReviews = async () => {
-         if (!user?.uid) return;
+         const profileId = user?._id || user?.uid;
+         if (!profileId) return;
 
          setLoadingReviews(true);
          try {
-            console.log("🔍 Fetching reviews for user:", user.uid);
-            const response = await reviewsApi.getUserReviews(user.uid, { limit: 10 });
+            console.log("🔍 Fetching reviews for user:", profileId);
+            const response = await reviewsApi.getUserReviews(profileId, { limit: 10 });
 
             // Check if response has reviews array
             if (!response || !response.data || !Array.isArray(response.data)) {
@@ -435,7 +436,7 @@ function ProfilePageContent() {
          }
       };
 
-      if (user?.uid) {
+      if (user?._id || user?.uid) {
          fetchReviews();
       }
    }, [user]);

@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
+import { getSafeProfilePhotoUrl } from "@/lib/utils/profilePhoto";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -147,7 +148,7 @@ export function ProfileEditForm({
       userType: user.userType || "individual",
    });
 
-   const [photoURL, setPhotoURL] = useState(user.photoURL || "");
+   const [photoURL, setPhotoURL] = useState(getSafeProfilePhotoUrl(user) || "");
    const [pendingPhotoFile, setPendingPhotoFile] = useState<File | null>(null);
    const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string>("");
    const [isSaving, setIsSaving] = useState(false);

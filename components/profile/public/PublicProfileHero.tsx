@@ -7,6 +7,7 @@ import { MapPin, Calendar, Star, Clock } from "lucide-react";
 import { UserProfile } from "@/types/user";
 import { UserBadge } from "@/components/ui/user-badge";
 import { cn } from "@/lib/utils";
+import { getSafeProfilePhotoUrl } from "@/lib/utils/profilePhoto";
 
 type PublicHeroProps = {
   user: UserProfile;
@@ -42,6 +43,7 @@ export function PublicProfileHero({
   ratingLabel,
 }: PublicHeroProps) {
   const resolvedBadge = String(badge || user.verificationBadge || "none").toLowerCase();
+  const safePhotoUrl = getSafeProfilePhotoUrl(user);
   const locationLabel =
     user.location?.city || user.location?.state ? `${user.location?.city || ""}${user.location?.city && user.location?.state ? ", " : ""}${user.location?.state || ""}` : null;
 
@@ -52,7 +54,7 @@ export function PublicProfileHero({
           <div className="flex items-start gap-5 min-w-0">
             <div className="relative">
               <Avatar className="md:w-24 md:h-24 w-20 h-20 shrink-0">
-                <AvatarImage src={user.photoURL || undefined} alt={user.name} />
+                <AvatarImage src={safePhotoUrl} alt={user.name} />
                 <AvatarFallback className="bg-gray-100 text-gray-600 text-2xl font-medium">
                   {user.name?.charAt(0).toUpperCase() || "U"}
                 </AvatarFallback>

@@ -8,6 +8,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { buildPublicProfileHandle } from "@/lib/utils/profileHandle";
+import { getSafeProfilePhotoUrl } from "@/lib/utils/profilePhoto";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -83,11 +84,12 @@ export function ProfileOverview({ user, onNavigate, loading }: ProfileOverviewPr
    );
 
    const avatarSrc = React.useMemo(() => {
-      if (!user.photoURL) return undefined;
+      const safePhotoUrl = getSafeProfilePhotoUrl(user);
+      if (!safePhotoUrl) return undefined;
       const rawVersion = user.updatedAt ? new Date(user.updatedAt).getTime() : Date.now();
-      const separator = user.photoURL.includes("?") ? "&" : "?";
-      return `${user.photoURL}${separator}v=${rawVersion}`;
-   }, [user.photoURL, user.updatedAt]);
+      const separator = safePhotoUrl.includes("?") ? "&" : "?";
+      return `${safePhotoUrl}${separator}v=${rawVersion}`;
+   }, [user]);
 
    const suggestedSkills = useMemo(() => {
       const query = skillInput.trim().toLowerCase();
@@ -191,7 +193,7 @@ export function ProfileOverview({ user, onNavigate, loading }: ProfileOverviewPr
    const hasAbout = aboutInput.trim().length > 0;
    const aadhaarDone = Boolean(user.isAadhaarVerified);
    const bankDone = Boolean(user.isBankVerified);
-   const hasPhoto = Boolean(user.photoURL);
+   const hasPhoto = Boolean(getSafeProfilePhotoUrl(user));
    const hasPendingSetup = !hasSkills || !hasAbout || !aadhaarDone || !bankDone || !hasPhoto;
 
    const addSkill = (skillName: string) => {

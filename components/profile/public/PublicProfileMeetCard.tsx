@@ -6,6 +6,7 @@ import { MapPin, ShieldCheck, Star } from "lucide-react";
 import { UserProfile } from "@/types/user";
 import { UserBadge } from "@/components/ui/user-badge";
 import { cn } from "@/lib/utils";
+import { getSafeProfilePhotoUrl } from "@/lib/utils/profilePhoto";
 
 function isRecentlyJoined(createdAt?: Date | string): boolean {
   if (!createdAt) return false;
@@ -63,6 +64,7 @@ export function PublicProfileMeetCard({
   ratingLabel: React.ReactNode;
 }) {
   const resolvedBadge = String(badge || user.verificationBadge || "none").toLowerCase();
+  const safePhotoUrl = getSafeProfilePhotoUrl(user);
   const city = (user.location?.city || "").trim();
   const state = (user.location?.state || "").trim();
   const locationLabel =
@@ -118,7 +120,7 @@ export function PublicProfileMeetCard({
           </div>
 
           <Avatar className="size-20 shrink-0">
-            <AvatarImage src={user.photoURL || undefined} alt={user.name} />
+            <AvatarImage src={safePhotoUrl} alt={user.name} />
             <AvatarFallback className="bg-slate-100 text-slate-600 text-lg font-medium">
               {user.name?.charAt(0).toUpperCase() || "U"}
             </AvatarFallback>
