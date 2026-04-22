@@ -18,10 +18,22 @@ function isRecentlyJoined(createdAt?: Date | string): boolean {
 /** Check if user has verified certificates (both verified and certified flags must be true) */
 function hasVerifiedCertificates(user: UserProfile): boolean {
   const skills = Array.isArray(user.skills?.list) ? user.skills.list : [];
-  const verifiedSkill = skills.some(
+  const hasVerifiedSkillFlags = skills.some(
     (skill) => skill?.verified === true && skill?.certified === true
   );
-  return verifiedSkill;
+
+  const hasVerifiedCertificateDoc = skills.some((skill) => {
+    const certificates = Array.isArray(skill?.certificates) ? skill.certificates : [];
+    return certificates.some((cert: any) => {
+      const status = typeof cert?.status === "string" ? cert.status.toLowerCase() : "";
+      return (
+        Boolean(cert?.documentUrl) &&
+        (status === "verified" || status === "approved" || cert?.verified === true)
+      );
+    });
+  });
+
+  return hasVerifiedSkillFlags || hasVerifiedCertificateDoc;
 }
 
 export function PublicProfileMeetCard({
@@ -48,6 +60,7 @@ export function PublicProfileMeetCard({
       : city || state || null;
 
   const recentlyJoined = isRecentlyJoined(user.createdAt);
+  const professionalVerified = hasVerifiedCertificates(user);
 
   return (
     <Card className="rounded-2xl">
@@ -61,12 +74,14 @@ export function PublicProfileMeetCard({
               <h2 className="text-[28px] leading-tight font-semibold text-slate-900 truncate">{user.name}</h2>
             </div>
 
-            {professionLabel && hasVerifiedCertificates(user) ? (
+            {professionLabel ? (
               <div className="mt-1 flex items-center gap-2 flex-wrap">
                 <span className="text-sm font-medium text-slate-700">{professionLabel}</span>
-                <Badge className="shrink-0 border border-emerald-200 bg-emerald-100 text-emerald-800">
-                  Professional
-                </Badge>
+                {professionalVerified ? (
+                  <Badge className="shrink-0 border border-emerald-200 bg-emerald-100 text-emerald-800">
+                    Professional
+                  </Badge>
+                ) : null}
               </div>
             ) : null}
 

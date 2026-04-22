@@ -74,7 +74,19 @@ export function PublicProfile({
             console.log("📊 Fetching stats for user:", userId);
             const statsResponse = await profilesApi.getProfileStats(userId);
             console.log("✅ Stats fetched:", statsResponse);
-            setStats(statsResponse.data);
+            const normalizedStats = normalizeProfileStatsPayload(statsResponse);
+
+            if (normalizedStats) {
+               setStats(normalizedStats);
+            } else {
+               setStats({
+                  totalTasks: user.totalTasks || 0,
+                  completedTasks: user.completedTasks || 0,
+                  postedTasks: 0,
+                  totalReviews: user.totalReviews || 0,
+                  rating: user.rating || 0,
+               });
+            }
          } catch (error: any) {
             console.warn("⚠️ Failed to fetch stats:", error.message);
             // Use fallback from user profile
@@ -100,9 +112,21 @@ export function PublicProfile({
       rating: user.rating || 0,
    };
 
+   const completedTasks = Math.max(
+      toSafeNumber(actualStats.completedTasks),
+      toSafeNumber(user.completedTasks),
+      Array.isArray(workHistory) ? workHistory.length : 0
+   );
+
+   const totalTasks = Math.max(
+      toSafeNumber(actualStats.totalTasks),
+      toSafeNumber(user.totalTasks),
+      completedTasks
+   );
+
    // Calculate metrics using backend stats
-   const completionRate = actualStats.totalTasks > 0
-      ? Math.round((actualStats.completedTasks / actualStats.totalTasks) * 100)
+   const completionRate = totalTasks > 0
+      ? Math.round((completedTasks / totalTasks) * 100)
       : 0;
 
   const availability = getAvailabilityInfo(user);
@@ -134,14 +158,14 @@ export function PublicProfile({
                <PublicProfileAbout user={user} />
 
                <PublicProfileTrustMetrics
-                  completedTasks={actualStats.completedTasks ?? 0}
+                  completedTasks={completedTasks}
                   completionRatePercent={completionRate}
                   avgRating={actualStats.rating ?? 0}
                />
 
                <PublicProfilePerformanceBreakdown
                   reviews={reviews}
-                  completedTasks={actualStats.completedTasks ?? 0}
+                  completedTasks={completedTasks}
                />
 
                {/* Reviews: carousel + see all */}
@@ -174,6 +198,32 @@ function getNormalizedProfession(profession?: string): string {
       .filter(Boolean)
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(" ");
+}
+
+function toSafeNumber(value: unknown): number {
+   const parsed = Number(value);
+   return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+function normalizeProfileStatsPayload(payload: any): {
+   totalTasks: number;
+   completedTasks: number;
+   postedTasks: number;
+   totalReviews: number;
+   rating: number;
+} | null {
+   const candidate = payload?.data?.data || payload?.data || payload;
+   if (!candidate || typeof candidate !== "object") {
+      return null;
+   }
+
+   return {
+      totalTasks: Number(candidate.totalTasks || 0),
+      completedTasks: Number(candidate.completedTasks || 0),
+      postedTasks: Number(candidate.postedTasks || 0),
+      totalReviews: Number(candidate.totalReviews || 0),
+      rating: Number(candidate.rating || 0),
+   };
 }
 
 export default PublicProfile;

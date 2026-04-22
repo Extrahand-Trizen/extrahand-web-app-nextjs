@@ -24,6 +24,27 @@ function VerificationBadge({ label, verified }: { label: string; verified?: bool
   );
 }
 
+function hasVerifiedCertificates(user: UserProfile): boolean {
+  const skills = Array.isArray(user.skills?.list) ? user.skills.list : [];
+
+  const hasVerifiedSkillFlags = skills.some(
+    (skill) => skill?.verified === true && skill?.certified === true
+  );
+
+  const hasVerifiedCertificateDoc = skills.some((skill) => {
+    const certificates = Array.isArray(skill?.certificates) ? skill.certificates : [];
+    return certificates.some((cert: any) => {
+      const status = typeof cert?.status === "string" ? cert.status.toLowerCase() : "";
+      return (
+        Boolean(cert?.documentUrl) &&
+        (status === "verified" || status === "approved" || cert?.verified === true)
+      );
+    });
+  });
+
+  return hasVerifiedSkillFlags || hasVerifiedCertificateDoc;
+}
+
 export function PublicProfileVerifications({ user }: { user: UserProfile }) {
   const legacyUser = user as UserProfile & {
     phoneVerified?: boolean;
@@ -37,6 +58,8 @@ export function PublicProfileVerifications({ user }: { user: UserProfile }) {
     user.isEmailVerified === true ||
     legacyUser.emailVerified === true ||
     !!user.emailVerifiedAt;
+
+  const isCertificateVerified = hasVerifiedCertificates(user);
 
   return (
     <Card>
@@ -53,6 +76,7 @@ export function PublicProfileVerifications({ user }: { user: UserProfile }) {
             label="PAN Verified"
             verified={!!user.business?.pan?.isPANVerified || !!user.isPanVerified}
           />
+          <VerificationBadge label="Certificate Verified" verified={isCertificateVerified} />
           {user.userType === "business" ? (
             <VerificationBadge label="GST Verified" verified={!!user.business?.isGSTVerified} />
           ) : null}

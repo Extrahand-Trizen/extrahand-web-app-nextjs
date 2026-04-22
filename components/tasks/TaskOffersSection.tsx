@@ -237,6 +237,15 @@ export function TaskOffersSection({
       }
    };
 
+   // Check if an actor has already sent one counter offer
+   const canActorCounter = (application: TaskApplication, actor: "poster" | "tasker"): boolean => {
+      if (!application.negotiation?.history) return true;
+      const actorCounterCount = application.negotiation.history.filter(
+         (record) => record.action === "counter" && record.by === actor
+      ).length;
+      return actorCounterCount === 0;
+   };
+
    const openCounterDialog = (application: TaskApplication) => {
       const currentAmount = application.negotiation?.currentAmount ?? getApplicationAmount(application);
       setCounterApplication(application);
@@ -527,7 +536,9 @@ export function TaskOffersSection({
                                        size="sm"
                                        variant="outline"
                                        onClick={() => openCounterDialog(myApplication)}
-                                       className="border-primary-300 text-primary-700 hover:bg-primary-50"
+                                       disabled={!canActorCounter(myApplication, "tasker")}
+                                       title={!canActorCounter(myApplication, "tasker") ? "You have already sent one counter offer" : ""}
+                                       className="border-primary-300 text-primary-700 hover:bg-primary-50 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                        Counter Again
                                     </Button>
@@ -1029,7 +1040,9 @@ export function TaskOffersSection({
                                              size="sm"
                                              variant="outline"
                                              onClick={() => openCounterDialog(application)}
-                                             className="rounded-lg text-[10px] md:text-xs font-semibold px-5"
+                                             disabled={!canActorCounter(application, "poster")}
+                                             title={!canActorCounter(application, "poster") ? "You have already sent one counter offer" : ""}
+                                             className="rounded-lg text-[10px] md:text-xs font-semibold px-5 disabled:opacity-50 disabled:cursor-not-allowed"
                                           >
                                              Counter again
                                           </Button>
