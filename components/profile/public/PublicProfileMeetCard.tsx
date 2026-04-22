@@ -24,16 +24,29 @@ function hasVerifiedCertificates(user: UserProfile): boolean {
 
   const hasVerifiedCertificateDoc = skills.some((skill) => {
     const certificates = Array.isArray(skill?.certificates) ? skill.certificates : [];
-    return certificates.some((cert: any) => {
-      const status = typeof cert?.status === "string" ? cert.status.toLowerCase() : "";
-      return (
-        Boolean(cert?.documentUrl) &&
-        (status === "verified" || status === "approved" || cert?.verified === true)
-      );
-    });
+    return certificates.some((cert: any) => isCertificateVerified(cert));
   });
 
   return hasVerifiedSkillFlags || hasVerifiedCertificateDoc;
+}
+
+function isCertificateVerified(cert: any): boolean {
+  const status = normalizeCertificateStatus(
+    cert?.status ?? cert?.statusTag ?? cert?.verificationStatus ?? cert?.reviewStatus
+  );
+
+  return Boolean(
+    cert &&
+      (cert?.verified === true ||
+        cert?.isVerified === true ||
+        cert?.approved === true ||
+        status === "verified" ||
+        status === "approved")
+  );
+}
+
+function normalizeCertificateStatus(value: unknown): string {
+  return typeof value === "string" ? value.trim().toLowerCase() : "";
 }
 
 export function PublicProfileMeetCard({
