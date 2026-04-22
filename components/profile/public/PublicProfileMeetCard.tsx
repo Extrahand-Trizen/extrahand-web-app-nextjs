@@ -102,6 +102,11 @@ export function PublicProfileMeetCard({
               {resolvedBadge !== "none" ? (
                 <UserBadge badge={resolvedBadge as any} size="sm" showLabel />
               ) : null}
+              {user.isAadhaarVerified ? (
+                <Badge className="shrink-0 border border-emerald-200 bg-emerald-100 text-emerald-800">
+                  Aadhaar Verified
+                </Badge>
+              ) : null}
               {isAvailable ? (
                 <Badge variant="outline" className="text-green-600 border-green-200">
                   <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-1.5" />

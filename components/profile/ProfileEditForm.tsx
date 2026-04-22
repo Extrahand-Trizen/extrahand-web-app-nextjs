@@ -74,6 +74,19 @@ export function ProfileEditForm({
       return digitsOnly.slice(0, 10);
    };
 
+   const normalizeProfessionInput = (value: string): string => {
+      return value
+         .replace(/[^a-zA-Z\s]/g, "")
+         .replace(/\s{2,}/g, " ")
+         .slice(0, 100);
+   };
+
+   const isValidProfessionName = (value: string): boolean => {
+      const trimmed = value.trim();
+      if (!trimmed) return true;
+      return /^[A-Za-z]+(?:\s+[A-Za-z]+)*$/.test(trimmed);
+   };
+
    const getBioWordMetrics = (value: string) => {
       const words = value
          .trim()
@@ -244,6 +257,11 @@ export function ProfileEditForm({
          !/^[6-9]\d{9}$/.test(formData.phone.replace(/\D/g, ""))
       ) {
          newErrors.phone = "Please enter a valid 10-digit phone number";
+      }
+
+      if (!isValidProfessionName(formData.profession)) {
+         newErrors.profession =
+            "Profession should contain only letters and spaces";
       }
 
       const trimmedBio = formData.bio.trim();
@@ -671,13 +689,18 @@ export function ProfileEditForm({
                <Input
                   id="profession"
                   value={formData.profession}
-                  onChange={(e) => updateField("profession", e.target.value.slice(0, 100))}
+                  onChange={(e) =>
+                     updateField("profession", normalizeProfessionInput(e.target.value))
+                  }
                   onFocus={() => setProfessionInputFocused(true)}
                   onBlur={() => {
                      setTimeout(() => setProfessionInputFocused(false), 120);
                   }}
-                  className="mt-1.5 h-9 sm:h-10 text-xs md:text-sm"
-                  placeholder="e.g. IT Support / Laptop Repair"
+                  className={cn(
+                     "mt-1.5 h-9 sm:h-10 text-xs md:text-sm",
+                     errors.profession && "border-red-300 focus:border-red-500"
+                  )}
+                  placeholder="e.g. IT Support Specialist"
                   maxLength={100}
                />
                {professionInputFocused && suggestedProfessions.length > 0 && (
@@ -698,8 +721,14 @@ export function ProfileEditForm({
                   </div>
                )}
                <p className="text-[10px] sm:text-xs text-gray-500 mt-1">
-                  Pick a profession suggestion or type your own custom profession.
+                  Use only letters and spaces for profession name.
                </p>
+               {errors.profession && (
+                  <p className="text-[10px] sm:text-xs text-red-500 mt-1 flex items-center gap-1">
+                     <AlertCircle className="w-3 h-3" />
+                     {errors.profession}
+                  </p>
+               )}
             </div>
 
             <div>
