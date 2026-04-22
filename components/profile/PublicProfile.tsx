@@ -136,6 +136,7 @@ export function PublicProfile({
       rating: actualStats.rating,
       totalReviews: actualStats.totalReviews,
    });
+   const hasReviews = reviews.length > 0 || (actualStats.totalReviews ?? 0) > 0;
 
    return (
       <div className="max-w-7xl mx-auto">
@@ -148,6 +149,7 @@ export function PublicProfile({
                   professionLabel={professionLabel}
                   badge={badge?.currentBadge || null}
                   ratingLabel={meetCardRatingNode}
+                  hasReviews={hasReviews}
                />
             </div>
 

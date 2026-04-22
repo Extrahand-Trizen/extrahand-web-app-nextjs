@@ -56,12 +56,14 @@ export function PublicProfileMeetCard({
   professionLabel,
   badge,
   ratingLabel,
+  hasReviews = false,
 }: {
   user: UserProfile;
   isAvailable: boolean;
   professionLabel?: string;
   badge?: string | null;
   ratingLabel: React.ReactNode;
+  hasReviews?: boolean;
 }) {
   const resolvedBadge = String(badge || user.verificationBadge || "none").toLowerCase();
   const safePhotoUrl = getSafeProfilePhotoUrl(user);
@@ -140,7 +142,7 @@ export function PublicProfileMeetCard({
           </div>
         ) : null}
 
-        <p className={cn("mt-3 text-sm text-slate-600", recentlyJoined ? "" : "hidden")}>
+        <p className={cn("mt-3 text-sm text-slate-600", recentlyJoined && !hasReviews ? "" : "hidden")}>
           {user.name} has recently joined ExtraHand and is ready to help you.
         </p>
       </CardContent>

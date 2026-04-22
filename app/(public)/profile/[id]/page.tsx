@@ -167,10 +167,15 @@ export default function UserProfilePage() {
          return false;
       };
 
-      const mapReviews = (rawReviews: unknown[]): Review[] => {
+      const mapReviews = (
+         rawReviews: unknown[],
+         options?: { skipOwnershipFilter?: boolean }
+      ): Review[] => {
          return rawReviews
             .filter((review) => Number((review as { rating?: unknown })?.rating) > 0)
-            .filter((review) => isReceivedReview(review))
+            .filter((review) =>
+               options?.skipOwnershipFilter ? true : isReceivedReview(review)
+            )
             .map((review, index: number) => {
                const r = (review || {}) as Record<string, unknown>;
 
@@ -224,7 +229,7 @@ export default function UserProfilePage() {
 
          if (profileReviewsRaw.length > 0) {
             console.log("📦 Using reviews from profile response:", profileReviewsRaw.length);
-            setReviews(mapReviews(profileReviewsRaw));
+            setReviews(mapReviews(profileReviewsRaw, { skipOwnershipFilter: true }));
             setLoadingReviews(false);
             return;
          }
