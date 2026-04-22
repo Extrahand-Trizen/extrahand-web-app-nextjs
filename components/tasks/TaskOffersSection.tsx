@@ -246,7 +246,27 @@ export function TaskOffersSection({
       return actorCounterCount === 0;
    };
 
+   const canShowCounterButton = (
+      application: TaskApplication,
+      actor: "poster" | "tasker"
+   ): boolean => {
+      if (!application.proposedBudget?.isNegotiable) return false;
+      if (!canActorCounter(application, actor)) return false;
+
+      const negotiationStatus = application.negotiation?.status ?? "none";
+
+      if (actor === "poster") {
+         return negotiationStatus === "none";
+      }
+
+      return negotiationStatus === "countered_by_poster";
+   };
+
    const openCounterDialog = (application: TaskApplication) => {
+      const actor = isOwner ? "poster" : "tasker";
+      if (!canShowCounterButton(application, actor)) {
+         return;
+      }
       const currentAmount = application.negotiation?.currentAmount ?? getApplicationAmount(application);
       setCounterApplication(application);
       setCounterAmountInput(String(currentAmount));

@@ -2,7 +2,7 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Star } from "lucide-react";
+import { MapPin, ShieldCheck, Star } from "lucide-react";
 import { UserProfile } from "@/types/user";
 import { UserBadge } from "@/components/ui/user-badge";
 import { cn } from "@/lib/utils";
@@ -103,9 +103,10 @@ export function PublicProfileMeetCard({
                 <UserBadge badge={resolvedBadge as any} size="sm" showLabel />
               ) : null}
               {user.isAadhaarVerified ? (
-                <Badge className="shrink-0 border border-emerald-200 bg-emerald-100 text-emerald-800">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium text-green-600 bg-green-50 text-[10px]">
+                  <ShieldCheck className="h-3.5 w-3.5" />
                   Aadhaar Verified
-                </Badge>
+                </span>
               ) : null}
               {isAvailable ? (
                 <Badge variant="outline" className="text-green-600 border-green-200">

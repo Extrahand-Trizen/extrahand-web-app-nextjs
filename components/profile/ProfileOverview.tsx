@@ -48,6 +48,18 @@ interface ProfileOverviewProps {
    loading?: boolean;
 }
 
+function hasVerifiedCertificate(user: UserProfile): boolean {
+   const skills = Array.isArray(user.skills?.list) ? user.skills.list : [];
+
+   return skills.some((skill) => {
+      const certificates = Array.isArray(skill?.certificates)
+         ? skill.certificates
+         : [];
+
+      return certificates.some((certificate) => certificate?.status === "verified");
+   });
+}
+
 export function ProfileOverview({ user, onNavigate, loading }: ProfileOverviewProps) {
    const [shareOpen, setShareOpen] = useState(false);
    const [skillsModalOpen, setSkillsModalOpen] = useState(false);
@@ -165,6 +177,11 @@ export function ProfileOverview({ user, onNavigate, loading }: ProfileOverviewPr
    const verifiedCount = verificationItems.filter(
       (v) => v.status === "verified"
    ).length;
+   const isTasker =
+      user.roles?.includes("tasker") || user.roles?.includes("both");
+   const isPoster =
+      user.roles?.includes("poster") || user.roles?.includes("both");
+   const isProfessionalTasker = isTasker && hasVerifiedCertificate(user);
 
    if (loading) {
       return <ProfileOverviewSkeleton />;
@@ -298,10 +315,12 @@ export function ProfileOverview({ user, onNavigate, loading }: ProfileOverviewPr
                      )}
                      <span className="flex items-center gap-1">
                         <Briefcase className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                        {user.roles?.includes("tasker") &&
-                        user.roles?.includes("poster")
+                        {isTasker &&
+                        isPoster
                            ? "Tasker & Poster"
-                           : user.roles?.includes("tasker")
+                           : isProfessionalTasker
+                           ? "Professional Tasker"
+                           : isTasker
                            ? "Tasker"
                            : "Poster"}
                      </span>
