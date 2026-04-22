@@ -353,6 +353,8 @@ function ProfilePageContent() {
          if (!reviewObj) return false;
 
          const revieweeIds = [
+            ...extractIds(reviewObj.reviewedId),
+            ...extractIds(reviewObj.reviewedUid),
             ...extractIds(reviewObj.reviewee),
             ...extractIds(reviewObj.revieweeId),
             ...extractIds(reviewObj.revieweeUid),
