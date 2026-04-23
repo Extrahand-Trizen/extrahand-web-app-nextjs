@@ -5,108 +5,159 @@ export const metadata: Metadata = {
   description: "Frequently asked questions about ExtraHand services.",
 };
 
+const faqSections = [
+  {
+    title: "About ExtraHand",
+    items: [
+      {
+        question: "What is ExtraHand?",
+        answer:
+          "ExtraHand is a local-services marketplace operated by Naipunya AI Labs Private Limited. It helps Posters connect with independent Taskers for everyday jobs, home services, business support, delivery help, and other local tasks.",
+      },
+      {
+        question: "Does ExtraHand provide the task directly?",
+        answer:
+          "No. ExtraHand acts as a platform that helps users discover, book, communicate, and manage tasks. The actual work is carried out by independent Taskers.",
+      },
+      {
+        question: "Who can use ExtraHand?",
+        answer:
+          "People who need help with a task can join as Posters, and skilled individuals looking for local work opportunities can join as Taskers, subject to platform requirements and verification where applicable.",
+      },
+    ],
+  },
+  {
+    title: "For Posters",
+    items: [
+      {
+        question: "How do I post a task?",
+        answer:
+          "Click on \"Post a Task,\" describe the work, add location and timing details, set your budget, and submit the task. Interested Taskers can then review the requirement and respond through the platform.",
+      },
+      {
+        question: "How is pricing decided?",
+        answer:
+          "The final task amount depends on the type of work, urgency, complexity, and the agreement between the Poster and the Tasker. ExtraHand helps organize the flow, but users should make sure the scope and price are clear before work begins.",
+      },
+      {
+        question: "How do I choose the right Tasker?",
+        answer:
+          "You can review the Tasker's profile, ratings, reviews, relevant experience, and communication before proceeding. Choosing the right Tasker is easier when your task description is specific and complete.",
+      },
+      {
+        question: "What if the task details change after booking?",
+        answer:
+          "If the scope, timing, or materials change, both sides should discuss the changes clearly before work continues. This helps avoid confusion around expectations, timelines, and payment.",
+      },
+    ],
+  },
+  {
+    title: "Payments and completion",
+    items: [
+      {
+        question: "Is payment secure?",
+        answer:
+          "Payments on ExtraHand are processed through supported online payment methods. The platform is designed to keep the payment flow organized and reduce confusion around task completion and payouts.",
+      },
+      {
+        question: "When does a Tasker get paid?",
+        answer:
+          "Tasker payouts are processed after the task is marked complete, subject to the platform workflow, applicable checks, and any dispute or refund process that may apply.",
+      },
+      {
+        question: "What if I am not satisfied with the work?",
+        answer:
+          "If there is a problem with quality, completion, or expectations, contact support as soon as possible and share the relevant details. ExtraHand may review the issue through its dispute and support process.",
+      },
+      {
+        question: "Can I cancel a task?",
+        answer:
+          "Yes, but cancellation outcomes depend on timing and the applicable policy. Refunds, charges, and compensation may vary based on how close the cancellation is to the scheduled task.",
+      },
+    ],
+  },
+  {
+    title: "For Taskers",
+    items: [
+      {
+        question: "How do I become a Tasker?",
+        answer:
+          "You can sign up, complete your profile, and submit the required information requested by the platform. Certain categories or payment features may require identity verification before you can start accepting tasks or receiving payouts.",
+      },
+      {
+        question: "Do all Taskers need verification?",
+        answer:
+          "Verification requirements can depend on the role and the feature being used. Where identity verification is required, Taskers must complete it successfully before using those features.",
+      },
+      {
+        question: "How can Taskers increase their chances of getting work?",
+        answer:
+          "A complete profile, clear communication, professional behavior, timely responses, and strong reviews can all help Taskers build trust and improve their chances of being selected.",
+      },
+    ],
+  },
+  {
+    title: "Support and safety",
+    items: [
+      {
+        question: "How do I contact support?",
+        answer:
+          "For help with tasks, payments, disputes, or account-related questions, contact ExtraHand at support@extrahand.in.",
+      },
+      {
+        question: "What should I do if I see suspicious behavior?",
+        answer:
+          "Report it immediately. Misleading information, abusive conduct, off-platform solicitation, fraud, and unsafe behavior should be brought to the platform's attention as soon as possible.",
+      },
+      {
+        question: "Where can I read more about your policies?",
+        answer:
+          "You can review our Terms and Conditions, Privacy Policy, Community Guidelines, Refund Policy, and related public pages on the ExtraHand website.",
+      },
+    ],
+  },
+];
+
 export default function FAQsPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8 md:py-12 max-w-3xl">
-        <h1 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900">
-          Frequently Asked Questions
-        </h1>
+    <main className="min-h-screen bg-white text-secondary-900">
+      <div className="mx-auto max-w-4xl px-5 py-12 md:px-8 md:py-16">
+        <header className="mb-10">
+          <h1 className="text-3xl font-bold text-secondary-900 md:text-4xl">
+            Frequently Asked Questions
+          </h1>
+          <p className="mt-4 max-w-3xl text-base leading-7 text-secondary-600">
+            Here are the most common questions about using ExtraHand as a
+            Poster or a Tasker. These answers are meant to give a practical
+            overview of how the platform works.
+          </p>
+        </header>
 
-        <p className="text-gray-700 mb-6">
-          Find answers to the most common questions about using ExtraHand.
-        </p>
-
-        <div className="space-y-6">
-          <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
-            <h2 className="text-xl font-semibold mb-3 text-gray-900">
-              What is ExtraHand?
-            </h2>
-            <p className="text-gray-700">
-              ExtraHand is a trusted marketplace that connects customers
-              (Posters) with verified service professionals (Taskers) to help
-              with everyday tasks and services.
-            </p>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
-            <h2 className="text-xl font-semibold mb-3 text-gray-900">
-              How does ExtraHand work?
-            </h2>
-            <p className="text-gray-700">
-              Simply post a task, browse verified taskers, and hire the one who
-              best fits your needs. Pay securely through our platform and rate
-              the work when complete.
-            </p>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
-            <h2 className="text-xl font-semibold mb-3 text-gray-900">
-              How do I post a task?
-            </h2>
-            <p className="text-gray-700">
-              Click on &quot;Post a Task&quot; in the top navigation, fill in the
-              details about your task, set a budget, and submit. You&apos;ll then
-              receive applications from interested taskers.
-            </p>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
-            <h2 className="text-xl font-semibold mb-3 text-gray-900">
-              How much does it cost?
-            </h2>
-            <p className="text-gray-700">
-              Pricing is set by individual taskers based on their experience and
-              the complexity of the task. You decide the budget when posting your
-              task.
-            </p>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
-            <h2 className="text-xl font-semibold mb-3 text-gray-900">
-              Is my payment secure?
-            </h2>
-            <p className="text-gray-700">
-              Yes! All payments are processed securely through our platform.
-              Payment is only released to the tasker after you confirm the work
-              is complete.
-            </p>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
-            <h2 className="text-xl font-semibold mb-3 text-gray-900">
-              What if I&apos;m not satisfied with the work?
-            </h2>
-            <p className="text-gray-700">
-              We have a resolution process to handle disputes. Please contact our
-              support team and we&apos;ll work to find a fair solution for both
-              parties.
-            </p>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
-            <h2 className="text-xl font-semibold mb-3 text-gray-900">
-              How do I become a tasker?
-            </h2>
-            <p className="text-gray-700">
-              Click on &quot;Become a Tasker&quot; and complete our verification
-              process. You&apos;ll need to provide identification and pass our
-              background check.
-            </p>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
-            <h2 className="text-xl font-semibold mb-3 text-gray-900">
-              How do taskers get paid?
-            </h2>
-            <p className="text-gray-700">
-              Taskers earn money by completing tasks. Payments are transferred to
-              their account within 24-48 hours after the customer confirms task
-              completion.
-            </p>
-          </div>
+        <div className="space-y-8">
+          {faqSections.map((section) => (
+            <section
+              key={section.title}
+              className="border-t border-secondary-200 py-8"
+            >
+              <h2 className="text-2xl font-semibold text-secondary-900">
+                {section.title}
+              </h2>
+              <div className="mt-6 space-y-6">
+                {section.items.map((item) => (
+                  <div key={item.question}>
+                    <h3 className="text-lg font-semibold text-secondary-900">
+                      {item.question}
+                    </h3>
+                    <p className="mt-2 leading-7 text-secondary-600">
+                      {item.answer}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ))}
         </div>
       </div>
-    </div>
+    </main>
   );
 }

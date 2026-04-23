@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Tasker Agreement | ExtraHand",
@@ -6,192 +7,179 @@ export const metadata: Metadata = {
     "Terms and conditions applicable to Taskers on the ExtraHand marketplace.",
 };
 
+const sections = [
+  {
+    title: "1. Scope of this agreement",
+    paragraphs: [
+      "This Tasker Agreement applies to your use of ExtraHand as a Tasker. It should be read together with the Terms and Conditions, Privacy Policy, Refund Policy, and Community Guidelines that govern the platform more broadly.",
+      "By using ExtraHand as a Tasker, you agree to follow this Agreement and all related platform rules that apply to service providers using the marketplace.",
+    ],
+  },
+  {
+    title: "2. Independent service provider status",
+    paragraphs: [
+      "ExtraHand is a technology platform that connects Posters with independent Taskers. Nothing in this Agreement creates an employer-employee relationship, partnership, agency, or joint venture between you and Naipunya AI Labs Private Limited.",
+      "You act as an independent service provider and remain responsible for your own work, conduct, taxes, tools, permits, legal compliance, and service quality.",
+    ],
+  },
+  {
+    title: "3. Eligibility and KYC",
+    paragraphs: [
+      "To operate as a Tasker on ExtraHand, you must be at least 18 years old, legally capable of contracting, and able to provide accurate and current information about yourself and your services.",
+      "Under the platform rules, Taskers are required to complete mandatory Aadhaar-based KYC before they are permitted to accept or perform tasks on the platform. Your account may also be restricted from receiving payouts until the required verification is completed successfully.",
+    ],
+    bullets: [
+      "You must not submit false or misleading identity information.",
+      "You must keep your bank and payout details current.",
+      "Failure to complete required verification may lead to suspension or deactivation.",
+    ],
+  },
+  {
+    title: "4. Your responsibilities as a Tasker",
+    paragraphs: [
+      "You are responsible for performing accepted tasks with due skill, care, professionalism, and reasonable safety practices. You must respect the customer's property, privacy, and instructions while carrying out the work.",
+      "You must also comply with applicable laws, licensing requirements, tax obligations, and any professional standards relevant to the type of service you provide.",
+    ],
+    bullets: [
+      "Accept only tasks you are qualified and able to complete.",
+      "Do not engage in fraud, abuse, harassment, discrimination, or illegal conduct.",
+      "Do not manipulate reviews, completion proofs, or task status.",
+      "Do not misuse customer information or attempt unauthorized access to property or accounts.",
+    ],
+  },
+  {
+    title: "5. Platform use, payments, and fee deductions",
+    paragraphs: [
+      "Tasks that originate on ExtraHand must be handled in accordance with the platform workflow. The Customer pays the task amount through supported online payment flow, and ExtraHand processes the payout to the Tasker according to the applicable platform rules.",
+      "Under the current platform terms, ExtraHand deducts a platform fee of 5% of the task amount before remitting the Tasker payout, and GST applies on that platform fee component. Payouts may be released only after task completion, the applicable dispute window, and any required checks.",
+      "Where refunds, cancellations, dispute adjustments, penalties, or compliance holds apply, the relevant amount may be adjusted against your current or future payouts in accordance with platform policy.",
+    ],
+    bullets: [
+      "Do not request cash or off-platform payment for platform-originated tasks.",
+      "Do not try to bypass the platform fee through side arrangements.",
+      "Payout timing may vary based on banking, verification, refund, or dispute review processes.",
+    ],
+  },
+  {
+    title: "6. Cancellations, reviews, and account standing",
+    paragraphs: [
+      "You are expected to honor confirmed commitments. Repeated cancellations, no-shows, late arrivals, poor communication, unsafe conduct, or low-quality performance may affect your visibility and access to future tasks.",
+      "Customers may rate and review your work, and those ratings may be used to evaluate quality and platform standing. You agree not to manipulate reviews or pressure customers for favorable ratings.",
+    ],
+  },
+  {
+    title: "7. Suspension and termination",
+    paragraphs: [
+      "ExtraHand may suspend, restrict, or terminate your Tasker account where there is suspected fraud, false KYC information, abusive conduct, safety concerns, repeated cancellations, serious customer complaints, legal risk, or violation of this Agreement or other platform rules.",
+      "You may stop using the platform at any time, but you remain responsible for obligations that arose before account closure, including active disputes, refunds, penalties, or payment adjustments that apply under the platform terms.",
+    ],
+  },
+  {
+    title: "8. Liability and related policies",
+    paragraphs: [
+      "Your use of ExtraHand as a Tasker is also subject to the broader limitation of liability, dispute resolution, and legal provisions contained in the Terms and Conditions. Where there is a conflict, the platform terms and applicable law will govern the relevant issue.",
+      "This Agreement may be updated from time to time, and the latest version will be published on this page.",
+    ],
+  },
+];
+
 export default function TaskerAgreementPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8 md:py-12 max-w-4xl">
-        <h1 className="text-3xl md:text-4xl font-bold mb-6 text-gray-900">
-          Tasker Agreement
-        </h1>
-
-        <div className="prose prose-gray max-w-none bg-white rounded-lg shadow-sm p-6 md:p-8">
-          <p className="text-lg font-semibold mb-4 text-gray-900">
-            This Tasker Agreement (&quot;Agreement&quot;) governs your use of
-            the ExtraHand platform as a service provider (&quot;Tasker&quot;,
-            &quot;you&quot;) and is entered into with{" "}
-            <strong>Naipunya AI Labs Private Limited</strong> (&quot;Company&quot;,
-            &quot;we&quot;, &quot;us&quot;, &quot;our&quot;).
+    <main className="min-h-screen bg-white text-secondary-900">
+      <div className="mx-auto max-w-4xl px-5 py-12 md:px-8 md:py-16">
+        <header className="mb-10">
+          <h1 className="text-3xl font-bold text-secondary-900 md:text-4xl">
+            Tasker Agreement
+          </h1>
+          <p className="mt-4 max-w-3xl text-base leading-7 text-secondary-600">
+            This page explains the core rules that apply when you use ExtraHand
+            as a Tasker. It is intended to clarify your independent role,
+            verification requirements, platform responsibilities, payment flow,
+            and account expectations.
           </p>
+        </header>
 
-          <h2 className="text-2xl font-bold mt-8 mb-4 text-gray-900">
-            1. Relationship with ExtraHand
-          </h2>
-          <p className="mb-6 text-gray-700">
-            ExtraHand is a technology platform that connects you with customers
-            who require services. Nothing in this Agreement shall be construed as
-            creating an employer-employee relationship, partnership, joint
-            venture, or agency between you and the Company. You act as an
-            independent contractor and are solely responsible for your own taxes,
-            compliances, and obligations under applicable law.
-          </p>
+        <div className="space-y-8">
+          {sections.map((section) => (
+            <section
+              key={section.title}
+              className="border-t border-secondary-200 py-8"
+            >
+              <h2 className="text-2xl font-semibold text-secondary-900">
+                {section.title}
+              </h2>
+              <div className="mt-4 space-y-4">
+                {section.paragraphs.map((paragraph) => (
+                  <p
+                    key={paragraph}
+                    className="leading-7 text-secondary-600"
+                  >
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
 
-          <h2 className="text-2xl font-bold mt-8 mb-4 text-gray-900">
-            2. Eligibility &amp; KYC
-          </h2>
-          <p className="mb-4 text-gray-700">
-            To operate as a Tasker on ExtraHand, you must:
-          </p>
-          <ul className="list-disc pl-6 mb-6 space-y-2 text-gray-700">
-            <li>Be at least 18 years of age and legally capable of contracting.</li>
-            <li>
-              Complete identity verification (KYC) as required by applicable law
-              and our payment partners.
-            </li>
-            <li>
-              Provide accurate and up-to-date information about yourself and your
-              services.
-            </li>
-            <li>
-              Maintain an active bank account in your name for receiving payouts.
-            </li>
-          </ul>
+              {"bullets" in section && section.bullets ? (
+                <ul className="mt-4 space-y-3 text-secondary-600">
+                  {section.bullets.map((item) => (
+                    <li key={item} className="flex gap-3 leading-7">
+                      <span className="mt-3 size-1.5 shrink-0 rounded-full bg-primary-500" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </section>
+          ))}
 
-          <h2 className="text-2xl font-bold mt-8 mb-4 text-gray-900">
-            3. Use of the Platform
-          </h2>
-          <p className="mb-4 text-gray-700">
-            You agree to use the ExtraHand platform in compliance with:
-          </p>
-          <ul className="list-disc pl-6 mb-6 space-y-2 text-gray-700">
-            <li>Our Terms and Conditions and Privacy Policy.</li>
-            <li>All applicable laws, regulations, and licensing requirements.</li>
-            <li>
-              Reasonable standards of professionalism, safety, and customer
-              service.
-            </li>
-          </ul>
-
-          <h2 className="text-2xl font-bold mt-8 mb-4 text-gray-900">
-            4. Service Quality &amp; Conduct
-          </h2>
-          <p className="mb-4 text-gray-700">
-            As a Tasker, you are solely responsible for:
-          </p>
-          <ul className="list-disc pl-6 mb-6 space-y-2 text-gray-700">
-            <li>
-              Performing services with due skill, care, and diligence as promised
-              to the customer.
-            </li>
-            <li>
-              Complying with safety norms and using appropriate tools and
-              protective equipment.
-            </li>
-            <li>
-              Not engaging in any illegal, fraudulent, abusive, or harmful
-              activities.
-            </li>
-            <li>
-              Respecting the privacy, property, and personal space of customers.
-            </li>
-          </ul>
-
-          <h2 className="text-2xl font-bold mt-8 mb-4 text-gray-900">
-            5. Pricing, Payments &amp; Commission
-          </h2>
-          <p className="mb-4 text-gray-700">
-            Unless otherwise specified on the platform:
-          </p>
-          <ul className="list-disc pl-6 mb-6 space-y-2 text-gray-700">
-            <li>
-              You may propose your own price for a task or accept the price displayed to you.
-            </li>
-            <li>
-              Payments from customers are collected by our payment gateway partners and may be held in escrow until completion of the task.
-            </li>
-            <li>
-              You will receive the task amount after deduction of the applicable platform fee and taxes/GST, as displayed on the platform.
-            </li>
-            <li>
-              We may deduct applicable cancellation charges, dispute adjustments, refunds, penalties, or other charges from your payout in accordance with our policies.
-            </li>
-            <li>
-              Payout timelines may vary depending on banking partners, payment gateway processing, and compliance checks.
-            </li>
-          </ul>
-
-          <h2 className="text-2xl font-bold mt-8 mb-4 text-gray-900">
-            6. Taxes &amp; Invoicing
-          </h2>
-          <p className="mb-6 text-gray-700">
-            You are solely responsible for determining and fulfilling your tax
-            obligations (including GST, income tax, and any other levies) in
-            connection with the services you provide. Where required, we may
-            issue invoices to customers on your behalf or share transaction
-            details to enable you to issue invoices. We may also deduct tax at
-            source (TDS) where mandated by law.
-          </p>
-
-          <h2 className="text-2xl font-bold mt-8 mb-4 text-gray-900">
-            7. Cancellations &amp; Refunds
-          </h2>
-          <p className="mb-6 text-gray-700">
-            You agree to comply with our Refund &amp; Cancellation Policy. Where
-            a refund is processed to a customer due to your no-show,
-            non-performance, or breach, we may recover the refunded amount and
-            associated charges from your current or future payouts.
-          </p>
-
-          <h2 className="text-2xl font-bold mt-8 mb-4 text-gray-900">
-            8. Ratings, Reviews &amp; Feedback
-          </h2>
-          <p className="mb-6 text-gray-700">
-            Customers may rate and review your services. These ratings are used
-            to maintain quality on the platform and may affect your visibility,
-            access to tasks, or continued participation. You agree not to
-            manipulate ratings or reviews in any manner.
-          </p>
-
-          <h2 className="text-2xl font-bold mt-8 mb-4 text-gray-900">
-            9. Suspension &amp; Termination
-          </h2>
-          <p className="mb-6 text-gray-700">
-            We may, at our sole discretion, suspend or terminate your Tasker
-            account, restrict access to tasks, or withhold payouts in cases of
-            suspected fraud, abuse, poor performance, safety concerns, or breach
-            of this Agreement or applicable law. You may stop using the platform
-            at any time, subject to fulfilling any ongoing commitments to
-            customers.
-          </p>
-
-          <h2 className="text-2xl font-bold mt-8 mb-4 text-gray-900">
-            10. Limitation of Liability
-          </h2>
-          <p className="mb-6 text-gray-700">
-            To the maximum extent permitted by law, our liability to you in
-            connection with your use of the platform as a Tasker is limited in
-            accordance with the limitation of liability section in our Terms and
-            Conditions. You are responsible for your own acts and omissions and
-            for any loss or damage caused to customers or third parties.
-          </p>
-
-          <h2 className="text-2xl font-bold mt-8 mb-4 text-gray-900">
-            11. Contact
-          </h2>
-          <p className="mb-4 text-gray-700">
-            If you have any questions about this Agreement, please contact:
-          </p>
-          <div className="mb-6 text-gray-700">
-            <p className="font-semibold">Naipunya AI Labs Private Limited</p>
-            <p>Email: support@extrahand.in</p>
-            <p>Website: https://extrahand.in</p>
-          </div>
-
-          <p className="text-xs text-gray-500 mt-8">
-            This Agreement may be updated from time to time. The latest version
-            will always be available on this page.
-          </p>
+          <section className="border-t border-secondary-200 py-8">
+            <h2 className="text-2xl font-semibold text-secondary-900">
+              Related documents and contact
+            </h2>
+            <p className="mt-4 leading-7 text-secondary-600">
+              Please also review the{" "}
+              <Link
+                href="/terms-and-conditions"
+                className="font-semibold text-primary-700 hover:underline"
+              >
+                Terms and Conditions
+              </Link>
+              ,{" "}
+              <Link
+                href="/privacy-policy"
+                className="font-semibold text-primary-700 hover:underline"
+              >
+                Privacy Policy
+              </Link>
+              ,{" "}
+              <Link
+                href="/refund-policy"
+                className="font-semibold text-primary-700 hover:underline"
+              >
+                Refund Policy
+              </Link>
+              , and{" "}
+              <Link
+                href="/community-guidelines"
+                className="font-semibold text-primary-700 hover:underline"
+              >
+                Community Guidelines
+              </Link>
+              .
+            </p>
+            <p className="mt-4 leading-7 text-secondary-600">
+              For questions about your Tasker account, contact{" "}
+              <a
+                href="mailto:support@extrahand.in"
+                className="font-semibold text-primary-700 hover:underline"
+              >
+                support@extrahand.in
+              </a>
+              .
+            </p>
+          </section>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
