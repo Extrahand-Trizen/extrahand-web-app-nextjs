@@ -37,7 +37,7 @@ export const FinalCTASection: React.FC = () => {
             </h2>
 
             {/* Subtext */}
-            <p className="text-sm md:text-lg text-secondary-300 max-w-2xl mx-auto mb-8">
+            <p className="text-sm md:text-lg text-secondary-200 max-w-2xl mx-auto mb-8">
                Join 50,000+ people who trust ExtraHand for their everyday tasks.
                Post your first task in minutes.
             </p>
@@ -48,7 +48,7 @@ export const FinalCTASection: React.FC = () => {
                   {benefits.map((benefit, idx) => (
                      <div
                         key={idx}
-                        className="flex items-center gap-2 text-secondary-300"
+                        className="flex items-center gap-2 text-secondary-200"
                      >
                         <CheckCircle className="size-4 md:size-5 text-primary-400" />
                         <span className="text-xs md:text-sm font-medium">
@@ -82,7 +82,7 @@ export const FinalCTASection: React.FC = () => {
             </div>
 
             {/* Trust line */}
-            <p className="mt-5 md:mt-8 text-xs md:text-sm text-secondary-500">
+            <p className="mt-5 md:mt-8 text-xs md:text-sm text-secondary-200">
                No credit card required • Free to post • Cancel anytime
             </p>
          </div>

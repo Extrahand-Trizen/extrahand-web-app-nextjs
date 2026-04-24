@@ -13,6 +13,7 @@
 import { useState } from "react";
 import { Star, Quote } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 const testimonials = [
    {
@@ -70,7 +71,7 @@ const testimonials = [
 ];
 
 const highlightStyles = {
-   time: "bg-[#FFF7D6] text-[#9A7B0A]",
+   time: "bg-[#FFF7D6] text-[#6B5200]",
    earnings: "bg-[#DFF8E7] text-[#1F7A43]",
    savings: "bg-[#E8F1FF] text-[#2B5BA9]",
    benefit: "bg-[#F2EEFF] text-[#5B3FBA]",
@@ -104,7 +105,7 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({ testimonial }) => {
 
       {/* Quote text */}
       <p className="text-secondary-700 leading-relaxed mb-4 md:mb-6 text-sm md:text-base">
-         "{testimonial.quote}"
+         &quot;{testimonial.quote}&quot;
       </p>
 
       {/* Highlight badge */}
@@ -131,9 +132,12 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({ testimonial }) => {
                   {testimonial.avatarInitials}
                </div>
             ) : (
-               <img
+               <Image
                   src={testimonial.avatar}
                   alt={`${testimonial.name} profile`}
+                  width={48}
+                  height={48}
+                  sizes="48px"
                   className="size-full object-cover"
                   loading="lazy"
                   onError={() => setImgError(true)}

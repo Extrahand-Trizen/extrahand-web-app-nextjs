@@ -71,7 +71,7 @@ export const ServicesSection: React.FC = () => {
                   <div className="relative lg:col-span-7 px-6 py-8 md:px-10 md:py-12 lg:px-12">
                      <div className="pointer-events-none absolute -left-10 top-6 h-24 w-24 rounded-full bg-primary-200/20 blur-2xl" />
                      <div className="max-w-2xl">
-                        <div className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-primary-200/80 bg-primary-50 px-4 py-1.5 text-sm font-semibold text-primary-700 shadow-sm">
+                        <div className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-primary-300 bg-primary-100 px-4 py-1.5 text-sm font-semibold text-primary-800 shadow-sm">
                            <Sparkles className="size-3.5" />
                            India&apos;s Smart Home Services Platform
                         </div>
@@ -129,7 +129,7 @@ export const ServicesSection: React.FC = () => {
                               key={step}
                               className="group flex items-center gap-3 rounded-xl border border-secondary-200 bg-white px-4 py-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary-300 hover:shadow-sm"
                            >
-                              <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-100 text-sm font-bold text-primary-700 ring-1 ring-primary-200">
+                              <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-200 text-sm font-bold text-primary-900 ring-1 ring-primary-300">
                                  {String(idx + 1).padStart(2, "0")}
                               </span>
                               <span className="font-semibold text-secondary-900 transition-colors group-hover:text-secondary-950">{step}</span>

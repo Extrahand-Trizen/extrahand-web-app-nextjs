@@ -14,6 +14,8 @@ import { PollingOtpToastBridge } from "@/components/notifications/PollingOtpToas
 const inter = Inter({
    subsets: ["latin"],
    variable: "--font-inter",
+   display: "swap",
+   preload: false,
 });
 
 export const metadata: Metadata = {
@@ -66,35 +68,7 @@ export default function RootLayout({
 }>) {
    return (
       <html lang="en" suppressHydrationWarning style={{ scrollBehavior: 'auto' }}>
-         <head>
-            <script
-               dangerouslySetInnerHTML={{
-                  __html: `
-                     // Aggressive scroll reset - runs immediately
-                     (function() {
-                        window.history.scrollRestoration = 'manual';
-                        window.scrollTo(0, 0);
-                        if (document.documentElement) document.documentElement.scrollTop = 0;
-                        if (document.body) document.body.scrollTop = 0;
-                        
-                        // Reset on DOMContentLoaded
-                        document.addEventListener('DOMContentLoaded', function() {
-                           window.scrollTo(0, 0);
-                           if (document.documentElement) document.documentElement.scrollTop = 0;
-                           if (document.body) document.body.scrollTop = 0;
-                        });
-                        
-                        // Reset on load
-                        window.addEventListener('load', function() {
-                           window.scrollTo(0, 0);
-                           if (document.documentElement) document.documentElement.scrollTop = 0;
-                           if (document.body) document.body.scrollTop = 0;
-                        });
-                     })();
-                  `,
-               }}
-            />
-         </head>
+         <head />
          <body
             className={`${inter.variable} font-sans antialiased`}
             suppressHydrationWarning

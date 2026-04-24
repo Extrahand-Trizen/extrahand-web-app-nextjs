@@ -121,19 +121,18 @@ export const LandingFooter: React.FC = () => {
                   alt="ExtraHand logo"
                   width={48}
                   height={48}
+                  sizes="48px"
                   className="relative z-10 size-8 md:size-12"
-                  unoptimized
-                  priority={false}
                 />
               </div>
               <div className="flex flex-col">
                 <span className="text-lg md:text-xl font-bold">ExtraHand</span>
-                <span className="text-xs md:text-sm font-semibold text-secondary-400">
+                <span className="text-xs md:text-sm font-semibold text-secondary-300">
                   By NAIPUNYA AI LABS PRIVATE LIMITED
                 </span>
               </div>
             </Link>
-          <p className="text-secondary-400 text-xs md:text-sm leading-relaxed pt-1.5">
+          <p className="text-secondary-300 text-xs md:text-sm leading-relaxed pt-1.5">
             Get any task done by verified local experts. Safe, secure, and
             simple.
           </p>
@@ -149,7 +148,7 @@ export const LandingFooter: React.FC = () => {
                   aria-label={social.label}
                   className="size-8 md:size-10 rounded-full bg-secondary-800 hover:bg-secondary-700 flex items-center justify-center transition-colors"
                 >
-                  <social.icon className="size-4 md:size-5 text-secondary-400" />
+                  <social.icon className="size-4 md:size-5 text-secondary-200" />
                 </a>
               ))}
             </div>
@@ -173,7 +172,7 @@ export const LandingFooter: React.FC = () => {
                     {column.title}
                   </span>
                   <ChevronDown
-                    className={`w-4 h-4 text-secondary-400 transition-transform ${
+                    className={`w-4 h-4 text-secondary-200 transition-transform ${
                       isOpen ? "rotate-180" : ""
                     }`}
                   />
@@ -185,7 +184,7 @@ export const LandingFooter: React.FC = () => {
                         {isExternalLink(link.href) ? (
                           <a
                             href={link.href}
-                            className="text-secondary-400 hover:text-white text-xs transition-colors"
+                            className="text-secondary-200 hover:text-white text-xs transition-colors"
                             rel="noopener noreferrer"
                           >
                             {link.label}
@@ -193,7 +192,7 @@ export const LandingFooter: React.FC = () => {
                         ) : (
                           <Link
                             href={link.href}
-                            className="text-secondary-400 hover:text-white text-xs transition-colors"
+                            className="text-secondary-200 hover:text-white text-xs transition-colors"
                           >
                             {link.label}
                           </Link>
@@ -222,7 +221,7 @@ export const LandingFooter: React.FC = () => {
                       {isExternalLink(link.href) ? (
                         <a
                           href={link.href}
-                          className="text-secondary-400 hover:text-white text-sm transition-colors"
+                          className="text-secondary-200 hover:text-white text-sm transition-colors"
                           rel="noopener noreferrer"
                         >
                           {link.label}
@@ -230,7 +229,7 @@ export const LandingFooter: React.FC = () => {
                       ) : (
                         <Link
                           href={link.href}
-                          className="text-secondary-400 hover:text-white text-sm transition-colors"
+                          className="text-secondary-200 hover:text-white text-sm transition-colors"
                         >
                           {link.label}
                         </Link>
@@ -250,7 +249,7 @@ export const LandingFooter: React.FC = () => {
               <h4 className="font-semibold text-white text-sm md:text-base mb-1">
                 Get the app
               </h4>
-              <p className="text-secondary-400 text-xs md:text-sm">
+              <p className="text-secondary-200 text-xs md:text-sm">
                 Download ExtraHand on your mobile device
               </p>
             </div>
@@ -325,7 +324,7 @@ export const LandingFooter: React.FC = () => {
         {/* Bottom bar with legal + address strip */}
         <div className="border-t border-secondary-800 py-5 md:pt-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="space-y-1 text-xs md:text-sm text-secondary-500 max-w-3xl">
+            <div className="space-y-1 text-xs md:text-sm text-secondary-200 max-w-3xl">
               <p>© {new Date().getFullYear()} ExtraHand. All rights reserved.</p>
               <p>
                 Registered Office: 1-98/G/38, Plot 37 &amp; 38, Serenity Square,
@@ -337,19 +336,19 @@ export const LandingFooter: React.FC = () => {
             <div className="flex items-center gap-6 text-xs md:text-sm">
               <Link
                 href="/privacy-policy"
-                className="text-secondary-400 hover:text-white transition-colors"
+                className="text-secondary-200 hover:text-white transition-colors"
               >
                 Privacy Policy
               </Link>
               <Link
                 href="/terms-and-conditions"
-                className="text-secondary-400 hover:text-white transition-colors"
+                className="text-secondary-200 hover:text-white transition-colors"
               >
                 Terms and Conditions
               </Link>
               <Link
                 href="/cookie-policy" 
-                className="text-secondary-400 hover:text-white transition-colors"
+                className="text-secondary-200 hover:text-white transition-colors"
               >
                 Cookie Policy
               </Link>

@@ -4,16 +4,9 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Search, MapPin, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
 import Image from "next/image";
 
-const heroImages = [
-   "/assets/images/hero-bg1.webp",
-   "/assets/images/hero-bg2.webp",
-   "/assets/images/hero-bg3.webp",
-   "/assets/images/hero-bg4.webp",
-];
+const HERO_IMAGE = "/assets/images/hero-bg1.webp";
 
 interface LocationSuggestion {
    place_id: string;
@@ -32,10 +25,7 @@ export const HeroSection: React.FC = () => {
       LocationSuggestion[]
    >([]);
    const [isSearchingLocation, setIsSearchingLocation] = useState(false);
-   const [currentImageIndex, setCurrentImageIndex] = useState(0);
    const locationContainerRef = useRef<HTMLDivElement>(null);
-
-   const isMobile = useIsMobile();
 
    useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
@@ -48,14 +38,6 @@ export const HeroSection: React.FC = () => {
       };
       document.addEventListener("mousedown", handleClickOutside);
       return () => document.removeEventListener("mousedown", handleClickOutside);
-   }, []);
-
-   useEffect(() => {
-      const interval = setInterval(() => {
-         setCurrentImageIndex((prev) => (prev + 1) % heroImages.length);
-      }, 3000);
-
-      return () => clearInterval(interval);
    }, []);
 
    // Debounce location search
@@ -173,20 +155,15 @@ export const HeroSection: React.FC = () => {
       <section className="relative h-[450px] md:h-[650px] flex items-center justify-center">
          {/* Background Image Carousel */}
          <div className="absolute inset-0 z-0">
-            {heroImages.map((image, index) => (
-               <Image
-                  key={image}
-                  src={image}
-                  alt=""
-                  priority={index === 0}
-                  fill
-                  sizes="100vw"
-                  className={cn(
-                     "object-cover transition-opacity duration-1000",
-                     index === currentImageIndex ? "opacity-100" : "opacity-0"
-                  )}
-               />
-            ))}
+            <Image
+               src={HERO_IMAGE}
+               alt=""
+               priority
+               fetchPriority="high"
+               fill
+               sizes="100vw"
+               className="object-cover"
+            />
             {/* Dark Overlay for Text Readability */}
             <div className="absolute inset-0 bg-black/40 backdrop-blur-xs" />
          </div>
