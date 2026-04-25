@@ -447,6 +447,7 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
                open={showMakeOfferModal}
                onOpenChange={setShowMakeOfferModal}
                onSubmittingChange={setIsSubmittingOffer}
+               existingApplication={canEditAppliedOffer ? currentApplication : null}
                onSuccess={async () => {
                   console.log("🎉 Offer submitted successfully, refetching applications...");
                   // Immediately refetch applications to show the new offer

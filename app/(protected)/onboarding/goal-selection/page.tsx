@@ -106,7 +106,7 @@ export default function GoalSelectionPage() {
               Get Help
             </h2>
             <p className="text-gray-600 text-sm mt-1.5 leading-6">
-              Get help and hire skilled professionals to help you get things done
+              Post your work and find someone to do it
             </p>
           </button>
 
@@ -149,7 +149,7 @@ export default function GoalSelectionPage() {
               Earn Money
             </h2>
             <p className="text-gray-600 text-sm mt-1.5 leading-6">
-              Offer your services and skills to earn money by helping others
+              Find work and earn money
             </p>
           </button>
         </div>

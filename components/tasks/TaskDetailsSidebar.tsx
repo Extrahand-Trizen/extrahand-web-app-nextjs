@@ -16,6 +16,7 @@ interface TaskDetailsSidebarProps {
    isOwner?: boolean;
    onMakeOffer?: () => void;
    hasApplied?: boolean;
+   canEditAppliedOffer?: boolean;
    checkingApplication?: boolean;
    isSubmittingOffer?: boolean;
 }
@@ -25,6 +26,7 @@ export function TaskDetailsSidebar({
    isOwner = false, 
    onMakeOffer,
    hasApplied = false,
+   canEditAppliedOffer = false,
    checkingApplication = false,
    isSubmittingOffer = false,
 }: TaskDetailsSidebarProps) {
@@ -96,7 +98,7 @@ export function TaskDetailsSidebar({
             {task.status === "open" && !isOwner && (
                <Button
                   onClick={onMakeOffer}
-                  disabled={hasApplied || checkingApplication || isSubmittingOffer}
+                  disabled={checkingApplication || isSubmittingOffer || (hasApplied && !canEditAppliedOffer)}
                   className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold h-12 rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                >
                   {checkingApplication ? (
@@ -110,10 +112,12 @@ export function TaskDetailsSidebar({
                         Submitting...
                      </>
                   ) : hasApplied ? (
-                     <>
-                        <CheckCircle className="w-4 h-4" />
-                        Already Applied
-                     </>
+                     canEditAppliedOffer ? "Edit Offer" : (
+                        <>
+                           <CheckCircle className="w-4 h-4" />
+                           Already Applied
+                        </>
+                     )
                   ) : (
                      "Make an Offer"
                   )}

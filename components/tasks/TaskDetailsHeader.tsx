@@ -11,6 +11,7 @@ interface TaskDetailsHeaderProps {
    showMobileCTA?: boolean;
    onMakeOffer?: () => void;
    hasApplied?: boolean;
+   canEditAppliedOffer?: boolean;
    checkingApplication?: boolean;
    isSubmittingOffer?: boolean;
    isOwner?: boolean;
@@ -21,6 +22,7 @@ export function TaskDetailsHeader({
    showMobileCTA = false,
    onMakeOffer,
    hasApplied = false,
+   canEditAppliedOffer = false,
    checkingApplication = false,
    isSubmittingOffer = false,
    isOwner = false,
@@ -260,7 +262,7 @@ export function TaskDetailsHeader({
                {task.status === "open" && !isOwner && onMakeOffer && (
                   <Button 
                      onClick={onMakeOffer}
-                     disabled={hasApplied || checkingApplication || isSubmittingOffer}
+                     disabled={checkingApplication || isSubmittingOffer || (hasApplied && !canEditAppliedOffer)}
                      className="bg-primary-600 hover:bg-primary-700 text-white h-10 font-semibold rounded-xl shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" 
                      size="lg"
                   >
@@ -275,10 +277,12 @@ export function TaskDetailsHeader({
                            Submitting...
                         </>
                      ) : hasApplied ? (
-                        <>
-                           <CheckCircle className="w-4 h-4" />
-                           Already Applied
-                        </>
+                        canEditAppliedOffer ? "Edit Offer" : (
+                           <>
+                              <CheckCircle className="w-4 h-4" />
+                              Already Applied
+                           </>
+                        )
                      ) : (
                         "Make an Offer"
                      )}
