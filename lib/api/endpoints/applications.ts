@@ -4,7 +4,14 @@
  */
 
 import { fetchWithAuth, fetchPublic } from '../client';
-import { TaskApplication, CreateApplicationRequest, UpdateApplicationRequest, ApplicationsResponse, NegotiateApplicationRequest } from '@/types/application';
+import {
+  TaskApplication,
+  CreateApplicationRequest,
+  UpdateApplicationRequest,
+  EditApplicationRequest,
+  ApplicationsResponse,
+  NegotiateApplicationRequest,
+} from '@/types/application';
 import { ApplicationQueryParams } from '@/types/api';
 
 export const applicationsApi = {
@@ -60,6 +67,21 @@ export const applicationsApi = {
     const response = await fetchWithAuth(`applications/${applicationId}`, {
       method: 'PUT',
       body: JSON.stringify(updateData),
+    });
+    return response.data || response;
+  },
+
+  /**
+   * Edit current user's pending application
+   * PATCH /api/v1/applications/:id
+   */
+  async editApplication(
+    applicationId: string,
+    editData: EditApplicationRequest
+  ): Promise<TaskApplication> {
+    const response = await fetchWithAuth(`applications/${applicationId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(editData),
     });
     return response.data || response;
   },

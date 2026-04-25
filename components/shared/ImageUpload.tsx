@@ -224,7 +224,7 @@ export function ImageUpload({
                            <Upload className="w-8 h-8 text-primary-600" />
                         </div>
                         <p className="text-sm font-medium text-gray-900 mb-1">
-                           {isDragging ? "Drop images here" : "Upload task images"}
+                           {isDragging ? "Drop photos here" : "Tap or click to add photos"}
                         </p>
                         <p className="text-xs text-gray-500 mb-3">
                            Drag & drop or click to browse

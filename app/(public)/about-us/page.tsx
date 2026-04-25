@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 const values = [
   "Clear task details before work begins",
-  "Verified Taskers for safer local services",
+  "Verified Helpers for safer local services",
   "Transparent pricing and online payments",
   "Support for task updates, issues, and disputes",
   "Ratings and reviews that help users make better decisions",
@@ -18,7 +18,7 @@ const values = [
 
 const steps = [
   "A Poster shares the task details, location, timing, and budget.",
-  "Available Taskers can review the requirement and apply or accept based on fit.",
+  "Available Helpers can review the requirement and apply or accept based on fit.",
   "Both sides can communicate about the work before the task starts.",
   "Payment and completion updates are handled through the platform.",
   "After completion, reviews help build accountability and trust.",
@@ -35,7 +35,7 @@ export default function AboutUsPage() {
           <p className="mt-4 max-w-3xl text-base leading-7 text-secondary-600 md:text-lg">
             ExtraHand is a local-services marketplace operated by Naipunya AI
             Labs Private Limited. We connect people who need help with
-            independent Taskers who can complete everyday tasks reliably.
+            independent Helpers who can complete everyday tasks reliably.
           </p>
           <p className="mt-4 max-w-3xl leading-7 text-secondary-600">
             The idea is simple: when someone needs extra help, they should be
@@ -51,7 +51,7 @@ export default function AboutUsPage() {
           </h2>
           <p className="mt-4 leading-7 text-secondary-600">
             ExtraHand helps Posters share their requirements, set a budget, and
-            find suitable Taskers nearby. Taskers can discover work, communicate
+            find suitable Helpers nearby. Helpers can discover work, communicate
             with customers, complete tasks, and build trust through their
             profile and reviews.
           </p>
@@ -60,7 +60,7 @@ export default function AboutUsPage() {
             services, repairs, delivery support, cleaning, moving, business
             assistance, event help, and other local tasks. ExtraHand does not
             perform the task directly; it provides the technology and support
-            flow that helps Posters and Taskers connect more confidently.
+            flow that helps Posters and Helpers connect more confidently.
           </p>
         </section>
 
@@ -72,10 +72,10 @@ export default function AboutUsPage() {
             ExtraHand is for Posters who want dependable help without relying
             only on word of mouth, repeated phone calls, or unclear pricing. A
             Poster can describe the task, compare options, communicate with
-            Taskers, and keep track of the work in one place.
+            Helpers, and keep track of the work in one place.
           </p>
           <p className="mt-4 leading-7 text-secondary-600">
-            ExtraHand is also for Taskers who want access to nearby work
+            ExtraHand is also for Helpers who want access to nearby work
             opportunities. Skilled individuals can use the platform to show
             their experience, respond to relevant tasks, complete work
             professionally, and grow their reputation over time.
@@ -144,7 +144,7 @@ export default function AboutUsPage() {
             We also encourage clear communication before the task begins:
             scope, time, location, expected outcome, and materials should be
             discussed openly. This helps avoid misunderstandings and gives both
-            Posters and Taskers a better experience.
+            Posters and Helpers a better experience.
           </p>
         </section>
 
@@ -155,7 +155,7 @@ export default function AboutUsPage() {
           <p className="mt-4 leading-7 text-secondary-600">
             ExtraHand is built for everyday local needs in India, with a focus
             on practical service discovery, clear communication, secure
-            payments, and better accountability between Posters and Taskers.
+            payments, and better accountability between Posters and Helpers.
           </p>
           <p className="mt-4 leading-7 text-secondary-600">
             We understand that local work is personal. A small repair, a home

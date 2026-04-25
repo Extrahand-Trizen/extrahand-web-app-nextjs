@@ -53,7 +53,7 @@ export function PaymentSuccess({
                <h3 className="text-sm font-medium text-gray-900 mb-1">
                   {taskTitle}
                </h3>
-               <p className="text-xs text-gray-500">Tasker: {taskerName}</p>
+               <p className="text-xs text-gray-500">Helper: {taskerName}</p>
             </div>
 
             <div className="p-4 space-y-3">
@@ -94,7 +94,7 @@ export function PaymentSuccess({
                      What happens next?
                   </p>
                   <ul className="text-xs text-primary-700 space-y-1.5 list-disc list-inside">
-                     <li>The tasker has been notified and can start work</li>
+                     <li>The helper has been notified and can start work</li>
                      <li>You can track the task progress in real-time</li>
                      <li>A receipt has been sent to your email</li>
                   </ul>

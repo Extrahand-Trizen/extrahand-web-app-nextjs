@@ -10,14 +10,14 @@ const guidelineSections = [
   {
     title: "Respect every person on the platform",
     paragraphs: [
-      "ExtraHand is built on trust, respect, and practical cooperation. Posters and Taskers should treat each other with courtesy in all messages, calls, and in-person interactions.",
+      "ExtraHand is built on trust, respect, and practical cooperation. Posters and Helpers should treat each other with courtesy in all messages, calls, and in-person interactions.",
       "Harassment, abuse, intimidation, threats, hate speech, discrimination, or humiliating behavior are not acceptable. This applies to behavior based on race, caste, religion, nationality, gender, age, disability, sexual orientation, or any other protected characteristic.",
     ],
   },
   {
     title: "Be honest in profiles and task details",
     paragraphs: [
-      "Users must provide truthful and accurate information about who they are, what they need, and what they can do. Posters should describe the task clearly, including timing, location, materials, and special requirements. Taskers should not misrepresent their skills, experience, identity, or availability.",
+      "Users must provide truthful and accurate information about who they are, what they need, and what they can do. Posters should describe the task clearly, including timing, location, materials, and special requirements. Helpers should not misrepresent their skills, experience, identity, or availability.",
       "Honesty helps avoid disputes and protects the quality of the marketplace for everyone.",
     ],
   },
@@ -31,7 +31,7 @@ const guidelineSections = [
   {
     title: "Protect safety during real-world tasks",
     paragraphs: [
-      "Many tasks happen in homes, offices, shops, and personal spaces. Posters should provide a safe and appropriate environment for work. Taskers should behave professionally and avoid any conduct that could put people, property, or themselves at risk.",
+      "Many tasks happen in homes, offices, shops, and personal spaces. Posters should provide a safe and appropriate environment for work. Helpers should behave professionally and avoid any conduct that could put people, property, or themselves at risk.",
       "If a task appears unsafe, illegal, or materially different from what was described, users should pause and report the issue instead of continuing.",
     ],
   },
@@ -75,7 +75,7 @@ export default function CommunityGuidelinesPage() {
           </h1>
           <p className="mt-4 max-w-3xl text-base leading-7 text-secondary-600">
             These guidelines explain the behavior expected from everyone using
-            ExtraHand. They are intended to help Posters and Taskers interact
+            ExtraHand. They are intended to help Posters and Helpers interact
             safely, professionally, and fairly.
           </p>
         </header>

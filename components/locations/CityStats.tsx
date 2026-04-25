@@ -16,19 +16,19 @@ export function CityStats({ city }: CityStatsProps) {
    const steps = [
       {
          icon: Upload,
-         title: `Post a task in ${city.name}`,
+         title: `Get help in ${city.name}`,
          description: "Describe what you need help with and set your budget.",
       },
       {
          icon: Users,
-         title: "Get offers from local taskers",
+         title: "Get offers from local helpers",
          description:
-            "Review profiles, ratings, and prices from verified taskers.",
+            "Review profiles, ratings, and prices from verified helpers.",
       },
       {
          icon: CheckCircle,
          title: "Choose and confirm",
-         description: "Pick the right tasker and get your task done.",
+         description: "Pick the right helper and get your task done.",
       },
    ];
 
@@ -68,7 +68,7 @@ export function CityStats({ city }: CityStatsProps) {
                      <div className="text-3xl font-bold text-gray-900 mb-1">
                         {city.activeTaskers.toLocaleString()}+
                      </div>
-                     <div className="text-sm text-gray-600">Local taskers</div>
+                     <div className="text-sm text-gray-600">Local helpers</div>
                   </div>
                   <div>
                      <div className="text-3xl font-bold text-gray-900 mb-1">

@@ -59,7 +59,7 @@ export function CityHero({ city }: CityHeroProps) {
                      size="lg"
                      className="w-full sm:w-auto bg-primary-500 hover:bg-primary-600 text-white font-bold text-lg px-10 py-7 rounded-2xl shadow-2xl transition-all hover:scale-105"
                   >
-                     Post a Task
+                     Get Help
                      <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                   </Button>
                </Link>
@@ -69,7 +69,7 @@ export function CityHero({ city }: CityHeroProps) {
                      size="lg"
                      className="w-full sm:w-auto border-2 border-white/80 font-semibold text-lg px-8 py-7 rounded-2xl backdrop-blur-sm transition-all hover:bg-white/90"
                   >
-                     Become a Tasker
+                     Become a Helper
                   </Button>
                </Link>
             </div>
@@ -90,7 +90,7 @@ export function CityHero({ city }: CityHeroProps) {
                      <div className="text-2xl font-bold text-white">
                         {city.activeTaskers.toLocaleString()}+
                      </div>
-                     <div className="text-sm">Verified Taskers</div>
+                     <div className="text-sm">Verified Helpers</div>
                   </div>
                </div>
                <div className="w-px h-12 bg-white/30 hidden sm:block" />

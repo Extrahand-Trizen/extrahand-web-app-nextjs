@@ -289,7 +289,7 @@ function PrivacySection({ privacy, onUpdate }: PrivacySectionProps) {
             />
             <PrivacyToggle
                label="Appear in search results"
-               description="Let your profile appear when users search for taskers"
+               description="Let your profile appear when users search for helpers"
                checked={localPrivacy.showOnSearch}
                onChange={(checked) => updateSetting("showOnSearch", checked)}
             />

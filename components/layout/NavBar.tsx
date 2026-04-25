@@ -48,8 +48,8 @@ export const NavBar: React.FC<NavBarProps> = ({
 
    const menuItems = [
       { label: "Home", route: "/home", icon: "⌂" },
-      { label: "Browse Tasks", route: "/tasks", icon: "☐" },
-      { label: "Post a Task", route: "/tasks/new", icon: "＋" },
+      { label: "Start Earning", route: "/tasks", icon: "☐" },
+      { label: "Get Help", route: "/tasks/new", icon: "＋" },
       { label: "My Tasks", route: "/home", icon: "📋" },
       { label: "My Applications", route: "/applications", icon: "📝" },
       { label: "Chat", route: "/chat", icon: "💬" },

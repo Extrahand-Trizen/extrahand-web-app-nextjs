@@ -61,7 +61,7 @@ export function TaskerHero() {
                         4.8 / 5
                      </p>
                      <p className="text-[10px] md:text-xs text-secondary-600">
-                        Average tasker rating
+                        Average helper rating
                      </p>
                   </div>
                </div>
@@ -75,7 +75,7 @@ export function TaskerHero() {
                   className="px-8 py-5 text-base bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold shadow-sm hover:shadow-md transition-shadow"
                >
                   <Link href="/login">
-                     Become a Tasker
+                     Become a Helper
                      <ArrowRight className="ml-2 w-5 h-5" />
                   </Link>
                </Button>

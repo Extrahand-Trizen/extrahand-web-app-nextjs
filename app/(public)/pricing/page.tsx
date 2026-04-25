@@ -131,10 +131,10 @@ export default function PricingPage() {
           </div>
         </div>
 
-        {/* For Taskers Section */}
+        {/* For Helpers Section */}
         <div className="mb-12">
           <h2 className="text-2xl md:text-3xl font-bold mb-6 text-gray-900">
-            For Taskers
+            For Helpers
           </h2>
 
           <div className="bg-white rounded-lg shadow-sm p-6 md:p-8 mb-6">
@@ -221,16 +221,16 @@ export default function PricingPage() {
                 When do I pay the platform fee?
               </h3>
               <p className="text-gray-700">
-                For task posters, the platform fee is collected when you post a task and a tasker accepts it. The fee is calculated on the agreed task amount.
+                For task posters, the platform fee is collected when a helper accepts your task. The fee is calculated on the agreed task amount.
               </p>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
               <h3 className="text-lg font-semibold mb-2 text-gray-900">
-                Can I negotiate the price with a tasker?
+                Can I negotiate the price with a helper?
               </h3>
               <p className="text-gray-700">
-                Yes! You can set your budget as "Negotiable" when posting a task, allowing taskers to suggest their own rates. The final agreed amount will have our fees applied.
+                Yes! You can set your budget as "Negotiable," allowing helpers to suggest their own rates. The final agreed amount will have our fees applied.
               </p>
             </div>
 
@@ -239,7 +239,7 @@ export default function PricingPage() {
                 What if the task is not completed?
               </h3>
               <p className="text-gray-700">
-                Your payment is held in escrow until the task is completed. If there's a dispute, our support team will review and either refund you or release the funds to the tasker.
+                Your payment is held in escrow until the task is completed. If there's a dispute, our support team will review and either refund you or release the funds to the helper.
               </p>
             </div>
 
@@ -254,10 +254,10 @@ export default function PricingPage() {
 
             <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
               <h3 className="text-lg font-semibold mb-2 text-gray-900">
-                Do taskers pay any fees?
+                Do helpers pay any fees?
               </h3>
               <p className="text-gray-700">
-                Taskers pay a 15% platform commission on completed tasks. Payout to your bank account or UPI is completely free with no additional processing fees.
+                Helpers pay a 15% platform commission on completed tasks. Payout to your bank account or UPI is completely free with no additional processing fees.
               </p>
             </div>
 
@@ -275,7 +275,7 @@ export default function PricingPage() {
                 Can I get a refund if I'm not satisfied?
               </h3>
               <p className="text-gray-700">
-                If you're not satisfied with the work, contact our support team within 24 hours. We'll work with you and the tasker to resolve the issue. Refunds are processed according to our Refund Policy.
+                If you're not satisfied with the work, contact our support team within 24 hours. We'll work with you and the helper to resolve the issue. Refunds are processed according to our Refund Policy.
               </p>
             </div>
           </div>

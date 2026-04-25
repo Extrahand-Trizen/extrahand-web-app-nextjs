@@ -127,7 +127,7 @@ const mockCurrentStatus: UserCurrentStatus = {
 const mockPrimaryActions: PrimaryAction[] = [
    {
       id: "post-task",
-      label: "Post a Task",
+      label: "Get Help",
       description: "Get help with anything you need",
       icon: "post",
       route: "/tasks/new",
@@ -145,8 +145,8 @@ const mockPrimaryActions: PrimaryAction[] = [
    },
    {
       id: "browse-tasks",
-      label: "Browse Tasks",
-      description: "Find tasks to work on nearby",
+      label: "Start Earning",
+      description: "Find work near you",
       icon: "browse",
       route: "/discover",
       variant: "outline",
@@ -337,7 +337,7 @@ export const mockEmptyDashboardData: DashboardData = {
    primaryActions: [
       {
          id: "post-task",
-         label: "Post a Task",
+         label: "Get Help",
          description: "Get help with anything you need",
          icon: "post",
          route: "/tasks/new",
@@ -346,8 +346,8 @@ export const mockEmptyDashboardData: DashboardData = {
       },
       {
          id: "browse-tasks",
-         label: "Browse Tasks",
-         description: "Find tasks to work on nearby",
+         label: "Start Earning",
+         description: "Find work near you",
          icon: "browse",
          route: "/discover",
          variant: "secondary",

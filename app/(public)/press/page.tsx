@@ -5,14 +5,14 @@ const pressReleases = [
     title: "ExtraHand Launches Android App",
     date: "April 17, 2026",
     summary:
-      "ExtraHand officially launched its Android app, making it easier for users to post tasks, browse services, and connect with taskers on mobile devices.",
+      "ExtraHand officially launched its Android app, making it easier for users to get help, browse services, and connect with helpers on mobile devices.",
     href: "/press/releases/2026-04-17-android-app-launch.txt",
   },
   {
     title: "ExtraHand Officially Launches Marketplace Platform",
     date: "April 1, 2026",
     summary:
-      "ExtraHand officially launched its platform for local services, enabling users to post tasks, discover verified taskers, and manage bookings more easily.",
+      "ExtraHand officially launched its platform for local services, enabling users to get help, discover verified helpers, and manage bookings more easily.",
     href: "/press/releases/2026-04-01-marketplace-platform-launch.txt",
   },
 ];

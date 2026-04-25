@@ -101,6 +101,14 @@ export interface UpdateApplicationRequest {
   message?: string;
 }
 
+export interface EditApplicationRequest {
+  coverLetter?: string;
+  proposedBudget?: {
+    amount?: number;
+    currency?: string;
+  };
+}
+
 export interface NegotiateApplicationRequest {
   action: 'counter' | 'accept' | 'reject';
   amount?: number;

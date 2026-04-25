@@ -16,7 +16,7 @@ export default function CareersPage() {
 
         <p className="text-gray-700 mb-6">
           We&apos;re building a trusted marketplace that connects Posters with
-          verified Taskers to get everyday jobs done safely and reliably. If you
+          verified Helpers to get everyday jobs done safely and reliably. If you
           are passionate about marketplaces, operations, and customer experience,
           we&apos;d love to hear from you.
         </p>

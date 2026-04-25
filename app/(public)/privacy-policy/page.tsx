@@ -45,7 +45,7 @@ const locationInformation = [
 const informationUses = [
   "Create and manage user accounts",
   "Enable task posting, booking, communication, payments, and payouts",
-  "Match Customers with Taskers",
+  "Match Customers with Helpers",
   "Verify identity and prevent fraud",
   "Provide customer support and resolve disputes",
   "Improve platform performance, reliability, and user experience",
@@ -54,7 +54,7 @@ const informationUses = [
 ];
 
 const sharingItems = [
-  "Between Customers and Taskers where sharing is necessary to coordinate and complete a task",
+  "Between Customers and Helpers where sharing is necessary to coordinate and complete a task",
   "With payment processors, verification partners, hosting providers, messaging services, analytics providers, and other service providers that help us operate the platform",
   "With affiliates, professional advisors, auditors, and contractors where reasonably necessary for operations or compliance",
   "With law enforcement, courts, regulators, or government authorities where required by law or where necessary to protect rights, safety, and the platform",
@@ -109,7 +109,7 @@ export default function PrivacyPolicy() {
           <p className="mt-4 leading-7 text-secondary-600">
             By using the Platform, you agree to the collection and use of
             information in accordance with this Privacy Policy. This policy is
-            intended to help Customers, Taskers, and visitors understand what
+            intended to help Customers, Helpers, and visitors understand what
             information is collected, why it is collected, and how it supports
             the safe and reliable functioning of ExtraHand.
           </p>
@@ -121,7 +121,7 @@ export default function PrivacyPolicy() {
           </h2>
           <p className="mt-4 leading-7 text-secondary-600">
             We collect information depending on how you use the Platform as a
-            Customer (&quot;Poster&quot;), Tasker, or both. Some information is
+            Customer (&quot;Poster&quot;), Helper, or both. Some information is
             provided directly by you, while some is collected automatically
             through your use of the platform.
           </p>

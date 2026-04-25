@@ -216,7 +216,7 @@ export function TaskDetailsSidebar({
             <div className="space-y-2 text-xs text-primary-800">
                <div className="flex items-center gap-2">
                   <CheckCircle className="w-3.5 h-3.5 text-primary-600 shrink-0" />
-                  <span>Verified taskers only</span>
+                  <span>Verified helpers only</span>
                </div>
                <div className="flex items-center gap-2">
                   <CheckCircle className="w-3.5 h-3.5 text-primary-600 shrink-0" />

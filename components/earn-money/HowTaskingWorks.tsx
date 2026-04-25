@@ -10,7 +10,7 @@ export function HowTaskingWorks() {
    const steps = [
       {
          icon: UserCircle,
-         title: "Create a tasker profile",
+         title: "Create a helper profile",
          description:
             "Add your skills, service area, and complete ID verification.",
       },
@@ -18,7 +18,7 @@ export function HowTaskingWorks() {
          icon: Clipboard,
          title: "Choose your work",
          description:
-            "Browse tasks or receive requests and accept the ones that suit you.",
+            "Start earning by browsing tasks or receiving requests that suit you.",
       },
       {
          icon: Bell,

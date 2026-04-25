@@ -105,7 +105,7 @@ export function AskQuestionForm({
                               Make this question public
                            </FormLabel>
                            <p className="text-xs text-secondary-500">
-                              Other taskers can see public questions and answers
+                              Other helpers can see public questions and answers
                            </p>
                         </div>
                      </FormItem>

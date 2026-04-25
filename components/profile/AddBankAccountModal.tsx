@@ -237,7 +237,11 @@ export function AddBankAccountModal({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="!bg-primary-600 hover:!bg-primary-700 !text-white"
+            >
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />

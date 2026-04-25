@@ -114,7 +114,7 @@ function FirstTimeCard() {
                   Welcome to ExtraHand!
                </h3>
                <p className="text-sm sm:text-base text-secondary-600 mb-4">
-                  Get started by posting your first task or browse available
+                  Get started by getting help with your first task or exploring
                   opportunities to start earning.
                </p>
                <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -122,7 +122,7 @@ function FirstTimeCard() {
                      onClick={() => router.push("/tasks/new")}
                      className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold shadow-sm"
                   >
-                     Post Your First Task
+                     Get Help
                      <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                   <Button
@@ -130,7 +130,7 @@ function FirstTimeCard() {
                      onClick={() => router.push("/discover")}
                      className="border-secondary-300 hover:border-primary-300"
                   >
-                     Browse Tasks
+                     Start Earning
                   </Button>
                </div>
             </div>
@@ -288,7 +288,7 @@ function AchievementUnlockedCard({ user }: { user: UserProfile }) {
    let milestone = `${completedTasks} tasks completed`;
    
    if (completedTasks >= 50) {
-      achievement = "Expert Tasker";
+      achievement = "Expert Helper";
    } else if (completedTasks >= 25) {
       achievement = "Task Master";
    } else if (completedTasks >= 10) {
@@ -360,14 +360,14 @@ function ReturningUserCard({ user }: { user: UserProfile }) {
                      onClick={() => router.push("/tasks/new")}
                      className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold shadow-sm"
                   >
-                     Post a Task
+                     Get Help
                   </Button>
                   <Button
                      variant="outline"
                      onClick={() => router.push("/discover")}
                      className="border-secondary-300 hover:border-primary-300"
                   >
-                     Browse Tasks
+                     Start Earning
                   </Button>
                </div>
             </div>

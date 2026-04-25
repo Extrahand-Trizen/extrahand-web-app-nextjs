@@ -26,8 +26,8 @@ export async function generateMetadata({
    }
 
    return {
-      title: `ExtraHand ${cityInfo.name} | Find Local Taskers & Services in ${cityInfo.name}`,
-      description: `Connect with verified taskers in ${cityInfo.name}, ${cityInfo.state}. ${cityInfo.description}`,
+      title: `ExtraHand ${cityInfo.name} | Find Local Helpers & Services in ${cityInfo.name}`,
+      description: `Connect with verified helpers in ${cityInfo.name}, ${cityInfo.state}. ${cityInfo.description}`,
       openGraph: {
          title: `ExtraHand ${cityInfo.name} - Local Services & Tasks`,
          description: cityInfo.description,

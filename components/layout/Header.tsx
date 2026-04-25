@@ -13,13 +13,13 @@ import { Button } from "@/components/ui/button";
 import { categoriesApi } from "@/lib/api/endpoints/categories";
 
 const menuItems = [
-   { label: "Post a Task", type: "button", route: "/tasks/new" },
-   { label: "Browse Tasks", icon: true },
+   { label: "Get Help", type: "button", route: "/tasks/new" },
+   { label: "Start Earning", icon: true },
    { label: "How it works" },
    { label: "Benefits" },
    { label: "Login", route: "/login" },
    { label: "Signup", route: "/signup" },
-   { label: "Become a Tasker", type: "button", route: "/earn-money" },
+   { label: "Become a Helper", type: "button", route: "/earn-money" },
 ];
 
 type HeaderCategory = {
@@ -110,7 +110,7 @@ export const Header: React.FC = () => {
          if (el) {
             el.scrollIntoView({ behavior: "smooth", block: "start" });
          }
-      } else if (item.label === "Become a Tasker") {
+      } else if (item.label === "Become a Helper") {
          router.push('/earn-money');
       } else if (item.route) {
          router.push(item.route);
@@ -161,7 +161,7 @@ export const Header: React.FC = () => {
          {/* Desktop Menu - Centered */}
          <div className="hidden md:flex justify-center items-center h-12 absolute left-1/2 -translate-x-1/2 gap-4 lg:gap-6">
             {centerMenu.map((item, index) =>
-               item.label === "Browse Tasks" ? (
+               item.label === "Start Earning" ? (
                   <div
                      key={index}
                      className="relative flex items-center h-10"
@@ -230,7 +230,7 @@ export const Header: React.FC = () => {
                                              : "bg-white border-neutral-gray-200 text-secondary-600"
                                        )}
                                     >
-                                       AS A TASKER
+                                       AS A HELPER
                                        <span className="block text-[11px] font-normal text-secondary-500 mt-1">
                                           I&apos;m looking for work in ...
                                        </span>

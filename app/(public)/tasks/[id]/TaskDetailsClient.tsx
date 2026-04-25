@@ -21,10 +21,15 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useAuth } from "@/lib/auth/context";
 import { useUserStore } from "@/lib/state/userStore";
 import type { Task } from "@/types/task";
+import type { TaskApplication } from "@/types/application";
 import { tasksApi } from "@/lib/api/endpoints/tasks";
 import { applicationsApi } from "@/lib/api/endpoints/applications";
 import { taskDetailsQueryKeys } from "@/lib/queryKeys";
 import { ShareModal } from "@/components/shared/ShareModal";
+import {
+   canEditPendingTaskApplication,
+   isActiveTaskApplication,
+} from "@/lib/utils/application";
 import { toast } from "sonner";
 
 interface TaskDetailsClientProps {
@@ -104,23 +109,43 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
       }
    }, [userId, currentUid, applications]);
    
+   const matchingApplications = useMemo(
+      () => applications.filter((app) => matchesCurrentUserApplication(app)),
+      [applications, userProfile, currentUid]
+   );
+
+   const currentApplication = useMemo<TaskApplication | null>(() => {
+      if ((!userId && !currentUid) || matchingApplications.length === 0) {
+         return null;
+      }
+
+      return (
+         matchingApplications.find((app) => isActiveTaskApplication(app)) ?? null
+      );
+   }, [matchingApplications, userId, currentUid]);
+
+   const canEditAppliedOffer = useMemo(
+      () => canEditPendingTaskApplication(currentApplication),
+      [currentApplication]
+   );
+
    const hasApplied = useMemo(() => {
-      if ((!userId && !currentUid) || !applications.length) {
+      if ((!userId && !currentUid) || !matchingApplications.length) {
          console.log("🔍 hasApplied check: false (no identity or no applications)", {
             userId,
             currentUid,
-            applicationsLength: applications.length,
+            applicationsLength: matchingApplications.length,
          });
          return false;
       }
-      const result = applications.some((app) => matchesCurrentUserApplication(app));
+      const result = Boolean(currentApplication);
       console.log("🔍 hasApplied check:", result, {
          userId,
          currentUid,
-         applicationsLength: applications.length,
+         applicationsLength: matchingApplications.length,
       });
       return result;
-   }, [applications, userId, currentUid]);
+   }, [currentApplication, matchingApplications.length, userId, currentUid]);
 
    // Log when hasApplied changes
    useEffect(() => {
@@ -164,7 +189,7 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
          !task ||
          task.status !== "open" ||
          isOwner ||
-         hasApplied
+         (currentApplication && !canEditAppliedOffer)
       ) {
          return;
       }
@@ -177,7 +202,8 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
       isLoggedIn,
       task,
       isOwner,
-      hasApplied,
+      currentApplication,
+      canEditAppliedOffer,
       router,
       taskId,
    ]);
@@ -240,6 +266,16 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
       }
    };
 
+   const scrollToOffersSection = () => {
+      setActiveTab("offers");
+      setTimeout(() => {
+         document.querySelector('[data-offers-section]')?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+         });
+      }, 100);
+   };
+
    const handleMakeOffer = () => {
       if (authLoading) {
          toast.info("Checking account", {
@@ -259,18 +295,16 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
          });
          return;
       }
-      if (hasApplied) {
-         toast.info("Already applied", {
-            description: "You have already submitted an offer for this task.",
+      if (currentApplication && !canEditAppliedOffer) {
+         toast.info("Offer already sent", {
+            description:
+               "You can review the latest status in the Offers section below.",
          });
-         // Scroll to offers section
-         setActiveTab("offers");
-         setTimeout(() => {
-            document.querySelector('[data-offers-section]')?.scrollIntoView({ 
-               behavior: 'smooth', 
-               block: 'start' 
-            });
-         }, 100);
+         scrollToOffersSection();
+         return;
+      }
+      if (currentApplication && canEditAppliedOffer) {
+         setShowMakeOfferModal(true);
          return;
       }
       setShowMakeOfferModal(true);
@@ -303,6 +337,7 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
                showMobileCTA={isMobile}
                onMakeOffer={handleMakeOffer}
                hasApplied={hasApplied}
+               canEditAppliedOffer={canEditAppliedOffer}
                checkingApplication={checkingApplication}
                isSubmittingOffer={isSubmittingOffer}
                isOwner={isOwner}
@@ -366,6 +401,7 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
                      isOwner={isOwner}
                      onMakeOffer={handleMakeOffer}
                      hasApplied={hasApplied}
+                     canEditAppliedOffer={canEditAppliedOffer}
                      checkingApplication={checkingApplication}
                      isSubmittingOffer={isSubmittingOffer}
                   />
@@ -378,16 +414,22 @@ export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProp
                <div className="max-w-7xl mx-auto px-4 py-3">
                   <Button
                      onClick={handleMakeOffer}
-                     disabled={hasApplied || isSubmittingOffer}
+                     disabled={
+                        checkingApplication ||
+                        (hasApplied && !canEditAppliedOffer) ||
+                        isSubmittingOffer
+                     }
                      className="w-full bg-primary-600 hover:bg-primary-700 text-white h-10 font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                     {isSubmittingOffer ? (
+                     {checkingApplication ? (
+                        <span>Checking...</span>
+                     ) : isSubmittingOffer ? (
                         <>
                            <LoadingSpinner className="w-4 h-4" />
                            <span>Submitting...</span>
                         </>
                      ) : hasApplied ? (
-                        "Already Applied"
+                        canEditAppliedOffer ? "Edit Offer" : "Already Applied"
                      ) : (
                         <>
                            Make an Offer

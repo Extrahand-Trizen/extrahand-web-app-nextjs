@@ -42,12 +42,12 @@ export function MyApplicationsEmptyState({
             No applications yet
          </h3>
          <p className="text-sm md:text-base text-secondary-600 text-center max-w-md mb-6">
-            Start applying to tasks to see your applications here. Browse
-            available tasks and submit your offers!
+            Start applying to tasks to see your applications here. Find work
+            near you and submit your offers!
          </p>
          <Link href="/discover">
             <Button className="bg-primary-600 hover:bg-primary-700 text-white">
-               Browse Tasks
+               Start Earning
             </Button>
          </Link>
       </div>

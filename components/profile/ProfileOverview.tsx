@@ -319,11 +319,11 @@ export function ProfileOverview({ user, onNavigate, loading }: ProfileOverviewPr
                         <Briefcase className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                         {isTasker &&
                         isPoster
-                           ? "Tasker & Poster"
+                           ? "Helper & Poster"
                            : isProfessionalTasker
-                           ? "Professional Tasker"
+                           ? "Professional Helper"
                            : isTasker
-                           ? "Tasker"
+                           ? "Helper"
                            : "Poster"}
                      </span>
                   </div>

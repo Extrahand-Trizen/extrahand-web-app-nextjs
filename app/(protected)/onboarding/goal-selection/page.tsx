@@ -106,7 +106,7 @@ export default function GoalSelectionPage() {
               Get Help
             </h2>
             <p className="text-gray-600 text-sm mt-1.5 leading-6">
-              Post tasks and hire skilled professionals to help you get things done
+              Get help and hire skilled professionals to help you get things done
             </p>
           </button>
 

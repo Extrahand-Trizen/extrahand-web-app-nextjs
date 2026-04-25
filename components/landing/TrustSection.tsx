@@ -25,8 +25,8 @@ import { cn } from "@/lib/utils";
 const trustFeatures = [
   {
     icon: BadgeCheck,
-    title: "Verified Taskers",
-    description: "Every tasker is background-checked and ID verified before joining our platform.",
+    title: "Verified Helpers",
+    description: "Every helper is background-checked and ID verified before joining our platform.",
     color: "text-blue-600",
     bgColor: "bg-blue-50",
   },
@@ -54,7 +54,7 @@ const trustFeatures = [
   {
     icon: Camera,
     title: "Proof of Work",
-    description: "Taskers provide photos and updates so you can verify work quality remotely.",
+    description: "Helpers provide photos and updates so you can verify work quality remotely.",
     color: "text-orange-600",
     bgColor: "bg-orange-50",
   },

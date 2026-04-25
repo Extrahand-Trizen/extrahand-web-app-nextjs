@@ -287,7 +287,7 @@ export function StatusUpdateSection({
             if (response.data && onTaskUpdated) {
                onTaskUpdated(response.data);
             }
-            toast.success("Changes requested. Tasker has been notified to revise and resubmit.");
+            toast.success("Changes requested. Helper has been notified to revise and resubmit.");
          } else {
             await onStatusUpdate(newStatus, reason);
             toast.success(`Task status updated to ${newStatus?.replace("_", " ") || "unknown"}`);

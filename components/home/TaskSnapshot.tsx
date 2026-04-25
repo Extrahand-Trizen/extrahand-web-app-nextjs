@@ -259,7 +259,7 @@ function TaskSnapshotEmpty() {
                No tasks yet
             </h3>
             <p className="text-sm text-secondary-600 mb-6 max-w-md mx-auto">
-               Post a task to get help, or browse tasks to start earning.
+               Get help when you need it, or start earning with local work.
             </p>
             <div className="flex justify-center gap-3">
                <Button
@@ -267,7 +267,7 @@ function TaskSnapshotEmpty() {
                   className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold"
                >
                   <Plus className="w-4 h-4 mr-2" />
-                  Post Task
+                  Get Help
                </Button>
                <Button
                   variant="outline"
@@ -275,7 +275,7 @@ function TaskSnapshotEmpty() {
                   className="border-secondary-300 hover:border-primary-300"
                >
                   <Search className="w-4 h-4 mr-2" />
-                  Browse
+                  Start Earning
                </Button>
             </div>
          </div>

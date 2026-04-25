@@ -96,7 +96,7 @@ export function ReviewStep({
    }
    if (data.flexibility === "exact") {
       warnings.push(
-         "Exact timing may limit available taskers. Consider adding flexibility."
+         "Exact timing may limit available helpers. Consider adding flexibility."
       );
    }
 
@@ -311,7 +311,7 @@ export function ReviewStep({
                         />
                      </svg>
                      <span className="text-xs md:text-sm text-gray-900 font-medium">
-                        Negotiable - Review offers from taskers
+                        Negotiable - Review offers from helpers
                      </span>
                   </div>
                )}
@@ -374,7 +374,7 @@ export function ReviewStep({
                         >
                            Community Guidelines
                         </a>
-                        . I understand that taskers are independent contractors.
+                        . I understand that helpers are independent contractors.
                      </FormLabel>
                   </div>
 
@@ -391,10 +391,10 @@ export function ReviewStep({
                className="w-full h-10 font-medium bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300"
                size="lg"
             >
-               {isSubmitting ? "Posting..." : "Post Task"}
+               {isSubmitting ? "Submitting..." : "Get Help"}
             </Button>
             <p className="text-xs text-center text-gray-500">
-               Your task will be visible to taskers in your area immediately
+               Your task will be visible to helpers in your area immediately
             </p>
          </div>
       </div>

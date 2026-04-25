@@ -53,7 +53,7 @@ export function AcceptOfferModal({
          });
 
          toast.success("Offer accepted!", {
-            description: "The tasker has been notified of your acceptance.",
+            description: "The helper has been notified of your acceptance.",
          });
 
          setMessage("");
@@ -139,7 +139,7 @@ export function AcceptOfferModal({
                   </Label>
                   <Textarea
                      id="accept-message"
-                     placeholder="Add a message to the tasker..."
+                     placeholder="Add a message to the helper..."
                      rows={3}
                      value={message}
                      onChange={(e) => setMessage(e.target.value)}
@@ -157,7 +157,7 @@ export function AcceptOfferModal({
                <div className="flex items-start gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <AlertCircle className="w-4 h-4 text-yellow-600 shrink-0 mt-0.5" />
                   <p className="text-xs text-yellow-800">
-                     Once accepted, this task will be assigned to the tasker and
+                     Once accepted, this task will be assigned to the helper and
                      other offers will be automatically rejected.
                   </p>
                </div>

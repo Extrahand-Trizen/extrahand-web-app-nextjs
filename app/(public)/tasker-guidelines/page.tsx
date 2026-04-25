@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Tasker Guidelines | ExtraHand",
+  title: "Helper Guidelines | ExtraHand",
   description:
-    "Guidelines for Taskers on ExtraHand to keep every task safe, professional, and reliable.",
+    "Guidelines for Helpers on ExtraHand to keep every task safe, professional, and reliable.",
 };
 
 const sections = [
@@ -48,7 +48,7 @@ const sections = [
     title: "Keep work and payment on the platform",
     paragraphs: [
       "If the task originated on ExtraHand, do not try to move it off-platform in a way that bypasses the platform's booking or payment flow. Doing so can create disputes, reduce transparency, and violate platform rules.",
-      "Taskers should not ask Posters for cash payments or side arrangements when the task is meant to be handled through ExtraHand's supported online flow.",
+      "Helpers should not ask Posters for cash payments or side arrangements when the task is meant to be handled through ExtraHand's supported online flow.",
     ],
     bullets: [
       "Do not use off-platform arrangements to avoid the platform fee.",
@@ -83,11 +83,11 @@ export default function TaskerGuidelinesPage() {
       <div className="mx-auto max-w-4xl px-5 py-12 md:px-8 md:py-16">
         <header className="mb-10">
           <h1 className="text-3xl font-bold text-secondary-900 md:text-4xl">
-            Tasker Guidelines
+            Helper Guidelines
           </h1>
           <p className="mt-4 max-w-3xl text-base leading-7 text-secondary-600">
             These guidelines explain the working standards expected from
-            Taskers on ExtraHand. They are meant to help you deliver tasks
+            Helpers on ExtraHand. They are meant to help you deliver tasks
             safely, communicate clearly, and build lasting trust with Posters.
           </p>
         </header>
@@ -135,7 +135,7 @@ export default function TaskerGuidelinesPage() {
                 href="/tasker-agreement"
                 className="font-semibold text-primary-700 hover:underline"
               >
-                Tasker Agreement
+                Helper Agreement
               </Link>
               ,{" "}
               <Link

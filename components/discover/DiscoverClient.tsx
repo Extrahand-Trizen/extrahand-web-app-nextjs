@@ -82,14 +82,14 @@ const EmptyState = ({ searchQuery }: { searchQuery: string }) => {
       <p className="text-sm text-secondary-600 mb-4 max-w-md">
         {searchQuery
           ? `No results for "${searchQuery}". Try different keywords or adjust your filters.`
-          : "Try adjusting your filters or post your own task to get started."}
+          : "Try adjusting your filters or get help with your own task to get started."}
       </p>
       <Button
         onClick={() => router.push("/tasks/new")}
         className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold"
       >
         <Plus className="w-4 h-4 mr-2" />
-        Post a task
+        Get help
       </Button>
     </div>
   );

@@ -54,7 +54,7 @@ export default function BadgeDisplay({
       color: 'bg-gray-100',
       icon: '🥈',
       description: 'Silver Member',
-      benefits: ['Priority visibility', '6% platform fee', 'Post tasks', 'Email support'],
+      benefits: ['Priority visibility', '6% platform fee', 'Get help', 'Email support'],
     },
     Gold: {
       color: 'bg-yellow-100',

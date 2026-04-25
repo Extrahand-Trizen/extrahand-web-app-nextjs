@@ -98,7 +98,7 @@ export function BudgetStep({ form, onNext }: BudgetStepProps) {
                What's your budget?
             </h2>
             <p className="text-xs md:text-sm text-gray-600">
-               Set a fair price or let taskers make offers
+               Set a fair price or let helpers make offers
             </p>
          </div>
 
@@ -185,7 +185,7 @@ export function BudgetStep({ form, onNext }: BudgetStepProps) {
                                  </span>
                               </div>
                               <p className="text-[9px] md:text-xs text-gray-600 mt-2">
-                                 Review offers from taskers
+                                 Review offers from helpers
                               </p>
                            </div>
                            {field.value === "negotiable" && (

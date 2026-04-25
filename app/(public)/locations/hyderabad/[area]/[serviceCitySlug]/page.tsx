@@ -24,7 +24,7 @@ function fromAreaSlug(areaSlug: string) {
 
 function getDemoContent(serviceName: string, areaName: string) {
    const lowerService = serviceName.toLowerCase();
-   const demoIntro = `Find the best tasker for ${lowerService} in ${areaName}, Hyderabad. Compare profiles, check ratings, and book a verified worker with confidence.`;
+   const demoIntro = `Find the best helper for ${lowerService} in ${areaName}, Hyderabad. Compare profiles, check ratings, and book a verified worker with confidence.`;
    const ctaTitle = `Need ${lowerService} in ${areaName}?`;
 
    if (lowerService.includes("cleaning")) {
@@ -37,7 +37,7 @@ function getDemoContent(serviceName: string, areaName: string) {
             "Easy booking with area-specific availability",
          ],
          workerCopy:
-            "Choose experienced cleaning taskers who handle living rooms, kitchens, bathrooms, sofas, and high-touch areas using practical cleaning workflows.",
+            "Choose experienced cleaning helpers who handle living rooms, kitchens, bathrooms, sofas, and high-touch areas using practical cleaning workflows.",
       };
    }
 
@@ -65,7 +65,7 @@ function getDemoContent(serviceName: string, areaName: string) {
             "Suitable for household and office moves",
          ],
          workerCopy:
-            "Book taskers who can plan move flow room-by-room, reduce handling risks, and complete shifting jobs with better coordination.",
+            "Book helpers who can plan move flow room-by-room, reduce handling risks, and complete shifting jobs with better coordination.",
       };
    }
 
@@ -87,7 +87,7 @@ function getDemoContent(serviceName: string, areaName: string) {
       demoIntro,
       ctaTitle,
       highlights: [
-         "Find trusted local taskers in minutes",
+         "Find trusted local helpers in minutes",
          "Book verified workers based on your requirement",
          "Fast response and clear service communication",
       ],
@@ -98,7 +98,7 @@ function getDemoContent(serviceName: string, areaName: string) {
 
 function buildAreaBenefits(serviceName: string, areaName: string) {
    return [
-      `Find verified taskers for ${serviceName.toLowerCase()} near ${areaName} with faster response windows.`,
+      `Find verified helpers for ${serviceName.toLowerCase()} near ${areaName} with faster response windows.`,
       "Get transparent communication on scope, visit expectations, and next steps before work starts.",
       "Book skilled workers who handle both routine and urgent requests with practical support.",
    ];

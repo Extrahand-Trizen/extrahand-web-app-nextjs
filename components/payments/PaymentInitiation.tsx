@@ -108,7 +108,7 @@ export function PaymentInitiation({
             <div className="flex items-start gap-2.5">
                <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
                <p className="text-xs text-gray-600">
-                  Payment released to tasker after completion
+                  Payment released to helper after completion
                </p>
             </div>
             <div className="flex items-start gap-2.5">

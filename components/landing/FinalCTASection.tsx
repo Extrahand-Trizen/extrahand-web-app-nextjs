@@ -39,7 +39,7 @@ export const FinalCTASection: React.FC = () => {
             {/* Subtext */}
             <p className="text-sm md:text-lg text-secondary-200 max-w-2xl mx-auto mb-8">
                Join 50,000+ people who trust ExtraHand for their everyday tasks.
-               Post your first task in minutes.
+               Get help in minutes.
             </p>
 
             {/* Benefits checklist */}
@@ -66,7 +66,7 @@ export const FinalCTASection: React.FC = () => {
                      size="lg"
                      className="bg-primary-500 hover:bg-primary-400 text-secondary-900 font-semibold md:text-lg px-8 py-4 md:px-10 md:py-6 rounded-xl shadow-lg shadow-primary-500/25 transition-all hover:shadow-xl hover:-translate-y-0.5 w-full sm:w-auto"
                   >
-                     Post a Task Now
+                     Get Help Now
                      <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                </Link>
@@ -76,7 +76,7 @@ export const FinalCTASection: React.FC = () => {
                      size="lg"
                      className="border-2 border-secondary-600 font-semibold md:text-lg px-8 py-4 md:px-10 md:py-6 rounded-xl w-full sm:w-auto"
                   >
-                     Become a Tasker
+                     Become a Helper
                   </Button>
                </Link>
             </div>

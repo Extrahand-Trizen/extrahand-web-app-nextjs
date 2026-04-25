@@ -5,7 +5,7 @@
  * Uses React Hook Form + Zod validation
  */
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -50,6 +50,7 @@ import { getErrorMessage } from "@/lib/utils/errorUtils";
 import { getOfferSubmissionVerificationStatus } from "@/lib/utils/verificationGate";
 import { useAuth } from "@/lib/auth/context";
 import type { Task } from "@/types/task";
+import type { TaskApplication } from "@/types/application";
 
 interface MakeOfferModalProps {
    task: Task;
@@ -57,6 +58,7 @@ interface MakeOfferModalProps {
    onOpenChange: (open: boolean) => void;
    onSuccess?: () => void;
    onSubmittingChange?: (isSubmitting: boolean) => void;
+   existingApplication?: TaskApplication | null;
 }
 
 export function MakeOfferModal({
@@ -65,6 +67,7 @@ export function MakeOfferModal({
    onOpenChange,
    onSuccess,
    onSubmittingChange,
+   existingApplication = null,
 }: MakeOfferModalProps) {
    const router = useRouter();
    const { userData } = useAuth();
@@ -76,7 +79,10 @@ export function MakeOfferModal({
    const [rangeEnd, setRangeEnd] = useState("");
 
    // Independent local state for days/hours so each can be freely edited
-   const initialDuration = task.estimatedDuration ?? 0;
+   const initialDuration =
+      existingApplication?.proposedTime?.estimatedDuration ??
+      task.estimatedDuration ??
+      0;
    const [durationDays, setDurationDays] = useState<string>(
       String(Math.floor(initialDuration / 24))
    );
@@ -85,6 +91,7 @@ export function MakeOfferModal({
    );
 
    const verificationStatus = getOfferSubmissionVerificationStatus(userData ?? null);
+   const isEditing = Boolean(existingApplication);
 
    const taskBudget =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
@@ -96,24 +103,30 @@ export function MakeOfferModal({
       ? task.schedule.filter((entry) => entry.status === "open")
       : [];
 
+   const buildFormValues = (): CreateApplicationFormData => ({
+      taskId: task._id,
+      proposedBudget: {
+         amount: existingApplication?.proposedBudget?.amount ?? taskBudget ?? 0,
+         currency: existingApplication?.proposedBudget?.currency ?? "INR",
+         isNegotiable: existingApplication?.proposedBudget?.isNegotiable ?? true,
+      },
+      proposedTime: {
+         flexible: existingApplication?.proposedTime?.flexible ?? true,
+         estimatedDuration:
+            existingApplication?.proposedTime?.estimatedDuration ??
+            task.estimatedDuration ??
+            undefined,
+      },
+      selectedDates:
+         existingApplication?.selectedDates?.map((date) => new Date(date)) ?? [],
+      coverLetter: existingApplication?.coverLetter ?? "",
+      relevantExperience: existingApplication?.relevantExperience ?? [],
+      portfolio: existingApplication?.portfolio ?? [],
+   });
+
    const form = useForm<CreateApplicationFormData>({
       resolver: zodResolver(createApplicationSchema),
-      defaultValues: {
-         taskId: task._id,
-         proposedBudget: {
-            amount: taskBudget ?? 0,
-            currency: "INR",
-            isNegotiable: true,
-         },
-         proposedTime: {
-            flexible: true,
-            estimatedDuration: task.estimatedDuration ?? undefined,
-         },
-         selectedDates: [],
-         coverLetter: "",
-         relevantExperience: [],
-         portfolio: [],
-      },
+      defaultValues: buildFormValues(),
    });
 
    const relevantExperience = form.watch("relevantExperience") || [];
@@ -123,6 +136,21 @@ export function MakeOfferModal({
    const openDatesSorted = [...openDates].sort((a, b) => a.getTime() - b.getTime());
    const minOpenDate = openDatesSorted[0];
    const maxOpenDate = openDatesSorted[openDatesSorted.length - 1];
+
+   useEffect(() => {
+      if (!open) return;
+
+      const nextValues = buildFormValues();
+      form.reset(nextValues);
+      setExperienceInput("");
+      setPortfolioInput("");
+      setRangeStart("");
+      setRangeEnd("");
+
+      const nextDuration = nextValues.proposedTime?.estimatedDuration ?? 0;
+      setDurationDays(String(Math.floor(nextDuration / 24)));
+      setDurationHours(String(nextDuration % 24));
+   }, [open, existingApplication, task._id, taskBudget, task.estimatedDuration, form]);
 
    const toDateInputValue = (date?: Date) => {
       if (!date) return "";
@@ -204,8 +232,8 @@ export function MakeOfferModal({
          return;
       }
 
-      // Background check: Aadhaar, PAN, and bank must be verified to apply
-      if (!verificationStatus.allowed) {
+      // Background check is required only for new offers.
+      if (!isEditing && !verificationStatus.allowed) {
          setShowVerificationModal(true);
          return;
       }
@@ -232,12 +260,25 @@ export function MakeOfferModal({
             portfolio: data.portfolio,
          };
 
-         // Submit application via real API
-         await applicationsApi.submitApplication(applicationPayload);
+         if (isEditing && existingApplication) {
+            await applicationsApi.editApplication(existingApplication._id, {
+               coverLetter: data.coverLetter,
+               proposedBudget: {
+                  amount: data.proposedBudget.amount,
+                  currency: data.proposedBudget.currency,
+               },
+            });
 
-         toast.success("Offer submitted successfully!", {
-            description: "Your offer has been sent to the task poster.",
-         });
+            toast.success("Offer updated successfully!", {
+               description: "Your updated offer has been shared with the task poster.",
+            });
+         } else {
+            await applicationsApi.submitApplication(applicationPayload);
+
+            toast.success("Offer submitted successfully!", {
+               description: "Your offer has been sent to the task poster.",
+            });
+         }
 
          form.reset();
          setDurationDays("0");
@@ -250,12 +291,21 @@ export function MakeOfferModal({
          const isUnauthorized = error?.status === 401 || error?.status === 403;
          const isDuplicate = errorMessage.toLowerCase().includes("already applied") || 
                            errorMessage.toLowerCase().includes("duplicate");
+         const isNoLongerEditable =
+            errorMessage.toLowerCase().includes("only pending offers can be edited");
          
          if (isUnauthorized) {
             toast.error("Session expired", {
                description:
                   "Please log in again to submit an offer. Your session may have expired.",
             });
+         } else if (isEditing && isNoLongerEditable) {
+            toast.error("This offer can no longer be edited", {
+               description: "The poster has already responded to your offer.",
+            });
+            form.reset();
+            onOpenChange(false);
+            onSuccess?.();
          } else if (isDuplicate) {
             toast.info("Already applied", {
                description: "You have already submitted an offer for this task. Check the Offers section below.",
@@ -281,10 +331,12 @@ export function MakeOfferModal({
          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
                <DialogTitle className="text-xl font-bold text-secondary-900">
-                  Make an Offer
+                  {isEditing ? "Edit Your Offer" : "Make an Offer"}
                </DialogTitle>
                <DialogDescription className="text-sm text-secondary-600">
-                  Submit your offer for &quot;{task.title}&quot;
+                  {isEditing
+                     ? `Update your offer for "${task.title}"`
+                     : `Submit your offer for "${task.title}"`}
                </DialogDescription>
             </DialogHeader>
 
@@ -293,8 +345,14 @@ export function MakeOfferModal({
                   onSubmit={form.handleSubmit(onSubmit)}
                   className="space-y-6"
                >
+                  {isEditing && (
+                     <div className="rounded-lg border border-primary-200 bg-primary-50 px-4 py-3 text-sm text-primary-900">
+                        Update your budget and message while the poster hasn&apos;t countered or accepted your offer yet.
+                     </div>
+                  )}
+
                   {/* Proposed Budget */}
-                     {isRecurring && (
+                     {!isEditing && isRecurring && (
                         <FormField
                            control={form.control}
                            name="selectedDates"
@@ -469,27 +527,30 @@ export function MakeOfferModal({
                      )}
                   />
 
-                  <FormField
-                     control={form.control}
-                     name="proposedBudget.isNegotiable"
-                     render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                           <FormControl>
-                              <Checkbox
-                                 checked={field.value}
-                                 onCheckedChange={field.onChange}
-                              />
-                           </FormControl>
-                           <div className="space-y-1 leading-none">
-                              <FormLabel className="text-sm text-secondary-700 cursor-pointer">
-                                 Budget is negotiable
-                              </FormLabel>
-                           </div>
-                        </FormItem>
-                     )}
-                  />
+                  {!isEditing && (
+                     <FormField
+                        control={form.control}
+                        name="proposedBudget.isNegotiable"
+                        render={({ field }) => (
+                           <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                              <FormControl>
+                                 <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                 />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                 <FormLabel className="text-sm text-secondary-700 cursor-pointer">
+                                    Budget is negotiable
+                                 </FormLabel>
+                              </div>
+                           </FormItem>
+                        )}
+                     />
+                  )}
 
                   {/* Proposed Time */}
+                  {!isEditing && (
                   <div className="space-y-4">
                      <FormLabel className="flex items-center gap-2 text-sm font-semibold text-secondary-900">
                         <Clock className="w-4 h-4" />
@@ -615,6 +676,7 @@ export function MakeOfferModal({
                         )}
                      />
                   </div>
+                  )}
 
                   {/* Cover Letter */}
                   <FormField
@@ -646,6 +708,7 @@ export function MakeOfferModal({
                   />
 
                   {/* Relevant Experience */}
+                  {!isEditing && (
                   <div className="space-y-3">
                      <FormLabel className="flex items-center gap-2 text-sm font-semibold text-secondary-900">
                         <Briefcase className="w-4 h-4" />
@@ -696,8 +759,10 @@ export function MakeOfferModal({
                         </div>
                      )}
                   </div>
+                  )}
 
                   {/* Portfolio Links */}
+                  {!isEditing && (
                   <div className="space-y-3">
                      <FormLabel className="text-sm font-semibold text-secondary-900">
                         Portfolio Links (Optional)
@@ -754,6 +819,7 @@ export function MakeOfferModal({
                         </div>
                      )}
                   </div>
+                  )}
 
                   {/* Actions */}
                   <div className="flex gap-3 pt-4 border-t border-secondary-200">
@@ -774,10 +840,10 @@ export function MakeOfferModal({
                         {isSubmitting ? (
                            <>
                               <LoadingSpinner size="sm" className="mr-2" />
-                              Submitting...
+                              {isEditing ? "Saving..." : "Submitting..."}
                            </>
                         ) : (
-                           "Submit Offer"
+                           isEditing ? "Save Changes" : "Submit Offer"
                         )}
                      </Button>
                   </div>

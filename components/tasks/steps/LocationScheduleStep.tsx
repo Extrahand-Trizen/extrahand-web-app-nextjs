@@ -311,7 +311,7 @@ export function LocationScheduleStep({
                               "text-center text-xs mt-1",
                               field.value === "in-person" ? "text-white/80" : "text-secondary-600"
                            )}>
-                              Select this if you need the Tasker physically there
+                              Select this if you need the Helper physically there
                            </div>
                         </button>
 
@@ -336,7 +336,7 @@ export function LocationScheduleStep({
                               "text-center text-xs mt-1",
                               field.value === "online" ? "text-white/80" : "text-secondary-600"
                            )}>
-                              Select this if the Tasker can do it from home
+                              Select this if the Helper can do it from home
                            </div>
                         </button>
                      </div>
@@ -505,7 +505,7 @@ export function LocationScheduleStep({
                />
 
                <div className="bg-secondary-50 border border-secondary-100 rounded-lg p-3 text-xs text-secondary-600">
-                  Recurring tasks let taskers pick specific dates from your range.
+                  Recurring tasks let helpers pick specific dates from your range.
                </div>
             </div>
          )}
