@@ -92,6 +92,7 @@ export function MakeOfferModal({
 
    const verificationStatus = getOfferSubmissionVerificationStatus(userData ?? null);
    const isEditing = Boolean(existingApplication);
+   const existingApplicationId = existingApplication?._id || existingApplication?.id;
 
    const taskBudget =
       typeof task.budget === "object" ? task.budget.amount : task.budget;
@@ -261,7 +262,14 @@ export function MakeOfferModal({
          };
 
          if (isEditing && existingApplication) {
-            await applicationsApi.editApplication(existingApplication._id, {
+            if (!existingApplicationId) {
+               toast.error("Unable to edit offer", {
+                  description: "Missing application ID. Please refresh and try again.",
+               });
+               return;
+            }
+
+            await applicationsApi.editApplication(existingApplicationId, {
                coverLetter: data.coverLetter,
                proposedBudget: {
                   amount: data.proposedBudget.amount,
@@ -299,6 +307,12 @@ export function MakeOfferModal({
                description:
                   "Please log in again to submit an offer. Your session may have expired.",
             });
+            sessionStorage.setItem(
+               "postAuthRedirectTo",
+               `/tasks/${task._id}?action=offer`
+            );
+            onOpenChange(false);
+            router.push("/login");
          } else if (isEditing && isNoLongerEditable) {
             toast.error("This offer can no longer be edited", {
                description: "The poster has already responded to your offer.",
@@ -333,11 +347,11 @@ export function MakeOfferModal({
                <DialogTitle className="text-xl font-bold text-secondary-900">
                   {isEditing ? "Edit Your Offer" : "Make an Offer"}
                </DialogTitle>
-               <DialogDescription className="text-sm text-secondary-600">
-                  {isEditing
-                     ? `Update your offer for "${task.title}"`
-                     : `Submit your offer for "${task.title}"`}
-               </DialogDescription>
+               {!isEditing && (
+                  <DialogDescription className="text-sm text-secondary-600">
+                     {`Submit your offer for "${task.title}"`}
+                  </DialogDescription>
+               )}
             </DialogHeader>
 
             <Form {...form}>
@@ -345,12 +359,6 @@ export function MakeOfferModal({
                   onSubmit={form.handleSubmit(onSubmit)}
                   className="space-y-6"
                >
-                  {isEditing && (
-                     <div className="rounded-lg border border-primary-200 bg-primary-50 px-4 py-3 text-sm text-primary-900">
-                        Update your budget and message while the poster hasn&apos;t countered or accepted your offer yet.
-                     </div>
-                  )}
-
                   {/* Proposed Budget */}
                      {!isEditing && isRecurring && (
                         <FormField
