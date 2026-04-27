@@ -5,7 +5,7 @@
  * View another user's profile (or your own public view)
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { PublicProfile } from "@/components/profile";
@@ -34,6 +34,7 @@ export default function UserProfilePage() {
    const [loadingReviews, setLoadingReviews] = useState(false);
    const [error, setError] = useState<string | null>(null);
    const [errorTitle, setErrorTitle] = useState<string>("Profile not found");
+   const lastReviewsProfileId = useRef<string | null>(null);
 
    const isOwnProfile = userData?.uid === userId || userData?._id === userId;
 
@@ -221,6 +222,18 @@ export default function UserProfilePage() {
       };
 
       const loadReviews = async () => {
+         const profileId = (user?._id || user?.uid || userId) as string | undefined;
+         if (!profileId) {
+            setReviews([]);
+            setLoadingReviews(false);
+            return;
+         }
+
+         if (lastReviewsProfileId.current === profileId) {
+            return;
+         }
+
+         lastReviewsProfileId.current = profileId;
          setLoadingReviews(true);
 
          const profileReviewsRaw = user && Array.isArray((user as any).reviews)
@@ -234,15 +247,7 @@ export default function UserProfilePage() {
             return;
          }
 
-         if (!user?._id && !user?.uid) {
-            console.log("ℹ️ No user ID available for reviews fetch");
-            setReviews([]);
-            setLoadingReviews(false);
-            return;
-         }
-
          try {
-            const profileId = user._id || user.uid;
             console.log("🔄 Falling back to reviews API for user:", profileId);
             const response = await reviewsApi.getUserReviews(profileId, { limit: 20 });
             const apiReviewsRaw = Array.isArray(response?.data) ? response.data : [];

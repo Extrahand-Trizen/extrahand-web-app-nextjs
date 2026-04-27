@@ -6,7 +6,7 @@
  * Accessible at /profile/[id]/tasks
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,7 @@ export default function UserPortfolioPage() {
    const [error, setError] = useState<string | null>(null);
    const [errorTitle, setErrorTitle] = useState<string>("Portfolio not found");
    const [shareOpen, setShareOpen] = useState(false);
+   const lastTasksUserId = useRef<string | null>(null);
 
    const isOwnProfile = userData?.uid === userId || userData?._id === userId;
 
@@ -65,17 +66,21 @@ export default function UserPortfolioPage() {
                router.replace(`/profile/${canonicalHandle}/tasks`);
             }
 
-            // Fetch user's tasks (public view)
-            setLoadingTasks(true);
-            const tasksResponse = await tasksApi.getPublicTasks({
-               requesterId: userId,
-               limit: 50,
-            });
+            if (lastTasksUserId.current !== userId) {
+               // Fetch user's tasks (public view)
+               setLoadingTasks(true);
+               const tasksResponse = await tasksApi.getPublicTasks({
+                  requesterId: userId,
+                  limit: 50,
+               });
 
-            if (tasksResponse.success) {
-               setTasks(tasksResponse.tasks || []);
-            } else {
-               setTasks([]);
+               if (tasksResponse.success) {
+                  setTasks(tasksResponse.tasks || []);
+               } else {
+                  setTasks([]);
+               }
+
+               lastTasksUserId.current = userId;
             }
          } catch (err: any) {
             console.error("❌ Failed to load portfolio:", err);
