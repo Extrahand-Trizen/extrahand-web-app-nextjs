@@ -64,7 +64,10 @@ export const usePaymentsStore = create<PaymentsState>()((set, get) => ({
       const summaryPromise = paymentApi.getTransactionSummary(userId, {
         linkedUserIds: linkedUserIds.length > 0 ? linkedUserIds.join(",") : undefined,
       });
-      const walletPromise = paymentApi.getExtraCoinsWallet(userId);
+      const walletPromise = paymentApi.getExtraCoinsWallet(
+        userId,
+        linkedUserIds.length > 0 ? linkedUserIds.join(",") : undefined
+      );
 
       const txRes = await txPromise;
       let mapped: Transaction[] = [];

@@ -80,7 +80,7 @@ export function CategorySubservicesSection({
             {variant === "poster" && (
                <div className="mt-8">
                   <Button asChild>
-                     <Link href="/tasks/new">Post a task</Link>
+                     <Link href="/tasks/new">Get help</Link>
                   </Button>
                </div>
             )}

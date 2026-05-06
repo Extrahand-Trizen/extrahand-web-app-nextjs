@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Success Stories | ExtraHand",
   description:
-    "Read success stories from task posters and taskers using ExtraHand.",
+    "Read success stories from task posters and helpers using ExtraHand.",
 };
 
 const stories = [
@@ -27,12 +27,12 @@ const stories = [
     taskType: "Home shifting",
     location: "Pune",
     summary:
-      "We coordinated packing and moving support for a two-bedroom home. The taskers arrived on time, handled fragile items well, and completed the move as planned.",
+      "We coordinated packing and moving support for a two-bedroom home. The helpers arrived on time, handled fragile items well, and completed the move as planned.",
     outcome: "Completed relocation in one weekend",
   },
   {
     name: "Sandeep Kumar",
-    role: "Tasker",
+    role: "Helper",
     photo:
       "https://ui-avatars.com/api/?name=Sandeep+Kumar&background=DCFCE7&color=166534&size=128",
     taskType: "General home services",
@@ -58,7 +58,7 @@ export default function SuccessStoriesPage() {
             Success Stories That Show How Fast Local Help Can Work
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 md:text-lg">
-            Real examples of how posters and taskers use ExtraHand to get work done faster, safer, and with more confidence.
+            Real examples of how posters and helpers use ExtraHand to get work done faster, safer, and with more confidence.
           </p>
           <p className="mt-6 text-sm font-medium text-slate-500">
             Detailed testimonials with names, photos, task type, and outcomes.
@@ -106,14 +106,14 @@ export default function SuccessStoriesPage() {
         <section className="mt-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
           <h2 className="text-2xl font-semibold text-slate-900">Ready for your own success story?</h2>
           <p className="mt-3 max-w-2xl text-slate-600">
-            Post a task in minutes or start offering services in your city. ExtraHand helps both sides move from search to completion with less friction.
+            Get help in minutes or start offering services in your city. ExtraHand helps both sides move from search to completion with less friction.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Link
               href="/post-task"
               className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
             >
-              Post a Task
+              Get Help
             </Link>
             <Link
               href="/services"

@@ -203,9 +203,13 @@ export const paymentApi = {
    * GET /api/v1/payment/transactions/user/:userId/wallet
    */
   async getExtraCoinsWallet(
-    userId: string
+    userId: string,
+    linkedUserIds?: string
   ): Promise<{ success: boolean; wallet?: ExtraCoinsWallet; error?: string }> {
-    return fetchWithAuth(`/payment/transactions/user/${userId}/wallet`);
+    const q = new URLSearchParams();
+    if (linkedUserIds?.trim()) q.set('linkedUserIds', linkedUserIds.trim());
+    const suffix = q.toString() ? `?${q.toString()}` : '';
+    return fetchWithAuth(`/payment/transactions/user/${userId}/wallet${suffix}`);
   },
 
   /**

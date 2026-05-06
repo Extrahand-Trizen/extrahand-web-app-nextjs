@@ -23,7 +23,7 @@ export default function ComingSoonPage({ searchParams }: ComingSoonPageProps) {
     ? label
       ? `${label} page is under construction. Please check back soon.`
       : "This page is under construction. Please check back soon."
-    : "Poster categories are under construction. You can post a task directly and we'll help you find the right tasker.";
+    : "Poster categories are under construction. You can get help directly and we'll help you find the right helper.";
 
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center px-4 py-12 text-center">
@@ -38,7 +38,7 @@ export default function ComingSoonPage({ searchParams }: ComingSoonPageProps) {
           {!isInfoPage && (
             <Link href="/tasks/new">
               <Button className="w-full sm:w-auto bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold">
-                Post a Task
+                Get Help
                 <ArrowRight className="w-4 h-4 ml-2 inline" />
               </Button>
             </Link>

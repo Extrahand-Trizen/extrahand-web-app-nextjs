@@ -80,7 +80,7 @@ export function ChatList({
                   No chats yet
                </h3>
                <p className="text-sm text-secondary-600">
-                  Chats will appear here when you assign a task to a tasker or
+                  Chats will appear here when you assign a task to a helper or
                   get assigned to a task.
                </p>
             </div>

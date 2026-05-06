@@ -39,7 +39,7 @@ export function WhoCanBeTasker() {
          <div className="max-w-6xl mx-auto px-4 lg:px-6">
             <div className="text-center mb-8 md:mb-12">
                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-secondary-900 mb-6">
-                  Who becomes a tasker?
+                  Who becomes a helper?
                </h2>
             </div>
 

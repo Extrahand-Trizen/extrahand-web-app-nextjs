@@ -41,7 +41,7 @@ import { authApi } from "@/lib/api/endpoints/auth";
 import Image from "next/image";
 
 const BENEFITS = [
-   "Access to verified local taskers",
+   "Access to verified local helpers",
    "Secure payments & money-back guarantee",
    "24/7 customer support",
 ];
@@ -185,7 +185,7 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
                         Join ExtraHand Today
                      </h1>
                      <p className="text-lg text-gray-600">
-                        Connect with skilled taskers or start earning by helping
+                        Connect with skilled helpers or start earning by helping
                         others.
                      </p>
                   </div>

@@ -13,12 +13,12 @@ export const StickyMobileCtaBar: React.FC = () => {
       <div className="flex gap-3">
         <Link href="/tasks/new" className="flex-1">
           <Button className="w-full bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold py-6 rounded-xl">
-            Post a Task
+            Get Help
           </Button>
         </Link>
         <Link href="/login">
           <Button variant="outline" className="border-secondary-300 text-secondary-700 font-medium py-6 rounded-xl">
-            Tasker
+            Helper
           </Button>
         </Link>
       </div>

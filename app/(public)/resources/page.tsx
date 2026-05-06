@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Resources | ExtraHand",
   description:
-    "Helpful resources for posters and taskers on ExtraHand.",
+    "Helpful resources for posters and helpers on ExtraHand.",
 };
 
 const resourceLinks = [

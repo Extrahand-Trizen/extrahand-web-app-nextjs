@@ -12,17 +12,17 @@ const faqSections = [
       {
         question: "What is ExtraHand?",
         answer:
-          "ExtraHand is a local-services marketplace operated by Naipunya AI Labs Private Limited. It helps Posters connect with independent Taskers for everyday jobs, home services, business support, delivery help, and other local tasks.",
+          "ExtraHand is a local-services marketplace operated by Naipunya AI Labs Private Limited. It helps Posters connect with independent Helpers for everyday jobs, home services, business support, delivery help, and other local tasks.",
       },
       {
         question: "Does ExtraHand provide the task directly?",
         answer:
-          "No. ExtraHand acts as a platform that helps users discover, book, communicate, and manage tasks. The actual work is carried out by independent Taskers.",
+          "No. ExtraHand acts as a platform that helps users discover, book, communicate, and manage tasks. The actual work is carried out by independent Helpers.",
       },
       {
         question: "Who can use ExtraHand?",
         answer:
-          "People who need help with a task can join as Posters, and skilled individuals looking for local work opportunities can join as Taskers, subject to platform requirements and verification where applicable.",
+          "People who need help with a task can join as Posters, and skilled individuals looking for local work opportunities can join as Helpers, subject to platform requirements and verification where applicable.",
       },
     ],
   },
@@ -30,19 +30,19 @@ const faqSections = [
     title: "For Posters",
     items: [
       {
-        question: "How do I post a task?",
+        question: "How do I get help?",
         answer:
-          "Click on \"Post a Task,\" describe the work, add location and timing details, set your budget, and submit the task. Interested Taskers can then review the requirement and respond through the platform.",
+          "Click on \"Get Help,\" describe the work, add location and timing details, set your budget, and submit the task. Interested Helpers can then review the requirement and respond through the platform.",
       },
       {
         question: "How is pricing decided?",
         answer:
-          "The final task amount depends on the type of work, urgency, complexity, and the agreement between the Poster and the Tasker. ExtraHand helps organize the flow, but users should make sure the scope and price are clear before work begins.",
+          "The final task amount depends on the type of work, urgency, complexity, and the agreement between the Poster and the Helper. ExtraHand helps organize the flow, but users should make sure the scope and price are clear before work begins.",
       },
       {
-        question: "How do I choose the right Tasker?",
+        question: "How do I choose the right Helper?",
         answer:
-          "You can review the Tasker's profile, ratings, reviews, relevant experience, and communication before proceeding. Choosing the right Tasker is easier when your task description is specific and complete.",
+          "You can review the Helper's profile, ratings, reviews, relevant experience, and communication before proceeding. Choosing the right Helper is easier when your task description is specific and complete.",
       },
       {
         question: "What if the task details change after booking?",
@@ -60,9 +60,9 @@ const faqSections = [
           "Payments on ExtraHand are processed through supported online payment methods. The platform is designed to keep the payment flow organized and reduce confusion around task completion and payouts.",
       },
       {
-        question: "When does a Tasker get paid?",
+        question: "When does a Helper get paid?",
         answer:
-          "Tasker payouts are processed after the task is marked complete, subject to the platform workflow, applicable checks, and any dispute or refund process that may apply.",
+          "Helper payouts are processed after the task is marked complete, subject to the platform workflow, applicable checks, and any dispute or refund process that may apply.",
       },
       {
         question: "What if I am not satisfied with the work?",
@@ -77,22 +77,22 @@ const faqSections = [
     ],
   },
   {
-    title: "For Taskers",
+    title: "For Helpers",
     items: [
       {
-        question: "How do I become a Tasker?",
+        question: "How do I become a Helper?",
         answer:
           "You can sign up, complete your profile, and submit the required information requested by the platform. Certain categories or payment features may require identity verification before you can start accepting tasks or receiving payouts.",
       },
       {
-        question: "Do all Taskers need verification?",
+        question: "Do all Helpers need verification?",
         answer:
-          "Verification requirements can depend on the role and the feature being used. Where identity verification is required, Taskers must complete it successfully before using those features.",
+          "Verification requirements can depend on the role and the feature being used. Where identity verification is required, Helpers must complete it successfully before using those features.",
       },
       {
-        question: "How can Taskers increase their chances of getting work?",
+        question: "How can Helpers increase their chances of getting work?",
         answer:
-          "A complete profile, clear communication, professional behavior, timely responses, and strong reviews can all help Taskers build trust and improve their chances of being selected.",
+          "A complete profile, clear communication, professional behavior, timely responses, and strong reviews can all help Helpers build trust and improve their chances of being selected.",
       },
     ],
   },
@@ -128,7 +128,7 @@ export default function FAQsPage() {
           </h1>
           <p className="mt-4 max-w-3xl text-base leading-7 text-secondary-600">
             Here are the most common questions about using ExtraHand as a
-            Poster or a Tasker. These answers are meant to give a practical
+            Poster or a Helper. These answers are meant to give a practical
             overview of how the platform works.
           </p>
         </header>

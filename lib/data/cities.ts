@@ -28,9 +28,9 @@ export const cities: Record<string, CityInfo> = {
       state: "Maharashtra",
       slug: "mumbai",
       description:
-         "India's financial capital with a vibrant community of skilled taskers ready to help across home and professional services.",
+         "India's financial capital with a vibrant community of skilled helpers ready to help across home and professional services.",
       longDescription:
-         "ExtraHand is Mumbai's trusted platform for getting things done. From Andheri to Colaba, connect with verified local taskers for home services, moving, cleaning, assembly, and professional work.",
+         "ExtraHand is Mumbai's trusted platform for getting things done. From Andheri to Colaba, connect with verified local helpers for home services, moving, cleaning, assembly, and professional work.",
       population: "20M+",
       activeTasks: 1243,
       activeTaskers: 3567,
@@ -62,7 +62,7 @@ export const cities: Record<string, CityInfo> = {
       state: "National Capital Territory",
       slug: "delhi",
       description:
-         "The capital region with thousands of verified taskers offering services across every major category.",
+         "The capital region with thousands of verified helpers offering services across every major category.",
       longDescription:
          "Delhi’s premier on-demand services marketplace. From Connaught Place to Dwarka, ExtraHand helps you find reliable local professionals quickly and easily.",
       population: "32M+",
@@ -96,9 +96,9 @@ export const cities: Record<string, CityInfo> = {
       state: "Karnataka",
       slug: "bangalore",
       description:
-         "India’s tech capital with skilled taskers specializing in both tech and home services.",
+         "India’s tech capital with skilled helpers specializing in both tech and home services.",
       longDescription:
-         "Bangalore’s go-to platform for getting things done. From Koramangala to Whitefield, connect with verified taskers for tech support, home services, and professional help.",
+         "Bangalore’s go-to platform for getting things done. From Koramangala to Whitefield, connect with verified helpers for tech support, home services, and professional help.",
       population: "13M+",
       activeTasks: 1876,
       activeTaskers: 4123,
@@ -130,9 +130,9 @@ export const cities: Record<string, CityInfo> = {
       state: "West Bengal",
       slug: "kolkata",
       description:
-         "A cultural and commercial hub with trusted taskers for home and professional services.",
+         "A cultural and commercial hub with trusted helpers for home and professional services.",
       longDescription:
-         "Kolkata’s on-demand services marketplace. From Salt Lake to South Kolkata, ExtraHand connects you with verified local taskers for cleaning, repairs, moving, and business services.",
+         "Kolkata’s on-demand services marketplace. From Salt Lake to South Kolkata, ExtraHand connects you with verified local helpers for cleaning, repairs, moving, and business services.",
       population: "15M+",
       activeTasks: 1045,
       activeTaskers: 2680,
@@ -164,9 +164,9 @@ export const cities: Record<string, CityInfo> = {
       state: "Tamil Nadu",
       slug: "chennai",
       description:
-         "A major metro with reliable taskers offering home, tech, and professional services.",
+         "A major metro with reliable helpers offering home, tech, and professional services.",
       longDescription:
-         "Chennai’s trusted marketplace for on-demand help. From Adyar to Velachery, find skilled and verified taskers for home maintenance, moving, cleaning, and more.",
+         "Chennai’s trusted marketplace for on-demand help. From Adyar to Velachery, find skilled and verified helpers for home maintenance, moving, cleaning, and more.",
       population: "11M+",
       activeTasks: 1320,
       activeTaskers: 2985,
@@ -198,7 +198,7 @@ export const cities: Record<string, CityInfo> = {
       state: "Telangana",
       slug: "hyderabad",
       description:
-         "A fast-growing tech and business hub with skilled, verified taskers across the city.",
+         "A fast-growing tech and business hub with skilled, verified helpers across the city.",
       longDescription:
          "Hyderabad’s trusted on-demand services marketplace. From HITEC City to Secunderabad, ExtraHand connects you with experienced professionals for every kind of task.",
       population: "10M+",
@@ -234,7 +234,7 @@ export const cities: Record<string, CityInfo> = {
       description:
          "A growing metro with skilled professionals for home, business, and personal services.",
       longDescription:
-         "Pune’s trusted services marketplace. From Hinjewadi to Koregaon Park, connect with verified taskers ready to help with everything from home maintenance to professional work.",
+         "Pune’s trusted services marketplace. From Hinjewadi to Koregaon Park, connect with verified helpers ready to help with everything from home maintenance to professional work.",
       population: "7M+",
       activeTasks: 892,
       activeTaskers: 2134,
@@ -266,9 +266,9 @@ export const cities: Record<string, CityInfo> = {
       state: "Gujarat",
       slug: "ahmedabad",
       description:
-         "A major commercial center with reliable taskers for home and business services.",
+         "A major commercial center with reliable helpers for home and business services.",
       longDescription:
-         "Ahmedabad’s on-demand services platform connecting you with verified local taskers. From SG Highway to Maninagar, get help with home services, moving, and professional tasks.",
+         "Ahmedabad’s on-demand services platform connecting you with verified local helpers. From SG Highway to Maninagar, get help with home services, moving, and professional tasks.",
       population: "9M+",
       activeTasks: 760,
       activeTaskers: 1890,

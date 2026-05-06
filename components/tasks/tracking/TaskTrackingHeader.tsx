@@ -31,7 +31,7 @@ export function TaskTrackingHeader({
          case "poster":
             return "Task Owner";
          case "tasker":
-            return "Assigned Tasker";
+            return "Assigned Helper";
          default:
             return "Viewer";
       }
@@ -45,7 +45,7 @@ export function TaskTrackingHeader({
             (task as any).assignedToName ||
             (task as any).assigneeName ||
             (task as any).assignee?.name ||
-            "Assigned Tasker"
+            "Assigned Helper"
          );
       }
 

@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
     ? `${profile.name} – ExtraHand`
     : "ExtraHand – Hire Help or Earn Money Near You";
   const description =
-    "Connect with skilled taskers and get things done. Post tasks, hire services, and become a tasker on ExtraHand.";
+    "Connect with skilled helpers and get things done. Get help, hire services, and become a helper on ExtraHand.";
 
   return {
     title,

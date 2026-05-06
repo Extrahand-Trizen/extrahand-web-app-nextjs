@@ -69,7 +69,7 @@ export default function NotFound() {
                      href="/discover"
                      className="text-primary-600 hover:text-primary-700 font-medium transition-colors"
                   >
-                     Browse Tasks
+                     Start Earning
                   </Link>
                   <Link
                      href="/services"

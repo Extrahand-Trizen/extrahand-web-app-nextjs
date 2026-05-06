@@ -170,7 +170,7 @@ export function TaskQuestionsSection({ taskId, isOwner, openFormTrigger }: TaskQ
                </p>
                <p className="text-sm text-secondary-500">
                   {isOwner
-                     ? "Once taskers ask something about your task, you'll see it here and can reply."
+                     ? "Once helpers ask something about your task, you'll see it here and can reply."
                      : "Be the first to ask about this task"}
                </p>
             </div>

@@ -5,7 +5,7 @@ const USER_MENU_ITEMS = [
    { label: "Home", route: "/home" },
    { label: "Profile", route: "/profile" },
    { label: "Chat", route: "/chat" },
-   { label: "Post a Task", route: "/tasks/new" },
+   { label: "Get Help", route: "/tasks/new" },
 ];
 
 type UserMenuRole = "poster" | "tasker";

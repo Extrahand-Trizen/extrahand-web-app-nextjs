@@ -82,7 +82,7 @@ export function PaymentSummaryCard({
                <div className="flex items-start gap-2.5">
                   <Shield className="w-4 h-4 text-primary-600 mt-0.5 shrink-0" />
                   <p className="text-xs text-primary-700 leading-relaxed">
-                     Secure payment via Razorpay. Payment released to tasker
+                     Secure payment via Razorpay. Payment released to helper
                      after task completion.
                   </p>
                </div>

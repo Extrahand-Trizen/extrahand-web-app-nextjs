@@ -14,7 +14,7 @@ export function LaunchBanner() {
             ExtraHand is now live in Hyderabad from April 1.
             <span className="text-secondary-800">
             <span className="font-semibold text-secondary-800">Task completion may depend on current availability in your area.</span>
-            Our team is actively onboarding taskers across categories.
+            Our team is actively onboarding helpers across categories.
             </span>
           </p>
         </div>

@@ -264,7 +264,7 @@ export default function PhoneVerificationPage() {
                   },
                   {
                      icon: MessageSquare,
-                     text: "Communicate with taskers easily",
+                     text: "Communicate with helpers easily",
                   },
                ].map((item, i) => (
                   <div
@@ -437,7 +437,7 @@ export default function PhoneVerificationPage() {
                </li>
                <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4" />
-                  Direct communication with taskers
+                  Direct communication with helpers
                </li>
             </ul>
          </div>

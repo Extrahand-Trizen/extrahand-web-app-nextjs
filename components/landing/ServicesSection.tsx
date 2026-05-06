@@ -32,7 +32,7 @@ const whyChoosePoints = [
    {
       icon: CheckCircle2,
       title: "Verified & Skilled Professionals",
-      description: "Work with trusted taskers verified for quality and reliability.",
+      description: "Work with trusted helpers verified for quality and reliability.",
       color: "text-amber-600",
       iconBg: "bg-amber-50",
    },

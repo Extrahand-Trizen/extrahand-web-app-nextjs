@@ -25,14 +25,14 @@ const testimonials = [
       avatarInitials: "PS",
       rating: 5,
       taskType: "Home Cleaning",
-      quote: "I was traveling for work and needed someone to deep clean my apartment before my parents visited. The tasker arrived on time, sent me photos throughout, and my place looked spotless. Saved me so much stress!",
+      quote: "I was traveling for work and needed someone to deep clean my apartment before my parents visited. The helper arrived on time, sent me photos throughout, and my place looked spotless. Saved me so much stress!",
       highlight: "Completed in 4 hours",
       highlightType: "time",
    },
    {
       id: 2,
       name: "Rahul Verma",
-      role: "Tasker",
+      role: "Helper",
       location: "Hyderabad",
       avatar: "https://source.unsplash.com/300x300/?indian,man,portrait&sig=22",
       avatarInitials: "RV",
@@ -51,14 +51,14 @@ const testimonials = [
       avatarInitials: "AP",
       rating: 5,
       taskType: "Moving Help",
-      quote: "Needed help moving heavy furniture to my new flat. Found 2 taskers within an hour, they were professional and careful with my stuff. Way cheaper than a moving company.",
+      quote: "Needed help moving heavy furniture to my new flat. Found 2 helpers within an hour, they were professional and careful with my stuff. Way cheaper than a moving company.",
       highlight: "Saved ₹3,000+",
       highlightType: "savings",
    },
    {
       id: 4,
       name: "Vikram Singh",
-      role: "Tasker",
+      role: "Helper",
       location: "Hyderabad",
       avatar: "https://source.unsplash.com/300x300/?indian,male,portrait&sig=44",
       avatarInitials: "VS",
@@ -79,7 +79,7 @@ const highlightStyles = {
 
 const roleStyles = {
    "Task Poster": "bg-[#E8F1FF] text-[#2B5BA9]",
-   Tasker: "bg-[#DFF8E7] text-[#1F7A43]",
+   Helper: "bg-[#DFF8E7] text-[#1F7A43]",
 } as const;
 
 const legendItems: Array<{ label: string; className: string }> = [
@@ -88,7 +88,7 @@ const legendItems: Array<{ label: string; className: string }> = [
    { label: "Savings badge", className: "bg-[#E8F1FF]" },
    { label: "Benefit badge", className: "bg-[#F2EEFF]" },
    { label: "Task Poster", className: "bg-[#E8F1FF]" },
-   { label: "Tasker", className: "bg-[#DFF8E7]" },
+   { label: "Helper", className: "bg-[#DFF8E7]" },
 ];
 
 interface TestimonialCardProps {

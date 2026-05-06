@@ -210,7 +210,7 @@ export default function PANVerificationPage() {
                   <p className="text-xs text-primary-600 mt-1">
                      {isBusiness
                         ? "PAN verification is mandatory for business accounts to ensure tax compliance and enable higher transaction limits."
-                        : "PAN verification is required to post tasks and submit offers, and for tax compliance."}
+                        : "PAN verification is required to get help and submit offers, and for tax compliance."}
                   </p>
                </div>
             </div>
@@ -230,7 +230,7 @@ export default function PANVerificationPage() {
                           { icon: Building2, text: "Access business features" },
                        ]
                      : [
-                          { icon: BadgeCheck, text: "Post tasks and submit offers" },
+                          { icon: BadgeCheck, text: "Get help and submit offers" },
                           { icon: Shield, text: "Tax compliance" },
                           { icon: Building2, text: "Build trust with requesters" },
                        ]),
@@ -356,7 +356,7 @@ export default function PANVerificationPage() {
                   <>
                      <li className="flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4" />
-                        Post tasks and submit offers
+                        Get help and submit offers
                      </li>
                      <li className="flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4" />
@@ -467,7 +467,7 @@ export default function PANVerificationPage() {
                   <p className="text-gray-500 mt-2">
                      {isBusiness
                         ? "Required for business accounts"
-                        : "Required to post tasks and submit offers"}
+                        : "Required to get help and submit offers"}
                   </p>
                </div>
             )}

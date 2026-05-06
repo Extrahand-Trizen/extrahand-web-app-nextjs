@@ -84,7 +84,7 @@ export default async function ProfileOpenGraphImage({ params }: PageProps) {
                 maxWidth: 760,
               }}
             >
-              Connect with skilled taskers and get things done. Post tasks, hire services, and become a tasker on ExtraHand.
+              Connect with skilled helpers and get things done. Get help, hire services, and become a helper on ExtraHand.
             </div>
 
             <div

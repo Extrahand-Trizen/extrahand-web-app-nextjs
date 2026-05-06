@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, Suspense } from "react";
+import React, { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth/context";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -164,6 +164,7 @@ function ProfilePageContent() {
    const [loadingProfile, setLoadingProfile] = useState(false);
    const [profileError, setProfileError] = useState<string | null>(null);
    const [loadingReviews, setLoadingReviews] = useState(false);
+   const lastReviewsProfileId = useRef<string | null>(null);
    const [notificationSettings, setNotificationSettings] =
       useState<NotificationSettingsState>(DEFAULT_NOTIFICATION_SETTINGS);
    const [notificationFrequency, setNotificationFrequency] =
@@ -321,6 +322,8 @@ function ProfilePageContent() {
 
    // Fetch reviews
    useEffect(() => {
+      if (section !== "public-profile") return;
+
       const targetIds = new Set(
          [user?.uid, user?._id]
             .filter(Boolean)
@@ -387,6 +390,12 @@ function ProfilePageContent() {
          const profileId = user?._id || user?.uid;
          if (!profileId) return;
 
+         if (lastReviewsProfileId.current === profileId) {
+            return;
+         }
+
+         lastReviewsProfileId.current = profileId;
+
          setLoadingReviews(true);
          try {
             console.log("🔍 Fetching reviews for user:", profileId);
@@ -441,7 +450,7 @@ function ProfilePageContent() {
       if (user?._id || user?.uid) {
          fetchReviews();
       }
-   }, [user]);
+   }, [user, section]);
 
    // Extract work history from profile data - filter out dummy/empty entries
    useEffect(() => {

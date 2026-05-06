@@ -29,11 +29,11 @@ const footerLinks = {
     ],
   },
   forTaskers: {
-    title: "For Taskers",
+    title: "For Helpers",
     links: [
-      { label: "Become a Tasker", href: "/earn-money#how-to-become-tasker" },
+      { label: "Become a Helper", href: "/earn-money#how-to-become-tasker" },
       { label: "How to Earn", href: "/earn-money#how-to-earn" },
-      { label: "Tasker Guidelines", href: "/tasker-guidelines" },
+      { label: "Helper Guidelines", href: "/tasker-guidelines" },
       { label: "Success Stories", href: "/success-stories" },
       { label: "Resources", href: "/resources" },
     ],
@@ -50,7 +50,7 @@ const footerLinks = {
       { label: "Privacy Policy", href: "/privacy-policy" },
       { label: "Terms and Conditions", href: "/terms-and-conditions" },
       { label: "Refund Policy", href: "/refund-policy" },
-      { label: "Tasker Agreement", href: "/tasker-agreement" },
+      { label: "Helper Agreement", href: "/tasker-agreement" },
       { label: "Community Guidelines", href: "/community-guidelines" },
       { label: "Report an Issue", href: "/report-an-issue" },
     ],

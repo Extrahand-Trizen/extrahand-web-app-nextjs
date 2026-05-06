@@ -107,7 +107,7 @@ export function BankAccountSection({ user }: BankAccountSectionProps) {
 
         <Button
           onClick={() => setShowBankModal(true)}
-          className="w-full sm:w-auto h-9 text-xs sm:text-sm"
+          className="w-full sm:w-auto h-9 text-xs sm:text-sm !bg-primary-600 hover:!bg-primary-700 !text-white"
           disabled={loading}
         >
           {isVerified ? "Update Bank Account" : "Add Bank Account"}

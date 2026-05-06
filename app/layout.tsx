@@ -21,8 +21,8 @@ const inter = Inter({
 export const metadata: Metadata = {
    title: "ExtraHand – Hire Help or Earn Money Near You",
    description:
-      "Hire help or earn money near you. Browse tasks, post tasks, and get things done with ExtraHand.",
-   keywords: "task marketplace, hire tasker, post task, services, freelance, home services, India",
+      "Hire help or earn money near you. Get help, start earning, and get things done with ExtraHand.",
+   keywords: "task marketplace, hire helper, get help, services, freelance, home services, India",
    authors: [{ name: "ExtraHand" }],
    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://extrahand.in"),
    icons: {
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
       url: "/",
       siteName: "ExtraHand",
       title: "ExtraHand – Hire Help or Earn Money Near You",
-      description: "Connect with skilled taskers and get things done. Post tasks, hire services, and become a tasker on ExtraHand.",
+      description: "Connect with skilled helpers and get things done. Get help, hire services, and become a helper on ExtraHand.",
       images: [
          {
             url: "/opengraph-image",
@@ -54,7 +54,7 @@ export const metadata: Metadata = {
       card: "summary_large_image",
       title: "ExtraHand – Hire Help or Earn Money Near You",
       description:
-         "Hire help or earn money near you. Browse taskers, post tasks, and get things done with ExtraHand.",
+         "Hire help or earn money near you. Find helpers, get help, and get things done with ExtraHand.",
       images: ["/opengraph-image"],
       creator: "@ExtraHand",
       site: "@ExtraHand",

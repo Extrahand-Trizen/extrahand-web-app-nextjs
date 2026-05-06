@@ -82,7 +82,7 @@ export function PublicProfileHero({
 
               {/* Headline */}
               <p className="mt-1 text-sm md:text-base text-gray-700">
-                {headline?.trim() ? headline : "This tasker is ready to help with your tasks."}
+                {headline?.trim() ? headline : "This helper is ready to help with your tasks."}
               </p>
 
               {/* Rating / new user */}

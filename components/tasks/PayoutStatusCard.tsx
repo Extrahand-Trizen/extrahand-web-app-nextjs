@@ -93,7 +93,7 @@ export function PayoutStatusCard({ taskId, taskStatus }: PayoutStatusCardProps) 
             <CheckCircle className="w-4 h-4 text-green-600 mt-0.5" />
             <div className="flex-1">
               <p className="text-xs font-medium text-green-900">Payment Released</p>
-              <p className="text-xs text-green-700">₹{amount.toFixed(2)} paid to tasker</p>
+              <p className="text-xs text-green-700">₹{amount.toFixed(2)} paid to helper</p>
             </div>
           </div>
         )}

@@ -76,7 +76,7 @@ export const TopTaskersSection: React.FC<TopTaskersSectionProps> = ({
                               {tasker.profileImage && (
                                  <AvatarImage
                                     src={tasker.profileImage}
-                                    alt={tasker.name || "Tasker"}
+                                    alt={tasker.name || "Helper"}
                                  />
                               )}
                               <AvatarFallback className="bg-slate-100">

@@ -15,7 +15,7 @@ export function PublicProfileBio({ user }: { user: UserProfile }) {
           <CardTitle className="text-base">Bio</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-gray-600">This tasker is ready to help with your tasks.</p>
+          <p className="text-sm text-gray-600">This helper is ready to help with your tasks.</p>
         </CardContent>
       </Card>
     );

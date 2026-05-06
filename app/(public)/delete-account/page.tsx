@@ -51,7 +51,7 @@ export default function DeleteAccountPage() {
                 </li>
                 <li className="flex gap-3">
                   <span className="text-red-600 font-bold">•</span>
-                  <span>Public identity on existing records, replaced with &quot;Tasker (account deleted)&quot; or &quot;Customer (account deleted)&quot;</span>
+                  <span>Public identity on existing records, replaced with &quot;Helper (account deleted)&quot; or &quot;Customer (account deleted)&quot;</span>
                 </li>
               </ul>
             </div>

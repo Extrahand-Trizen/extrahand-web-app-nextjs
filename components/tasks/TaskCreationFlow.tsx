@@ -949,7 +949,7 @@ export function TaskCreationFlow() {
 
                      <div>
                         <h1 className="text-lg font-semibold text-gray-900">
-                           Post a Task
+                           Get Help
                         </h1>
                         <p className="text-sm text-gray-500">
                            Step {currentStep} of {TOTAL_STEPS}

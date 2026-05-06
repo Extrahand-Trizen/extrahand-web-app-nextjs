@@ -52,7 +52,7 @@ const navItems: Array<{
    hasDropdown?: boolean;
 }> = [
    { label: "Categories", href: "#categories", hasDropdown: true },
-   { label: "Browse tasks", href: "/discover" },
+   { label: "Start earning", href: "/discover" },
    { label: "How it works", href: "/how-it-works#how-it-works" },
 ];
 
@@ -105,7 +105,7 @@ const GuestCtaButtons = ({ onBecomeTasker }: { onBecomeTasker: () => void }) => 
          onClick={onBecomeTasker}
          className="border-secondary-300 text-secondary-700 font-medium"
       >
-         Become a Tasker
+         Become a Helper
       </Button>
    </>
 );
@@ -305,7 +305,7 @@ export const LandingHeader: React.FC = () => {
                         )}
                         onClick={() => handleRouteChange("/tasks/new")}
                      >
-                        Post a Task
+                        Get Help
                      </Button>
                      {navItems.map((item) =>
                         item.hasDropdown ? (
@@ -360,7 +360,7 @@ export const LandingHeader: React.FC = () => {
                                                    )}
                                                 >
                                                    <span className="text-xs font-semibold text-primary-600 uppercase tracking-wide">
-                                                      As a Tasker
+                                                      As a Helper
                                                    </span>
                                                    <p className="text-xs text-secondary-600 mt-0.5">
                                                       I&apos;m looking for work
@@ -501,7 +501,7 @@ export const LandingHeader: React.FC = () => {
                         onClick={() => handleRouteChange("/tasks/new")}
                      >
                         <PlusCircle className="w-4 h-4 mr-1.5" />
-                        Post Task
+                        Get Help
                      </Button>
                      <button
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -651,7 +651,7 @@ export const LandingHeader: React.FC = () => {
                                  )}
                               >
                                  <Briefcase className="w-4 h-4" />
-                                 <span className="text-sm font-medium">Browse Tasks</span>
+                                 <span className="text-sm font-medium">Start Earning</span>
                               </button>
                               <button
                                  onClick={() =>
@@ -686,7 +686,7 @@ export const LandingHeader: React.FC = () => {
                                  )}
                               >
                                  <PlusCircle className="w-4 h-4" />
-                                 <span className="text-sm">Post a Task</span>
+                                 <span className="text-sm">Get Help</span>
                               </button>
                               {!isAuthenticated && (
                                  <button
@@ -697,7 +697,7 @@ export const LandingHeader: React.FC = () => {
                                     className="w-full flex items-center gap-3 px-3 py-2.5 text-secondary-700 hover:bg-secondary-50 rounded-lg transition-colors"
                                  >
                                     <Briefcase className="w-4 h-4" />
-                                    <span className="text-sm font-medium">Become a Tasker</span>
+                                    <span className="text-sm font-medium">Become a Helper</span>
                                  </button>
                               )}
                            </div>
@@ -769,7 +769,7 @@ export const LandingHeader: React.FC = () => {
                                  )}
                               >
                                  <span className="text-xs font-semibold text-primary-600 uppercase tracking-wide">
-                                    As a Tasker
+                                    As a Helper
                                  </span>
                                  <p className="text-[10px] text-secondary-600 mt-0.5">
                                     I&apos;m looking for work

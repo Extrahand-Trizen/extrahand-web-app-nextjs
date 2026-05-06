@@ -137,7 +137,7 @@ function CancellationPolicyView({ onBack }: { onBack: () => void }) {
           <Banknote className="w-5 h-5 text-orange-400 shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-orange-800">
-              This fee goes to the Tasker
+              This fee goes to the Helper
             </p>
             <p className="text-xs text-orange-700 mt-1 leading-relaxed">
               Their time is reserved for your task &amp; they may have turned

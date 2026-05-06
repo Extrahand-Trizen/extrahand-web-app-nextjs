@@ -49,7 +49,7 @@ export default async function TaskOpenGraphImage({ params }: PageProps) {
   const title = task?.title ? clamp(task.title, 64) : "Task on ExtraHand";
   const description = task?.description
     ? clamp(task.description, 180)
-    : "Browse tasks, post tasks, and get things done with ExtraHand.";
+    : "Get help, start earning, and get things done with ExtraHand.";
 
   // If user shares /tasks/<id>, we still want the canonical-looking handle rendered on the card.
   const handle = task?._id && task?.title ? buildPublicTaskHandle(task.title, task._id) : null;
@@ -162,7 +162,7 @@ export default async function TaskOpenGraphImage({ params }: PageProps) {
                 fontWeight: 850,
               }}
             >
-              Post a task • Get offers • Pay securely
+              Get help • Get offers • Pay securely
             </div>
           </div>
         </div>

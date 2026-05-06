@@ -10,14 +10,14 @@ const sections = [
   {
     title: "How trust works on ExtraHand",
     paragraphs: [
-      "ExtraHand is a technology platform that helps Posters and Taskers connect, communicate, manage bookings, and handle payments more clearly. The actual task is carried out by an independent Tasker, but the platform is designed to make the process more accountable for both sides.",
+      "ExtraHand is a technology platform that helps Posters and Helpers connect, communicate, manage bookings, and handle payments more clearly. The actual task is carried out by an independent Helper, but the platform is designed to make the process more accountable for both sides.",
       "Trust on ExtraHand comes from a mix of clear task descriptions, identity checks where required, supported payment flow, ratings and reviews, and a support process for issues that arise during or after a task.",
     ],
   },
   {
     title: "Identity verification and account integrity",
     paragraphs: [
-      "All Taskers are required to complete mandatory Aadhaar-based identity verification before they are permitted to accept or perform tasks on the platform. A Tasker's account may also be restricted from receiving payouts until the required verification is successfully completed.",
+      "All Helpers are required to complete mandatory Aadhaar-based identity verification before they are permitted to accept or perform tasks on the platform. A Helper's account may also be restricted from receiving payouts until the required verification is successfully completed.",
       "Posters are generally able to use the core platform without Aadhaar verification, but ExtraHand may request basic identity confirmation in situations involving suspected fraud, misuse, or account-risk review.",
     ],
     bullets: [
@@ -29,8 +29,8 @@ const sections = [
   {
     title: "Payments, payouts, and task completion",
     paragraphs: [
-      "ExtraHand supports online payment flow for tasks booked through the platform. Customers pay the agreed task amount, and Tasker payouts are processed after the task is completed, subject to the platform workflow, dispute handling, and applicable checks.",
-      "Under the platform terms, ExtraHand deducts a 5% platform fee from the task amount before remitting the Tasker payout, and GST applies on the platform fee component. The payment flow is structured to reduce confusion around completion, payout timing, and cancellations.",
+      "ExtraHand supports online payment flow for tasks booked through the platform. Customers pay the agreed task amount, and Helper payouts are processed after the task is completed, subject to the platform workflow, dispute handling, and applicable checks.",
+      "Under the platform terms, ExtraHand deducts a 5% platform fee from the task amount before remitting the Helper payout, and GST applies on the platform fee component. The payment flow is structured to reduce confusion around completion, payout timing, and cancellations.",
     ],
     bullets: [
       "Payments are accepted through supported online methods only.",
@@ -41,7 +41,7 @@ const sections = [
   {
     title: "Reviews, communication, and privacy",
     paragraphs: [
-      "After a completed task, Posters and Taskers may leave ratings and reviews. These reviews help users make better decisions and help maintain accountability on the platform.",
+      "After a completed task, Posters and Helpers may leave ratings and reviews. These reviews help users make better decisions and help maintain accountability on the platform.",
       "Reviews must be honest and must not be manipulated. Fake ratings, pressure for positive reviews, or attempts to damage another user's reputation unfairly are not acceptable.",
       "Users should also share only the personal information necessary to coordinate the task. For more detail on how data is handled, please review our Privacy Policy.",
     ],
@@ -49,7 +49,7 @@ const sections = [
   {
     title: "Safety during real-world tasks",
     paragraphs: [
-      "Many tasks happen in homes, offices, shops, and other personal or business spaces. Posters should describe the job accurately and provide a safe environment for the Tasker to work. Taskers should behave professionally, respect privacy and property, and avoid any conduct that could put people or property at risk.",
+      "Many tasks happen in homes, offices, shops, and other personal or business spaces. Posters should describe the job accurately and provide a safe environment for the Helper to work. Helpers should behave professionally, respect privacy and property, and avoid any conduct that could put people or property at risk.",
       "If a task appears illegal, unsafe, or materially different from what was originally described, the issue should be raised immediately instead of continuing as though nothing changed.",
     ],
     bullets: [
@@ -78,7 +78,7 @@ export default function TrustSafetyPage() {
           </h1>
           <p className="mt-4 max-w-3xl text-base leading-7 text-secondary-600">
             ExtraHand is built to make local tasks more organized and more
-            accountable for both Posters and Taskers. This page explains how
+            accountable for both Posters and Helpers. This page explains how
             verification, payments, reviews, privacy, and support work across
             the platform.
           </p>

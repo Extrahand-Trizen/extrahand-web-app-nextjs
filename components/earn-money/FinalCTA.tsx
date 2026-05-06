@@ -17,7 +17,7 @@ export function FinalCTA() {
 
          <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-2xl md:text-4xl font-bold text-white mb-6 leading-tight">
-               Ready to become a tasker?
+               Ready to become a helper?
             </h2>
             <p className="text-sm md:text-lg text-secondary-300 max-w-2xl mx-auto mb-8">
                Join thousands of people earning on their own schedule. Sign up
@@ -52,7 +52,7 @@ export function FinalCTA() {
                className="md:text-lg px-7 md:px-10 py-4 md:py-7 bg-primary-500 hover:bg-primary-400 text-secondary-900 font-bold shadow-2xl shadow-primary-500/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
             >
                <Link href="/login">
-                  Become a Tasker
+                  Become a Helper
                   <ArrowRight className="ml-2 w-5 h-5" />
                </Link>
             </Button>

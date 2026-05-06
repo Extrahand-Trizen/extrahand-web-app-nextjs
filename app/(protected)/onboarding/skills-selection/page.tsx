@@ -249,12 +249,15 @@ export default function SkillsSelectionPage() {
         sessionStorage.setItem('pendingPosterLocationText', locationInput.trim());
       }
 
-      toast.success('Location set successfully!', {
-        description: 'Welcome to ExtraHand.',
-      });
+      toast.success('Location set successfully!');
 
       setTimeout(() => {
-        router.push('/home');
+        // Taskers go to skill selection step; posters go straight to home
+        if (selectedGoal === 'earn') {
+          router.push('/onboarding/tasker-skills');
+        } else {
+          router.push('/home');
+        }
       }, 600);
     } catch (error) {
       console.error('Error saving location:', error);

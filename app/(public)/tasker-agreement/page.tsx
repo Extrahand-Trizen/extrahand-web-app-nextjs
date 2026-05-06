@@ -2,31 +2,31 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Tasker Agreement | ExtraHand",
+  title: "Helper Agreement | ExtraHand",
   description:
-    "Terms and conditions applicable to Taskers on the ExtraHand marketplace.",
+    "Terms and conditions applicable to Helpers on the ExtraHand marketplace.",
 };
 
 const sections = [
   {
     title: "1. Scope of this agreement",
     paragraphs: [
-      "This Tasker Agreement applies to your use of ExtraHand as a Tasker. It should be read together with the Terms and Conditions, Privacy Policy, Refund Policy, and Community Guidelines that govern the platform more broadly.",
-      "By using ExtraHand as a Tasker, you agree to follow this Agreement and all related platform rules that apply to service providers using the marketplace.",
+      "This Helper Agreement applies to your use of ExtraHand as a Helper. It should be read together with the Terms and Conditions, Privacy Policy, Refund Policy, and Community Guidelines that govern the platform more broadly.",
+      "By using ExtraHand as a Helper, you agree to follow this Agreement and all related platform rules that apply to service providers using the marketplace.",
     ],
   },
   {
     title: "2. Independent service provider status",
     paragraphs: [
-      "ExtraHand is a technology platform that connects Posters with independent Taskers. Nothing in this Agreement creates an employer-employee relationship, partnership, agency, or joint venture between you and Naipunya AI Labs Private Limited.",
+      "ExtraHand is a technology platform that connects Posters with independent Helpers. Nothing in this Agreement creates an employer-employee relationship, partnership, agency, or joint venture between you and Naipunya AI Labs Private Limited.",
       "You act as an independent service provider and remain responsible for your own work, conduct, taxes, tools, permits, legal compliance, and service quality.",
     ],
   },
   {
     title: "3. Eligibility and KYC",
     paragraphs: [
-      "To operate as a Tasker on ExtraHand, you must be at least 18 years old, legally capable of contracting, and able to provide accurate and current information about yourself and your services.",
-      "Under the platform rules, Taskers are required to complete mandatory Aadhaar-based KYC before they are permitted to accept or perform tasks on the platform. Your account may also be restricted from receiving payouts until the required verification is completed successfully.",
+      "To operate as a Helper on ExtraHand, you must be at least 18 years old, legally capable of contracting, and able to provide accurate and current information about yourself and your services.",
+      "Under the platform rules, Helpers are required to complete mandatory Aadhaar-based KYC before they are permitted to accept or perform tasks on the platform. Your account may also be restricted from receiving payouts until the required verification is completed successfully.",
     ],
     bullets: [
       "You must not submit false or misleading identity information.",
@@ -35,7 +35,7 @@ const sections = [
     ],
   },
   {
-    title: "4. Your responsibilities as a Tasker",
+    title: "4. Your responsibilities as a Helper",
     paragraphs: [
       "You are responsible for performing accepted tasks with due skill, care, professionalism, and reasonable safety practices. You must respect the customer's property, privacy, and instructions while carrying out the work.",
       "You must also comply with applicable laws, licensing requirements, tax obligations, and any professional standards relevant to the type of service you provide.",
@@ -50,8 +50,8 @@ const sections = [
   {
     title: "5. Platform use, payments, and fee deductions",
     paragraphs: [
-      "Tasks that originate on ExtraHand must be handled in accordance with the platform workflow. The Customer pays the task amount through supported online payment flow, and ExtraHand processes the payout to the Tasker according to the applicable platform rules.",
-      "Under the current platform terms, ExtraHand deducts a platform fee of 5% of the task amount before remitting the Tasker payout, and GST applies on that platform fee component. Payouts may be released only after task completion, the applicable dispute window, and any required checks.",
+      "Tasks that originate on ExtraHand must be handled in accordance with the platform workflow. The Customer pays the task amount through supported online payment flow, and ExtraHand processes the payout to the Helper according to the applicable platform rules.",
+      "Under the current platform terms, ExtraHand deducts a platform fee of 5% of the task amount before remitting the Helper payout, and GST applies on that platform fee component. Payouts may be released only after task completion, the applicable dispute window, and any required checks.",
       "Where refunds, cancellations, dispute adjustments, penalties, or compliance holds apply, the relevant amount may be adjusted against your current or future payouts in accordance with platform policy.",
     ],
     bullets: [
@@ -70,14 +70,14 @@ const sections = [
   {
     title: "7. Suspension and termination",
     paragraphs: [
-      "ExtraHand may suspend, restrict, or terminate your Tasker account where there is suspected fraud, false KYC information, abusive conduct, safety concerns, repeated cancellations, serious customer complaints, legal risk, or violation of this Agreement or other platform rules.",
+      "ExtraHand may suspend, restrict, or terminate your Helper account where there is suspected fraud, false KYC information, abusive conduct, safety concerns, repeated cancellations, serious customer complaints, legal risk, or violation of this Agreement or other platform rules.",
       "You may stop using the platform at any time, but you remain responsible for obligations that arose before account closure, including active disputes, refunds, penalties, or payment adjustments that apply under the platform terms.",
     ],
   },
   {
     title: "8. Liability and related policies",
     paragraphs: [
-      "Your use of ExtraHand as a Tasker is also subject to the broader limitation of liability, dispute resolution, and legal provisions contained in the Terms and Conditions. Where there is a conflict, the platform terms and applicable law will govern the relevant issue.",
+      "Your use of ExtraHand as a Helper is also subject to the broader limitation of liability, dispute resolution, and legal provisions contained in the Terms and Conditions. Where there is a conflict, the platform terms and applicable law will govern the relevant issue.",
       "This Agreement may be updated from time to time, and the latest version will be published on this page.",
     ],
   },
@@ -89,11 +89,11 @@ export default function TaskerAgreementPage() {
       <div className="mx-auto max-w-4xl px-5 py-12 md:px-8 md:py-16">
         <header className="mb-10">
           <h1 className="text-3xl font-bold text-secondary-900 md:text-4xl">
-            Tasker Agreement
+            Helper Agreement
           </h1>
           <p className="mt-4 max-w-3xl text-base leading-7 text-secondary-600">
             This page explains the core rules that apply when you use ExtraHand
-            as a Tasker. It is intended to clarify your independent role,
+            as a Helper. It is intended to clarify your independent role,
             verification requirements, platform responsibilities, payment flow,
             and account expectations.
           </p>
@@ -168,7 +168,7 @@ export default function TaskerAgreementPage() {
               .
             </p>
             <p className="mt-4 leading-7 text-secondary-600">
-              For questions about your Tasker account, contact{" "}
+              For questions about your Helper account, contact{" "}
               <a
                 href="mailto:support@extrahand.in"
                 className="font-semibold text-primary-700 hover:underline"

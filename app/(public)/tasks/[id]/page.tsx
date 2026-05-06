@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       : "Task – ExtraHand";
    const description =
       (typeof task?.description === "string" && task.description.trim()) ||
-      "Browse tasks, post tasks, and get things done with ExtraHand.";
+      "Get help, start earning, and get things done with ExtraHand.";
 
    return {
       title,

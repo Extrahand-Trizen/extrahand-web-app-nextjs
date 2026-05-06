@@ -443,10 +443,10 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
          {/* Header */}
          <div>
             <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
-               What do you need done?
+               What needs to be done?
             </h2>
             <p className="text-xs md:text-sm text-gray-600">
-               Give taskers a clear idea of the job
+               Give helpers a clear idea of the job
             </p>
          </div>
 
@@ -456,10 +456,10 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
             name="title"
             render={({ field }) => (
                <FormItem>
-                  <FormLabel className="text-xs md:text-sm">Task title</FormLabel>
+                  <FormLabel className="text-xs md:text-sm">What do you need help with?</FormLabel>
                   <FormControl>
                      <Input
-                        placeholder="e.g., Deep clean 2-bedroom apartment"
+                        placeholder="e.g., Replace a kitchen tap"
                         {...field}
                         className="h-10 text-sm"
                         maxLength={200}
@@ -481,10 +481,10 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
             name="description"
             render={({ field }) => (
                <FormItem>
-                  <FormLabel className="text-xs md:text-sm">Description</FormLabel>
+                  <FormLabel className="text-xs md:text-sm">Give more details</FormLabel>
                   <FormControl>
                      <Textarea
-                        placeholder="Describe what needs to be done, any specific requirements, and what the tasker should know"
+                        placeholder="Describe your task in detail..."
                         {...field}
                         rows={4}
                         maxLength={2000}
@@ -771,28 +771,32 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
             name="priority"
             render={({ field }) => (
                <FormItem>
-                  <FormLabel className="text-xs md:text-sm">Task priority (optional)</FormLabel>
+                  <FormLabel className="text-xs md:text-sm">How urgent is this?</FormLabel>
                   <FormControl>
                      <div className="grid grid-cols-3 gap-4">
-                        {["low", "normal", "high"].map((priority) => (
+                        {[
+                           { value: "low", label: "Can wait" },
+                           { value: "normal", label: "Normal" },
+                           { value: "high", label: "Urgent" },
+                        ].map(({ value, label }) => (
                            <button
-                              key={priority}
+                              key={value}
                               type="button"
-                              onClick={() => field.onChange(priority)}
+                              onClick={() => field.onChange(value)}
                               className={cn(
-                                 "h-10 rounded-lg border-2 text-sm font-medium transition-all capitalize",
-                                 field.value === priority
+                                 "h-10 rounded-lg border-2 text-sm font-medium transition-all",
+                                 field.value === value
                                     ? "border-primary-600 bg-primary-50 text-primary-600"
                                     : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
                               )}
                            >
-                              {priority}
+                              {label}
                            </button>
                         ))}
                      </div>
                   </FormControl>
                   <FormDescription className="text-xs">
-                     Priority helps taskers gauge importance
+                     Priority helps helpers gauge importance
                   </FormDescription>
                   <FormMessage />
                </FormItem>
@@ -805,7 +809,7 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
             name="attachments"
             render={({ field }) => (
                <FormItem>
-                  <FormLabel className="text-xs md:text-sm">Task images (optional)</FormLabel>
+                  <FormLabel className="text-xs md:text-sm">Add photos (optional)</FormLabel>
                   <FormControl>
                      <ImageUpload
                         value={field.value || []}
@@ -815,7 +819,7 @@ export function TaskBasicsStep({ form, onNext }: TaskBasicsStepProps) {
                      />
                   </FormControl>
                   <FormDescription className="text-xs">
-                     Upload photos to help taskers understand the task better
+                     Add photos to help helpers understand the task better
                   </FormDescription>
                   <FormMessage />
                </FormItem>
