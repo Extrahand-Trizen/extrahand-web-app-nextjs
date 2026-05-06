@@ -114,7 +114,9 @@ export function AutoApprovalRedirect() {
       run();
 
       // Keep checking while user stays on the same page.
-      const intervalId = window.setInterval(run, 2000);
+      // 30 s is sufficient — the focus/visibilitychange listeners already fire
+      // an immediate check whenever the user switches back to the tab.
+      const intervalId = window.setInterval(run, 30_000);
 
       // Re-check as soon as tab gains focus.
       const handleFocus = () => {

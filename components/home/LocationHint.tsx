@@ -12,7 +12,7 @@ import { MapPin, ArrowRight } from "lucide-react";
 
 interface LocationHintProps {
    nearbyTasksCount?: number;
-   userRole?: "tasker" | "poster" | "both";
+   userRole?: "tasker" | "poster";
 }
 
 export function LocationHint({
@@ -21,8 +21,8 @@ export function LocationHint({
 }: LocationHintProps) {
    const router = useRouter();
 
-   // Only show for taskers
-   if (userRole !== "tasker" && userRole !== "both") {
+   // Only show for taskers (includes users with tasker in roles array)
+   if (userRole !== "tasker") {
       return null;
    }
 

@@ -39,7 +39,7 @@ export function TaskerSetupBanner({ user }: TaskerSetupBannerProps) {
 
    const uid = user.uid || user._id || "anon";
    const roles = user.roles || [];
-   const isTasker = roles.includes("tasker") || roles.includes("both");
+   const isTasker = roles.includes("tasker");
    const hasSkills = selectedSkills.length > 0;
    const isAadhaarVerified =
       "isAadhaarVerified" in user

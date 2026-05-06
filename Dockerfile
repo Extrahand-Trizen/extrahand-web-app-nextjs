@@ -66,6 +66,9 @@ RUN mkdir -p /tmp && chmod 1777 /tmp
 RUN npm run build
 
 # --- Stage 3: Runner ---------------------------------------------
+# Uses Next.js standalone output: only the files actually needed at runtime
+# are copied (~40-60 MB vs ~800 MB+ for full node_modules).
+# This eliminates the I/O burst at container start that was spiking CPU to 100%.
 FROM node:20-slim AS runner
 WORKDIR /app
 
@@ -75,12 +78,10 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # Create non-root user
 RUN useradd -m nextjs
 
-# Copy required runtime artifacts (without standalone to reduce build disk pressure)
-COPY --from=builder --chown=nextjs:nextjs /app/package.json ./package.json
-COPY --from=builder --chown=nextjs:nextjs /app/next.config.ts ./next.config.ts
+# Standalone bundle already includes its own trimmed node_modules and server.js
+COPY --from=builder --chown=nextjs:nextjs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nextjs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nextjs /app/public ./public
-COPY --from=builder --chown=nextjs:nextjs /app/.next ./.next
-COPY --from=deps --chown=nextjs:nextjs /app/node_modules ./node_modules
 
 # Next.js writes runtime image/fetch caches under .next/cache.
 RUN mkdir -p /app/.next/cache/images /app/.next/cache/fetch-cache
@@ -91,4 +92,5 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["npm", "run", "start"]
+# standalone output produces server.js at the root — no npm needed at runtime
+CMD ["node", "server.js"]

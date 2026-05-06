@@ -24,7 +24,7 @@ export default function TasksPage() {
    // Determine user role
    const userRole = useMemo<"tasker" | "poster" | null>(() => {
       const roles = userData?.roles ?? [];
-      if (roles.includes("tasker") || roles.includes("both")) {
+      if (roles.includes("tasker")) {
          return "tasker";
       }
       if (roles.includes("poster") || roles.includes("requester")) {

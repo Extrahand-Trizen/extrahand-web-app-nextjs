@@ -69,7 +69,11 @@ async function fetchContentAdmin<T>(
                "Content-Type": "application/json",
                ...options.headers,
             },
-            cache: "no-store", // Always get fresh data for SSR
+            // Cache category data for 1 hour on the server.
+            // Categories change rarely; no-store was triggering a fresh upstream
+            // call on every SSR render (including sitemap generation), causing
+            // cascading load on the content-admin service at deploy time.
+            next: { revalidate: 3600 },
          });
 
          if (!res.ok) {

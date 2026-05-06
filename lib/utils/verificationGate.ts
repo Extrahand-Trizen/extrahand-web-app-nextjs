@@ -14,7 +14,7 @@ export interface VerificationGateResult {
 
 function isTaskerRole(profile: UserProfile): boolean {
    const roles = Array.isArray(profile.roles) ? profile.roles : [];
-   return roles.includes("tasker") || roles.includes("both");
+   return roles.includes("tasker");
 }
 
 function isPanVerified(profile: UserProfile | null): boolean {

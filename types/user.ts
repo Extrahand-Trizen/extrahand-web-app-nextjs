@@ -10,7 +10,7 @@ export interface UserProfile {
    profession?: string;
    email?: string;
    phone?: string;
-   roles: ("tasker" | "requester" | "poster" | "both")[];
+   roles: ("tasker" | "requester" | "poster")[];
    userType: "individual" | "business";
    location?: {
       type: "Point";

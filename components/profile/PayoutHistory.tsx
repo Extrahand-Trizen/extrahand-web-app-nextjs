@@ -180,7 +180,9 @@ export function PayoutHistory({
 
     if (payoutIds.length > 0 || fallbackPayouts.length > 0) {
       fetchPayoutDetails();
-      intervalId = setInterval(fetchPayoutDetails, 10_000);
+      // 60 s is enough for payout status — each poll fires N parallel Firebase
+      // token verifications + N payment-service calls (one per payout ID).
+      intervalId = setInterval(fetchPayoutDetails, 60_000);
     } else {
       setLoading(false);
     }

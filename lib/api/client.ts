@@ -54,7 +54,7 @@ async function refreshAccessToken(): Promise<boolean> {
    isRefreshing = true;
 
    try {
-      console.log("🔄 Attempting to refresh access token...");
+      if (isDevelopment) console.log("🔄 Attempting to refresh access token...");
       
       // Dynamically import to avoid circular dependencies
       const { sessionsApi } = await import("@/lib/api/endpoints/sessions");
@@ -64,7 +64,7 @@ async function refreshAccessToken(): Promise<boolean> {
       // Call the refresh endpoint (refresh token is in httpOnly cookie)
       await sessionsApi.refresh();
       
-      console.log("✅ Access token refreshed successfully");
+      if (isDevelopment) console.log("✅ Access token refreshed successfully");
       
       // Notify waiting requests that refresh succeeded
       notifyRefreshSubscribers();
@@ -106,12 +106,11 @@ async function _fetchWithAuth(
    const cleanPath = path.replace(/^\//, "");
    const fullUrl = `${cleanApiBase}/api/v1/${cleanPath}`;
 
-   console.log("🔧 fetchWithAuth called with path:", path);
-   console.log("🔧 Full URL:", fullUrl);
-   console.log(
-      "🔧 Environment:",
-      isDevelopment ? "development" : "production"
-   );
+   if (isDevelopment) {
+      console.log("🔧 fetchWithAuth called with path:", path);
+      console.log("🔧 Full URL:", fullUrl);
+      console.log("🔧 Environment: development");
+   }
 
    const corsConfig =
       CORS_CONFIG[isDevelopment ? "development" : "production"];
@@ -123,11 +122,11 @@ async function _fetchWithAuth(
       headers.set("Content-Type", "application/json");
    }
 
-   console.log("🔧 Making fetch request to:", fullUrl);
-   console.log("🔧 Headers:", redactHeaders(headers));
-   console.log(
-      "🔧 HttpOnly cookies will be sent automatically with credentials: 'include'"
-   );
+   if (isDevelopment) {
+      console.log("🔧 Making fetch request to:", fullUrl);
+      console.log("🔧 Headers:", redactHeaders(headers));
+      console.log("🔧 HttpOnly cookies will be sent automatically with credentials: 'include'");
+   }
 
    const res = await fetch(fullUrl, {
       ...init,
@@ -135,7 +134,7 @@ async function _fetchWithAuth(
       ...corsConfig,
    });
 
-   console.log("🔧 Response status:", res.status);
+   if (isDevelopment) console.log("🔧 Response status:", res.status);
 
    if (!res.ok) {
       const text = await res.text().catch(() => "");
@@ -176,7 +175,7 @@ async function _fetchWithAuth(
    }
 
    const data = await res.json();
-   console.log(`✅ API Success: ${path}`, data);
+   if (isDevelopment) console.log(`✅ API Success: ${path}`, data);
    return data;
 }
 
@@ -201,13 +200,13 @@ async function fetchWithAuth(
       const shouldRetryWithRefresh = isAuthError && !isRefreshEndpoint;
 
       if (shouldRetryWithRefresh) {
-         console.log("🔄 Access token expired, attempting refresh...");
+         if (isDevelopment) console.log("🔄 Access token expired, attempting refresh...");
          
          // Attempt to refresh the access token
          const refreshSucceeded = await refreshAccessToken();
          
          if (refreshSucceeded) {
-            console.log("🔄 Retrying original request with new access token...");
+            if (isDevelopment) console.log("🔄 Retrying original request with new access token...");
             
             // Retry the original request with the new access token
             // The new token is in httpOnly cookies, so no need to modify headers
@@ -264,16 +263,20 @@ async function fetchPublic(
       const cleanPath = path.replace(/^\//, "");
       const fullUrl = `${cleanApiBase}/api/v1/${cleanPath}`;
 
-      console.log("🔧 fetchPublic called with path:", path);
-      console.log("🔧 Full URL:", fullUrl);
+      if (isDevelopment) {
+         console.log("🔧 fetchPublic called with path:", path);
+         console.log("🔧 Full URL:", fullUrl);
+      }
 
       const headers = new Headers(init.headers || {});
       if (!headers.has("Content-Type")) {
          headers.set("Content-Type", "application/json");
       }
 
-      console.log("🔧 Making public fetch request to:", fullUrl);
-      console.log("🔧 Credentials:", "include (cookies sent when present)");
+      if (isDevelopment) {
+         console.log("🔧 Making public fetch request to:", fullUrl);
+         console.log("🔧 Credentials:", "include (cookies sent when present)");
+      }
 
       const res = await fetch(fullUrl, {
          ...init,
@@ -281,7 +284,7 @@ async function fetchPublic(
          credentials: 'include',
       });
 
-      console.log("🔧 Response status:", res.status);
+      if (isDevelopment) console.log("🔧 Response status:", res.status);
 
       if (!res.ok) {
          const text = await res.text().catch(() => "");
@@ -312,7 +315,7 @@ async function fetchPublic(
       }
 
       const data = await res.json();
-      console.log(`✅ Public API Success: ${path}`, data);
+      if (isDevelopment) console.log(`✅ Public API Success: ${path}`, data);
       return data;
    } catch (error) {
       const apiError = error as APIError;
