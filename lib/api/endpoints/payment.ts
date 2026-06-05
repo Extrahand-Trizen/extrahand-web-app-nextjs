@@ -204,10 +204,14 @@ export const paymentApi = {
    */
   async getExtraCoinsWallet(
     userId: string,
-    linkedUserIds?: string
+    linkedUserIds?: string,
+    walletRole?: 'poster' | 'tasker' | 'customer' | 'helper'
   ): Promise<{ success: boolean; wallet?: ExtraCoinsWallet; error?: string }> {
     const q = new URLSearchParams();
     if (linkedUserIds?.trim()) q.set('linkedUserIds', linkedUserIds.trim());
+    const internalRole =
+      walletRole === 'customer' ? 'poster' : walletRole === 'helper' ? 'tasker' : walletRole;
+    if (internalRole) q.set('walletRole', internalRole);
     const suffix = q.toString() ? `?${q.toString()}` : '';
     return fetchWithAuth(`/payment/transactions/user/${userId}/wallet${suffix}`);
   },

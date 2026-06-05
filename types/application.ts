@@ -46,7 +46,9 @@ export interface TaskApplication {
   // Application status
   status: 'pending' | 'accepted' | 'rejected' | 'withdrawn';
   negotiation?: {
+    initialAmount?: number;
     currentAmount: number;
+    finalAmount?: number;
     status: 'none' | 'countered_by_poster' | 'countered_by_tasker' | 'accepted' | 'rejected';
     lastActionBy?: 'poster' | 'tasker';
     history?: Array<{
