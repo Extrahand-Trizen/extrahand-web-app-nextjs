@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import LandingPageClient from "./LandingPageClient";
 
 export const metadata: Metadata = {
-   title: "Post Your Service Requirement | Get Quotes & Hire Experts | ExtraHand",
+   title: "Extrahand | Get Expert Professional Local & Home Services Near You",
    description:
-      "Post your service needs, set your budget & get matched with professionals near you. All services in one place. Simple, fast & best platform.",
+      "Connect with trusted local professionals for plumbing, electrical, cleaning, painting, and repairs. Compare quotes or book services instantly.",
    verification: {
       google: "tHgCYG0CEAgFmlXSEujUdvF3jSdZK8zDMUpuARfrF9Q",
    },
@@ -23,7 +23,7 @@ export default function LandingPage() {
                   url: "https://extrahand.in/",
                   logo: "https://extrahand.in/logo.png",
                   description:
-                     "Post your service needs, set your budget & get matched with professionals near you. All services in one place. Simple, fast & best platform.",
+                     "Connect with trusted local professionals for plumbing, electrical, cleaning, painting, and repairs. Compare quotes or book services instantly.",
                   contactPoint: {
                      "@type": "ContactPoint",
                      telephone: "+91-6281575094",
@@ -52,39 +52,47 @@ export default function LandingPage() {
                         name: "What is ExtraHand?",
                         acceptedAnswer: {
                            "@type": "Answer",
-                           text: "ExtraHand is a platform where you can post your work and find people to do it. It connects you with nearby service providers for different tasks, making your work easy and quick.",
+                           text: "ExtraHand is a local services marketplace that connects customers with verified professionals for home, office, maintenance, repair, and cleaning services.",
                         },
                      },
                      {
                         "@type": "Question",
-                        name: "Can I set my own budget for services?",
+                        name: "How does Choose Your Budget work?",
                         acceptedAnswer: {
                            "@type": "Answer",
-                           text: "Yes, you can mention your budget while posting your requirement and choose a provider that fits your price.",
+                           text: "Customers post a requirement and set their preferred budget. Verified service providers send offers, and customers choose the best one.",
                         },
                      },
                      {
                         "@type": "Question",
-                        name: "Are home service providers verified on ExtraHand?",
+                        name: "What is Instant Service?",
                         acceptedAnswer: {
                            "@type": "Answer",
-                           text: "Yes, all service providers are verified and experienced.",
+                           text: "Instant Service allows customers to book services immediately at fixed prices. A verified professional is assigned automatically.",
                         },
                      },
                      {
                         "@type": "Question",
-                        name: "Is ExtraHand available in Hyderabad?",
+                        name: "Are service providers verified?",
                         acceptedAnswer: {
                            "@type": "Answer",
-                           text: "Yes, ExtraHand is available in Hyderabad and expanding quickly across all areas.",
+                           text: "Yes. Service providers go through a verification process before joining the platform.",
                         },
                      },
                      {
                         "@type": "Question",
-                        name: "Can I book multiple services at once in ExtraHand?",
+                        name: "Can I compare multiple offers?",
                         acceptedAnswer: {
                            "@type": "Answer",
-                           text: "Yes, on ExtraHand you can post multiple tasks or services based on your needs. Each task is handled separately, so you can manage different services at the same time.",
+                           text: "Yes. The Choose Your Budget model allows customers to compare offers from different professionals.",
+                        },
+                     },
+                     {
+                        "@type": "Question",
+                        name: "Can I book emergency services?",
+                        acceptedAnswer: {
+                           "@type": "Answer",
+                           text: "Yes. Instant Service is designed for faster booking and urgent requirements.",
                         },
                      },
                   ],

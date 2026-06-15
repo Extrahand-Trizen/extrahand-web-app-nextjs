@@ -149,15 +149,30 @@ async function _fetchWithAuth(
 
       // Extract error message from backend format
       // Backend uses: { success: false, error: "message", details?: "...", context?: "..." }
+      const nestedErrorData =
+         errorData && typeof errorData.data === "object" ? errorData.data : undefined;
+
       let errorMessage = 
-         errorData.error || 
-         errorData.message || 
+         errorData.error ||
+         errorData.message ||
          errorData.details ||
+         nestedErrorData?.error ||
+         nestedErrorData?.message ||
          `HTTP ${res.status}`;
       
       // If there's additional context/details, append it
       if (errorData.details && errorData.error && errorData.details !== errorData.error) {
          errorMessage = `${errorData.error}: ${errorData.details}`;
+      }
+
+      if (
+         typeof errorMessage === "string" &&
+         /^Request failed with status code \d+$/i.test(errorMessage)
+      ) {
+         errorMessage =
+            nestedErrorData?.error ||
+            nestedErrorData?.message ||
+            errorMessage;
       }
 
       // Create a more informative error

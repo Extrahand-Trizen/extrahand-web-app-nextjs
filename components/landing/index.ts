@@ -7,3 +7,5 @@ export { TestimonialsSection } from "./TestimonialsSection";
 export { FAQSection } from "./FAQSection";
 export { FinalCTASection } from "./FinalCTASection";
 export { CategoriesExplorer } from "./CategoriesExplorer";
+export { PartnerSection } from "./PartnerSection";
+export { WhyDifferentSection } from "./WhyDifferentSection";

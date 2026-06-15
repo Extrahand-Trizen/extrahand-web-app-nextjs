@@ -13,26 +13,32 @@ const faqs: FAQItem[] = [
    {
       question: "What is ExtraHand?",
       answer:
-         "ExtraHand is a platform where you can post your work and find people to do it. It connects you with nearby service providers for different tasks, making your work easy and quick.",
+         "ExtraHand is a local services marketplace that connects customers with verified professionals for home, office, maintenance, repair, and cleaning services.",
    },
    {
-      question: "Can I set my own budget for services?",
+      question: "How does Choose Your Budget work?",
       answer:
-         "Yes, you can mention your budget while posting your requirement and choose a provider that fits your price.",
+         "Customers post a requirement and set their preferred budget. Verified service providers send offers, and customers choose the best one.",
    },
    {
-      question: "Are home service providers verified on ExtraHand?",
-      answer: "Yes, all service providers are verified and experienced.",
-   },
-   {
-      question: "Is ExtraHand available in Hyderabad?",
+      question: "What is Instant Service?",
       answer:
-         "Yes, ExtraHand is available in Hyderabad and expanding quickly across all areas.",
+         "Instant Service allows customers to book services immediately at fixed prices. A verified professional is assigned automatically.",
    },
    {
-      question: "Can I book multiple services at once in ExtraHand?",
+      question: "Are service providers verified?",
       answer:
-         "Yes, on ExtraHand you can post multiple tasks or services based on your needs. Each task is handled separately, so you can manage different services at the same time.",
+         "Yes. Service providers go through a verification process before joining the platform.",
+   },
+   {
+      question: "Can I compare multiple offers?",
+      answer:
+         "Yes. The Choose Your Budget model allows customers to compare offers from different professionals.",
+   },
+   {
+      question: "Can I book emergency services?",
+      answer:
+         "Yes. Instant Service is designed for faster booking and urgent requirements.",
    },
 ];
 

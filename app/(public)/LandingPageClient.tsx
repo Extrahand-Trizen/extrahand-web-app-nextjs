@@ -20,6 +20,14 @@ const TestimonialsSection = dynamic(
    () => import("@/components/landing/TestimonialsSection")
 );
 
+const PartnerSection = dynamic(
+   () => import("@/components/landing/PartnerSection")
+);
+
+const WhyDifferentSection = dynamic(
+   () => import("@/components/landing/WhyDifferentSection")
+);
+
 const FAQSection = dynamic(
    () => import("@/components/landing/FAQSection")
 );
@@ -164,6 +172,8 @@ export default function LandingPageClient() {
          <SocialProofBar />
          <HowItWorksSection />
          <ServicesSection />
+         <PartnerSection />
+         <WhyDifferentSection />
          <TestimonialsSection />
          <FAQSection />
          <FinalCTASection />
