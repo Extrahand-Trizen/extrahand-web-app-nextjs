@@ -154,7 +154,7 @@ export function ConversationView({
                         className="cursor-pointer"
                      >
                         <ExternalLink className="w-4 h-4 mr-2" />
-                        View Task Details
+                        View Work Details
                      </DropdownMenuItem>
                      <DropdownMenuSeparator />
                      <DropdownMenuItem className="cursor-pointer text-amber-600">

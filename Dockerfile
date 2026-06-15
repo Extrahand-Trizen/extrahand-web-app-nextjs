@@ -101,6 +101,9 @@ ENV HOSTNAME=0.0.0.0
 RUN useradd -m -u 1001 nextjs
 
 # Copy ONLY minimal runtime files
+# Standalone bundle already includes its own trimmed node_modules and server.js
+COPY --from=builder --chown=nextjs:nextjs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nextjs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nextjs /app/public ./public
 COPY --from=builder --chown=nextjs:nextjs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nextjs /app/.next/static ./.next/static

@@ -240,7 +240,7 @@ export function VerificationSection({ user }: VerificationSectionProps) {
   const shownToastKeysRef = useRef<Set<string>>(new Set());
 
   const isBusiness = user.userType === "business";
-  const isTaskerRole = user.roles?.includes("tasker") || user.roles?.includes("both");
+  const isTaskerRole = user.roles?.includes("tasker");
   const panData = isBusiness
     ? user.business?.pan
     : {

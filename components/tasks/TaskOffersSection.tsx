@@ -76,6 +76,15 @@ const getApplicationAmount = (application?: TaskApplication | null) => {
    return application?.proposedBudget?.amount ?? 0;
 };
 
+const getEffectiveNegotiatedAmount = (application?: TaskApplication | null) => {
+   return (
+      application?.negotiation?.finalAmount ??
+      application?.negotiation?.currentAmount ??
+      application?.proposedBudget?.amount ??
+      0
+   );
+};
+
 const isDeletedAccountName = (name: string | undefined | null): boolean => {
    return String(name || "").toLowerCase().includes("account deleted");
 };
@@ -267,7 +276,8 @@ export function TaskOffersSection({
       if (!canShowCounterButton(application, actor)) {
          return;
       }
-      const currentAmount = application.negotiation?.currentAmount ?? getApplicationAmount(application);
+      const currentAmount =
+         application.negotiation?.currentAmount ?? getEffectiveNegotiatedAmount(application);
       setCounterApplication(application);
       setCounterAmountInput(String(currentAmount));
    };
@@ -369,7 +379,7 @@ export function TaskOffersSection({
 
    const sortedApplications = [...applications].sort((a, b) => {
       if (sortBy === "price-low")
-         return getApplicationAmount(a) - getApplicationAmount(b);
+         return getEffectiveNegotiatedAmount(a) - getEffectiveNegotiatedAmount(b);
       if (sortBy === "rating") {
          const ratingA = a.applicantProfile?.rating || 0;
          const ratingB = b.applicantProfile?.rating || 0;
@@ -541,7 +551,7 @@ export function TaskOffersSection({
                         {myApplication.status === "pending" && myApplication.negotiation?.status === "countered_by_poster" && (
                            <div className="mt-3 pt-3 border-t border-primary-200">
                               <p className="text-sm font-semibold text-secondary-900 mb-2">
-                                 Client countered with ₹{(myApplication.negotiation.currentAmount ?? getApplicationAmount(myApplication)).toLocaleString()}
+                                 Client countered with ₹{(myApplication.negotiation.currentAmount ?? getEffectiveNegotiatedAmount(myApplication)).toLocaleString()}
                               </p>
                               <div className="flex flex-wrap gap-2">
                                  <Button
@@ -578,7 +588,7 @@ export function TaskOffersSection({
                         {myApplication.status === "pending" && myApplication.negotiation?.status === "accepted" && (
                            <div className="mt-3 pt-3 border-t border-primary-200">
                               <p className="text-sm font-semibold text-green-700">
-                                 Final price agreed: ₹{(myApplication.negotiation.currentAmount ?? getApplicationAmount(myApplication)).toLocaleString()}
+                                 Final price agreed: ₹{getEffectiveNegotiatedAmount(myApplication).toLocaleString()}
                               </p>
                               <p className="text-xs text-secondary-500 mt-1">
                                  Waiting for client to assign and pay.
@@ -664,6 +674,9 @@ export function TaskOffersSection({
                         <div className="space-y-3">
                            {acceptedApplications.map((acceptedApplication) => {
                               const isDeletedApplicant = isDeletedAccountName(acceptedApplication.applicantProfile?.name);
+                              const initialAmount = getApplicationAmount(acceptedApplication);
+                              const effectiveAmount = getEffectiveNegotiatedAmount(acceptedApplication);
+                              const hasNegotiatedDelta = effectiveAmount !== initialAmount;
 
                               return (
                               <div
@@ -762,11 +775,19 @@ export function TaskOffersSection({
                                           {isOwner && (
                                              <>
                                                 <div className="text-xl font-bold text-green-700 mb-1">
-                                                   ₹{(getApplicationAmount(acceptedApplication) * (acceptedApplication.selectedDates?.length || 1)).toLocaleString()}
+                                                   ₹{(effectiveAmount * (acceptedApplication.selectedDates?.length || 1)).toLocaleString()}
                                                 </div>
+                                                <div className="text-[11px] text-green-700 font-semibold mb-0.5">
+                                                   {hasNegotiatedDelta ? "Agreed amount" : "Offer amount"}
+                                                </div>
+                                                {hasNegotiatedDelta ? (
+                                                   <div className="text-xs text-secondary-500 mb-1">
+                                                      Initial offer: ₹{initialAmount.toLocaleString()}
+                                                   </div>
+                                                ) : null}
                                                 {acceptedApplication.selectedDates && acceptedApplication.selectedDates.length > 0 && (
                                                    <div className="text-xs text-secondary-500">
-                                                      ₹{getApplicationAmount(acceptedApplication)} × {acceptedApplication.selectedDates.length} days
+                                                      ₹{effectiveAmount} × {acceptedApplication.selectedDates.length} days
                                                    </div>
                                                 )}
                                                 {acceptedApplication.proposedTime?.estimatedDuration && !acceptedApplication.selectedDates?.length && (
@@ -839,6 +860,9 @@ export function TaskOffersSection({
                         )}
                         {otherApplications.map((application) => {
                      const isDeletedApplicant = isDeletedAccountName(application.applicantProfile?.name);
+                     const initialAmount = getApplicationAmount(application);
+                     const effectiveAmount = getEffectiveNegotiatedAmount(application);
+                     const hasNegotiatedDelta = effectiveAmount !== initialAmount;
                      const user = {
                         name: application.applicantProfile?.name || (application.applicantId ? `User ${String(application.applicantId).slice(-4)}` : "Unknown User"),
                         photoURL: application.applicantProfile?.photoURL || null,
@@ -964,11 +988,19 @@ export function TaskOffersSection({
                                        <>
                                           <div className="text-lg font-bold text-primary-600 mb-1">
                                              ₹
-                                             {(getApplicationAmount(application) * (application.selectedDates?.length || 1)).toLocaleString()}
+                                             {(effectiveAmount * (application.selectedDates?.length || 1)).toLocaleString()}
                                           </div>
+                                          <div className="text-[11px] text-primary-700 font-semibold mb-0.5">
+                                             {hasNegotiatedDelta ? "Current amount" : "Initial offer"}
+                                          </div>
+                                          {hasNegotiatedDelta ? (
+                                             <div className="text-xs text-secondary-500 mb-1">
+                                                Initial offer: ₹{initialAmount.toLocaleString()}
+                                             </div>
+                                          ) : null}
                                           {application.selectedDates && application.selectedDates.length > 0 && (
                                              <div className="text-xs text-secondary-400 font-medium mb-1">
-                                                ₹{getApplicationAmount(application)} × {application.selectedDates.length} days
+                                                ₹{effectiveAmount} × {application.selectedDates.length} days
                                              </div>
                                           )}
                                        </>
@@ -1044,7 +1076,7 @@ export function TaskOffersSection({
                                  <>
                                     <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 mb-3">
                                        <p className="text-xs text-amber-800 font-bold">
-                                                               Helper countered with ₹{(application.negotiation?.currentAmount ?? getApplicationAmount(application)).toLocaleString()}
+                                                               Helper countered with ₹{(application.negotiation?.currentAmount ?? getEffectiveNegotiatedAmount(application)).toLocaleString()}
                                        </p>
                                     </div>
                                     <div className="flex gap-2 w-full flex-wrap">
@@ -1084,7 +1116,7 @@ export function TaskOffersSection({
                                     <div>
                                        <p className="text-xs text-green-800 font-bold">✓ Helper accepted</p>
                                        <p className="text-[11px] text-green-700 mt-1">
-                                          Agreed price: ₹{(application.negotiation?.currentAmount ?? application.proposedBudget?.amount ?? 0).toLocaleString()}
+                                          Agreed price: ₹{getEffectiveNegotiatedAmount(application).toLocaleString()}
                                        </p>
                                     </div>
                                  </div>
@@ -1269,10 +1301,13 @@ export function TaskOffersSection({
                         ? (selectedApplication.taskId as { description: string }).description
                         : undefined,
                }}
-               application={{
+                  application={{
                   id: selectedApplication._id,
                   applicantId: selectedApplication.applicantId as string,
-                  proposedBudget: selectedApplication.proposedBudget,
+                     proposedBudget: {
+                        ...selectedApplication.proposedBudget,
+                        amount: getEffectiveNegotiatedAmount(selectedApplication),
+                     },
                   selectedDates: selectedApplication.selectedDates,
                }}
                posterUid={currentUser?.uid ?? ""}

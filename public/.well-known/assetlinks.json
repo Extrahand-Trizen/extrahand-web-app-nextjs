@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.extrahand",
+      "sha256_cert_fingerprints": [
+        "90:BE:94:52:EA:7C:34:9C:25:10:91:00:85:8D:10:1B:A9:02:52:B2:9C:E2:D7:70:BA:4B:8E:F3:7A:11:DA:CA",
+        "FA:C6:17:45:DC:09:03:78:6F:B9:ED:E6:2A:96:2B:39:9F:73:48:F0:BB:6F:89:9B:83:32:66:75:91:03:3B:9C"
+      ]
+    }
+  }
+]

@@ -13,7 +13,6 @@ import LoadingSpinner from '../LoadingSpinner';
 import { toast } from 'sonner';
 
 const REFERRAL_SOURCES = ['referral_signup', 'referral_welcome', 'referral_task_bonus'];
-const COIN_RATE = 0.20; // ₹ per coin
 
 function coinBadge(source: string) {
   const map: Record<string, { label: string; cls: string }> = {
@@ -37,6 +36,14 @@ export default function ReferralDashboardSimple({ className = '' }: ReferralSimp
   const uid = userData?.uid ?? '';
 
   // Dashboard stats from user-service
+  const { data: program } = useQuery({
+    queryKey: ['referralProgram'],
+    queryFn: () => referralsApi.getReferralProgram(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const coinRate = program?.coinValueInr ?? 0.2;
+
   const { data: dashboard, isLoading: dashLoading, error: dashError } = useQuery({
     queryKey: ['referralSimple'],
     queryFn: () => referralsApi.getDashboard(),
@@ -60,7 +67,7 @@ export default function ReferralDashboardSimple({ className = '' }: ReferralSimp
     return REFERRAL_SOURCES.includes(src);
   });
   const totalReferralCoins = referralTxns.reduce((s, tx) => s + Number(tx.coins), 0);
-  const totalReferralRupees = (totalReferralCoins * COIN_RATE).toFixed(2);
+  const totalReferralRupees = (totalReferralCoins * coinRate).toFixed(2);
 
   if (isLoading) {
     return (

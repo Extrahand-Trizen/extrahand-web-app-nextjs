@@ -59,7 +59,29 @@ export interface BatchJobLog {
   logs: string[];
 }
 
+export interface ReferralProgramMarketing {
+  programId: string;
+  version: number;
+  coinValueInr: number;
+  displayName: string;
+  qualificationMode: string;
+  qualificationWindowDays: number;
+  referrerCoins: number;
+  refereeCoins: number;
+  referrerRupees: number;
+  refereeRupees: number;
+}
+
 export const referralsApi = {
+  /**
+   * Active referral program marketing numbers
+   * GET /api/v1/user/referral-program
+   */
+  async getReferralProgram(): Promise<ReferralProgramMarketing> {
+    const response = await fetchWithAuth('user/referral-program');
+    return response.data || response;
+  },
+
   /**
    * Get referral dashboard with stats and recent transactions
    * GET /api/v1/user/referral-dashboard

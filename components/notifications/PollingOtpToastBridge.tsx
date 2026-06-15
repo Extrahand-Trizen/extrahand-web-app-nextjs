@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { toast } from "sonner";
 import { useInAppNotifications } from "@/hooks/useInAppNotifications";
+import { useAuth } from "@/lib/auth/context";
 import type { InAppNotification } from "@/lib/notifications/pollingService";
 
 const DISMISSED_OTP_TOASTS_KEY = "dismissed-task-start-otp-toasts";
@@ -36,11 +37,17 @@ function saveDismissedOtpToasts(ids: Set<string>) {
 }
 
 export function PollingOtpToastBridge() {
+  const { currentUser, loading } = useAuth();
   const shownToastIdsRef = useRef<Set<string>>(new Set());
   const dismissedToastIdsRef = useRef<Set<string>>(loadDismissedOtpToasts());
 
+  // Only poll when the user is authenticated. Anonymous visitors have no
+  // notifications and would otherwise trigger a backend call every 10 s.
+  const isAuthenticated = !loading && Boolean(currentUser);
+
   const { markAsRead } = useInAppNotifications({
-    pollingInterval: 10000,
+    enabled: isAuthenticated,
+    pollingInterval: 60000,
     onNotification: (notification: InAppNotification) => {
       if (notification.data?.otpType !== "task_start") return;
 

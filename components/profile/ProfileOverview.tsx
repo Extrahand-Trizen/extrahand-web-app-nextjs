@@ -180,9 +180,9 @@ export function ProfileOverview({ user, onNavigate, loading }: ProfileOverviewPr
       (v) => v.status === "verified"
    ).length;
    const isTasker =
-      user.roles?.includes("tasker") || user.roles?.includes("both");
+      user.roles?.includes("tasker");
    const isPoster =
-      user.roles?.includes("poster") || user.roles?.includes("both");
+      user.roles?.includes("poster") || user.roles?.includes("requester");
    const isProfessionalTasker = isTasker && hasVerifiedCertificate(user);
 
    if (loading) {
