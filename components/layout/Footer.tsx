@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { APP_STORE_URL } from '@/lib/openAppBridge';
 
 const footerColumns = [
   {
@@ -172,7 +173,9 @@ export const Footer: React.FC = () => {
           {/* App Download Buttons */}
           <div className="flex flex-col md:flex-row gap-3 md:gap-6.5 items-center">
             <Link
-              href="/coming-soon/mobile-app"
+              href={APP_STORE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               aria-label="Download on the App Store"
               className="inline-block no-underline"
             >

@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
-import { LandingHeader } from "@/components/layout/LandingHeader";
+import { LandingTopBar } from "@/components/layout/LandingTopBar";
 import { LandingFooter } from "@/components/layout/LandingFooter";
 
 type RouteChromeVariant = "public" | "protected";
@@ -18,7 +18,7 @@ export function RouteChrome({ children, variant }: RouteChromeProps) {
             suppressHydrationWarning
             style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}
          >
-            <LandingHeader />
+            <LandingTopBar />
             <main
                style={{
                   flex: 1,
@@ -35,7 +35,7 @@ export function RouteChrome({ children, variant }: RouteChromeProps) {
 
    return (
       <div suppressHydrationWarning>
-         <LandingHeader />
+         <LandingTopBar />
          <main className="min-h-[calc(100vh - 110px)]">
             <div className="w-full mx-auto">{children}</div>
          </main>
