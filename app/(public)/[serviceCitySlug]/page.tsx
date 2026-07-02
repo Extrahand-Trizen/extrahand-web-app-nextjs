@@ -7,10 +7,14 @@ import {
    type HyderabadServicePage,
    hyderabadServicePageSlugs,
 } from "@/lib/data/hyderabad-service-pages";
+import { getPublishedSeoPage } from "@/lib/api/endpoints/seoPages";
+import SeoPageRenderer from "@/components/SeoPageRenderer";
 
 interface ServiceCityPageProps {
    params: Promise<{ serviceCitySlug: string }>;
 }
+
+export const dynamic = "force-dynamic";
 
 interface ServicePageEnhancement {
    imagePath: string;
@@ -448,6 +452,16 @@ export async function generateMetadata({
    params,
 }: ServiceCityPageProps): Promise<Metadata> {
    const { serviceCitySlug } = await params;
+
+   const cmsPage = await getPublishedSeoPage(serviceCitySlug);
+   if (cmsPage) {
+      return {
+         title: cmsPage.metaTitle,
+         description: cmsPage.metaDescription,
+         alternates: { canonical: cmsPage.canonicalUrl },
+      };
+   }
+
    const servicePage = getHyderabadServicePageBySlug(serviceCitySlug);
 
    if (!servicePage) {
@@ -491,6 +505,28 @@ export async function generateMetadata({
 
 export default async function ServiceCityPage({ params }: ServiceCityPageProps) {
    const { serviceCitySlug } = await params;
+
+   const cmsPage = await getPublishedSeoPage(serviceCitySlug);
+   if (cmsPage) {
+      return (
+         <>
+            {cmsPage.faqSchema && (
+               <script
+                  type="application/ld+json"
+                  dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPage.faqSchema) }}
+               />
+            )}
+            {cmsPage.breadcrumbSchema && (
+               <script
+                  type="application/ld+json"
+                  dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPage.breadcrumbSchema) }}
+               />
+            )}
+            <SeoPageRenderer page={cmsPage} />
+         </>
+      );
+   }
+
    const servicePage = getHyderabadServicePageBySlug(serviceCitySlug);
 
    if (!servicePage) {

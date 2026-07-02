@@ -6,6 +6,8 @@ import {
    hyderabadServicePageSlugs,
 } from "@/lib/data/hyderabad-service-pages";
 import { getCityBySlug } from "@/lib/data/cities";
+import { getPublishedSeoPage } from "@/lib/api/endpoints/seoPages";
+import SeoPageRenderer from "@/components/SeoPageRenderer";
 
 interface HyderabadAreaServicePageProps {
    params: Promise<{ area: string; serviceCitySlug: string }>;
@@ -132,6 +134,18 @@ export async function generateMetadata({
    params,
 }: HyderabadAreaServicePageProps): Promise<Metadata> {
    const { area, serviceCitySlug } = await params;
+   const categorySlugPart = serviceCitySlug.replace(/-in-hyderabad$/, "");
+   const areaSlug = `${categorySlugPart}-in-${area}`;
+
+   const cmsPage = await getPublishedSeoPage(areaSlug);
+   if (cmsPage) {
+      return {
+         title: cmsPage.metaTitle,
+         description: cmsPage.metaDescription,
+         alternates: { canonical: cmsPage.canonicalUrl },
+      };
+   }
+
    const areaName = fromAreaSlug(area);
    const servicePage = getHyderabadServicePageBySlug(serviceCitySlug);
 
@@ -154,6 +168,30 @@ export default async function HyderabadAreaServicePage({
    params,
 }: HyderabadAreaServicePageProps) {
    const { area, serviceCitySlug } = await params;
+   const categorySlugPart = serviceCitySlug.replace(/-in-hyderabad$/, "");
+   const areaSlug = `${categorySlugPart}-in-${area}`;
+
+   const cmsPage = await getPublishedSeoPage(areaSlug);
+   if (cmsPage) {
+      return (
+         <>
+            {cmsPage.faqSchema && (
+               <script
+                  type="application/ld+json"
+                  dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPage.faqSchema) }}
+               />
+            )}
+            {cmsPage.breadcrumbSchema && (
+               <script
+                  type="application/ld+json"
+                  dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPage.breadcrumbSchema) }}
+               />
+            )}
+            <SeoPageRenderer page={cmsPage} />
+         </>
+      );
+   }
+
    const areaName = fromAreaSlug(area);
    const servicePage = getHyderabadServicePageBySlug(serviceCitySlug);
 
