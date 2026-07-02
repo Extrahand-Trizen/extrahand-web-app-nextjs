@@ -3,8 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { admin } from "@/lib/firebase-admin";
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { payoutId: string } }
+  request: NextRequest
 ) {
   try {
     // Get Bearer token from Authorization header
@@ -16,7 +15,7 @@ export async function GET(
     const idToken = authHeader.slice(7);
     await getAuth(admin).verifyIdToken(idToken); // Verify user is authenticated
 
-    const { payoutId } = params;
+    const payoutId = request.nextUrl.searchParams.get("payoutId");
 
     if (!payoutId) {
       return NextResponse.json({ error: "payoutId is required" }, { status: 400 });

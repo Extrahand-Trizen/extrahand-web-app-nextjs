@@ -159,9 +159,9 @@ export default function AvailableTasksScreen() {
                               {getTaskCategoryLabel(task)}
                            </span>
                            <span className="text-xs text-gray-600 flex-1 text-right">
-                              {!task.location?.coordinates || !task.location?.address
-                                 ? "Remote"
-                                 : task.location.address || "Location not specified"}
+                            {!task.location?.address
+                                  ? "Remote"
+                                  : task.location.address || "Location not specified"}
                            </span>
                         </div>
 

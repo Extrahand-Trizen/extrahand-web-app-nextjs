@@ -97,6 +97,7 @@ export interface Task {
 }
 
 export interface TaskListResponse {
+  success?: boolean;
   tasks: Task[];
   pagination: {
     page: number;

@@ -39,18 +39,13 @@ function buildAuthHeaders(request: NextRequest): HeadersInit {
 }
 
 type RouteParams = {
-  params: {
-    notificationId: string;
-  } | Promise<{
+  params: Promise<{
     notificationId: string;
   }>;
 };
 
-async function resolveRouteParams(routeParams: RouteParams['params']) {
-  if (routeParams && typeof (routeParams as Promise<{ notificationId: string }>).then === 'function') {
-    return await routeParams;
-  }
-  return routeParams as { notificationId: string };
+async function resolveRouteParams(routeParams: Promise<{ notificationId: string }>) {
+  return await routeParams;
 }
 
 async function parseJsonIfPresent(response: Response): Promise<any | null> {

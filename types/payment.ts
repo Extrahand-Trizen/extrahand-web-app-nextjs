@@ -190,3 +190,34 @@ export interface ExtraCoinsWallet {
   usedHistory: ExtraCoinsWalletEntry[];
   expiringSoon: ExtraCoinsWalletEntry[];
 }
+
+export interface PaymentError {
+  code: string;
+  userMessage: string;
+  retryable: boolean;
+  suggestedAction?: string;
+}
+
+export interface PaymentSummary {
+  taskId: string;
+  taskTitle: string;
+  taskAmount: number;
+  serviceFee?: number;
+  platformFee: number;
+  totalAmount: number;
+  currency: string;
+  taskerName: string;
+}
+
+export interface PaymentTransaction {
+  id: string;
+  type: "payment" | "payout" | "refund" | "fee";
+  amount: number;
+  currency: string;
+  status: "pending" | "processing" | "completed" | "failed";
+  description?: string;
+  taskId?: string;
+  taskTitle?: string;
+  createdAt: Date | string;
+  completedAt?: Date | string;
+}

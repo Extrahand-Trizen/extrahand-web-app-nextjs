@@ -166,7 +166,7 @@ export default function ChatPage() {
           (profile as any)?.displayName ||
           (profile as any)?.fullName ||
           "Unknown";
-        const profileImage = profile?.profileImage || (profile as any)?.photoURL;
+        const profileImage = profile?.photoURL || (profile as any)?.profileImage;
         profileCacheRef.current.set(otherUserId, { name, profileImage });
         return {
           ...chat,

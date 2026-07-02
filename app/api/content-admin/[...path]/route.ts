@@ -23,9 +23,9 @@ type RouteParams = {
 
 export async function GET(
    request: NextRequest,
-   context: { params: RouteParams }
+   context: { params: Promise<RouteParams> }
 ) {
-   const parts = context.params.path || [];
+   const { path: parts = [] } = await context.params;
    const pathname = parts.length ? `/${parts.join("/")}` : "";
    const url = `${getContentAdminBaseUrl()}${pathname}${request.nextUrl.search}`;
 

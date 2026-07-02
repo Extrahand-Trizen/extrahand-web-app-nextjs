@@ -218,7 +218,7 @@ export default function HomePage() {
                   {/* Dynamic Action Card Section - Full Width, Centered Content */}
                   <div>
                      <div className="w-full mx-auto">
-                        {user && <DynamicActionCard user={user} />}
+                        {user && <DynamicActionCard user={user as any} />}
                      </div>
                   </div>
                </div>

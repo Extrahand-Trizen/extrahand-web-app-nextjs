@@ -253,14 +253,14 @@ export function PaymentConfirmationModal({
           ...(posterPhone ? { posterPhone } : {}),
         },
         autoReleaseAfterDays: 5 / (24 * 60), // 5 minutes for testing
-        taskCategory: task.categorySlug ?? task.category ?? undefined,
+        taskCategory: (task as any).categorySlug ?? task.category ?? undefined,
       });
 
       if (!escrowResponse.success || !escrowResponse.order) {
         throw new Error(escrowResponse.error || "Failed to create payment order");
       }
 
-      const { order, escrow } = escrowResponse as {
+      const { order, escrow } = (escrowResponse as unknown) as {
         order?: Record<string, unknown>;
         escrow?: Record<string, unknown>;
         keyId?: string;
@@ -284,7 +284,7 @@ export function PaymentConfirmationModal({
         currency: String(order?.currency || "INR"),
       };
 
-      setEscrowId(escrow?.escrowId || null);
+      setEscrowId(typeof escrow?.escrowId === 'string' ? escrow.escrowId : null);
 
       // Step 2: Open Razorpay checkout
       console.log("Opening Razorpay checkout...");
@@ -311,7 +311,7 @@ export function PaymentConfirmationModal({
 
               if (verifyResponse.success) {
                 console.log("✅ Payment verified successfully");
-                onSuccess(escrow?.escrowId || "", response.razorpay_payment_id);
+                onSuccess(String(escrow?.escrowId || ""), response.razorpay_payment_id);
                 onOpenChange(false);
               } else {
                 throw new Error(verifyResponse.error || "Payment verification failed");

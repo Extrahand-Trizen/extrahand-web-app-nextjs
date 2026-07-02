@@ -99,7 +99,7 @@ export default function LandingPageClient() {
       if (loading || !isAuthenticated) return;
 
       let cancelled = false;
-      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+      let timeoutId: number | undefined;
 
       const syncHashAllow = () => {
          if (typeof window === "undefined") return false;

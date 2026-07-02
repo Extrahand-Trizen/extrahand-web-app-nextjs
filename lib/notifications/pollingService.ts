@@ -3,8 +3,6 @@
  * Provides fallback/alternative to FCM for fetching notifications
  */
 
-import logger from '@/lib/config/logger';
-
 export interface InAppNotification {
   id: string;
   userId: string;

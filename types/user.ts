@@ -129,7 +129,7 @@ export interface UserProfile {
          verifiedAt?: Date;
       };
       gstNumber?: string;
-      isGSTVerified: boolean;
+      isGSTVerified?: boolean;
       gstVerifiedAt?: Date;
       verificationStatus?: {
          level: number; // 0: none, 1: PAN+Bank, 2: +GST+Aadhaar, 3: +Documents
