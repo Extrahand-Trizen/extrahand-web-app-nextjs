@@ -1,5 +1,7 @@
 import type { MetadataRoute } from "next";
 
+export const dynamic = "force-static";
+
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://extrahand.in";
 
 export default function robots(): MetadataRoute.Robots {

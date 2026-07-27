@@ -4,6 +4,8 @@ import { hyderabadServicePageSlugs } from "@/lib/data/hyderabad-service-pages";
 import { manualServicePrimaryPaths } from "@/lib/data/manual-services-catalog";
 import { categoriesApi } from "@/lib/api/endpoints/categories";
 
+export const dynamic = "force-static";
+
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://extrahand.in";
 
 function joinUrl(base: string, path: string) {

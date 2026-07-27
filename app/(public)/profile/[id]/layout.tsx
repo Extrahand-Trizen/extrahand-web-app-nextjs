@@ -7,6 +7,11 @@ type LayoutProps = {
   params: Promise<{ id: string }>;
 };
 
+/** Required for `output: 'export'` with dynamic segments. */
+export function generateStaticParams() {
+  return [{ id: "_" }];
+}
+
 async function fetchProfileName(idOrHandle: string): Promise<{ id: string; name?: string } | null> {
   const { userId } = parsePublicProfileHandle(idOrHandle);
   const id = userId || idOrHandle;
@@ -74,4 +79,3 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
 export default function ProfileLayout({ children }: LayoutProps) {
   return <>{children}</>;
 }
-

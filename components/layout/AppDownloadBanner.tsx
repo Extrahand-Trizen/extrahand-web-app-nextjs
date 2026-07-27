@@ -39,7 +39,7 @@ export function AppDownloadBanner({ onDismiss }: AppDownloadBannerProps) {
                   <div className="flex items-center gap-3 min-w-0">
                      <div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-secondary-100 bg-white shadow-sm">
                         <Image
-                           src="/assets/images/logo.webp"
+                           src="./assets/images/logo.webp"
                            alt="ExtraHand"
                            width={24}
                            height={24}

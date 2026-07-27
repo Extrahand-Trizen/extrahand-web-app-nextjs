@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth/context";
@@ -10,13 +9,8 @@ import { EnvironmentLogger } from "@/components/EnvironmentLogger";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { PollingOtpToastBridge } from "@/components/notifications/PollingOtpToastBridge";
 
-
-const inter = Inter({
-   subsets: ["latin"],
-   variable: "--font-inter",
-   display: "swap",
-   preload: false,
-});
+// Avoid next/font here: relative assetPrefix (`./`) required for MinIO subfolder hosting
+// is incompatible with next/font's assetPrefix validation.
 
 export const metadata: Metadata = {
    title: "ExtraHand – Hire Help or Earn Money Near You",
@@ -27,11 +21,11 @@ export const metadata: Metadata = {
    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://extrahand.in"),
    icons: {
       icon: [
-         { url: "/icon.svg?v=3", type: "image/svg+xml" },
-         { url: "/logo.webp", type: "image/webp" },
+         { url: "./icon.svg?v=3", type: "image/svg+xml" },
+         { url: "./logo.webp", type: "image/webp" },
       ],
-      shortcut: "/icon.svg?v=3",
-      apple: "/logo.webp?v=3",
+      shortcut: "./icon.svg?v=3",
+      apple: "./logo.webp?v=3",
    },
    openGraph: {
       type: "website",
@@ -68,11 +62,18 @@ export default function RootLayout({
 }>) {
    return (
       <html lang="en" suppressHydrationWarning style={{ scrollBehavior: 'auto' }}>
-         <head />
+         <head>
+            <link rel="preconnect" href="https://fonts.googleapis.com" />
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+            <link
+               href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+               rel="stylesheet"
+            />
+         </head>
          <body
-            className={`${inter.variable} font-sans antialiased`}
+            className="font-sans antialiased"
             suppressHydrationWarning
-            style={{ margin: 0, padding: 0, overflowX: 'hidden' }}
+            style={{ margin: 0, padding: 0, overflowX: 'hidden', ['--font-inter' as string]: "'Inter', sans-serif" }}
          >
             <EnvironmentLogger />
             <ErrorBoundary>

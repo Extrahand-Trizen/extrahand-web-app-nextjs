@@ -14,8 +14,6 @@ interface ServiceCityPageProps {
    params: Promise<{ serviceCitySlug: string }>;
 }
 
-export const dynamic = "force-dynamic";
-
 interface ServicePageEnhancement {
    imagePath: string;
    overview: string;
