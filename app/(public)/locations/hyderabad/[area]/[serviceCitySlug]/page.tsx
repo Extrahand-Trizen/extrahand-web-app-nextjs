@@ -295,8 +295,23 @@ export default async function HyderabadAreaServicePage({
       })() : null;
 
    return (
-      <SeoPageWrapper slug={areaSlug} initialPage={cmsPage}>
-         {staticFallback}
-      </SeoPageWrapper>
+      <>
+         {/* JSON-LD schemas in server component = baked into static HTML at build time */}
+         {cmsPage?.faqSchema && (
+            <script
+               type="application/ld+json"
+               dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPage.faqSchema) }}
+            />
+         )}
+         {cmsPage?.breadcrumbSchema && (
+            <script
+               type="application/ld+json"
+               dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPage.breadcrumbSchema) }}
+            />
+         )}
+         <SeoPageWrapper slug={areaSlug} initialPage={cmsPage}>
+            {staticFallback}
+         </SeoPageWrapper>
+      </>
    );
 }

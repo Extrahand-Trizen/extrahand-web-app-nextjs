@@ -10,6 +10,15 @@ interface SeoPageWrapperProps {
   children: React.ReactNode;
 }
 
+/**
+ * SeoPageWrapper — client component that:
+ *  1. Renders CMS SeoPageRenderer if a page is available (either from SSG or client fetch)
+ *  2. Falls back to static `children` if no CMS page is found
+ *
+ * NOTE: JSON-LD schema <script> tags are intentionally NOT rendered here.
+ * They must be rendered in the parent server component so they appear in the
+ * initial static HTML (required for SEO / Google Rich Results).
+ */
 export default function SeoPageWrapper({
   slug,
   initialPage = null,
@@ -18,11 +27,13 @@ export default function SeoPageWrapper({
   const [cmsPage, setCmsPage] = useState<SeoPage | null>(initialPage);
 
   useEffect(() => {
+    // If already have a page from SSG, keep it
     if (initialPage) {
       setCmsPage(initialPage);
       return;
     }
 
+    // Client-side fallback: fetch CMS page when SSG didn't get it
     let isMounted = true;
     getPublishedSeoPage(slug).then((fetchedPage) => {
       if (isMounted && fetchedPage) {
@@ -36,24 +47,9 @@ export default function SeoPageWrapper({
   }, [slug, initialPage]);
 
   if (cmsPage) {
-    return (
-      <>
-        {cmsPage.faqSchema && (
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPage.faqSchema) }}
-          />
-        )}
-        {cmsPage.breadcrumbSchema && (
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPage.breadcrumbSchema) }}
-          />
-        )}
-        <SeoPageRenderer page={cmsPage} />
-      </>
-    );
+    return <SeoPageRenderer page={cmsPage} />;
   }
 
   return <>{children}</>;
 }
+

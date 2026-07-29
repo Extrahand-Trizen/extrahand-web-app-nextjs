@@ -543,16 +543,31 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
    }
 
    return (
-      <SeoPageWrapper slug={serviceCitySlug} initialPage={cmsPage}>
-         <main className="min-h-screen bg-linear-to-b from-white to-secondary-50">
-         <section className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:px-8 lg:py-16">
-            <div>
-               <p className="text-sm font-semibold uppercase tracking-wide text-primary-600">
-                  Hyderabad Local Services
-               </p>
-               <h1 className="mt-3 text-3xl font-bold text-secondary-900 sm:text-4xl">
-                  {servicePage.serviceName} in Hyderabad
-               </h1>
+      <>
+         {/* JSON-LD schemas rendered in server component = baked into static HTML at build time.
+             This ensures Google Rich Results Test, Bing, and other crawlers find them without JS. */}
+         {cmsPage?.faqSchema && (
+            <script
+               type="application/ld+json"
+               dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPage.faqSchema) }}
+            />
+         )}
+         {cmsPage?.breadcrumbSchema && (
+            <script
+               type="application/ld+json"
+               dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPage.breadcrumbSchema) }}
+            />
+         )}
+         <SeoPageWrapper slug={serviceCitySlug} initialPage={cmsPage}>
+            <main className="min-h-screen bg-linear-to-b from-white to-secondary-50">
+            <section className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:px-8 lg:py-16">
+               <div>
+                  <p className="text-sm font-semibold uppercase tracking-wide text-primary-600">
+                     Hyderabad Local Services
+                  </p>
+                  <h1 className="mt-3 text-3xl font-bold text-secondary-900 sm:text-4xl">
+                     {servicePage.serviceName} in Hyderabad
+                  </h1>
                <p className="mt-4 max-w-2xl text-base text-secondary-700 sm:text-lg">
                   {servicePage.heroDescription}
                </p>
@@ -748,5 +763,6 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
          </section>
       </main>
       </SeoPageWrapper>
+      </>
    );
 }
