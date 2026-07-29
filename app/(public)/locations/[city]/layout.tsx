@@ -1,8 +1,13 @@
+import { getAllCitySlugs } from "@/lib/data/cities";
+
 /** Required for `output: 'export'` with dynamic segments. */
 export function generateStaticParams() {
-  return [{ city: "_" }];
+   const slugs = getAllCitySlugs();
+   return slugs.map((slug) => ({
+      city: slug,
+   }));
 }
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return children;
+   return children;
 }

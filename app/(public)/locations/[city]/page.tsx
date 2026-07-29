@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { getCityBySlug } from "@/lib/data/cities";
+import { getCityBySlug, getAllCitySlugs } from "@/lib/data/cities";
 import { getFeaturedCategories } from "@/lib/data/categories";
 import { CityHero } from "@/components/locations/CityHero";
 import { ServiceCategoriesGrid } from "@/components/locations/ServiceCategoriesGrid";
@@ -128,3 +128,9 @@ export default async function CityPage({ params }: PageProps) {
    );
 }
 
+export async function generateStaticParams() {
+   const slugs = getAllCitySlugs();
+   return slugs.map((slug) => ({
+      city: slug,
+   }));
+}

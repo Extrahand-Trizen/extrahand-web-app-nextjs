@@ -21,11 +21,14 @@ export const metadata: Metadata = {
    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://extrahand.in"),
    icons: {
       icon: [
-         { url: "./icon.svg?v=3", type: "image/svg+xml" },
-         { url: "./logo.webp", type: "image/webp" },
+         { url: "/icon.svg?v=3", type: "image/svg+xml" },
+         { url: "/logo.webp", type: "image/webp" },
       ],
-      shortcut: "./icon.svg?v=3",
-      apple: "./logo.webp?v=3",
+      shortcut: "/icon.svg?v=3",
+      apple: "/logo.webp?v=3",
+      other: [
+         { url: '/favicon.ico', type: 'image/x-icon' }
+      ],
    },
    openGraph: {
       type: "website",
@@ -69,6 +72,9 @@ export default function RootLayout({
                href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
                rel="stylesheet"
             />
+               <link rel="shortcut icon" href="/favicon.ico" />
+               <link rel="icon" href="/icon.svg?v=3" type="image/svg+xml" />
+               <link rel="icon" href="/logo.webp" type="image/webp" />
          </head>
          <body
             className="font-sans antialiased"
