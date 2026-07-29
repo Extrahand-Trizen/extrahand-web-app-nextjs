@@ -135,7 +135,7 @@ export const Header: React.FC = () => {
          <div className="flex flex-row items-center flex-shrink-0">
             <Link href="/" className="flex items-center gap-2">
                <img
-                  src="./assets/images/logo.webp"
+                  src="/assets/images/logo.webp"
                   alt="ExtraHand logo"
                   className="h-8 w-8"
                   onError={(e) => {

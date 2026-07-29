@@ -118,7 +118,7 @@ export const LandingFooter: React.FC = () => {
               <div className="relative flex items-center justify-center size-8 md:size-12 shrink-0">
                 <div className="absolute w-[75%] h-[75%] bg-white rounded-full z-0"></div>
                 <Image
-                  src="./assets/images/logo.webp"
+                  src="/assets/images/logo.webp"
                   alt="ExtraHand logo"
                   width={48}
                   height={48}
