@@ -144,6 +144,17 @@ export async function generateMetadata({
          title: cmsPage.metaTitle,
          description: cmsPage.metaDescription,
          alternates: { canonical: cmsPage.canonicalUrl },
+         openGraph: {
+            title: cmsPage.metaTitle,
+            description: cmsPage.metaDescription,
+            url: cmsPage.canonicalUrl,
+            type: "website",
+         },
+         twitter: {
+            card: "summary_large_image",
+            title: cmsPage.metaTitle,
+            description: cmsPage.metaDescription,
+         },
       };
    }
 
@@ -156,12 +167,32 @@ export async function generateMetadata({
       };
    }
 
+   const areaCanonicalPath = `/locations/hyderabad/${area}/${serviceCitySlug}`;
+
    return {
       title: `${servicePage.serviceName} in ${areaName}, Hyderabad | ExtraHand`,
       description: servicePage.shortDescription.replaceAll(
          "in Hyderabad",
          `in ${areaName}, Hyderabad`
       ),
+      alternates: { canonical: areaCanonicalPath },
+      openGraph: {
+         title: `${servicePage.serviceName} in ${areaName}, Hyderabad`,
+         description: servicePage.shortDescription.replaceAll(
+            "in Hyderabad",
+            `in ${areaName}, Hyderabad`
+         ),
+         url: `${process.env.NEXT_PUBLIC_APP_URL || "https://extrahand.in"}${areaCanonicalPath}`,
+         type: "website",
+      },
+      twitter: {
+         card: "summary_large_image",
+         title: `${servicePage.serviceName} in ${areaName}, Hyderabad | ExtraHand`,
+         description: servicePage.shortDescription.replaceAll(
+            "in Hyderabad",
+            `in ${areaName}, Hyderabad`
+         ),
+      },
    };
 }
 

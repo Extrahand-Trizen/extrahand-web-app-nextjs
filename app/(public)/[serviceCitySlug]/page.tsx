@@ -458,6 +458,17 @@ export async function generateMetadata({
          title: cmsPage.metaTitle,
          description: cmsPage.metaDescription,
          alternates: { canonical: cmsPage.canonicalUrl },
+         openGraph: {
+            title: cmsPage.metaTitle,
+            description: cmsPage.metaDescription,
+            url: cmsPage.canonicalUrl,
+            type: "website",
+         },
+         twitter: {
+            card: "summary_large_image",
+            title: cmsPage.metaTitle,
+            description: cmsPage.metaDescription,
+         },
       };
    }
 

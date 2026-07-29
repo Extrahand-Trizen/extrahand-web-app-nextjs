@@ -55,16 +55,84 @@ export interface SeoPage {
   isPublished: boolean;
 }
 
+// TEMPORARY DIAGNOSTIC LOGGING — remove after debugging
+const SEO_ENV = typeof window === "undefined" ? "SERVER" : "BROWSER";
+console.log("[SEO BUILD] Module loaded | CONTENT_ADMIN_URL =", CONTENT_ADMIN_URL, "| Env =", SEO_ENV);
+
 export async function getPublishedSeoPage(slug: string): Promise<SeoPage | null> {
+  const url = `${CONTENT_ADMIN_URL}/api/seo-pages/published?slug=${encodeURIComponent(slug)}`;
+  console.log("[SEO FETCH] | slug =", slug, "| url =", url, "| env =", SEO_ENV);
+
   try {
-    const res = await fetch(
-      `${CONTENT_ADMIN_URL}/api/seo-pages/published?slug=${encodeURIComponent(slug)}`,
-      { cache: 'no-store' }
+    // NOTE: no cache option = default 'force-cache'.
+    // cache: 'no-store' would mark the route as dynamic and BLOCK static export
+    // (output: 'export' requires all routes to be statically pre-rendered).
+    const res = await fetch(url);
+
+    console.log(
+      "[SEO RESPONSE] | slug =",
+      slug,
+      "| status =",
+      res.status,
+      "| statusText =",
+      res.statusText,
+      "| contentType =",
+      res.headers.get("content-type"),
     );
-    if (!res.ok) return null;
-    const data = await res.json();
+
+    if (!res.ok) {
+      const body = await res.text();
+      console.log(
+        "[SEO RESPONSE] | slug =",
+        slug,
+        "| url =",
+        url,
+        "| !res.ok — body =",
+        body,
+      );
+      return null;
+    }
+
+    const text = await res.text();
+    let data: SeoPage | null = null;
+    try {
+      data = JSON.parse(text);
+      console.log(
+        "[SEO RESPONSE] | slug =",
+        slug,
+        "| JSON parse ok | data is null?",
+        data === null,
+        "| data keys =",
+        data ? Object.keys(data) : "N/A",
+      );
+    } catch (parseErr) {
+      console.log(
+        "[SEO ERROR] | slug =",
+        slug,
+        "| JSON parse FAILED | raw text preview =",
+        text.slice(0, 500),
+        "| error =",
+        parseErr,
+      );
+      return null;
+    }
+
     return data || null;
-  } catch {
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    console.log(
+      "[SEO ERROR] | slug =",
+      slug,
+      "| url =",
+      url,
+      "| name =",
+      error.name,
+      "| message =",
+      error.message,
+      "| stack =",
+      error.stack,
+    );
     return null;
   }
 }
+// END TEMPORARY DIAGNOSTIC LOGGING
