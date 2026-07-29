@@ -5,7 +5,7 @@
 const CONTENT_ADMIN_URL =
   process.env.CONTENT_ADMIN_URL ||
   process.env.NEXT_PUBLIC_CONTENT_ADMIN_URL ||
-  'https://extrahand-content-admin-backend.apps.extrahand.in';
+  'https://extrahand-content-admin-backend.backend.extrahand.in';
 
 export interface SeoPage {
   _id: string;
@@ -30,13 +30,23 @@ export interface SeoPage {
   whyChooseDescription?: string | null;
   whyChoose?: Array<{ label: string; description: string }>;
   serviceSolutionsHeading?: string | null;
+  serviceSolutionsHeading2?: string | null;
   serviceSolutions?: Array<{ title: string; description: string }>;
   whyExtrahandHeading?: string | null;
   whyExtrahandDescription?: string | null;
   whyExtrahand?: string[];
+  whyExtrahandBenefitsIncludedHeading?: string | null;
+  whyExtrahandBenefitsIncluded?: string[];
+  whyExtrahandBenefitsIncludedDescription?: string | null;
   whyExtrahandDescription2?: string | null;
   howItWorks?: Array<{ step: number; title: string; description: string }>;
+  benefitsHeading?: string | null;
+  benefitsDescription?: string | null;
+  benefitsOnlyPoints?: boolean;
   benefits?: string[];
+  benefitsIncludedHeading?: string | null;
+  benefitsIncluded?: string[];
+  benefitsIncludedDescription?: string | null;
   commonProblems?: string[];
   faqs?: Array<{ question: string; answer: string }>;
   faqSchema?: Record<string, unknown>;

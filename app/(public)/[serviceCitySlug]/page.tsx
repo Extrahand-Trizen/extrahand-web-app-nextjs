@@ -9,6 +9,7 @@ import {
 } from "@/lib/data/hyderabad-service-pages";
 import { getPublishedSeoPage } from "@/lib/api/endpoints/seoPages";
 import SeoPageRenderer from "@/components/SeoPageRenderer";
+import SeoPageWrapper from "@/components/SeoPageWrapper";
 
 interface ServiceCityPageProps {
    params: Promise<{ serviceCitySlug: string }>;
@@ -505,36 +506,15 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
    const { serviceCitySlug } = await params;
 
    const cmsPage = await getPublishedSeoPage(serviceCitySlug);
-   if (cmsPage) {
-      return (
-         <>
-            {cmsPage.faqSchema && (
-               <script
-                  type="application/ld+json"
-                  dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPage.faqSchema) }}
-               />
-            )}
-            {cmsPage.breadcrumbSchema && (
-               <script
-                  type="application/ld+json"
-                  dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPage.breadcrumbSchema) }}
-               />
-            )}
-            <SeoPageRenderer page={cmsPage} />
-         </>
-      );
-   }
-
    const servicePage = getHyderabadServicePageBySlug(serviceCitySlug);
 
-   if (!servicePage) {
+   if (!servicePage && !cmsPage) {
       notFound();
    }
 
-   const enhancement = getServicePageEnhancement(servicePage);
-
-   const coverageAreas = getAreaSlice(servicePage.slug);
-   const postTaskHref = `/tasks/new?source=seo&service=${servicePage.slug}`;
+   const enhancement = servicePage ? getServicePageEnhancement(servicePage) : null;
+   const coverageAreas = servicePage ? getAreaSlice(servicePage.slug) : [];
+   const postTaskHref = servicePage ? `/tasks/new?source=seo&service=${servicePage.slug}` : "/tasks/new";
    const trustPoints = [
       "Verified professionals with service-category experience",
       "Clear scoping before work begins",
@@ -544,7 +524,7 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
    const serviceFlow = [
       {
          title: "Share Your Requirement",
-         description: `Tell us the issue and location details for ${servicePage.serviceName.toLowerCase()} in Hyderabad.`,
+         description: `Tell us the issue and location details for ${servicePage ? servicePage.serviceName.toLowerCase() : 'service'} in Hyderabad.`,
       },
       {
          title: "Get Matched Quickly",
@@ -556,8 +536,15 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
       },
    ];
 
+   if (!servicePage) {
+      // SeoPageWrapper (above) handles CMS-only pages; this is unreachable at runtime
+      // but satisfies TypeScript when servicePage is null.
+      notFound();
+   }
+
    return (
-      <main className="min-h-screen bg-linear-to-b from-white to-secondary-50">
+      <SeoPageWrapper slug={serviceCitySlug} initialPage={cmsPage}>
+         <main className="min-h-screen bg-linear-to-b from-white to-secondary-50">
          <section className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:px-8 lg:py-16">
             <div>
                <p className="text-sm font-semibold uppercase tracking-wide text-primary-600">
@@ -570,7 +557,7 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
                   {servicePage.heroDescription}
                </p>
                <p className="mt-4 max-w-2xl text-sm leading-6 text-secondary-600">
-                  {enhancement.overview}
+                  {enhancement?.overview}
                </p>
 
                <div className="mt-8 flex flex-wrap gap-3">
@@ -591,7 +578,7 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
                <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="rounded-lg border border-secondary-200 bg-white p-3 text-sm text-secondary-700">
                      <p className="font-semibold text-secondary-900">Best For</p>
-                     <p className="mt-1">{enhancement.bestFor}</p>
+                     <p className="mt-1">{enhancement?.bestFor}</p>
                   </div>
                   <div className="rounded-lg border border-secondary-200 bg-white p-3 text-sm text-secondary-700">
                      <p className="font-semibold text-secondary-900">Coverage</p>
@@ -603,7 +590,7 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
             <div>
                <div className="overflow-hidden rounded-2xl border border-secondary-200 bg-white">
                   <Image
-                     src={enhancement.imagePath}
+                     src={enhancement?.imagePath ?? "/assets/images/default.webp"}
                      alt={`${servicePage.serviceName} in Hyderabad`}
                      width={900}
                      height={560}
@@ -698,8 +685,8 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
                   About {servicePage.serviceName} in Hyderabad
                </h2>
                <p className="mt-4 text-secondary-700">{servicePage.shortDescription}</p>
-               <p className="mt-3 text-secondary-700">{enhancement.overview}</p>
-               <p className="mt-3 text-secondary-700">{enhancement.serviceDeepDive}</p>
+               <p className="mt-3 text-secondary-700">{enhancement?.overview}</p>
+               <p className="mt-3 text-secondary-700">{enhancement?.serviceDeepDive}</p>
                <p className="mt-3 text-secondary-700">
                   Commonly requested outcomes include {servicePage.whatYouGet[0].toLowerCase()}, {servicePage.whatYouGet[1].toLowerCase()}, and {servicePage.whatYouGet[2].toLowerCase()} with local coverage across residential and commercial areas of Hyderabad.
                </p>
@@ -713,7 +700,7 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
                   Sharing the right details helps professionals arrive prepared and complete your {servicePage.serviceName.toLowerCase()} request faster.
                </p>
                <ul className="mt-4 space-y-3 text-secondary-700">
-                  {enhancement.prepTips.map((tip) => (
+                  {(enhancement?.prepTips ?? []).map((tip) => (
                      <li key={tip} className="flex items-start gap-2">
                         <span aria-hidden="true" className="mt-1 h-2 w-2 rounded-full bg-primary-500" />
                         <span>{tip}</span>
@@ -730,7 +717,7 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
                   These steps help maintain results and reduce repeat issues after your service visit.
                </p>
                <ul className="mt-4 space-y-3 text-secondary-700">
-                  {enhancement.postServiceTips.map((tip) => (
+                  {(enhancement?.postServiceTips ?? []).map((tip) => (
                      <li key={tip} className="flex items-start gap-2">
                         <span aria-hidden="true" className="mt-1 h-2 w-2 rounded-full bg-primary-500" />
                         <span>{tip}</span>
@@ -749,14 +736,17 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
                      <p className="mt-2 text-secondary-700">{item.answer}</p>
                   </div>
                ))}
-               <div className="mt-4 border-t border-secondary-100 pt-4">
-                  <h3 className="text-base font-semibold text-secondary-900">
-                     {enhancement.secondFaq.question}
-                  </h3>
-                  <p className="mt-2 text-secondary-700">{enhancement.secondFaq.answer}</p>
-               </div>
+               {enhancement?.secondFaq && (
+                  <div className="mt-4 border-t border-secondary-100 pt-4">
+                     <h3 className="text-base font-semibold text-secondary-900">
+                        {enhancement.secondFaq.question}
+                     </h3>
+                     <p className="mt-2 text-secondary-700">{enhancement.secondFaq.answer}</p>
+                  </div>
+               )}
             </article>
          </section>
       </main>
+      </SeoPageWrapper>
    );
 }
