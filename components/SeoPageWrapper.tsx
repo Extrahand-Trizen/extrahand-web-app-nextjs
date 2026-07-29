@@ -47,7 +47,24 @@ export default function SeoPageWrapper({
   }, [slug, initialPage]);
 
   if (cmsPage) {
-    return <SeoPageRenderer page={cmsPage} />;
+    return (
+      <>
+        {/* Render JSON-LD schemas dynamically in the browser only if they were not pre-rendered in static HTML */}
+        {!initialPage && cmsPage.faqSchema && (
+          <script
+             type="application/ld+json"
+             dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPage.faqSchema) }}
+          />
+        )}
+        {!initialPage && cmsPage.breadcrumbSchema && (
+          <script
+             type="application/ld+json"
+             dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPage.breadcrumbSchema) }}
+          />
+        )}
+        <SeoPageRenderer page={cmsPage} />
+      </>
+    );
   }
 
   return <>{children}</>;
