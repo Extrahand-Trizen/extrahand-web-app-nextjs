@@ -72,9 +72,20 @@ export default function RootLayout({
                href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
                rel="stylesheet"
             />
-               <link rel="shortcut icon" href="/favicon.ico" />
-               <link rel="icon" href="/icon.svg?v=3" type="image/svg+xml" />
-               <link rel="icon" href="/logo.webp" type="image/webp" />
+            <link rel="shortcut icon" href="/favicon.ico" />
+            <link rel="icon" href="/icon.svg?v=3" type="image/svg+xml" />
+            <link rel="icon" href="/logo.webp" type="image/webp" />
+            <script async src="https://www.googletagmanager.com/gtag/js?id=G-C9E6GBS27L"></script>
+            <script
+               dangerouslySetInnerHTML={{
+                  __html: `
+                     window.dataLayer = window.dataLayer || [];
+                     function gtag(){dataLayer.push(arguments);}
+                     gtag('js', new Date());
+                     gtag('config', 'G-C9E6GBS27L');
+                  `,
+               }}
+            />
          </head>
          <body
             className="font-sans antialiased"
