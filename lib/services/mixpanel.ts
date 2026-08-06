@@ -9,16 +9,15 @@
  * Platform super properties: app = "web", platform = "web"
  * (mobile app uses app = "helper", platform = "android" | "ios")
  *
- * Consent: the website gates analytics behind the cookie-consent system
- * (`lib/consent/cookieConsent.ts`, "analytics" category), mirroring the
- * existing Firebase Analytics integration. Without consent every call is a
- * safe no-op. Anonymous visitors are tracked under Mixpanel's auto-generated
- * distinct_id and merged on identify().
+ * Anonymous visitors are tracked under Mixpanel's auto-generated distinct_id
+ * and merged on identify(). Initialization is NOT consent-gated: like the
+ * mobile app (and the GA4 gtag script injected by the root layout), Mixpanel
+ * loads on every page so the analytics funnels are not skipped for visitors
+ * who land anywhere other than the consent banner paths.
  */
 
 import mixpanel from 'mixpanel-browser';
 import { useUserStore } from '@/lib/state/userStore';
-import { hasConsentFor } from '@/lib/consent/cookieConsent';
 import {
   buildMixpanelPeopleProperties,
   clearMixpanelIdentitySession,
@@ -56,13 +55,12 @@ export function getCurrentRole(): 'tasker' | 'poster' | 'partner' | 'guest' {
 }
 
 /**
- * Initialize Mixpanel (consent-gated). Safe to call multiple times —
- * subsequent calls are no-ops. Only ever runs on the client.
+ * Initialize Mixpanel. Safe to call multiple times — subsequent calls are
+ * no-ops. Only ever runs on the client.
  */
 export function initMixpanel(): void {
   if (initialized) return;
   if (typeof window === 'undefined') return;
-  if (!hasConsentFor('analytics')) return;
 
   try {
     mixpanel.init(MIXPANEL_TOKEN, {
@@ -87,8 +85,7 @@ export function initMixpanel(): void {
 function mp(): boolean {
   if (typeof window === 'undefined') return false;
   if (!initialized) {
-    // Lazy init so events fire even if the explicit init was missed
-    // (still consent-gated, so this stays a no-op without consent).
+    // Lazy init so events fire even if the explicit init was missed.
     initMixpanel();
   }
   return initialized;
