@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import type { TaskApplication } from "@/types/application";
 import { applicationsApi } from "@/lib/api/endpoints/applications";
 import { taskDetailsQueryKeys } from "@/lib/queryKeys";
+import { trackLeadRejected } from "@/lib/services/mixpanel";
 import { PaymentConfirmationModal } from "@/components/payments/PaymentConfirmationModal";
 import { useAuth } from "@/lib/auth/context";
 import { getUserBadge } from "@/lib/api/badge";
@@ -231,6 +232,15 @@ export function TaskOffersSection({
          await applicationsApi.updateApplicationStatus(application._id, {
             status: "rejected",
          });
+
+         // Mixpanel: Lead Rejected (booking_id = task id)
+         const bookingId =
+            typeof application.taskId === "string"
+               ? application.taskId
+               : application.taskId?._id;
+         if (bookingId) {
+            trackLeadRejected({ booking_id: bookingId, reason: "declined_by_poster" });
+         }
 
          toast.success("Offer rejected", {
             description: "The applicant has been notified.",

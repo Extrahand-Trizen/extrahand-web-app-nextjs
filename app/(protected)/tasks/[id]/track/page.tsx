@@ -50,6 +50,11 @@ import { completionApi } from "@/lib/api/endpoints/completion";
 import { useChatSocket } from "@/lib/socket/hooks/useChatSocket";
 import { useTaskSocket } from "@/lib/socket/hooks/useTaskSocket";
 import { useUserStore } from "@/lib/state/userStore";
+import {
+   trackJobCompleted,
+   trackReviewSubmitted,
+   trackTaskProofSubmitted,
+} from "@/lib/services/mixpanel";
 
 export default function TaskTrackingPage() {
    const router = useRouter();
@@ -238,15 +243,21 @@ export default function TaskTrackingPage() {
 
       try {
          
-         const updatedTask = await completionApi.submitCompletionProof(task._id, {
-            proofUrls,
-            notes,
-         });
-         
-         console.log("✅ Completion proof submitted:", updatedTask);
-         console.log("📸 completionProof in response:", updatedTask?.completionProof);
-         setTaskInCache(updatedTask);
-         toast.success("Completion proof submitted for review!");
+const updatedTask = await completionApi.submitCompletionProof(task._id, {
+         proofUrls,
+         notes,
+      });
+      
+      console.log("✅ Completion proof submitted:", updatedTask);
+      console.log("📸 completionProof in response:", updatedTask?.completionProof);
+      setTaskInCache(updatedTask);
+      toast.success("Completion proof submitted for review!");
+      
+      // Mixpanel: Task Proof Submitted
+      trackTaskProofSubmitted({
+         task_id: task._id,
+         has_proof: Array.isArray(proofUrls) && proofUrls.length > 0,
+      });
          
          // Refetch task to ensure we have latest data
          const refreshedTask = await tasksApi.getTask(task._id);
@@ -269,11 +280,17 @@ export default function TaskTrackingPage() {
 
       try {
          
-         const updatedTask = await completionApi.approveCompletion(task._id);
-         
-         console.log("✅ Completion approved:", updatedTask);
-         setTaskInCache(updatedTask);
-         toast.success("Work approved! Task completed.");
+const updatedTask = await completionApi.approveCompletion(task._id);
+      
+      console.log("✅ Completion approved:", updatedTask);
+      setTaskInCache(updatedTask);
+      toast.success("Work approved! Task completed.");
+
+      // Mixpanel: Job Completed (booking_id = task id, amount = assigned budget)
+      trackJobCompleted({
+         booking_id: task._id,
+         amount: assignedBudget,
+      });
       } catch (error) {
          console.error("❌ Failed to approve completion:", error);
          toast.error("Failed to approve completion");
@@ -504,6 +521,9 @@ export default function TaskTrackingPage() {
          });
 
          console.log("✅ Review created successfully:", newReview);
+
+         // Mixpanel: Review Submitted
+         trackReviewSubmitted({ task_id: task._id, rating: data.rating });
          
          // Add review to local state
          setReviews([...reviews, newReview as unknown as Review]);

@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { EnvironmentLogger } from "@/components/EnvironmentLogger";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { AnalyticsPageView } from "@/components/AnalyticsPageView";
 import { PollingOtpToastBridge } from "@/components/notifications/PollingOtpToastBridge";
 
 // Avoid next/font here: relative assetPrefix (`./`) required for MinIO subfolder hosting
@@ -98,6 +99,7 @@ export default function RootLayout({
                   <AuthProvider>
                      <Suspense fallback={null}>
                         <ScrollToTop />
+                        <AnalyticsPageView />
                      </Suspense>
                      <Toaster
                         position="top-right"

@@ -49,6 +49,7 @@ import { applicationsApi } from "@/lib/api/endpoints/applications";
 import { getErrorMessage } from "@/lib/utils/errorUtils";
 import { getOfferSubmissionVerificationStatus } from "@/lib/utils/verificationGate";
 import { useAuth } from "@/lib/auth/context";
+import { trackTaskApplied } from "@/lib/services/mixpanel";
 import type { Task } from "@/types/task";
 import type { TaskApplication } from "@/types/application";
 
@@ -282,6 +283,16 @@ export function MakeOfferModal({
             });
          } else {
             await applicationsApi.submitApplication(applicationPayload);
+
+            // Mixpanel: task_applied (value moment — mirrors Helper Mobile App)
+            trackTaskApplied({
+               taskId: task._id,
+               taskCategory:
+                  typeof task.categoryLabel === "string"
+                     ? task.categoryLabel
+                     : task.category,
+               offerPrice: data.proposedBudget.amount,
+            });
 
             toast.success("Offer submitted successfully!", {
                description: "Your offer has been sent to the task poster.",

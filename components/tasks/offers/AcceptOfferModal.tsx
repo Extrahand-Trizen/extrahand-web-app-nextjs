@@ -22,6 +22,7 @@ import { Label } from "@/components/ui/label";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 import { applicationsApi } from "@/lib/api/endpoints/applications";
+import { trackLeadAccepted } from "@/lib/services/mixpanel";
 import type { TaskApplication } from "@/types/application";
 
 interface AcceptOfferModalProps {
@@ -51,6 +52,15 @@ export function AcceptOfferModal({
             status: "accepted" as any,
             message: message.trim() || undefined,
          });
+
+         // Mixpanel: Lead Accepted (booking_id = task id — joins web/mobile funnels)
+         const bookingId =
+            typeof application.taskId === "string"
+               ? application.taskId
+               : application.taskId?._id;
+         if (bookingId) {
+            trackLeadAccepted({ booking_id: bookingId });
+         }
 
          toast.success("Offer accepted!", {
             description: "The helper has been notified of your acceptance.",

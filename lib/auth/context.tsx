@@ -23,6 +23,11 @@ import { otpStateManager } from "./otpStateManager";
 import { isOTPAuthInProgress } from "./authFlowState";
 import { UserProfile } from "@/types/user";
 import { useUserStore } from "@/lib/state/userStore";
+import {
+  mixpanelIdentify,
+  mixpanelReset,
+  trackLogoutInitiated,
+} from "@/lib/services/mixpanel";
 
 interface AuthContextType {
    currentUser: User | null;
@@ -210,6 +215,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       try {
          console.log("🚪 Logging out user...");
 
+         // Mixpanel: log the logout and reset identity so the next session is fresh
+         trackLogoutInitiated();
+         mixpanelReset();
+
          await Promise.allSettled([sessionsApi.logout(), signOut(auth)]);
 
          // Clear all session and storage data
@@ -234,6 +243,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
          setUserData(null);
       }
    }, [storeLogout]);
+
+   // Mixpanel: identify the user as soon as a signed-in profile is available
+   // (covers sign-up, login, session restore and profile refresh). Guarded
+   // inside mixpanelIdentify so it fires once per session per user.
+   useEffect(() => {
+      if (!userData?.uid) return;
+      mixpanelIdentify(userData.uid, {
+         _id: userData._id,
+         uid: userData.uid,
+         name: userData.name,
+         email: userData.email,
+         phone: userData.phone,
+         roles: userData.roles as string[] | undefined,
+         createdAt: userData.createdAt,
+         location: userData.location,
+      });
+   }, [userData]);
 
    useEffect(() => {
       hydrateFromSession();

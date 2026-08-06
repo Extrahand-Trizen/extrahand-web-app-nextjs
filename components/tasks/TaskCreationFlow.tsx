@@ -31,6 +31,7 @@ import { api } from "@/lib/api";
 import { getErrorMessage, isNetworkError } from "@/lib/utils/errorUtils";
 import { useAuth } from "@/lib/auth/context";
 import { addressesApi } from "@/lib/api/endpoints/addresses";
+import { trackTaskPosted } from "@/lib/services/mixpanel";
 import { ADDRESSES_QUERY_KEY } from "@/components/shared/InteractiveLocationPicker";
 import {
    Dialog,
@@ -797,6 +798,15 @@ export function TaskCreationFlow() {
             setHasUnsavedChanges(false);
 
             const createdTask = getCreatedTaskFromResponse(response);
+
+            // Mixpanel: Task Posted (value moment)
+            trackTaskPosted({
+               taskId: createdTask?._id || createdTask?.id,
+               taskCategory: data.category,
+               budgetType: data.budgetType,
+               budget: data.budget ?? undefined,
+               urgency: data.urgency,
+            });
 
             // Ensure My Tasks page renders the new task immediately from cache.
             if (createdTask) {
