@@ -2,6 +2,8 @@ export const APP_SCHEME = "extrahand";
 export const ANDROID_PACKAGE = "com.extrahand";
 export const PLAY_STORE_URL =
   "https://play.google.com/store/apps/details?id=com.extrahand";
+export const WHATSAPP_HOME_SERVICES_BRIDGE_BASE =
+  "https://extrahand.in/open/home-services";
 
 const MONGO_ID_RE = /^[a-f0-9]{24}$/i;
 
@@ -17,6 +19,10 @@ export function buildAppDeepLink(path: string): string {
   return `${APP_SCHEME}://${normalized}`;
 }
 
+export function buildHomeServicesDeepLink(): string {
+  return buildAppDeepLink("services");
+}
+
 export function buildTaskOpenDeepLink(taskId: string, track = false): string {
   const id = encodeURIComponent(taskId.trim());
   return track
@@ -29,4 +35,8 @@ export function buildWhatsAppTaskBridgeUrl(taskId: string, track = false): strin
   return track
     ? `${WHATSAPP_TASK_OPEN_BRIDGE_BASE}/${id}/track`
     : `${WHATSAPP_TASK_OPEN_BRIDGE_BASE}/${id}`;
+}
+
+export function buildWhatsAppHomeServicesBridgeUrl(): string {
+  return WHATSAPP_HOME_SERVICES_BRIDGE_BASE;
 }

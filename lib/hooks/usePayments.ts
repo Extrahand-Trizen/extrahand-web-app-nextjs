@@ -82,11 +82,15 @@ export function useBankAccounts() {
         });
 
         const data = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          throw new Error(data.error || "Failed to delete bank account");
+        if (!response.ok || data?.success === false) {
+          throw new Error(
+            data.error || data.message || "Failed to delete bank account"
+          );
         }
 
         await fetchBankAccounts();
+        // Guard against "UI removed, DB still has row" (stale cache / failed upstream delete).
+        // Re-fetch is the source of truth; if the id is still present, surface an error.
         return data;
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error deleting bank account");

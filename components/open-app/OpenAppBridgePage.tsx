@@ -6,16 +6,24 @@ import { PLAY_STORE_URL } from "@/lib/openAppBridge";
 type OpenAppBridgePageProps = {
   appDeepLink: string;
   headline?: string;
+  fallbackUrl?: string;
 };
 
 export function OpenAppBridgePage({
   appDeepLink,
   headline = "Opening ExtraHand…",
+  fallbackUrl,
 }: OpenAppBridgePageProps) {
   const [showFallback, setShowFallback] = useState(false);
 
   const isAndroid = useMemo(
     () => typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent),
+    []
+  );
+  const isIos = useMemo(
+    () =>
+      typeof navigator !== "undefined" &&
+      /iPhone|iPad|iPod/i.test(navigator.userAgent),
     []
   );
 
@@ -50,9 +58,12 @@ export function OpenAppBridgePage({
       }, 1200);
     }
 
+    const fallbackDestination = isAndroid ? PLAY_STORE_URL : fallbackUrl;
+
     const storeTimer = window.setTimeout(() => {
       if (document.visibilityState === "hidden") return;
-      window.location.assign(PLAY_STORE_URL);
+      if (!fallbackDestination) return;
+      window.location.assign(fallbackDestination);
     }, 3500);
 
     const fallbackTimer = window.setTimeout(() => {
@@ -65,7 +76,7 @@ export function OpenAppBridgePage({
       window.clearTimeout(storeTimer);
       window.clearTimeout(fallbackTimer);
     };
-  }, [appDeepLink, isAndroid]);
+  }, [appDeepLink, fallbackUrl, isAndroid, isIos]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white">
@@ -75,12 +86,22 @@ export function OpenAppBridgePage({
       />
       <p className="text-gray-700 text-center text-sm">{headline}</p>
       {showFallback && (
-        <a
-          href={appDeepLink}
-          className="mt-6 text-sm text-amber-600 underline"
-        >
-          Tap here to open ExtraHand
-        </a>
+        <div className="mt-6 flex flex-col items-center gap-3">
+          <a
+            href={appDeepLink}
+            className="text-sm text-amber-600 underline"
+          >
+            Tap here to open ExtraHand
+          </a>
+          {fallbackUrl ? (
+            <a
+              href={fallbackUrl}
+              className="text-sm text-gray-500 underline"
+            >
+              Continue on website
+            </a>
+          ) : null}
+        </div>
       )}
     </div>
   );
