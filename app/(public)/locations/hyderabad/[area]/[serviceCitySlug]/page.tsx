@@ -140,22 +140,39 @@ export async function generateStaticParams() {
       const areaSlug = toAreaSlug(area);
       for (const serviceCitySlug of hyderabadServicePageSlugs) {
          params.push({ area: areaSlug, serviceCitySlug });
+         const categorySlugPart = serviceCitySlug.replace(/-in-hyderabad$/, "");
+         params.push({ area: areaSlug, serviceCitySlug: `${categorySlugPart}-in-${areaSlug}` });
       }
    }
 
    return params;
 }
 
+function parseAreaServiceSlug(serviceCitySlug: string, area: string) {
+   let categorySlugPart = serviceCitySlug;
+   if (categorySlugPart.endsWith("-in-hyderabad")) {
+      categorySlugPart = categorySlugPart.replace(/-in-hyderabad$/, "");
+   } else if (categorySlugPart.endsWith(`-in-${area}`)) {
+      categorySlugPart = categorySlugPart.replace(new RegExp(`-in-${area}$`), "");
+   } else {
+      categorySlugPart = categorySlugPart.replace(/-in-[a-z0-9-]+$/, "");
+   }
+
+   const canonicalHyderabadSlug = `${categorySlugPart}-in-hyderabad`;
+   const areaSlug = `${categorySlugPart}-in-${area}`;
+
+   return { categorySlugPart, canonicalHyderabadSlug, areaSlug };
+}
+
 export async function generateMetadata({
    params,
 }: HyderabadAreaServicePageProps): Promise<Metadata> {
    const { area, serviceCitySlug } = await params;
-   const categorySlugPart = serviceCitySlug.replace(/-in-hyderabad$/, "");
-   const areaSlug = `${categorySlugPart}-in-${area}`;
+   const { canonicalHyderabadSlug, areaSlug } = parseAreaServiceSlug(serviceCitySlug, area);
 
    const cmsPage = await getPublishedSeoPage(areaSlug);
    if (cmsPage) {
-      const rawCanonical = cmsPage.canonicalUrl || buildCanonicalAreaUrl(area, serviceCitySlug);
+      const rawCanonical = cmsPage.canonicalUrl || buildCanonicalAreaUrl(area, canonicalHyderabadSlug);
       const canonicalUrl = rawCanonical.endsWith("/") ? rawCanonical : `${rawCanonical}/`;
       return {
          title: cmsPage.metaTitle,
@@ -176,7 +193,9 @@ export async function generateMetadata({
    }
 
    const areaName = fromAreaSlug(area);
-   const servicePage = getHyderabadServicePageBySlug(serviceCitySlug);
+   const servicePage =
+      getHyderabadServicePageBySlug(serviceCitySlug) ??
+      getHyderabadServicePageBySlug(canonicalHyderabadSlug);
 
    if (!areaName || !servicePage) {
       return {
@@ -184,7 +203,7 @@ export async function generateMetadata({
       };
    }
 
-   const areaCanonicalUrl = buildCanonicalAreaUrl(area, serviceCitySlug);
+   const areaCanonicalUrl = buildCanonicalAreaUrl(area, canonicalHyderabadSlug);
 
    return {
       title: `${servicePage.serviceName} in ${areaName}, Hyderabad | ExtraHand`,
@@ -217,12 +236,13 @@ export default async function HyderabadAreaServicePage({
    params,
 }: HyderabadAreaServicePageProps) {
    const { area, serviceCitySlug } = await params;
-   const categorySlugPart = serviceCitySlug.replace(/-in-hyderabad$/, "");
-   const areaSlug = `${categorySlugPart}-in-${area}`;
+   const { canonicalHyderabadSlug, areaSlug } = parseAreaServiceSlug(serviceCitySlug, area);
 
    const cmsPage = await getPublishedSeoPage(areaSlug);
    const areaName = fromAreaSlug(area);
-   const servicePage = getHyderabadServicePageBySlug(serviceCitySlug);
+   const servicePage =
+      getHyderabadServicePageBySlug(serviceCitySlug) ??
+      getHyderabadServicePageBySlug(canonicalHyderabadSlug);
 
    // If neither CMS page nor static data found, 404
    if (!cmsPage && (!areaName || !servicePage)) {
