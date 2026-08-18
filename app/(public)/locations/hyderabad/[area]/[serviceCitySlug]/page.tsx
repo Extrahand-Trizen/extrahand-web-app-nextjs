@@ -155,14 +155,16 @@ export async function generateMetadata({
 
    const cmsPage = await getPublishedSeoPage(areaSlug);
    if (cmsPage) {
+      const rawCanonical = cmsPage.canonicalUrl || buildCanonicalAreaUrl(area, serviceCitySlug);
+      const canonicalUrl = rawCanonical.endsWith("/") ? rawCanonical : `${rawCanonical}/`;
       return {
          title: cmsPage.metaTitle,
          description: cmsPage.metaDescription,
-         alternates: { canonical: cmsPage.canonicalUrl },
+         alternates: { canonical: canonicalUrl },
          openGraph: {
             title: cmsPage.metaTitle,
             description: cmsPage.metaDescription,
-            url: cmsPage.canonicalUrl,
+            url: canonicalUrl,
             type: "website",
          },
          twitter: {
