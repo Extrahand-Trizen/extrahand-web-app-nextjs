@@ -17,6 +17,22 @@ interface HyderabadAreaServicePageProps {
 const hyderabadCity = getCityBySlug("hyderabad");
 const hyderabadAreas = hyderabadCity?.neighborhoods ?? [];
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://extrahand.in";
+
+const canonicalNoSlashAreaServiceSlugs = new Set([
+   "fitness-trainers-in-begumpet",
+   "office-relocation-in-miyapur",
+]);
+
+/**
+ * Build the full absolute canonical URL for a /locations/hyderabad/[area]/[serviceCitySlug] page.
+ * Full URL required so Next.js trailingSlash:true does not normalise the path.
+ */
+function buildCanonicalAreaUrl(area: string, serviceCitySlug: string): string {
+   const base = `${BASE_URL}/locations/hyderabad/${area}/${serviceCitySlug}`;
+   return canonicalNoSlashAreaServiceSlugs.has(serviceCitySlug) ? base : `${base}/`;
+}
+
 function toAreaSlug(area: string) {
    return area.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
@@ -112,10 +128,10 @@ function buildPopularJobs(serviceName: string, commonNeeds: string[], areaName: 
    return generated.length > 0
       ? generated
       : [
-           `${serviceName} visit in ${areaName}`,
-           `Same-day ${serviceName.toLowerCase()} booking in ${areaName}`,
-           `Verified ${serviceName.toLowerCase()} workers near ${areaName}`,
-        ];
+         `${serviceName} visit in ${areaName}`,
+         `Same-day ${serviceName.toLowerCase()} booking in ${areaName}`,
+         `Verified ${serviceName.toLowerCase()} workers near ${areaName}`,
+      ];
 }
 
 export async function generateStaticParams() {
@@ -167,7 +183,7 @@ export async function generateMetadata({
       };
    }
 
-   const areaCanonicalPath = `/locations/hyderabad/${area}/${serviceCitySlug}`;
+   const areaCanonicalUrl = buildCanonicalAreaUrl(area, serviceCitySlug);
 
    return {
       title: `${servicePage.serviceName} in ${areaName}, Hyderabad | ExtraHand`,
@@ -175,14 +191,14 @@ export async function generateMetadata({
          "in Hyderabad",
          `in ${areaName}, Hyderabad`
       ),
-      alternates: { canonical: areaCanonicalPath },
+      alternates: { canonical: areaCanonicalUrl },
       openGraph: {
          title: `${servicePage.serviceName} in ${areaName}, Hyderabad`,
          description: servicePage.shortDescription.replaceAll(
             "in Hyderabad",
             `in ${areaName}, Hyderabad`
          ),
-         url: `${process.env.NEXT_PUBLIC_APP_URL || "https://extrahand.in"}${areaCanonicalPath}`,
+         url: areaCanonicalUrl,
          type: "website",
       },
       twitter: {

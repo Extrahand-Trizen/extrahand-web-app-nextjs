@@ -90,5 +90,8 @@ export async function generateMetadata({ params }: JobSubcategoryPageProps) {
          subcategory.heroTitle ||
          `${subcategory.name} Jobs`,
       description: subcategory.metaDescription || subcategory.heroDescription,
+      alternates: {
+         canonical: `https://extrahand.in/jobs/${slug}/${subcategorySlug}`,
+      },
    };
 }

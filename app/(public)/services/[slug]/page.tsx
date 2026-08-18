@@ -119,6 +119,9 @@ export async function generateMetadata({ params }: ServicePageProps) {
          return {
             title: `${manualServices[0].categoryName} | ExtraHand Services`,
             description: `Find ${manualServices[0].categoryName.toLowerCase()} on ExtraHand with full service details and booking support.`,
+            alternates: {
+               canonical: `https://extrahand.in/services/${slug}`,
+            },
          };
       }
 
@@ -133,5 +136,8 @@ export async function generateMetadata({ params }: ServicePageProps) {
          category.heroTitle ||
          `${category.name} Services`,
       description: category.metaDescription || category.heroDescription,
+      alternates: {
+         canonical: `https://extrahand.in/services/${slug}`,
+      },
    };
 }

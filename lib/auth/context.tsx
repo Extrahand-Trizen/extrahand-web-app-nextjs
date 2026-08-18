@@ -73,10 +73,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
    const hydrateFromSession = useUserStore((state) => state.hydrateFromSession);
 
    const resetLocalSession = useCallback(async () => {
-      try {
-         await signOut(auth);
-      } catch (error) {
-         console.warn("signOut skipped", error);
+      if (auth) {
+         try {
+            await signOut(auth);
+         } catch (error) {
+            console.warn("signOut skipped", error);
+         }
       }
       // Clear all session data including localStorage, sessionStorage, and cookies
       if (typeof window !== "undefined") {
@@ -219,7 +221,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
          trackLogoutInitiated();
          mixpanelReset();
 
-         await Promise.allSettled([sessionsApi.logout(), signOut(auth)]);
+         await Promise.allSettled([
+            sessionsApi.logout(),
+            auth ? signOut(auth) : Promise.resolve(),
+         ]);
 
          // Clear all session and storage data
          clearAllSessionData();
@@ -279,7 +284,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             console.log("🔍 Restoring session:", session);
 
             // Attempt to use Firebase auth state; API calls will validate cookies
-            const user = auth.currentUser;
+            const user = auth?.currentUser ?? null;
             if (user) {
                setCurrentUser(user);
                
@@ -341,6 +346,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
    useEffect(() => {
       if (!sessionRestored) return;
       if (typeof window === "undefined") return; // Only run on client
+
+      if (!auth) {
+         setCurrentUser(null);
+         setUserData(null);
+         setLoading(false);
+         setSessionRestored(true);
+         return;
+      }
 
       const unsubscribe = onAuthStateChanged(auth, async (user) => {
          const currentUserId = user?.uid || null;

@@ -20,30 +20,42 @@ import {
 import { FIREBASE_CONFIG } from "@/lib/config";
 import { initializeAnalyticsIfConsented } from "@/lib/auth/firebase-analytics";
 
-// Initialize Firebase
-let app: FirebaseApp;
-let auth: Auth;
+// Initialize Firebase only when config is present. Local development may not have
+// the Firebase public keys populated yet, and the app should still render the page.
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
+const isFirebaseConfigured = Boolean(
+   FIREBASE_CONFIG.apiKey &&
+   FIREBASE_CONFIG.authDomain &&
+   FIREBASE_CONFIG.projectId
+);
 
-if (typeof window !== "undefined") {
-   // Only initialize if not already initialized
-   if (getApps().length === 0) {
-      app = initializeApp(FIREBASE_CONFIG);
+if (isFirebaseConfigured) {
+   if (typeof window !== "undefined") {
+      // Only initialize if not already initialized
+      if (getApps().length === 0) {
+         app = initializeApp(FIREBASE_CONFIG);
+      } else {
+         app = getApps()[0];
+      }
+
+      auth = getAuth(app);
+
+      // Initialize Analytics with consent gating (will be initialized when consent is given)
+      initializeAnalyticsIfConsented(app);
    } else {
-      app = getApps()[0];
+      // Server-side: create minimal app instance
+      if (getApps().length === 0) {
+         app = initializeApp(FIREBASE_CONFIG);
+      } else {
+         app = getApps()[0];
+      }
+      auth = getAuth(app);
    }
-
-   auth = getAuth(app);
-
-   // Initialize Analytics with consent gating (will be initialized when consent is given)
-   initializeAnalyticsIfConsented(app);
 } else {
-   // Server-side: create minimal app instance
-   if (getApps().length === 0) {
-      app = initializeApp(FIREBASE_CONFIG);
-   } else {
-      app = getApps()[0];
-   }
-   auth = getAuth(app);
+   console.warn(
+      "Firebase auth is not configured. Set NEXT_PUBLIC_FIREBASE_API_KEY, NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN, and NEXT_PUBLIC_FIREBASE_PROJECT_ID to enable sign-in."
+   );
 }
 
 export { app, auth };
@@ -55,6 +67,14 @@ export const signUpWithEmail = async (
    password: string,
    userData: { name: string; role?: string; location?: any }
 ) => {
+   if (!auth) {
+      return {
+         error: "Firebase is not configured in this environment.",
+         code: "config/missing",
+         success: false,
+      };
+   }
+
    try {
       const userCredential = await createUserWithEmailAndPassword(
          auth,
@@ -78,6 +98,14 @@ export const signUpWithEmail = async (
 
 // Email/Password Sign In
 export const signInWithEmail = async (email: string, password: string) => {
+   if (!auth) {
+      return {
+         error: "Firebase is not configured in this environment.",
+         code: "config/missing",
+         success: false,
+      };
+   }
+
    try {
       const userCredential = await signInWithEmailAndPassword(
          auth,
@@ -97,6 +125,14 @@ export const signInWithEmail = async (email: string, password: string) => {
 
 // Google Sign In
 export const signInWithGoogle = async () => {
+   if (!auth) {
+      return {
+         error: "Firebase is not configured in this environment.",
+         code: "config/missing",
+         success: false,
+      };
+   }
+
    try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
@@ -113,6 +149,10 @@ export const signInWithGoogle = async () => {
 
 // Sign Out
 export const signOutUser = async () => {
+   if (!auth) {
+      return { success: true };
+   }
+
    try {
       await signOut(auth);
       return { success: true };
@@ -126,6 +166,13 @@ export const signInWithPhone = async (
    phoneNumber: string,
    recaptchaVerifier: RecaptchaVerifier
 ) => {
+   if (!auth) {
+      const msg =
+         "Firebase config missing: set NEXT_PUBLIC_FIREBASE_API_KEY, NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN, and NEXT_PUBLIC_FIREBASE_PROJECT_ID in .env";
+      console.error("❌ Phone auth failed:", { code: "config/missing", message: msg });
+      return { error: msg, code: "config/missing", success: false };
+   }
+
    try {
       // Fail fast if Firebase config is missing (avoids cryptic errors)
       if (!FIREBASE_CONFIG.apiKey || !FIREBASE_CONFIG.authDomain) {
@@ -190,6 +237,14 @@ export const verifyOTP = async (
    confirmationResult: any,
    verificationCode: string
 ) => {
+   if (!auth) {
+      return {
+         error: "Firebase is not configured in this environment.",
+         code: "config/missing",
+         success: false,
+      };
+   }
+
    try {
       const result = await confirmationResult.confirm(verificationCode);
 

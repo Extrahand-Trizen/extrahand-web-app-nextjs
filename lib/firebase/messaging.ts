@@ -172,8 +172,8 @@ export const registerFCMToken = async (token: string, userId: string): Promise<b
     
     // Get Firebase Auth token for authentication
     const { auth } = await import('@/lib/auth/firebase');
-    const user = auth.currentUser;
-    
+    const user = auth?.currentUser ?? null;
+
     if (!user) {
       console.error('❌ No authenticated user');
       return false;

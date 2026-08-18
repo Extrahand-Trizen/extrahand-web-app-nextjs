@@ -33,8 +33,8 @@ export default async function TaskPage({ params }: TaskPageProps) {
    const segments = Array.isArray(slugParam)
       ? slugParam.filter(Boolean)
       : typeof slugParam === "string"
-      ? [slugParam]
-      : [];
+         ? [slugParam]
+         : [];
    const slug = segments[segments.length - 1] || "";
    const fullSlug = segments.join("/");
 
@@ -80,8 +80,8 @@ export async function generateMetadata({ params }: TaskPageProps) {
    const segments = Array.isArray(slugParam)
       ? slugParam.filter(Boolean)
       : typeof slugParam === "string"
-      ? [slugParam]
-      : [];
+         ? [slugParam]
+         : [];
    const slug = segments[segments.length - 1] || "";
    const fullSlug = segments.join("/");
 
@@ -106,5 +106,8 @@ export async function generateMetadata({ params }: TaskPageProps) {
       title:
          category.metaTitle || category.heroTitle || `${category.name} Jobs`,
       description: category.metaDescription || category.heroDescription,
+      alternates: {
+         canonical: `https://extrahand.in/task/${fullSlug}`,
+      },
    };
 }

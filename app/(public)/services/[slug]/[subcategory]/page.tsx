@@ -101,6 +101,9 @@ export async function generateMetadata({
          return {
             title: `${manualService.subcategoryName} | ExtraHand Services`,
             description: manualService.shortDescription,
+            alternates: {
+               canonical: `https://extrahand.in/services/${slug}/${subcategorySlug}`,
+            },
          };
       }
 
@@ -115,5 +118,8 @@ export async function generateMetadata({
          subcategory.heroTitle ||
          `${subcategory.name} Services`,
       description: subcategory.metaDescription || subcategory.heroDescription,
+      alternates: {
+         canonical: `https://extrahand.in/services/${slug}/${subcategorySlug}`,
+      },
    };
 }

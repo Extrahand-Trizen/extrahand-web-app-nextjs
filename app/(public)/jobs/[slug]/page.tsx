@@ -90,5 +90,10 @@ export async function generateMetadata({ params }: JobPageProps) {
       title:
          category.metaTitle || category.heroTitle || `${category.name} Jobs`,
       description: category.metaDescription || category.heroDescription,
+      alternates: {
+         // Full absolute URL required: Next.js trailingSlash:true would append "/"
+         // to a relative path, breaking the exact match with the Excel.
+         canonical: `https://extrahand.in/jobs/${slug}`,
+      },
    };
 }
