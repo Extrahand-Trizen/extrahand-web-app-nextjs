@@ -19,18 +19,17 @@ const hyderabadAreas = hyderabadCity?.neighborhoods ?? [];
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://extrahand.in";
 
-const canonicalNoSlashAreaServiceSlugs = new Set([
-   "fitness-trainers-in-begumpet",
-   "office-relocation-in-miyapur",
-]);
-
 /**
  * Build the full absolute canonical URL for a /locations/hyderabad/[area]/[serviceCitySlug] page.
- * Full URL required so Next.js trailingSlash:true does not normalise the path.
+ *
+ * All city/area service pages use a trailing slash, e.g.:
+ *   https://extrahand.in/locations/hyderabad/gachibowli/ac-repair-in-hyderabad/
+ *
+ * A full absolute URL is returned so Next.js (trailingSlash: false) does not
+ * strip or alter it during metadata normalisation.
  */
 function buildCanonicalAreaUrl(area: string, serviceCitySlug: string): string {
-   const base = `${BASE_URL}/locations/hyderabad/${area}/${serviceCitySlug}`;
-   return canonicalNoSlashAreaServiceSlugs.has(serviceCitySlug) ? base : `${base}/`;
+   return `${BASE_URL}/locations/hyderabad/${area}/${serviceCitySlug}/`;
 }
 
 function toAreaSlug(area: string) {
