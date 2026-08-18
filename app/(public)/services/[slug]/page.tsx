@@ -8,7 +8,6 @@ import {
    getManualServicesByCategorySlug,
 } from "@/lib/data/manual-services-catalog";
 import { getServiceCategoryStaticParams } from "@/lib/data/categoryStaticParams";
-import { allowDynamicCategoryParams } from "@/lib/utils/dynamicRouteConfig";
 
 interface ServicePageProps {
    params: Promise<{
@@ -22,7 +21,7 @@ export async function generateStaticParams() {
 }
 
 // Allow any slug not in staticParams to fall through to notFound instead of crash
-export const dynamicParams = allowDynamicCategoryParams;
+export const dynamicParams = false;
 
 /**
  * Ensure incomeOpportunitiesData has proper array structure

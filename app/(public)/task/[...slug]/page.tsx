@@ -4,7 +4,6 @@ import CategoryDetailClient from "@/components/categories/CategoryDetailClient";
 import { CategoryDetail } from "@/types/category";
 import { CategoryNotFound } from "@/components/shared/CategoryNotFound";
 import { getTaskCatchAllStaticParams } from "@/lib/data/categoryStaticParams";
-import { allowDynamicCategoryParams } from "@/lib/utils/dynamicRouteConfig";
 
 // Required for static export: pre-build every published /task/* page at build time.
 export async function generateStaticParams() {
@@ -12,7 +11,7 @@ export async function generateStaticParams() {
 }
 
 // Do not attempt to render paths outside the static set at runtime.
-export const dynamicParams = allowDynamicCategoryParams;
+export const dynamicParams = false;
 
 interface TaskPageProps {
    params: Promise<{

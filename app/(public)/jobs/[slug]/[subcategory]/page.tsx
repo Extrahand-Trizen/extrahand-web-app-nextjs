@@ -4,14 +4,13 @@ import CategoryDetailClient from "@/components/categories/CategoryDetailClient";
 import { SubcategoryDetail } from "@/types/category";
 import { CategoryNotFound } from "@/components/shared/CategoryNotFound";
 import { getSubcategoryStaticParams } from "@/lib/data/categoryStaticParams";
-import { allowDynamicCategoryParams } from "@/lib/utils/dynamicRouteConfig";
 
 export async function generateStaticParams() {
    return getSubcategoryStaticParams("tasker");
 }
 
 // Do not attempt to render slugs outside the static set at runtime.
-export const dynamicParams = allowDynamicCategoryParams;
+export const dynamicParams = false;
 
 interface JobSubcategoryPageProps {
    params: Promise<{

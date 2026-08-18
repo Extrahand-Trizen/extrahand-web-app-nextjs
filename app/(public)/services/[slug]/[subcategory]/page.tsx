@@ -8,14 +8,13 @@ import {
    getManualServiceBySlugs,
 } from "@/lib/data/manual-services-catalog";
 import { getSubcategoryStaticParams } from "@/lib/data/categoryStaticParams";
-import { allowDynamicCategoryParams } from "@/lib/utils/dynamicRouteConfig";
 
 // Required for static export: pre-build every published /services/[category]/[subcategory].
 export async function generateStaticParams() {
    return getSubcategoryStaticParams("poster");
 }
 
-export const dynamicParams = allowDynamicCategoryParams;
+export const dynamicParams = false;
 
 interface ServiceSubcategoryPageProps {
    params: Promise<{

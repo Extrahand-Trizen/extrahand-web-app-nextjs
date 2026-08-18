@@ -4,7 +4,6 @@ import CategoryDetailClient from "@/components/categories/CategoryDetailClient";
 import { CategoryDetail } from "@/types/category";
 import { CategoryNotFound } from "@/components/shared/CategoryNotFound";
 import { getJobCategoryStaticParams } from "@/lib/data/categoryStaticParams";
-import { allowDynamicCategoryParams } from "@/lib/utils/dynamicRouteConfig";
 
 // Required for static export: pre-build all known job/category pages at build time.
 export async function generateStaticParams() {
@@ -12,7 +11,7 @@ export async function generateStaticParams() {
 }
 
 // Prevent 404 for slugs not returned by the API — show CategoryNotFound instead.
-export const dynamicParams = allowDynamicCategoryParams;
+export const dynamicParams = false;
 
 interface JobPageProps {
    params: Promise<{
