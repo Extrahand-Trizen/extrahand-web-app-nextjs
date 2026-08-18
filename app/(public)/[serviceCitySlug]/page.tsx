@@ -49,15 +49,7 @@ function buildCanonicalServiceUrl(slug: string): string {
       return `${baseUrl}/categories`;
    }
 
-   // Hyderabad area pages such as /ac-repair-in-gachibowli must not include
-   // a trailing slash, while the generic /ac-repair-in-hyderabad template keeps
-   // the slash. This route is isolated here so it does not affect jobs, tasks,
-   // services, or other canonical URLs elsewhere in the app.
-   if (slug.includes("-in-") && !slug.endsWith("-in-hyderabad")) {
-      return `${baseUrl}/${slug}`;
-   }
-
-   return `${baseUrl}/${slug}/`;
+   return `${baseUrl}/${slug.replace(/\/+$/, "")}/`;
 }
 
 const hyderabadAreas = [
@@ -528,14 +520,18 @@ export async function generateMetadata({
       (await getPublishedSeoPage(normalizeServiceCitySlug(serviceCitySlug) ?? serviceCitySlug));
 
    if (cmsPage) {
+      const canonicalUrl = cmsPage.canonicalUrl
+         ? (cmsPage.canonicalUrl.endsWith("/") ? cmsPage.canonicalUrl : `${cmsPage.canonicalUrl}/`)
+         : buildCanonicalServiceUrl(serviceCitySlug);
+
       return {
          title: cmsPage.metaTitle,
          description: cmsPage.metaDescription,
-         alternates: { canonical: cmsPage.canonicalUrl },
+         alternates: { canonical: canonicalUrl },
          openGraph: {
             title: cmsPage.metaTitle,
             description: cmsPage.metaDescription,
-            url: cmsPage.canonicalUrl,
+            url: canonicalUrl,
             type: "website",
          },
          twitter: {
