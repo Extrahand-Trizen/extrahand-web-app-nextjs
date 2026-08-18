@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/context";
+import { trackRoleSwitched } from "@/lib/services/mixpanel";
 import { UserMenu } from "./UserMenu";
 import { NotificationCenter } from "@/components/home";
 import { categoriesApi } from "@/lib/api/endpoints/categories";
@@ -253,6 +254,30 @@ export const LandingHeader: React.FC = () => {
       [router]
    );
 
+   const handleRoleSwitch = useCallback(
+      (role: "poster" | "tasker") => {
+         setActiveRole((prev) => {
+            if (prev !== role) {
+               trackRoleSwitched(prev, role);
+            }
+            return role;
+         });
+      },
+      []
+   );
+
+   const handleMobileRoleSwitch = useCallback(
+      (role: "poster" | "tasker") => {
+         setMobileActiveRole((prev) => {
+            if (prev !== role) {
+               trackRoleSwitched(prev, role);
+            }
+            return role;
+         });
+      },
+      []
+   );
+
    const handleLogout = useCallback(async () => {
       try {
          await logout();
@@ -350,7 +375,7 @@ export const LandingHeader: React.FC = () => {
                                                 <button
                                                    type="button"
                                                    onClick={() =>
-                                                      setActiveRole("tasker")
+                                                      handleRoleSwitch("tasker")
                                                    }
                                                    className={cn(
                                                       "w-full text-left rounded-lg border p-2.5 transition-colors",
@@ -370,7 +395,7 @@ export const LandingHeader: React.FC = () => {
                                                 <button
                                                    type="button"
                                                    onClick={() =>
-                                                      setActiveRole("poster")
+                                                      handleRoleSwitch("poster")
                                                    }
                                                    className={cn(
                                                       "w-full text-left rounded-lg border p-2.5 transition-colors",
@@ -760,7 +785,7 @@ export const LandingHeader: React.FC = () => {
                            <div className="flex gap-4">
                               <button
                                  type="button"
-                                 onClick={() => setMobileActiveRole("tasker")}
+                                 onClick={() => handleMobileRoleSwitch("tasker")}
                                  className={cn(
                                     "w-full text-left rounded-lg border p-2 transition-colors",
                                     mobileActiveRole === "tasker"
@@ -777,7 +802,7 @@ export const LandingHeader: React.FC = () => {
                               </button>
                               <button
                                  type="button"
-                                 onClick={() => setMobileActiveRole("poster")}
+                                 onClick={() => handleMobileRoleSwitch("poster")}
                                  className={cn(
                                     "w-full text-left rounded-lg border p-2 transition-colors",
                                     mobileActiveRole === "poster"

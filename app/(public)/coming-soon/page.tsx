@@ -1,29 +1,19 @@
+"use client";
+
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Construction, ArrowRight } from "lucide-react";
 
-interface ComingSoonPageProps {
-  searchParams?: { [key: string]: string | string[] | undefined };
-}
-
-export default function ComingSoonPage({ searchParams }: ComingSoonPageProps) {
-  const type = typeof searchParams?.type === "string" ? searchParams.type : undefined;
-  const labelParam = searchParams?.label;
-  const label =
-    typeof labelParam === "string"
-      ? labelParam
-      : Array.isArray(labelParam)
-      ? labelParam[0]
-      : undefined;
+function ComingSoonContent() {
+  const searchParams = useSearchParams();
+  const type = searchParams.get("type") || undefined;
+  const label = searchParams.get("label") || undefined;
 
   const isInfoPage = type === "info";
 
   const title = isInfoPage ? "Page coming soon" : "Coming Soon!";
-  const description = isInfoPage
-    ? label
-      ? `${label} page is under construction. Please check back soon.`
-      : "This page is under construction. Please check back soon."
-    : "Poster categories are under construction. You can get help directly and we'll help you find the right helper.";
 
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center px-4 py-12 text-center">
@@ -34,6 +24,11 @@ export default function ComingSoonPage({ searchParams }: ComingSoonPageProps) {
         <h1 className="text-2xl md:text-3xl font-bold text-secondary-900">
           {title}
         </h1>
+        {isInfoPage && label ? (
+          <p className="text-secondary-600">
+            {label} page is under construction. Please check back soon.
+          </p>
+        ) : null}
         <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
           {!isInfoPage && (
             <Link href="/tasks/new">
@@ -51,5 +46,13 @@ export default function ComingSoonPage({ searchParams }: ComingSoonPageProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ComingSoonPage() {
+  return (
+    <Suspense fallback={<div className="min-h-[60vh]" />}>
+      <ComingSoonContent />
+    </Suspense>
   );
 }

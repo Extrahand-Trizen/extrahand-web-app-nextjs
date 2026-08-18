@@ -12,6 +12,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { APP_STORE_URL } from "@/lib/openAppBridge";
 import { Facebook, Twitter, Instagram, Linkedin, Youtube, ChevronDown } from "lucide-react";
 import { useState } from "react";
 
@@ -256,7 +257,9 @@ export const LandingFooter: React.FC = () => {
             <div className="flex gap-4">
               {/* App Store */}
               <Link
-              href="/coming-soon/mobile-app"
+              href={APP_STORE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
                 className="flex items-center gap-3 bg-white rounded-xl px-3 py-2 md:px-4 md:py-2.5 hover:bg-secondary-100 transition-colors"
               >
                 <svg

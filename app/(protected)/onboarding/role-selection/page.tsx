@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { referralsApi } from '@/lib/api/endpoints/referrals';
+import { trackOnboardingCompleted } from '@/lib/services/mixpanel';
 
 const PRIMARY_YELLOW = '#f9b233';
 const DARK = '#222';
@@ -59,6 +60,13 @@ export default function RoleSelectionPage() {
         });
       }
     }
+
+    // Mixpanel: Onboarding Completed
+    trackOnboardingCompleted({
+      goal,
+      userType,
+      roles: goal === 'earn' ? ['tasker'] : goal === 'get' ? ['poster'] : [],
+    });
 
     // Navigate based on goal selection
     if (goal === 'earn') {

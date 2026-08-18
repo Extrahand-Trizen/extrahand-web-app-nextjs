@@ -144,7 +144,7 @@ export default function HomePage() {
                            {user?.name?.split(" ")[0] || "there"}
                         </h1>
                         <h2 className="text-sm sm:text-base text-secondary-600 font-semibold">
-                           Find & Hire Services Near You at Your Budget
+                           Choose Your Budget or Book Instantly. The Choice is Yours.
                         </h2>
                      </div>
 
@@ -218,7 +218,7 @@ export default function HomePage() {
                   {/* Dynamic Action Card Section - Full Width, Centered Content */}
                   <div>
                      <div className="w-full mx-auto">
-                        {user && <DynamicActionCard user={user} />}
+                        {user && <DynamicActionCard user={user as any} />}
                      </div>
                   </div>
                </div>

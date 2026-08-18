@@ -676,7 +676,7 @@ export function InteractiveLocationPicker({
             state: address.state,
             pinCode: address.pinCode || "",
             country: address.country || "India",
-            coordinates: coordinates,
+            coordinates: { lat: coordinates[0], lng: coordinates[1] },
             isDefault: false,
          });
 

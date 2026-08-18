@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth/context";
@@ -8,15 +7,11 @@ import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { EnvironmentLogger } from "@/components/EnvironmentLogger";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { AnalyticsPageView } from "@/components/AnalyticsPageView";
 import { PollingOtpToastBridge } from "@/components/notifications/PollingOtpToastBridge";
 
-
-const inter = Inter({
-   subsets: ["latin"],
-   variable: "--font-inter",
-   display: "swap",
-   preload: false,
-});
+// Avoid next/font here: relative assetPrefix (`./`) required for MinIO subfolder hosting
+// is incompatible with next/font's assetPrefix validation.
 
 export const metadata: Metadata = {
    title: "ExtraHand – Hire Help or Earn Money Near You",
@@ -32,6 +27,9 @@ export const metadata: Metadata = {
       ],
       shortcut: "/icon.svg?v=3",
       apple: "/logo.webp?v=3",
+      other: [
+         { url: '/favicon.ico', type: 'image/x-icon' }
+      ],
    },
    openGraph: {
       type: "website",
@@ -68,11 +66,32 @@ export default function RootLayout({
 }>) {
    return (
       <html lang="en" suppressHydrationWarning style={{ scrollBehavior: 'auto' }}>
-         <head />
+         <head>
+            <link rel="preconnect" href="https://fonts.googleapis.com" />
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+            <link
+               href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+               rel="stylesheet"
+            />
+            <link rel="shortcut icon" href="/favicon.ico" />
+            <link rel="icon" href="/icon.svg?v=3" type="image/svg+xml" />
+            <link rel="icon" href="/logo.webp" type="image/webp" />
+            <script async src="https://www.googletagmanager.com/gtag/js?id=G-C9E6GBS27L"></script>
+            <script
+               dangerouslySetInnerHTML={{
+                  __html: `
+                     window.dataLayer = window.dataLayer || [];
+                     function gtag(){dataLayer.push(arguments);}
+                     gtag('js', new Date());
+                     gtag('config', 'G-C9E6GBS27L');
+                  `,
+               }}
+            />
+         </head>
          <body
-            className={`${inter.variable} font-sans antialiased`}
+            className="font-sans antialiased"
             suppressHydrationWarning
-            style={{ margin: 0, padding: 0, overflowX: 'hidden' }}
+            style={{ margin: 0, padding: 0, overflowX: 'hidden', ['--font-inter' as string]: "'Inter', sans-serif" }}
          >
             <EnvironmentLogger />
             <ErrorBoundary>
@@ -80,6 +99,7 @@ export default function RootLayout({
                   <AuthProvider>
                      <Suspense fallback={null}>
                         <ScrollToTop />
+                        <AnalyticsPageView />
                      </Suspense>
                      <Toaster
                         position="top-right"

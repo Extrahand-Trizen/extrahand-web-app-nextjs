@@ -301,7 +301,7 @@ export default function ReferralDashboardSimple({ className = '' }: ReferralSimp
                       </div>
                       <div className="ml-4 text-right shrink-0">
                         <p className="font-bold text-green-700">+{Number(tx.coins).toFixed(0)} coins</p>
-                        <p className="text-xs text-gray-500">≈ ₹{(Number(tx.coins) * COIN_RATE).toFixed(2)}</p>
+                        <p className="text-xs text-gray-500">≈ ₹{(Number(tx.coins) * coinRate).toFixed(2)}</p>
                       </div>
                     </div>
                   );

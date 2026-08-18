@@ -20,17 +20,17 @@ const pressReleases = [
 const brandAssets = [
   {
     name: "Primary Logo (WEBP)",
-    href: "/logo.webp",
+    href: "./logo.webp",
     fileName: "extrahand-logo-primary.webp",
   },
   {
     name: "Logo Variant (WEBP)",
-    href: "/assets/images/logo.webp",
+    href: "./assets/images/logo.webp",
     fileName: "extrahand-logo-variant.webp",
   },
   {
     name: "ExtraHand Wordmark (WEBP)",
-    href: "/assets/images/extrahand-logo.webp",
+    href: "./assets/images/extrahand-logo.webp",
     fileName: "extrahand-wordmark.webp",
   },
 ];

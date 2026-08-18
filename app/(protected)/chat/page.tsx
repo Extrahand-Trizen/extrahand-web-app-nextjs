@@ -21,6 +21,7 @@ import { useChatSocket } from "@/lib/socket/hooks/useChatSocket";
 import { useUserStore } from "@/lib/state/userStore";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import { trackChatMessageSent } from "@/lib/services/mixpanel";
 
 export default function ChatPage() {
   const searchParams = useSearchParams();
@@ -166,7 +167,7 @@ export default function ChatPage() {
           (profile as any)?.displayName ||
           (profile as any)?.fullName ||
           "Unknown";
-        const profileImage = profile?.profileImage || (profile as any)?.photoURL;
+        const profileImage = profile?.photoURL || (profile as any)?.profileImage;
         profileCacheRef.current.set(otherUserId, { name, profileImage });
         return {
           ...chat,
@@ -631,6 +632,13 @@ export default function ChatPage() {
         activeChat.chatId,
         messageText
       );
+
+      // Mixpanel: Chat Message Sent
+      trackChatMessageSent({
+        task_id: activeChat.relatedTask,
+        chat_id: activeChat.chatId,
+        message_type: "text",
+      });
 
       // Replace temp message with real message
       setMessages((prev) =>

@@ -1,0 +1,23 @@
+User-agent: *
+
+Disallow: /login
+Disallow: /signup
+Disallow: /otp-verification
+Disallow: /onboarding
+Disallow: /dashboard
+Disallow: /notifications
+Disallow: /payments
+Disallow: /profile/verify
+Disallow: /chat
+Disallow: /applications
+Disallow: /api/
+
+Disallow: /*?tag=
+Disallow: /*?category=
+Disallow: /*?page=
+
+Disallow: /blog?tag=
+Disallow: /blog?category=
+Disallow: /blog?page=
+
+Sitemap: https://www.extrahand.in/sitemap.xml

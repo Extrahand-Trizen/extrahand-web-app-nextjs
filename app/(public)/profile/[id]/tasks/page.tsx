@@ -210,10 +210,10 @@ export default function UserPortfolioPage() {
    }
 
    const completedTasks = tasks.filter(
-      (task) => task.status === "completed" || task.status === "closed"
+      (task) => task.status === "completed" || task.status === "cancelled"
    );
    const activeTasks = tasks.filter(
-      (task) => task.status === "active" || task.status === "open"
+      (task) => task.status === "open" || task.status === "assigned"
    );
 
    return (
@@ -441,23 +441,23 @@ function TaskCard({ task, userName }: TaskCardProps) {
                {task.location && (
                   <div className="flex items-center gap-1 text-sm text-gray-500 mb-3">
                      <MapPin className="w-3 h-3" />
-                     {task.location.city || task.location}
+                     {task.location.city || task.location.address || ""}
                   </div>
                )}
 
                {/* Status Badge */}
                <div className="flex items-center gap-2">
                   <span
-                     className={`text-xs font-medium px-2 py-1 rounded ${
-                        task.status === "completed" ||
-                        task.status === "closed"
-                           ? "bg-green-50 text-green-700"
-                           : "bg-yellow-50 text-yellow-700"
-                     }`}
-                  >
-                     {task.status === "completed" || task.status === "closed"
-                        ? "Completed"
-                        : "Active"}
+                      className={`text-xs font-medium px-2 py-1 rounded ${
+                         task.status === "completed" ||
+                         task.status === "cancelled"
+                            ? "bg-green-50 text-green-700"
+                            : "bg-yellow-50 text-yellow-700"
+                      }`}
+                   >
+                      {task.status === "completed" || task.status === "cancelled"
+                         ? "Completed"
+                         : "Active"}
                   </span>
                </div>
             </div>

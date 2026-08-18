@@ -1,28 +1,42 @@
 import type { NextConfig } from "next";
 
+const isProd = process.env.NODE_ENV === "production";
+
 const nextConfig: NextConfig = {
-  // Produce a self-contained server bundle (server.js + only required node_modules).
-  // This reduces the Docker image size by ~95 % and eliminates the I/O burst that
-  // causes CPU spikes at container startup when the full node_modules is present.
-  output: "standalone",
-  compress: true,
+  // Static HTML/CSS/JS for MinIO / CDN hosting (upload the `out/` folder)
+  // Only apply in production builds — dev mode uses the normal Next.js server
+  // which supports middleware, API routes, etc.
+  ...(isProd && {
+    output: "export",
+    // Relative asset URLs for MinIO subfolder (…/build-001/index.html → ./_next/…)
+    assetPrefix: "./",
+  }),
+  trailingSlash: true,
+  images: {
+    unoptimized: true,
+  },
+  async headers() {
+    return [
+      {
+        source: '/.well-known/apple-app-site-association',
+        headers: [
+          { key: 'Content-Type', value: 'application/json' },
+        ],
+      },
+    ];
+  },
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Allow images from external domains
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '4002',
-        pathname: '/uploads/**',
-      },
-      {
-        protocol: 'https',
-        hostname: '**', // Allow all HTTPS hosts for production
-      },
-    ],
+  webpack: (config, { dev }) => {
+    if (dev) {
+      // Disable filesystem pack cache in dev to prevent
+      // "RangeError: Array buffer allocation failed" crash on low-memory systems
+      config.cache = {
+        type: "memory",
+      };
+    }
+    return config;
   },
 };
 

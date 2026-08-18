@@ -3,7 +3,7 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PayoutStatusBadge } from "./PayoutStatusBadge";
+import { PayoutStatusBadge } from "@/components/profile/PayoutStatusBadge";
 import { Clock, CheckCircle, AlertCircle } from "lucide-react";
 
 interface TaskPayoutInfoProps {

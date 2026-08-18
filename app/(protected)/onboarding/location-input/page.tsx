@@ -26,7 +26,6 @@ const InteractiveMap = dynamicImport(
 );
 
 // Disable static generation for this page (map requires client-side rendering)
-export const dynamic = 'force-dynamic';
 
 const PRIMARY_YELLOW = '#f9b233';
 const DARK = '#222';

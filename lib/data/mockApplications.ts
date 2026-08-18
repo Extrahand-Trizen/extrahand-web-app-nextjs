@@ -6,6 +6,7 @@ export const mockApplicationsData: TaskApplication[] = [
       _id: "app1",
       id: "app1",
       taskId: "1",
+      applicantId: "performer1",
       applicantUid: "performer1",
       proposedBudget: {
          amount: 1200,
@@ -35,6 +36,7 @@ export const mockApplicationsData: TaskApplication[] = [
       _id: "app2",
       id: "app2",
       taskId: "1",
+      applicantId: "performer2",
       applicantUid: "performer2",
       proposedBudget: {
          amount: 1500,
@@ -63,6 +65,7 @@ export const mockApplicationsData: TaskApplication[] = [
       _id: "app3",
       id: "app3",
       taskId: "1",
+      applicantId: "performer3",
       applicantUid: "performer3",
       proposedBudget: {
          amount: 1400,
@@ -93,6 +96,7 @@ export const mockMyApplicationsData: TaskApplication[] = [
       _id: "myapp1",
       id: "myapp1",
       taskId: "1",
+      applicantId: "currentUser",
       applicantUid: "currentUser",
       proposedBudget: {
          amount: 1300,
@@ -122,6 +126,7 @@ export const mockMyApplicationsData: TaskApplication[] = [
       _id: "myapp2",
       id: "myapp2",
       taskId: "2",
+      applicantId: "currentUser",
       applicantUid: "currentUser",
       proposedBudget: {
          amount: 2500,
@@ -152,6 +157,7 @@ export const mockMyApplicationsData: TaskApplication[] = [
       _id: "myapp3",
       id: "myapp3",
       taskId: "3",
+      applicantId: "currentUser",
       applicantUid: "currentUser",
       proposedBudget: {
          amount: 1800,
@@ -182,6 +188,7 @@ export const mockMyApplicationsData: TaskApplication[] = [
       _id: "myapp4",
       id: "myapp4",
       taskId: "4",
+      applicantId: "currentUser",
       applicantUid: "currentUser",
       proposedBudget: {
          amount: 5000,
@@ -211,6 +218,7 @@ export const mockMyApplicationsData: TaskApplication[] = [
       _id: "myapp5",
       id: "myapp5",
       taskId: "5",
+      applicantId: "currentUser",
       applicantUid: "currentUser",
       proposedBudget: {
          amount: 800,

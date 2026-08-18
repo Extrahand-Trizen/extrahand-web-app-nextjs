@@ -6,7 +6,7 @@
 import { CategoryDetail, Subcategory } from "@/types/category";
 
 const DEFAULT_CONTENT_ADMIN_URL =
-   "https://extrahand-content-admin-backend.apps.extrahand.in";
+   "https://extrahand-content-admin-backend.backend.extrahand.in";
 const DEFAULT_APP_URL = "https://extrahand.in";
 const CONTENT_ADMIN_URL =
    process.env.NEXT_PUBLIC_CONTENT_ADMIN_URL || DEFAULT_CONTENT_ADMIN_URL;
@@ -38,11 +38,10 @@ function toAbsoluteUrl(value: string): string {
 
 function getContentAdminBaseUrls(): string[] {
    const configured = CONTENT_ADMIN_URL.replace(/\/+$/, "");
-   const proxyBaseUrl = toAbsoluteUrl("/api/content-admin");
    const fallbackAbsolute = DEFAULT_CONTENT_ADMIN_URL;
    const configuredAbsolute = toAbsoluteUrl(configured);
 
-   const baseUrls = [configuredAbsolute, proxyBaseUrl, fallbackAbsolute];
+   const baseUrls = [configuredAbsolute, fallbackAbsolute];
 
    return [...new Set(baseUrls.filter(Boolean))];
 }

@@ -30,6 +30,11 @@ import { setOTPAuthInProgress } from "@/lib/auth/authFlowState";
 import { isLocalTestMode, isTestPhone, DUMMY_OTP } from "@/lib/auth/devOtp";
 import { useUserStore } from "@/lib/state/userStore";
 import { formatPhoneNumber } from "@/lib/utils/phone";
+import {
+   trackLoginCompleted,
+   trackReferralCodeApplied,
+   trackSignUpCompleted,
+} from "@/lib/services/mixpanel";
 
 const OTP_LENGTH = 6;
 const INVALID_OTP_TOAST_MESSAGE =
@@ -154,6 +159,7 @@ export function OTPVerificationForm({
       try {
          await referralsApi.applyReferralCode(pendingReferralCode);
          sessionStorage.removeItem("pendingReferralCode");
+         trackReferralCodeApplied();
          toast.success("Referral code applied!", {
             description: "Complete a task worth ₹500+ to unlock rewards.",
          });
@@ -163,6 +169,18 @@ export function OTPVerificationForm({
          toast.error("Could not apply referral code", {
             description: "You can apply it later from your profile.",
          });
+      }
+   }, [authType]);
+
+   // Mixpanel: sign_up_completed / login_completed after successful OTP verification
+   const trackAuthCompletion = useCallback(() => {
+      if (authType === "signup") {
+         const hasReferral =
+            typeof window !== "undefined" &&
+            Boolean(sessionStorage.getItem("pendingReferralCode"));
+         trackSignUpCompleted({ supplyMode: "web", hasReferral });
+      } else {
+         trackLoginCompleted();
       }
    }, [authType]);
 
@@ -363,6 +381,7 @@ export function OTPVerificationForm({
             await new Promise((r) => setTimeout(r, 200));
             await refreshUserData();
             await applyPendingReferralCode();
+            trackAuthCompletion();
             
             // Mark verification as completed BEFORE setting isVerified
             verificationCompletedRef.current = true;
@@ -497,7 +516,11 @@ export function OTPVerificationForm({
          // Apply referral code if user signed up with one
          await applyPendingReferralCode();
 
+         // Mixpanel: sign_up_completed / login_completed
+         trackAuthCompletion();
+
          // 5. Success!
+         // Mark verification as completed BEFORE setting isVerified and showing toast
          // Mark verification as completed BEFORE setting isVerified and showing toast
          verificationCompletedRef.current = true;
          setIsVerified(true);

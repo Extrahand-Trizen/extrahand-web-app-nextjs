@@ -238,7 +238,6 @@ export function DiscoverClient({
           (task) =>
             !task.location ||
             !task.location.coordinates ||
-            task.location.coordinates.length === 0 ||
             !task.location.address
         );
       } else {
@@ -246,8 +245,7 @@ export function DiscoverClient({
         filtered = filtered.filter(
           (task) =>
             task.location &&
-            task.location.coordinates &&
-            task.location.coordinates.length > 0
+            task.location.coordinates
         );
       }
     }
@@ -403,7 +401,6 @@ export function DiscoverClient({
                           task={task}
                           isSelected={selectedTaskId === task._id}
                           onClick={() => handleTaskSelect(task._id)}
-                          distance={distance}
                         />
                       </PrefetchTaskWrapper>
                     );

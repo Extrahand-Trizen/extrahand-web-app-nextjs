@@ -7,11 +7,13 @@ import {
   CheckCircle,
   AlertCircle,
   RefreshCw,
+} from "lucide-react";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "lucide-react";
+} from "@/components/ui/tooltip";
 
 export type PayoutStatus = "processing" | "completed" | "failed" | "reversed";
 
@@ -63,7 +65,7 @@ export function PayoutStatusBadge({
     }
   };
 
-  const getIcon = (): JSX.Element => {
+  const getIcon = (): React.ReactNode => {
     const iconProps = { className: `w-3 h-3 ${compact ? "" : "mr-1"}` };
     switch (status) {
       case "processing":

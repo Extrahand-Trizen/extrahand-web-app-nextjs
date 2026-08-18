@@ -6,6 +6,9 @@ import {
    hyderabadServicePageSlugs,
 } from "@/lib/data/hyderabad-service-pages";
 import { getCityBySlug } from "@/lib/data/cities";
+import { getPublishedSeoPage } from "@/lib/api/endpoints/seoPages";
+import SeoPageRenderer from "@/components/SeoPageRenderer";
+import SeoPageWrapper from "@/components/SeoPageWrapper";
 
 interface HyderabadAreaServicePageProps {
    params: Promise<{ area: string; serviceCitySlug: string }>;
@@ -132,6 +135,29 @@ export async function generateMetadata({
    params,
 }: HyderabadAreaServicePageProps): Promise<Metadata> {
    const { area, serviceCitySlug } = await params;
+   const categorySlugPart = serviceCitySlug.replace(/-in-hyderabad$/, "");
+   const areaSlug = `${categorySlugPart}-in-${area}`;
+
+   const cmsPage = await getPublishedSeoPage(areaSlug);
+   if (cmsPage) {
+      return {
+         title: cmsPage.metaTitle,
+         description: cmsPage.metaDescription,
+         alternates: { canonical: cmsPage.canonicalUrl },
+         openGraph: {
+            title: cmsPage.metaTitle,
+            description: cmsPage.metaDescription,
+            url: cmsPage.canonicalUrl,
+            type: "website",
+         },
+         twitter: {
+            card: "summary_large_image",
+            title: cmsPage.metaTitle,
+            description: cmsPage.metaDescription,
+         },
+      };
+   }
+
    const areaName = fromAreaSlug(area);
    const servicePage = getHyderabadServicePageBySlug(serviceCitySlug);
 
@@ -141,12 +167,32 @@ export async function generateMetadata({
       };
    }
 
+   const areaCanonicalPath = `/locations/hyderabad/${area}/${serviceCitySlug}`;
+
    return {
       title: `${servicePage.serviceName} in ${areaName}, Hyderabad | ExtraHand`,
       description: servicePage.shortDescription.replaceAll(
          "in Hyderabad",
          `in ${areaName}, Hyderabad`
       ),
+      alternates: { canonical: areaCanonicalPath },
+      openGraph: {
+         title: `${servicePage.serviceName} in ${areaName}, Hyderabad`,
+         description: servicePage.shortDescription.replaceAll(
+            "in Hyderabad",
+            `in ${areaName}, Hyderabad`
+         ),
+         url: `${process.env.NEXT_PUBLIC_APP_URL || "https://extrahand.in"}${areaCanonicalPath}`,
+         type: "website",
+      },
+      twitter: {
+         card: "summary_large_image",
+         title: `${servicePage.serviceName} in ${areaName}, Hyderabad | ExtraHand`,
+         description: servicePage.shortDescription.replaceAll(
+            "in Hyderabad",
+            `in ${areaName}, Hyderabad`
+         ),
+      },
    };
 }
 
@@ -154,121 +200,149 @@ export default async function HyderabadAreaServicePage({
    params,
 }: HyderabadAreaServicePageProps) {
    const { area, serviceCitySlug } = await params;
+   const categorySlugPart = serviceCitySlug.replace(/-in-hyderabad$/, "");
+   const areaSlug = `${categorySlugPart}-in-${area}`;
+
+   const cmsPage = await getPublishedSeoPage(areaSlug);
    const areaName = fromAreaSlug(area);
    const servicePage = getHyderabadServicePageBySlug(serviceCitySlug);
 
-   if (!areaName || !servicePage) {
+   // If neither CMS page nor static data found, 404
+   if (!cmsPage && (!areaName || !servicePage)) {
       notFound();
    }
 
-   const demoContent = getDemoContent(servicePage.serviceName, areaName);
-   const areaBenefits = buildAreaBenefits(servicePage.serviceName, areaName);
-   const popularJobs = buildPopularJobs(
-      servicePage.serviceName,
-      servicePage.commonNeeds,
-      areaName
-   );
+   const staticFallback =
+      areaName && servicePage ? (() => {
+         const demoContent = getDemoContent(servicePage.serviceName, areaName);
+         const areaBenefits = buildAreaBenefits(servicePage.serviceName, areaName);
+         const popularJobs = buildPopularJobs(
+            servicePage.serviceName,
+            servicePage.commonNeeds,
+            areaName
+         );
+         return (
+            <main className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+               <section className="rounded-2xl border border-secondary-200 bg-white p-6 sm:p-8">
+                  <p className="text-sm font-semibold uppercase tracking-wide text-primary-600">
+                     Hyderabad Local Services
+                  </p>
+                  <h1 className="mt-2 text-2xl font-bold text-secondary-900 sm:text-3xl">
+                     {servicePage.serviceName} in {areaName}, Hyderabad
+                  </h1>
+                  <p className="mt-3 max-w-3xl text-secondary-700">
+                     {servicePage.heroDescription.replaceAll(
+                        "in Hyderabad",
+                        `in ${areaName}, Hyderabad`
+                     )}
+                  </p>
+                  <p className="mt-3 max-w-3xl text-secondary-700">{demoContent.demoIntro}</p>
+
+                  <div className="mt-6 flex flex-wrap gap-3">
+                     <Link
+                        href={`/locations/hyderabad/${area}`}
+                        className="rounded-lg border border-secondary-300 bg-white px-5 py-3 text-sm font-semibold text-secondary-800 transition hover:bg-secondary-100"
+                     >
+                        Explore All Services in {areaName}
+                     </Link>
+                     <Link
+                        href={`/${servicePage.slug}`}
+                        className="rounded-lg bg-primary-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-700"
+                     >
+                        Back to Hyderabad Service Page
+                     </Link>
+                  </div>
+               </section>
+
+               <section className="mt-8 grid gap-6 sm:grid-cols-2">
+                  <article className="rounded-2xl border border-secondary-200 bg-white p-6 sm:col-span-2">
+                     <h2 className="text-xl font-semibold text-secondary-900">{demoContent.ctaTitle}</h2>
+                     <p className="mt-3 text-secondary-700">{demoContent.workerCopy}</p>
+                     <ul className="mt-4 grid gap-3 sm:grid-cols-3 text-secondary-700">
+                        {demoContent.highlights.map((item) => (
+                           <li key={item} className="rounded-lg border border-secondary-200 bg-secondary-50 px-3 py-2 text-sm">
+                              {item}
+                           </li>
+                        ))}
+                     </ul>
+                  </article>
+
+                  <article className="rounded-2xl border border-secondary-200 bg-white p-6">
+                     <h2 className="text-xl font-semibold text-secondary-900">What You Get</h2>
+                     <ul className="mt-4 space-y-3 text-secondary-700">
+                        {servicePage.whatYouGet.map((item) => (
+                           <li key={item} className="flex items-start gap-2">
+                              <span aria-hidden="true" className="mt-1 h-2 w-2 rounded-full bg-primary-500" />
+                              <span>{item}</span>
+                           </li>
+                        ))}
+                     </ul>
+                  </article>
+
+                  <article className="rounded-2xl border border-secondary-200 bg-white p-6">
+                     <h2 className="text-xl font-semibold text-secondary-900">Common Service Requests</h2>
+                     <ul className="mt-4 space-y-3 text-secondary-700">
+                        {servicePage.commonNeeds.map((item) => (
+                           <li key={item} className="flex items-start gap-2">
+                              <span aria-hidden="true" className="mt-1 h-2 w-2 rounded-full bg-primary-500" />
+                              <span>{item}</span>
+                           </li>
+                        ))}
+                     </ul>
+                  </article>
+
+                  <article className="rounded-2xl border border-secondary-200 bg-white p-6 sm:col-span-2">
+                     <h2 className="text-xl font-semibold text-secondary-900">
+                        Why Choose {servicePage.serviceName} in {areaName}
+                     </h2>
+                     <ul className="mt-4 space-y-3 text-secondary-700">
+                        {areaBenefits.map((item) => (
+                           <li key={item} className="flex items-start gap-2">
+                              <span aria-hidden="true" className="mt-1 h-2 w-2 rounded-full bg-primary-500" />
+                              <span>{item}</span>
+                           </li>
+                        ))}
+                     </ul>
+                  </article>
+
+                  <article className="rounded-2xl border border-secondary-200 bg-white p-6 sm:col-span-2">
+                     <h2 className="text-xl font-semibold text-secondary-900">
+                        Popular {servicePage.serviceName} Jobs in {areaName}
+                     </h2>
+                     <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                        {popularJobs.map((job) => (
+                           <p
+                              key={job}
+                              className="rounded-lg border border-secondary-200 bg-secondary-50 px-3 py-2 text-sm text-secondary-800"
+                           >
+                              {job}
+                           </p>
+                        ))}
+                     </div>
+                  </article>
+               </section>
+            </main>
+         );
+      })() : null;
 
    return (
-      <main className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-         <section className="rounded-2xl border border-secondary-200 bg-white p-6 sm:p-8">
-            <p className="text-sm font-semibold uppercase tracking-wide text-primary-600">
-               Hyderabad Local Services
-            </p>
-            <h1 className="mt-2 text-2xl font-bold text-secondary-900 sm:text-3xl">
-               {servicePage.serviceName} in {areaName}, Hyderabad
-            </h1>
-            <p className="mt-3 max-w-3xl text-secondary-700">
-               {servicePage.heroDescription.replaceAll(
-                  "in Hyderabad",
-                  `in ${areaName}, Hyderabad`
-               )}
-            </p>
-            <p className="mt-3 max-w-3xl text-secondary-700">{demoContent.demoIntro}</p>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-               <Link
-                  href={`/locations/hyderabad/${area}`}
-                  className="rounded-lg border border-secondary-300 bg-white px-5 py-3 text-sm font-semibold text-secondary-800 transition hover:bg-secondary-100"
-               >
-                  Explore All Services in {areaName}
-               </Link>
-               <Link
-                  href={`/${servicePage.slug}`}
-                  className="rounded-lg bg-primary-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-700"
-               >
-                  Back to Hyderabad Service Page
-               </Link>
-            </div>
-         </section>
-
-         <section className="mt-8 grid gap-6 sm:grid-cols-2">
-            <article className="rounded-2xl border border-secondary-200 bg-white p-6 sm:col-span-2">
-               <h2 className="text-xl font-semibold text-secondary-900">{demoContent.ctaTitle}</h2>
-               <p className="mt-3 text-secondary-700">{demoContent.workerCopy}</p>
-               <ul className="mt-4 grid gap-3 sm:grid-cols-3 text-secondary-700">
-                  {demoContent.highlights.map((item) => (
-                     <li key={item} className="rounded-lg border border-secondary-200 bg-secondary-50 px-3 py-2 text-sm">
-                        {item}
-                     </li>
-                  ))}
-               </ul>
-            </article>
-
-            <article className="rounded-2xl border border-secondary-200 bg-white p-6">
-               <h2 className="text-xl font-semibold text-secondary-900">What You Get</h2>
-               <ul className="mt-4 space-y-3 text-secondary-700">
-                  {servicePage.whatYouGet.map((item) => (
-                     <li key={item} className="flex items-start gap-2">
-                        <span aria-hidden="true" className="mt-1 h-2 w-2 rounded-full bg-primary-500" />
-                        <span>{item}</span>
-                     </li>
-                  ))}
-               </ul>
-            </article>
-
-            <article className="rounded-2xl border border-secondary-200 bg-white p-6">
-               <h2 className="text-xl font-semibold text-secondary-900">Common Service Requests</h2>
-               <ul className="mt-4 space-y-3 text-secondary-700">
-                  {servicePage.commonNeeds.map((item) => (
-                     <li key={item} className="flex items-start gap-2">
-                        <span aria-hidden="true" className="mt-1 h-2 w-2 rounded-full bg-primary-500" />
-                        <span>{item}</span>
-                     </li>
-                  ))}
-               </ul>
-            </article>
-
-            <article className="rounded-2xl border border-secondary-200 bg-white p-6 sm:col-span-2">
-               <h2 className="text-xl font-semibold text-secondary-900">
-                  Why Choose {servicePage.serviceName} in {areaName}
-               </h2>
-               <ul className="mt-4 space-y-3 text-secondary-700">
-                  {areaBenefits.map((item) => (
-                     <li key={item} className="flex items-start gap-2">
-                        <span aria-hidden="true" className="mt-1 h-2 w-2 rounded-full bg-primary-500" />
-                        <span>{item}</span>
-                     </li>
-                  ))}
-               </ul>
-            </article>
-
-            <article className="rounded-2xl border border-secondary-200 bg-white p-6 sm:col-span-2">
-               <h2 className="text-xl font-semibold text-secondary-900">
-                  Popular {servicePage.serviceName} Jobs in {areaName}
-               </h2>
-               <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                  {popularJobs.map((job) => (
-                     <p
-                        key={job}
-                        className="rounded-lg border border-secondary-200 bg-secondary-50 px-3 py-2 text-sm text-secondary-800"
-                     >
-                        {job}
-                     </p>
-                  ))}
-               </div>
-            </article>
-         </section>
-      </main>
+      <>
+         {/* JSON-LD schemas in server component = baked into static HTML at build time */}
+         {cmsPage?.faqSchema && (
+            <script
+               type="application/ld+json"
+               dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPage.faqSchema) }}
+            />
+         )}
+         {cmsPage?.breadcrumbSchema && (
+            <script
+               type="application/ld+json"
+               dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPage.breadcrumbSchema) }}
+            />
+         )}
+         <SeoPageWrapper slug={areaSlug} initialPage={cmsPage}>
+            {staticFallback}
+         </SeoPageWrapper>
+      </>
    );
 }

@@ -28,7 +28,7 @@ export interface ActiveTaskItem {
    otherPartyName?: string;
    nextAction: string;
    nextActionRoute: string;
-   urgency: "low" | "medium" | "high";
+    urgency: "low" | "medium" | "high" | "urgent";
    scheduledDate?: Date;
    budget: number;
 }

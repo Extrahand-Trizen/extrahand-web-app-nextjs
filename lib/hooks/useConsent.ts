@@ -11,7 +11,7 @@ export interface CookieConsent {
   version: string; // Consent version for re-prompting on updates
 }
 
-const CONSENT_STORAGE_KEY = 'extrahand_cookie_consent';
+export const CONSENT_STORAGE_KEY = 'extrahand_cookie_consent';
 const CONSENT_ANSWERED_KEY = 'extrahand_consent_answered';
 const CONSENT_VERSION = '1.0.0';
 

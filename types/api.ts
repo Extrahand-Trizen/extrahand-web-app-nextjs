@@ -74,6 +74,7 @@ export interface TaskQueryParams extends PaginationParams {
    search?: string;
    creatorUid?: string;
    posterUid?: string;
+   requesterId?: string;
    assigneeId?: string;
    assignedTo?: string;
 }
