@@ -7,6 +7,8 @@ import {
    buildManualPosterCategoryOverview,
    getManualServicesByCategorySlug,
 } from "@/lib/data/manual-services-catalog";
+import { getServiceCategoryStaticParams } from "@/lib/data/categoryStaticParams";
+import { allowDynamicCategoryParams } from "@/lib/utils/dynamicRouteConfig";
 
 interface ServicePageProps {
    params: Promise<{
@@ -14,25 +16,13 @@ interface ServicePageProps {
    }>;
 }
 
-// Required for static export: pre-build all known category pages
+// Required for static export: pre-build all published service category pages
 export async function generateStaticParams() {
-   try {
-      const categories = await categoriesApi.getCategories({ includeUnpublished: false });
-      const apiSlugs = categories.map((c) => ({ slug: c.slug }));
-      // Deduplicate
-      const seen = new Set<string>();
-      return apiSlugs.filter(({ slug }) => {
-         if (seen.has(slug)) return false;
-         seen.add(slug);
-         return true;
-      });
-   } catch {
-      return [];
-   }
+   return getServiceCategoryStaticParams();
 }
 
 // Allow any slug not in staticParams to fall through to notFound instead of crash
-export const dynamicParams = false;
+export const dynamicParams = allowDynamicCategoryParams;
 
 /**
  * Ensure incomeOpportunitiesData has proper array structure

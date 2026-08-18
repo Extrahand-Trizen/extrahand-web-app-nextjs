@@ -3,30 +3,16 @@ import { categoriesApi } from "@/lib/api/endpoints/categories";
 import CategoryDetailClient from "@/components/categories/CategoryDetailClient";
 import { CategoryDetail } from "@/types/category";
 import { CategoryNotFound } from "@/components/shared/CategoryNotFound";
+import { getJobCategoryStaticParams } from "@/lib/data/categoryStaticParams";
+import { allowDynamicCategoryParams } from "@/lib/utils/dynamicRouteConfig";
 
 // Required for static export: pre-build all known job/category pages at build time.
-// Without this, only the placeholder "_" slug is exported and every real job URL
-// resolves to index.html (homepage) in production.
 export async function generateStaticParams() {
-   try {
-      const categories = await categoriesApi.getCategories({ includeUnpublished: false });
-      const apiSlugs = categories.map((c) => ({ slug: c.slug }));
-      // Deduplicate
-      const seen = new Set<string>();
-      return apiSlugs.filter(({ slug }) => {
-         if (seen.has(slug)) return false;
-         seen.add(slug);
-         return true;
-      });
-   } catch {
-      // If the API is unreachable at build time, fall back to the placeholder
-      // so the build doesn't fail outright.
-      return [{ slug: "_" }];
-   }
+   return getJobCategoryStaticParams();
 }
 
 // Prevent 404 for slugs not returned by the API — show CategoryNotFound instead.
-export const dynamicParams = false;
+export const dynamicParams = allowDynamicCategoryParams;
 
 interface JobPageProps {
    params: Promise<{

@@ -46,6 +46,7 @@ import type { CategoriesListItem } from "@/lib/api/endpoints/categories";
 import type { UserCurrentStatus } from "@/types/dashboard";
 import type { Category } from "@/types/category";
 import { mergeCarCategories } from "@/lib/utils/mergeCarCategories";
+import { filterCategoriesByRole } from "@/lib/utils/categoryRoleFilter";
 
 const navItems: Array<{
    label: string;
@@ -56,20 +57,6 @@ const navItems: Array<{
    { label: "Start earning", href: "/discover" },
    { label: "How it works", href: "/how-it-works#how-it-works" },
 ];
-
-const filterCategoriesByRole = (
-   source: CategoriesListItem[],
-   role: "poster" | "tasker"
-) => {
-   return source.filter((cat) => {
-      const type = (cat.categoryType || "").toLowerCase();
-      if (!type) return true;
-      if (role === "tasker") {
-         return type.includes("tasker") || type.includes("both");
-      }
-      return type.includes("poster") || type.includes("both");
-   });
-};
 
 /** Strip role-specific suffix from CMS labels: poster → no "Services", tasker → no "Tasks". */
 const getCategoryDisplayName = (name: string, role: "poster" | "tasker") => {

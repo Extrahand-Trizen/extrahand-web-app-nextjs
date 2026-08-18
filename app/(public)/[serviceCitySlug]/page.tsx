@@ -33,19 +33,30 @@ const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://extrahand.in";
 /**
  * Build the full absolute canonical URL for a [serviceCitySlug] page.
  *
- * Rules (matching the Excel Suggested Canonical exactly):
- *  - /categories            → https://extrahand.in/categories   (no trailing slash)
- *  - every other slug       → https://extrahand.in/{slug}/      (trailing slash)
+ * Rules:
+ *  - /categories                             → https://extrahand.in/categories   (no trailing slash)
+ *  - /ac-repair-in-gachibowli               → https://extrahand.in/ac-repair-in-gachibowli  (no trailing slash)
+ *  - /ac-repair-in-hyderabad                 → https://extrahand.in/ac-repair-in-hyderabad/ (trailing slash)
+ *  - all other non-SEO route groups remain untouched and are handled separately
  *
  * Using a full URL (https://…) is essential: Next.js `trailingSlash: true`
  * normalises *relative* canonical paths by appending "/", which would break
- * routes that must NOT have a trailing slash.  Absolute URLs are passed
- * through unchanged.
+ * routes that must NOT have a trailing slash. Absolute URLs are passed through
+ * unchanged.
  */
 function buildCanonicalServiceUrl(slug: string): string {
    if (slug === "categories") {
       return `${baseUrl}/categories`;
    }
+
+   // Hyderabad area pages such as /ac-repair-in-gachibowli must not include
+   // a trailing slash, while the generic /ac-repair-in-hyderabad template keeps
+   // the slash. This route is isolated here so it does not affect jobs, tasks,
+   // services, or other canonical URLs elsewhere in the app.
+   if (slug.includes("-in-") && !slug.endsWith("-in-hyderabad")) {
+      return `${baseUrl}/${slug}`;
+   }
+
    return `${baseUrl}/${slug}/`;
 }
 

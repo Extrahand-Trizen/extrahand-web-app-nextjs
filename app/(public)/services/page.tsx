@@ -2,6 +2,7 @@ import React from "react";
 import { categoriesApi } from "@/lib/api/endpoints/categories";
 import CategoriesClient from "@/components/categories/CategoriesClient";
 import { Category, Subcategory } from "@/types/category";
+import { filterCategoriesByRole } from "@/lib/utils/categoryRoleFilter";
 
 type MergedSubcategory = Subcategory & {
    categoryPageSlug?: string;
@@ -123,13 +124,8 @@ export default async function ServicesPage() {
 
       // Filter and map categories for poster view
       if (Array.isArray(allCategories)) {
-         const posterCategories = allCategories
-            .filter((cat: any) => {
-               const type = (cat.categoryType || "").toLowerCase();
-               // Show categories that are for "poster" or "both"
-               return type.includes("poster") || type.includes("both") || !type;
-            })
-            .map((cat: any) => ({
+         const posterCategories = filterCategoriesByRole(allCategories, "poster").map(
+            (cat) => ({
                _id: cat._id || "",
                name: cat.name || "",
                slug: cat.slug || "",
@@ -137,7 +133,8 @@ export default async function ServicesPage() {
                heroTitle: cat.heroTitle || "",
                heroDescription: cat.heroDescription || "",
                subcategories: Array.isArray(cat.subcategories) ? cat.subcategories : [],
-            }));
+            })
+         );
 
          // Fallback: if embedded subcategories are empty, fetch by category slug.
          categories = await Promise.all(
