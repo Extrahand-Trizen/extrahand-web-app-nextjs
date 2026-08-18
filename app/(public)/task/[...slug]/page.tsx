@@ -4,6 +4,44 @@ import CategoryDetailClient from "@/components/categories/CategoryDetailClient";
 import { CategoryDetail } from "@/types/category";
 import { CategoryNotFound } from "@/components/shared/CategoryNotFound";
 
+// Required for static export: pre-build every /task/[category] and
+// /task/[category]/[subcategory] page at build time.
+// [...slug] is a catch-all segment, so each param entry is an array of path
+// segments.  Without this, only the placeholder ["_"] is exported and every
+// real /task/* URL falls back to index.html (homepage) in production.
+export async function generateStaticParams() {
+   try {
+      const categories = await categoriesApi.getCategories({ includeUnpublished: false });
+      const params: { slug: string[] }[] = [];
+      const seen = new Set<string>();
+
+      for (const cat of categories) {
+         // /task/catering-services
+         if (!seen.has(cat.slug)) {
+            seen.add(cat.slug);
+            params.push({ slug: [cat.slug] });
+         }
+
+         // /task/catering-services/buffet-catering etc.
+         const subs = await categoriesApi.getSubcategories(cat.slug);
+         for (const sub of subs) {
+            const key = `${cat.slug}/${sub.slug}`;
+            if (!seen.has(key)) {
+               seen.add(key);
+               params.push({ slug: [cat.slug, sub.slug] });
+            }
+         }
+      }
+
+      return params.length > 0 ? params : [{ slug: ["_"] }];
+   } catch {
+      return [{ slug: ["_"] }];
+   }
+}
+
+// Do not attempt to render paths outside the static set at runtime.
+export const dynamicParams = false;
+
 interface TaskPageProps {
    params: Promise<{
       slug: string | string[];

@@ -4,6 +4,39 @@ import CategoryDetailClient from "@/components/categories/CategoryDetailClient";
 import { SubcategoryDetail } from "@/types/category";
 import { CategoryNotFound } from "@/components/shared/CategoryNotFound";
 
+// Required for static export: pre-build all known job subcategory pages.
+// Without this, only the placeholder "_" subcategory is exported and every
+// real /jobs/[slug]/[subcategory] URL falls back to index.html (homepage).
+export async function generateStaticParams() {
+   try {
+      const categories = await categoriesApi.getCategories({ includeUnpublished: false });
+      const params: { slug: string; subcategory: string }[] = [];
+      const seen = new Set<string>();
+
+      for (const cat of categories) {
+         const subs = await categoriesApi.getSubcategories(cat.slug);
+         for (const sub of subs) {
+            const key = `${cat.slug}/${sub.slug}`;
+            if (!seen.has(key)) {
+               seen.add(key);
+               params.push({ slug: cat.slug, subcategory: sub.slug });
+            }
+         }
+      }
+
+      // Always include the placeholder so the build doesn't fail on empty result.
+      if (params.length === 0) {
+         return [{ slug: "_", subcategory: "_" }];
+      }
+      return params;
+   } catch {
+      return [{ slug: "_", subcategory: "_" }];
+   }
+}
+
+// Do not attempt to render slugs outside the static set at runtime.
+export const dynamicParams = false;
+
 interface JobSubcategoryPageProps {
    params: Promise<{
       slug: string;

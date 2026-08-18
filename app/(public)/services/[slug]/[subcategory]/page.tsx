@@ -8,6 +8,34 @@ import {
    getManualServiceBySlugs,
 } from "@/lib/data/manual-services-catalog";
 
+// Required for static export: pre-build every /services/[category]/[subcategory].
+// Without this, only the placeholder "_" subcategory is built and all real
+// /services/*/subcategory URLs fall back to index.html in production.
+export async function generateStaticParams() {
+   try {
+      const categories = await categoriesApi.getCategories({ includeUnpublished: false });
+      const params: { slug: string; subcategory: string }[] = [];
+      const seen = new Set<string>();
+
+      for (const cat of categories) {
+         const subs = await categoriesApi.getSubcategories(cat.slug);
+         for (const sub of subs) {
+            const key = `${cat.slug}/${sub.slug}`;
+            if (!seen.has(key)) {
+               seen.add(key);
+               params.push({ slug: cat.slug, subcategory: sub.slug });
+            }
+         }
+      }
+
+      return params.length > 0 ? params : [{ slug: "_", subcategory: "_" }];
+   } catch {
+      return [{ slug: "_", subcategory: "_" }];
+   }
+}
+
+export const dynamicParams = false;
+
 interface ServiceSubcategoryPageProps {
    params: Promise<{
       slug: string;
