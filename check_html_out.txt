@@ -1,0 +1,19 @@
+﻿python : Traceback (most recent call last):
+At line:1 char:1
++ python check_html.py 2>&1 | Out-File check_html_out.txt -Encoding utf ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call l 
+   ast)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "E:\Trizent\Content-admin\extrahand-web-app-nextjs\check_html.py", 
+line 4, in <module>
+    with open(r'E:\Trizent\Content-admin\extrahand-web-app-nextjs\out\servi
+ces\cleaning-services\index.html',
+         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              encoding='utf-8', errors='replace') as f:
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'E:\\Trizent\\Conte
+nt-admin\\extrahand-web-app-nextjs\\out\\services\\cleaning-services\\index
+.html'

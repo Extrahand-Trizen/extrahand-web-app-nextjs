@@ -30,6 +30,28 @@ interface ServicePageEnhancement {
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://extrahand.in";
 
+/**
+ * Build the full absolute canonical URL for a [serviceCitySlug] page.
+ *
+ * Rules:
+ *  - /categories                             → https://extrahand.in/categories   (no trailing slash)
+ *  - /ac-repair-in-gachibowli               → https://extrahand.in/ac-repair-in-gachibowli  (no trailing slash)
+ *  - /ac-repair-in-hyderabad                 → https://extrahand.in/ac-repair-in-hyderabad/ (trailing slash)
+ *  - all other non-SEO route groups remain untouched and are handled separately
+ *
+ * Using a full URL (https://…) is essential: Next.js `trailingSlash: true`
+ * normalises *relative* canonical paths by appending "/", which would break
+ * routes that must NOT have a trailing slash. Absolute URLs are passed through
+ * unchanged.
+ */
+function buildCanonicalServiceUrl(slug: string): string {
+   if (slug === "categories") {
+      return `${baseUrl}/categories`;
+   }
+
+   return `${baseUrl}/${slug.replace(/\/+$/, "")}/`;
+}
+
 const hyderabadAreas = [
    "HITEC City",
    "Gachibowli",
@@ -47,6 +69,30 @@ const hyderabadAreas = [
 
 function toAreaSlug(area: string) {
    return area.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+function normalizeServiceCitySlug(slug: string) {
+   const trimmed = slug?.trim();
+   if (!trimmed) return null;
+
+   const canonicalMatch = hyderabadServicePageSlugs.find((serviceSlug) => serviceSlug === trimmed);
+   if (canonicalMatch) {
+      return canonicalMatch;
+   }
+
+   const areaAliasMatch = trimmed.match(/^(.*)-in-([a-z0-9-]+)$/i);
+   if (!areaAliasMatch) return null;
+
+   const [, serviceBase, areaSlug] = areaAliasMatch;
+   if (!serviceBase || !areaSlug) return null;
+
+   const areaName = hyderabadAreas.find((area) => toAreaSlug(area) === areaSlug);
+   if (!areaName) return null;
+
+   const canonicalServiceSlug = `${serviceBase}-in-hyderabad`;
+   return hyderabadServicePageSlugs.includes(canonicalServiceSlug)
+      ? canonicalServiceSlug
+      : null;
 }
 
 const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
@@ -442,7 +488,21 @@ function getAreaSlice(slug: string) {
 }
 
 export async function generateStaticParams() {
-   return hyderabadServicePageSlugs.map((serviceCitySlug) => ({
+   const serviceAliases = new Set<string>();
+
+   for (const serviceSlug of hyderabadServicePageSlugs) {
+      serviceAliases.add(serviceSlug);
+   }
+
+   for (const area of hyderabadAreas) {
+      const areaSlug = toAreaSlug(area);
+      for (const serviceSlug of hyderabadServicePageSlugs) {
+         const baseServiceSlug = serviceSlug.replace(/-in-hyderabad$/, "");
+         serviceAliases.add(`${baseServiceSlug}-in-${areaSlug}`);
+      }
+   }
+
+   return Array.from(serviceAliases).map((serviceCitySlug) => ({
       serviceCitySlug,
    }));
 }
@@ -452,16 +512,26 @@ export async function generateMetadata({
 }: ServiceCityPageProps): Promise<Metadata> {
    const { serviceCitySlug } = await params;
 
-   const cmsPage = await getPublishedSeoPage(serviceCitySlug);
+   // 1. Try CMS lookup with the exact slug from the URL first (e.g. "ac-repair-in-gachibowli").
+   //    Area-level pages published via Content Admin live under their own slug, not the canonical.
+   // 2. If no match, fall back to the canonical Hyderabad slug for static metadata.
+   const cmsPage =
+      (await getPublishedSeoPage(serviceCitySlug)) ??
+      (await getPublishedSeoPage(normalizeServiceCitySlug(serviceCitySlug) ?? serviceCitySlug));
+
    if (cmsPage) {
+      const canonicalUrl = cmsPage.canonicalUrl
+         ? (cmsPage.canonicalUrl.endsWith("/") ? cmsPage.canonicalUrl : `${cmsPage.canonicalUrl}/`)
+         : buildCanonicalServiceUrl(serviceCitySlug);
+
       return {
          title: cmsPage.metaTitle,
          description: cmsPage.metaDescription,
-         alternates: { canonical: cmsPage.canonicalUrl },
+         alternates: { canonical: canonicalUrl },
          openGraph: {
             title: cmsPage.metaTitle,
             description: cmsPage.metaDescription,
-            url: cmsPage.canonicalUrl,
+            url: canonicalUrl,
             type: "website",
          },
          twitter: {
@@ -482,18 +552,21 @@ export async function generateMetadata({
 
    const enhancement = getServicePageEnhancement(servicePage);
 
-   const canonicalPath = `/${servicePage.slug}`;
+   // Use the FULL absolute canonical URL so Next.js trailingSlash normalisation
+   // does not alter it.  Area slugs (e.g. ac-repair-in-gachibowli) self-
+   // canonicalise to their own URL, not to the Hyderabad parent.
+   const canonicalUrl = buildCanonicalServiceUrl(serviceCitySlug);
 
    return {
       title: `${servicePage.serviceName} in Hyderabad | ExtraHand`,
       description: servicePage.shortDescription,
       alternates: {
-         canonical: canonicalPath,
+         canonical: canonicalUrl,
       },
       openGraph: {
          title: `${servicePage.serviceName} in Hyderabad`,
          description: servicePage.shortDescription,
-         url: `${baseUrl}${canonicalPath}`,
+         url: canonicalUrl,
          type: "website",
          images: [
             {
@@ -513,11 +586,42 @@ export async function generateMetadata({
    };
 }
 
+
 export default async function ServiceCityPage({ params }: ServiceCityPageProps) {
    const { serviceCitySlug } = await params;
 
-   const cmsPage = await getPublishedSeoPage(serviceCitySlug);
-   const servicePage = getHyderabadServicePageBySlug(serviceCitySlug);
+   // Priority: fetch CMS by the exact URL slug first (handles area pages like
+   // "ac-repair-in-gachibowli"). If nothing is published under that slug, fall
+   // back to the canonical Hyderabad slug for the static service-page template.
+   const cmsPageForSlug = await getPublishedSeoPage(serviceCitySlug);
+
+   // If the CMS returned a page for this exact slug, serve it immediately.
+   // This is the correct path for all area-level pages (e.g. ac-repair-in-gachibowli).
+   if (cmsPageForSlug) {
+      return (
+         <>
+            {cmsPageForSlug.faqSchema && (
+               <script
+                  type="application/ld+json"
+                  dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPageForSlug.faqSchema) }}
+               />
+            )}
+            {cmsPageForSlug.breadcrumbSchema && (
+               <script
+                  type="application/ld+json"
+                  dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPageForSlug.breadcrumbSchema) }}
+               />
+            )}
+            <SeoPageRenderer page={cmsPageForSlug} />
+         </>
+      );
+   }
+
+   // No area-specific CMS page — fall back to canonical Hyderabad slug for the
+   // static template (e.g. "ac-repair-in-hyderabad").
+   const canonicalSlug = normalizeServiceCitySlug(serviceCitySlug) ?? serviceCitySlug;
+   const cmsPage = await getPublishedSeoPage(canonicalSlug);
+   const servicePage = getHyderabadServicePageBySlug(canonicalSlug);
 
    if (!servicePage && !cmsPage) {
       notFound();
@@ -547,10 +651,30 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
       },
    ];
 
+   // If there is no matching static service page but we DO have a published CMS page,
+   // render it directly — this is the normal path for area-level pages like
+   // "ac-repair-in-gachibowl" that are published via Content Admin.
    if (!servicePage) {
-      // SeoPageWrapper (above) handles CMS-only pages; this is unreachable at runtime
-      // but satisfies TypeScript when servicePage is null.
-      notFound();
+      if (!cmsPage) {
+         notFound();
+      }
+      return (
+         <>
+            {cmsPage.faqSchema && (
+               <script
+                  type="application/ld+json"
+                  dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPage.faqSchema) }}
+               />
+            )}
+            {cmsPage.breadcrumbSchema && (
+               <script
+                  type="application/ld+json"
+                  dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPage.breadcrumbSchema) }}
+               />
+            )}
+            <SeoPageRenderer page={cmsPage} />
+         </>
+      );
    }
 
    return (
@@ -571,209 +695,209 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
          )}
          <SeoPageWrapper slug={serviceCitySlug} initialPage={cmsPage}>
             <main className="min-h-screen bg-linear-to-b from-white to-secondary-50">
-            <section className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:px-8 lg:py-16">
-               <div>
-                  <p className="text-sm font-semibold uppercase tracking-wide text-primary-600">
-                     Hyderabad Local Services
-                  </p>
-                  <h1 className="mt-3 text-3xl font-bold text-secondary-900 sm:text-4xl">
-                     {servicePage.serviceName} in Hyderabad
-                  </h1>
-               <p className="mt-4 max-w-2xl text-base text-secondary-700 sm:text-lg">
-                  {servicePage.heroDescription}
-               </p>
-               <p className="mt-4 max-w-2xl text-sm leading-6 text-secondary-600">
-                  {enhancement?.overview}
-               </p>
+               <section className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:px-8 lg:py-16">
+                  <div>
+                     <p className="text-sm font-semibold uppercase tracking-wide text-primary-600">
+                        Hyderabad Local Services
+                     </p>
+                     <h1 className="mt-3 text-3xl font-bold text-secondary-900 sm:text-4xl">
+                        {servicePage.serviceName} in Hyderabad
+                     </h1>
+                     <p className="mt-4 max-w-2xl text-base text-secondary-700 sm:text-lg">
+                        {servicePage.heroDescription}
+                     </p>
+                     <p className="mt-4 max-w-2xl text-sm leading-6 text-secondary-600">
+                        {enhancement?.overview}
+                     </p>
 
-               <div className="mt-8 flex flex-wrap gap-3">
-                  <Link
-                     href={postTaskHref}
-                     className="rounded-lg bg-primary-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-700"
-                  >
-                     Book This Service
-                  </Link>
-                  <Link
-                     href="/locations/hyderabad"
-                     className="rounded-lg border border-secondary-300 bg-white px-5 py-3 text-sm font-semibold text-secondary-800 transition hover:bg-secondary-100"
-                  >
-                     Explore Hyderabad Services
-                  </Link>
-               </div>
+                     <div className="mt-8 flex flex-wrap gap-3">
+                        <Link
+                           href={postTaskHref}
+                           className="rounded-lg bg-primary-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-700"
+                        >
+                           Book This Service
+                        </Link>
+                        <Link
+                           href="/locations/hyderabad"
+                           className="rounded-lg border border-secondary-300 bg-white px-5 py-3 text-sm font-semibold text-secondary-800 transition hover:bg-secondary-100"
+                        >
+                           Explore Hyderabad Services
+                        </Link>
+                     </div>
 
-               <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div className="rounded-lg border border-secondary-200 bg-white p-3 text-sm text-secondary-700">
-                     <p className="font-semibold text-secondary-900">Best For</p>
-                     <p className="mt-1">{enhancement?.bestFor}</p>
+                     <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div className="rounded-lg border border-secondary-200 bg-white p-3 text-sm text-secondary-700">
+                           <p className="font-semibold text-secondary-900">Best For</p>
+                           <p className="mt-1">{enhancement?.bestFor}</p>
+                        </div>
+                        <div className="rounded-lg border border-secondary-200 bg-white p-3 text-sm text-secondary-700">
+                           <p className="font-semibold text-secondary-900">Coverage</p>
+                           <p className="mt-1">Available across key Hyderabad neighborhoods.</p>
+                        </div>
+                     </div>
                   </div>
-                  <div className="rounded-lg border border-secondary-200 bg-white p-3 text-sm text-secondary-700">
-                     <p className="font-semibold text-secondary-900">Coverage</p>
-                     <p className="mt-1">Available across key Hyderabad neighborhoods.</p>
+
+                  <div>
+                     <div className="overflow-hidden rounded-2xl border border-secondary-200 bg-white">
+                        <Image
+                           src={enhancement?.imagePath ?? "/assets/images/default.webp"}
+                           alt={`${servicePage.serviceName} in Hyderabad`}
+                           width={900}
+                           height={560}
+                           className="h-80 w-full object-cover object-center sm:h-96 lg:h-112"
+                           priority
+                        />
+                     </div>
                   </div>
-               </div>
-            </div>
+               </section>
 
-            <div>
-               <div className="overflow-hidden rounded-2xl border border-secondary-200 bg-white">
-                  <Image
-                     src={enhancement?.imagePath ?? "/assets/images/default.webp"}
-                     alt={`${servicePage.serviceName} in Hyderabad`}
-                     width={900}
-                     height={560}
-                     className="h-80 w-full object-cover object-center sm:h-96 lg:h-112"
-                     priority
-                  />
-               </div>
-            </div>
-         </section>
+               <section className="mx-auto grid max-w-6xl gap-6 px-4 pb-16 sm:px-6 lg:grid-cols-2 lg:px-8">
+                  <article className="rounded-2xl border border-secondary-200 bg-white p-6 shadow-xs">
+                     <h2 className="text-xl font-semibold text-secondary-900">
+                        What You Get
+                     </h2>
+                     <ul className="mt-4 space-y-3 text-secondary-700">
+                        {servicePage.whatYouGet.map((item) => (
+                           <li key={item} className="flex items-start gap-2">
+                              <span aria-hidden="true" className="mt-1 h-2 w-2 rounded-full bg-primary-500" />
+                              <span>{item}</span>
+                           </li>
+                        ))}
+                     </ul>
+                  </article>
 
-         <section className="mx-auto grid max-w-6xl gap-6 px-4 pb-16 sm:px-6 lg:grid-cols-2 lg:px-8">
-            <article className="rounded-2xl border border-secondary-200 bg-white p-6 shadow-xs">
-               <h2 className="text-xl font-semibold text-secondary-900">
-                  What You Get
-               </h2>
-               <ul className="mt-4 space-y-3 text-secondary-700">
-                  {servicePage.whatYouGet.map((item) => (
-                     <li key={item} className="flex items-start gap-2">
-                        <span aria-hidden="true" className="mt-1 h-2 w-2 rounded-full bg-primary-500" />
-                        <span>{item}</span>
-                     </li>
-                  ))}
-               </ul>
-            </article>
+                  <article className="rounded-2xl border border-secondary-200 bg-white p-6 shadow-xs">
+                     <h2 className="text-xl font-semibold text-secondary-900">
+                        Common Service Requests
+                     </h2>
+                     <ul className="mt-4 space-y-3 text-secondary-700">
+                        {servicePage.commonNeeds.map((item) => (
+                           <li key={item} className="flex items-start gap-2">
+                              <span aria-hidden="true" className="mt-1 h-2 w-2 rounded-full bg-primary-500" />
+                              <span>{item}</span>
+                           </li>
+                        ))}
+                     </ul>
+                  </article>
 
-            <article className="rounded-2xl border border-secondary-200 bg-white p-6 shadow-xs">
-               <h2 className="text-xl font-semibold text-secondary-900">
-                  Common Service Requests
-               </h2>
-               <ul className="mt-4 space-y-3 text-secondary-700">
-                  {servicePage.commonNeeds.map((item) => (
-                     <li key={item} className="flex items-start gap-2">
-                        <span aria-hidden="true" className="mt-1 h-2 w-2 rounded-full bg-primary-500" />
-                        <span>{item}</span>
-                     </li>
-                  ))}
-               </ul>
-            </article>
+                  <article className="rounded-2xl border border-secondary-200 bg-white p-6 shadow-xs">
+                     <h2 className="text-xl font-semibold text-secondary-900">
+                        Why People Choose ExtraHand
+                     </h2>
+                     <ul className="mt-4 space-y-3 text-secondary-700">
+                        {trustPoints.map((point) => (
+                           <li key={point} className="flex items-start gap-2">
+                              <span aria-hidden="true" className="mt-1 h-2 w-2 rounded-full bg-primary-500" />
+                              <span>{point}</span>
+                           </li>
+                        ))}
+                     </ul>
+                  </article>
 
-            <article className="rounded-2xl border border-secondary-200 bg-white p-6 shadow-xs">
-               <h2 className="text-xl font-semibold text-secondary-900">
-                  Why People Choose ExtraHand
-               </h2>
-               <ul className="mt-4 space-y-3 text-secondary-700">
-                  {trustPoints.map((point) => (
-                     <li key={point} className="flex items-start gap-2">
-                        <span aria-hidden="true" className="mt-1 h-2 w-2 rounded-full bg-primary-500" />
-                        <span>{point}</span>
-                     </li>
-                  ))}
-               </ul>
-            </article>
+                  <article className="rounded-2xl border border-secondary-200 bg-white p-6 shadow-xs">
+                     <h2 className="text-xl font-semibold text-secondary-900">
+                        How Service Works
+                     </h2>
+                     <ol className="mt-4 space-y-3 text-secondary-700">
+                        {serviceFlow.map((step, index) => (
+                           <li key={step.title} className="flex items-start gap-3">
+                              <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700">
+                                 {index + 1}
+                              </span>
+                              <span>
+                                 <span className="font-semibold text-secondary-900">{step.title}: </span>
+                                 {step.description}
+                              </span>
+                           </li>
+                        ))}
+                     </ol>
+                  </article>
 
-            <article className="rounded-2xl border border-secondary-200 bg-white p-6 shadow-xs">
-               <h2 className="text-xl font-semibold text-secondary-900">
-                  How Service Works
-               </h2>
-               <ol className="mt-4 space-y-3 text-secondary-700">
-                  {serviceFlow.map((step, index) => (
-                     <li key={step.title} className="flex items-start gap-3">
-                        <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700">
-                           {index + 1}
-                        </span>
-                        <span>
-                           <span className="font-semibold text-secondary-900">{step.title}: </span>
-                           {step.description}
-                        </span>
-                     </li>
-                  ))}
-               </ol>
-            </article>
+                  <article className="rounded-2xl border border-secondary-200 bg-white p-6 shadow-xs lg:col-span-2">
+                     <h2 className="text-xl font-semibold text-secondary-900">
+                        Popular Hyderabad Service Areas
+                     </h2>
+                     <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        {coverageAreas.map((area) => (
+                           <Link
+                              key={area}
+                              href={`/locations/hyderabad/${toAreaSlug(area)}/${servicePage.slug}`}
+                              className="rounded-lg border border-secondary-200 bg-secondary-50 px-3 py-2 text-sm text-secondary-800 transition hover:border-primary-300 hover:bg-white"
+                           >
+                              {area}
+                           </Link>
+                        ))}
+                     </div>
+                  </article>
 
-            <article className="rounded-2xl border border-secondary-200 bg-white p-6 shadow-xs lg:col-span-2">
-               <h2 className="text-xl font-semibold text-secondary-900">
-                  Popular Hyderabad Service Areas
-               </h2>
-               <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {coverageAreas.map((area) => (
-                     <Link
-                        key={area}
-                        href={`/locations/hyderabad/${toAreaSlug(area)}/${servicePage.slug}`}
-                        className="rounded-lg border border-secondary-200 bg-secondary-50 px-3 py-2 text-sm text-secondary-800 transition hover:border-primary-300 hover:bg-white"
-                     >
-                        {area}
-                     </Link>
-                  ))}
-               </div>
-            </article>
+                  <article className="rounded-2xl border border-secondary-200 bg-white p-6 shadow-xs lg:col-span-2">
+                     <h2 className="text-xl font-semibold text-secondary-900">
+                        About {servicePage.serviceName} in Hyderabad
+                     </h2>
+                     <p className="mt-4 text-secondary-700">{servicePage.shortDescription}</p>
+                     <p className="mt-3 text-secondary-700">{enhancement?.overview}</p>
+                     <p className="mt-3 text-secondary-700">{enhancement?.serviceDeepDive}</p>
+                     <p className="mt-3 text-secondary-700">
+                        Commonly requested outcomes include {servicePage.whatYouGet[0].toLowerCase()}, {servicePage.whatYouGet[1].toLowerCase()}, and {servicePage.whatYouGet[2].toLowerCase()} with local coverage across residential and commercial areas of Hyderabad.
+                     </p>
+                  </article>
 
-            <article className="rounded-2xl border border-secondary-200 bg-white p-6 shadow-xs lg:col-span-2">
-               <h2 className="text-xl font-semibold text-secondary-900">
-                  About {servicePage.serviceName} in Hyderabad
-               </h2>
-               <p className="mt-4 text-secondary-700">{servicePage.shortDescription}</p>
-               <p className="mt-3 text-secondary-700">{enhancement?.overview}</p>
-               <p className="mt-3 text-secondary-700">{enhancement?.serviceDeepDive}</p>
-               <p className="mt-3 text-secondary-700">
-                  Commonly requested outcomes include {servicePage.whatYouGet[0].toLowerCase()}, {servicePage.whatYouGet[1].toLowerCase()}, and {servicePage.whatYouGet[2].toLowerCase()} with local coverage across residential and commercial areas of Hyderabad.
-               </p>
-            </article>
+                  <article className="rounded-2xl border border-secondary-200 bg-white p-6 shadow-xs">
+                     <h2 className="text-xl font-semibold text-secondary-900">
+                        Before You Book
+                     </h2>
+                     <p className="mt-3 text-secondary-700">
+                        Sharing the right details helps professionals arrive prepared and complete your {servicePage.serviceName.toLowerCase()} request faster.
+                     </p>
+                     <ul className="mt-4 space-y-3 text-secondary-700">
+                        {(enhancement?.prepTips ?? []).map((tip) => (
+                           <li key={tip} className="flex items-start gap-2">
+                              <span aria-hidden="true" className="mt-1 h-2 w-2 rounded-full bg-primary-500" />
+                              <span>{tip}</span>
+                           </li>
+                        ))}
+                     </ul>
+                  </article>
 
-            <article className="rounded-2xl border border-secondary-200 bg-white p-6 shadow-xs">
-               <h2 className="text-xl font-semibold text-secondary-900">
-                  Before You Book
-               </h2>
-               <p className="mt-3 text-secondary-700">
-                  Sharing the right details helps professionals arrive prepared and complete your {servicePage.serviceName.toLowerCase()} request faster.
-               </p>
-               <ul className="mt-4 space-y-3 text-secondary-700">
-                  {(enhancement?.prepTips ?? []).map((tip) => (
-                     <li key={tip} className="flex items-start gap-2">
-                        <span aria-hidden="true" className="mt-1 h-2 w-2 rounded-full bg-primary-500" />
-                        <span>{tip}</span>
-                     </li>
-                  ))}
-               </ul>
-            </article>
+                  <article className="rounded-2xl border border-secondary-200 bg-white p-6 shadow-xs">
+                     <h2 className="text-xl font-semibold text-secondary-900">
+                        After-Service Care Tips
+                     </h2>
+                     <p className="mt-3 text-secondary-700">
+                        These steps help maintain results and reduce repeat issues after your service visit.
+                     </p>
+                     <ul className="mt-4 space-y-3 text-secondary-700">
+                        {(enhancement?.postServiceTips ?? []).map((tip) => (
+                           <li key={tip} className="flex items-start gap-2">
+                              <span aria-hidden="true" className="mt-1 h-2 w-2 rounded-full bg-primary-500" />
+                              <span>{tip}</span>
+                           </li>
+                        ))}
+                     </ul>
+                  </article>
 
-            <article className="rounded-2xl border border-secondary-200 bg-white p-6 shadow-xs">
-               <h2 className="text-xl font-semibold text-secondary-900">
-                  After-Service Care Tips
-               </h2>
-               <p className="mt-3 text-secondary-700">
-                  These steps help maintain results and reduce repeat issues after your service visit.
-               </p>
-               <ul className="mt-4 space-y-3 text-secondary-700">
-                  {(enhancement?.postServiceTips ?? []).map((tip) => (
-                     <li key={tip} className="flex items-start gap-2">
-                        <span aria-hidden="true" className="mt-1 h-2 w-2 rounded-full bg-primary-500" />
-                        <span>{tip}</span>
-                     </li>
-                  ))}
-               </ul>
-            </article>
-
-            <article className="rounded-2xl border border-secondary-200 bg-white p-6 shadow-xs lg:col-span-2">
-               <h2 className="text-xl font-semibold text-secondary-900">Frequently Asked Questions</h2>
-               {servicePage.faq.map((item) => (
-                  <div key={item.question} className="mt-4 border-t border-secondary-100 pt-4">
-                     <h3 className="text-base font-semibold text-secondary-900">
-                        {item.question}
-                     </h3>
-                     <p className="mt-2 text-secondary-700">{item.answer}</p>
-                  </div>
-               ))}
-               {enhancement?.secondFaq && (
-                  <div className="mt-4 border-t border-secondary-100 pt-4">
-                     <h3 className="text-base font-semibold text-secondary-900">
-                        {enhancement.secondFaq.question}
-                     </h3>
-                     <p className="mt-2 text-secondary-700">{enhancement.secondFaq.answer}</p>
-                  </div>
-               )}
-            </article>
-         </section>
-      </main>
-      </SeoPageWrapper>
+                  <article className="rounded-2xl border border-secondary-200 bg-white p-6 shadow-xs lg:col-span-2">
+                     <h2 className="text-xl font-semibold text-secondary-900">Frequently Asked Questions</h2>
+                     {servicePage.faq.map((item) => (
+                        <div key={item.question} className="mt-4 border-t border-secondary-100 pt-4">
+                           <h3 className="text-base font-semibold text-secondary-900">
+                              {item.question}
+                           </h3>
+                           <p className="mt-2 text-secondary-700">{item.answer}</p>
+                        </div>
+                     ))}
+                     {enhancement?.secondFaq && (
+                        <div className="mt-4 border-t border-secondary-100 pt-4">
+                           <h3 className="text-base font-semibold text-secondary-900">
+                              {enhancement.secondFaq.question}
+                           </h3>
+                           <p className="mt-2 text-secondary-700">{enhancement.secondFaq.answer}</p>
+                        </div>
+                     )}
+                  </article>
+               </section>
+            </main>
+         </SeoPageWrapper>
       </>
    );
 }

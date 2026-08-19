@@ -7,6 +7,14 @@ import {
    buildManualPosterCategoryDetail,
    getManualServiceBySlugs,
 } from "@/lib/data/manual-services-catalog";
+import { getSubcategoryStaticParams } from "@/lib/data/categoryStaticParams";
+
+// Required for static export: pre-build every published /services/[category]/[subcategory].
+export async function generateStaticParams() {
+   return getSubcategoryStaticParams("poster");
+}
+
+export const dynamicParams = false;
 
 interface ServiceSubcategoryPageProps {
    params: Promise<{
@@ -101,6 +109,9 @@ export async function generateMetadata({
          return {
             title: `${manualService.subcategoryName} | ExtraHand Services`,
             description: manualService.shortDescription,
+            alternates: {
+               canonical: `https://extrahand.in/services/${slug}/${subcategorySlug}`,
+            },
          };
       }
 
@@ -115,5 +126,8 @@ export async function generateMetadata({
          subcategory.heroTitle ||
          `${subcategory.name} Services`,
       description: subcategory.metaDescription || subcategory.heroDescription,
+      alternates: {
+         canonical: `https://extrahand.in/services/${slug}/${subcategorySlug}`,
+      },
    };
 }

@@ -3,6 +3,15 @@ import { categoriesApi } from "@/lib/api/endpoints/categories";
 import CategoryDetailClient from "@/components/categories/CategoryDetailClient";
 import { CategoryDetail } from "@/types/category";
 import { CategoryNotFound } from "@/components/shared/CategoryNotFound";
+import { getJobCategoryStaticParams } from "@/lib/data/categoryStaticParams";
+
+// Required for static export: pre-build all known job/category pages at build time.
+export async function generateStaticParams() {
+   return getJobCategoryStaticParams();
+}
+
+// Prevent 404 for slugs not returned by the API — show CategoryNotFound instead.
+export const dynamicParams = false;
 
 interface JobPageProps {
    params: Promise<{
@@ -90,5 +99,10 @@ export async function generateMetadata({ params }: JobPageProps) {
       title:
          category.metaTitle || category.heroTitle || `${category.name} Jobs`,
       description: category.metaDescription || category.heroDescription,
+      alternates: {
+         // Full absolute URL required: Next.js trailingSlash:true would append "/"
+         // to a relative path, breaking the exact match with the Excel.
+         canonical: `https://extrahand.in/jobs/${slug}`,
+      },
    };
 }

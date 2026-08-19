@@ -1,7 +1,8 @@
 import React from "react";
 import { categoriesApi } from "@/lib/api/endpoints/categories";
 import CategoriesClient from "@/components/categories/CategoriesClient";
-import { Category, Subcategory } from "@/types/category";
+import { Category } from "@/types/category";
+import { filterCategoriesByRole } from "@/lib/utils/categoryRoleFilter";
 
 /**
  * Jobs Page (Server Component) - For Taskers looking for work
@@ -18,13 +19,7 @@ export default async function JobsPage() {
 
       // Filter and map categories for tasker view
       if (Array.isArray(allCategories)) {
-         categories = allCategories
-            .filter((cat: any) => {
-               const type = (cat.categoryType || "").toLowerCase();
-               // Show categories that are for "tasker" or "both"
-               return type.includes("tasker") || type.includes("both") || !type;
-            })
-            .map((cat: any) => ({
+         categories = filterCategoriesByRole(allCategories, "tasker").map((cat) => ({
                _id: cat._id || "",
                name: cat.name || "",
                slug: cat.slug || "",

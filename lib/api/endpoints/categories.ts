@@ -98,6 +98,80 @@ async function fetchContentAdmin<T>(
    return null;
 }
 
+type PaginatedListResponse<T> = {
+   data?: T[];
+   pagination?: {
+      page?: number;
+      pages?: number;
+      total?: number;
+   };
+};
+
+function normalizeListResponse<T>(
+   payload: T[] | PaginatedListResponse<T> | null | undefined
+): T[] {
+   if (!payload) return [];
+   if (Array.isArray(payload)) return payload;
+   if (Array.isArray(payload.data)) return payload.data;
+   return [];
+}
+
+function isPublicWebListItem(item: {
+   isPublished?: boolean;
+   status?: string;
+}): boolean {
+   const status = (item.status || "").toUpperCase();
+   return (
+      item.isPublished === true ||
+      status === "PUBLISHED" ||
+      status === "APPROVED"
+   );
+}
+
+async function fetchAllContentAdminPages<T>(
+   path: string,
+   pageSize = 200
+): Promise<T[]> {
+   const firstPagePath = path.includes("?")
+      ? `${path}&page=1&limit=${pageSize}`
+      : `${path}?page=1&limit=${pageSize}`;
+
+   const firstPayload = await fetchContentAdmin<T[] | PaginatedListResponse<T>>(
+      firstPagePath
+   );
+
+   if (!firstPayload) return [];
+
+   if (Array.isArray(firstPayload)) {
+      return firstPayload;
+   }
+
+   const items = normalizeListResponse(firstPayload);
+   const totalPages = firstPagePath.includes("page=1")
+      ? firstPayload.pagination?.pages ?? 1
+      : 1;
+
+   if (totalPages <= 1) {
+      return items;
+   }
+
+   const allItems = [...items];
+
+   for (let page = 2; page <= totalPages; page += 1) {
+      const pagePath = path.includes("?")
+         ? `${path}&page=${page}&limit=${pageSize}`
+         : `${path}?page=${page}&limit=${pageSize}`;
+
+      const pagePayload = await fetchContentAdmin<
+         T[] | PaginatedListResponse<T>
+      >(pagePath);
+
+      allItems.push(...normalizeListResponse(pagePayload));
+   }
+
+   return allItems;
+}
+
 export interface CategoriesListItem {
    _id?: string;
    name: string;
@@ -120,21 +194,16 @@ export const categoriesApi = {
       options: { includeUnpublished?: boolean } = {}
    ): Promise<CategoriesListItem[]> {
       const query = options.includeUnpublished ? "?includeUnpublished=true" : "";
-      const categories = await fetchContentAdmin<CategoriesListItem[]>(
+      const categories = await fetchAllContentAdminPages<CategoriesListItem>(
          `/api/task-categories${query}`
       );
 
-      if (!categories) return [];
+      if (categories.length === 0) return [];
 
       if (options.includeUnpublished) return categories;
 
-      // Only return categories that are published
-      return categories.filter(
-         (cat) =>
-            cat.isPublished === true ||
-            cat.status === "PUBLISHED" ||
-            cat.status === "APPROVED"
-      );
+      // Public website: approved + published rows only (not draft/pending).
+      return categories.filter(isPublicWebListItem);
    },
 
    /**
@@ -155,19 +224,26 @@ export const categoriesApi = {
     * @returns Array of subcategories or empty array on error
     */
    async getSubcategories(categorySlug: string): Promise<Subcategory[]> {
-      const subcategories = await fetchContentAdmin<Subcategory[]>(
+      const subcategories = await fetchAllContentAdminPages<Subcategory>(
          `/api/task-subcategories?categorySlug=${encodeURIComponent(categorySlug)}`
       );
 
-      if (!subcategories) return [];
+      if (subcategories.length === 0) return [];
 
-      // Filter to only published subcategories (if the API returns all)
-      return subcategories.filter(
-         (sub) =>
-            sub.isPublished === true ||
-            sub.status === "PUBLISHED" ||
-            sub.status === "APPROVED"
+      return subcategories.filter(isPublicWebListItem);
+   },
+
+   /**
+    * Get all published subcategories across every parent category.
+    */
+   async getAllSubcategories(): Promise<Subcategory[]> {
+      const subcategories = await fetchAllContentAdminPages<Subcategory>(
+         "/api/task-subcategories"
       );
+
+      if (subcategories.length === 0) return [];
+
+      return subcategories.filter(isPublicWebListItem);
    },
 
    /**

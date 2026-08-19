@@ -37,9 +37,18 @@ export async function generateMetadata({
       };
    }
 
+   const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://extrahand.in";
+   const canonicalUrl = `${BASE_URL}/locations/hyderabad/${area}/`;
+
    return {
       title: `${areaName}, Hyderabad Services | ExtraHand`,
       description: `Explore all Hyderabad services available in ${areaName}. Find the right service and post your task quickly on ExtraHand.`,
+      alternates: { canonical: canonicalUrl },
+      openGraph: {
+         title: `${areaName}, Hyderabad Services | ExtraHand`,
+         description: `Explore all Hyderabad services available in ${areaName}. Find the right service and post your task quickly on ExtraHand.`,
+         url: canonicalUrl,
+      },
    };
 }
 

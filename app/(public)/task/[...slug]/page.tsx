@@ -3,6 +3,15 @@ import { categoriesApi } from "@/lib/api/endpoints/categories";
 import CategoryDetailClient from "@/components/categories/CategoryDetailClient";
 import { CategoryDetail } from "@/types/category";
 import { CategoryNotFound } from "@/components/shared/CategoryNotFound";
+import { getTaskCatchAllStaticParams } from "@/lib/data/categoryStaticParams";
+
+// Required for static export: pre-build every published /task/* page at build time.
+export async function generateStaticParams() {
+   return getTaskCatchAllStaticParams();
+}
+
+// Do not attempt to render paths outside the static set at runtime.
+export const dynamicParams = false;
 
 interface TaskPageProps {
    params: Promise<{
@@ -33,8 +42,8 @@ export default async function TaskPage({ params }: TaskPageProps) {
    const segments = Array.isArray(slugParam)
       ? slugParam.filter(Boolean)
       : typeof slugParam === "string"
-      ? [slugParam]
-      : [];
+         ? [slugParam]
+         : [];
    const slug = segments[segments.length - 1] || "";
    const fullSlug = segments.join("/");
 
@@ -80,8 +89,8 @@ export async function generateMetadata({ params }: TaskPageProps) {
    const segments = Array.isArray(slugParam)
       ? slugParam.filter(Boolean)
       : typeof slugParam === "string"
-      ? [slugParam]
-      : [];
+         ? [slugParam]
+         : [];
    const slug = segments[segments.length - 1] || "";
    const fullSlug = segments.join("/");
 
@@ -106,5 +115,8 @@ export async function generateMetadata({ params }: TaskPageProps) {
       title:
          category.metaTitle || category.heroTitle || `${category.name} Jobs`,
       description: category.metaDescription || category.heroDescription,
+      alternates: {
+         canonical: `https://extrahand.in/task/${fullSlug}`,
+      },
    };
 }

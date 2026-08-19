@@ -3,6 +3,14 @@ import { categoriesApi } from "@/lib/api/endpoints/categories";
 import CategoryDetailClient from "@/components/categories/CategoryDetailClient";
 import { SubcategoryDetail } from "@/types/category";
 import { CategoryNotFound } from "@/components/shared/CategoryNotFound";
+import { getSubcategoryStaticParams } from "@/lib/data/categoryStaticParams";
+
+export async function generateStaticParams() {
+   return getSubcategoryStaticParams("tasker");
+}
+
+// Do not attempt to render slugs outside the static set at runtime.
+export const dynamicParams = false;
 
 interface JobSubcategoryPageProps {
    params: Promise<{
@@ -90,5 +98,8 @@ export async function generateMetadata({ params }: JobSubcategoryPageProps) {
          subcategory.heroTitle ||
          `${subcategory.name} Jobs`,
       description: subcategory.metaDescription || subcategory.heroDescription,
+      alternates: {
+         canonical: `https://extrahand.in/jobs/${slug}/${subcategorySlug}`,
+      },
    };
 }

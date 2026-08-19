@@ -11,7 +11,13 @@ const nextConfig: NextConfig = {
     // Relative asset URLs for MinIO subfolder (…/build-001/index.html → ./_next/…)
     assetPrefix: "./",
   }),
-  trailingSlash: true,
+  // trailingSlash: false ensures Next.js does NOT append "/" to canonical URLs
+  // set in metadata alternates. With trailingSlash:true, Next.js 16 forcibly
+  // appends "/" even to full absolute URLs (https://…), making it impossible
+  // to generate no-slash canonicals for /jobs/, /services/, /task/ routes.
+  // Canonical trailing-slash behaviour is now controlled per-route in code via
+  // full absolute URLs in alternates.canonical.
+  trailingSlash: false,
   images: {
     unoptimized: true,
   },

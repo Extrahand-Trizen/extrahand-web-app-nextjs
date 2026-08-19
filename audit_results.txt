@@ -1,0 +1,59 @@
+﻿=== CANONICAL TAG AUDIT ===
+
+[BAD] out\services\cleaning-services\index.html
+      canonical = https://extrahand.in/services/cleaning-services/
+
+FILE NOT FOUND: out\services\appliances-services\index.html
+FILE NOT FOUND: out\services\pest-control-services\index.html
+[???] out\jobs\index.html -> NO canonical tag found in HTML
+
+[???] out\jobs\_\index.html -> NO canonical tag found in HTML
+
+[???] out\task\index.html -> NO canonical tag found in HTML
+
+=== ALL SERVICES HTML FILES - CANONICALS ===
+
+[TRAILING SLASH] \services\assembly-services\index.html -> https://extrahand.in/services/assembly-services/
+[TRAILING SLASH] \services\beauticians-services\index.html -> https://extrahand.in/services/beauticians-services/
+[TRAILING SLASH] \services\bicycle-service-services\index.html -> https://extrahand.in/services/bicycle-service-services/
+[TRAILING SLASH] \services\bricklaying-services\index.html -> https://extrahand.in/services/bricklaying-services/
+[TRAILING SLASH] \services\building-construction-services\index.html -> https://extrahand.in/services/building-construction-services/
+[TRAILING SLASH] \services\business-services\index.html -> https://extrahand.in/services/business-services/
+[TRAILING SLASH] \services\car-detailing-services\index.html -> https://extrahand.in/services/car-detailing-services/
+[TRAILING SLASH] \services\car-repair-services\index.html -> https://extrahand.in/services/car-repair-services/
+[TRAILING SLASH] \services\car-service-services\index.html -> https://extrahand.in/services/car-service-services/
+[TRAILING SLASH] \services\carpentry-services\index.html -> https://extrahand.in/services/carpentry-services/
+[TRAILING SLASH] \services\cat-care-services\index.html -> https://extrahand.in/services/cat-care-services/
+[TRAILING SLASH] \services\catering-services\index.html -> https://extrahand.in/services/catering-services/
+[TRAILING SLASH] \services\chef-services\index.html -> https://extrahand.in/services/chef-services/
+[TRAILING SLASH] \services\cladding-services\index.html -> https://extrahand.in/services/cladding-services/
+[TRAILING SLASH] \services\cleaning-services\index.html -> https://extrahand.in/services/cleaning-services/
+[TRAILING SLASH] \services\computers-it-services\index.html -> https://extrahand.in/services/computers-it-services/
+[TRAILING SLASH] \services\concreting-services\index.html -> https://extrahand.in/services/concreting-services/
+[TRAILING SLASH] \services\decking-services\index.html -> https://extrahand.in/services/decking-services/
+[TRAILING SLASH] \services\delivery-services\index.html -> https://extrahand.in/services/delivery-services/
+[TRAILING SLASH] \services\design-services\index.html -> https://extrahand.in/services/design-services/
+[TRAILING SLASH] \services\dog-care-services\index.html -> https://extrahand.in/services/dog-care-services/
+[TRAILING SLASH] \services\draftsman-services\index.html -> https://extrahand.in/services/draftsman-services/
+[TRAILING SLASH] \services\entertainment-services\index.html -> https://extrahand.in/services/entertainment-services/
+[TRAILING SLASH] \services\events-services\index.html -> https://extrahand.in/services/events-services/
+[TRAILING SLASH] \services\fencing-services\index.html -> https://extrahand.in/services/fencing-services/
+[TRAILING SLASH] \services\flooring-services\index.html -> https://extrahand.in/services/flooring-services/
+[TRAILING SLASH] \services\florist-services\index.html -> https://extrahand.in/services/florist-services/
+[TRAILING SLASH] \services\furniture-assembly-services\index.html -> https://extrahand.in/services/furniture-assembly-services/
+[TRAILING SLASH] \services\gardening-services\index.html -> https://extrahand.in/services/gardening-services/
+[TRAILING SLASH] \services\gate-installation-services\index.html -> https://extrahand.in/services/gate-installation-services/
+[TRAILING SLASH] \services\hairdressers-services\index.html -> https://extrahand.in/services/hairdressers-services/
+[TRAILING SLASH] \services\handyman-services\index.html -> https://extrahand.in/services/handyman-services/
+[TRAILING SLASH] \services\heating-cooling-services\index.html -> https://extrahand.in/services/heating-cooling-services/
+[TRAILING SLASH] \services\home-automation-and-security-services\index.html -> https://extrahand.in/services/home-automation-and-security-services/
+[TRAILING SLASH] \services\home-theatre-services\index.html -> https://extrahand.in/services/home-theatre-services/
+[TRAILING SLASH] \services\interior-designer-services\index.html -> https://extrahand.in/services/interior-designer-services/
+[TRAILING SLASH] \services\landscaping-services\index.html -> https://extrahand.in/services/landscaping-services/
+[TRAILING SLASH] \services\laundry-services\index.html -> https://extrahand.in/services/laundry-services/
+[TRAILING SLASH] \services\lawn-care-services\index.html -> https://extrahand.in/services/lawn-care-services/
+[TRAILING SLASH] \services\lessons-services\index.html -> https://extrahand.in/services/lessons-services/
+[TRAILING SLASH] \services\locksmith-services\index.html -> https://extrahand.in/services/locksmith-services/
+[TRAILING SLASH] \services\makeup-artist-services\index.html -> https://extrahand.in/services/makeup-artist-services/
+
+PROBLEM: 42 services pages have trailing slash in canonical!

@@ -17,6 +17,21 @@ interface HyderabadAreaServicePageProps {
 const hyderabadCity = getCityBySlug("hyderabad");
 const hyderabadAreas = hyderabadCity?.neighborhoods ?? [];
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://extrahand.in";
+
+/**
+ * Build the full absolute canonical URL for a /locations/hyderabad/[area]/[serviceCitySlug] page.
+ *
+ * All city/area service pages use a trailing slash, e.g.:
+ *   https://extrahand.in/locations/hyderabad/gachibowli/ac-repair-in-hyderabad/
+ *
+ * A full absolute URL is returned so Next.js (trailingSlash: false) does not
+ * strip or alter it during metadata normalisation.
+ */
+function buildCanonicalAreaUrl(area: string, serviceCitySlug: string): string {
+   return `${BASE_URL}/locations/hyderabad/${area}/${serviceCitySlug}/`;
+}
+
 function toAreaSlug(area: string) {
    return area.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
@@ -112,10 +127,10 @@ function buildPopularJobs(serviceName: string, commonNeeds: string[], areaName: 
    return generated.length > 0
       ? generated
       : [
-           `${serviceName} visit in ${areaName}`,
-           `Same-day ${serviceName.toLowerCase()} booking in ${areaName}`,
-           `Verified ${serviceName.toLowerCase()} workers near ${areaName}`,
-        ];
+         `${serviceName} visit in ${areaName}`,
+         `Same-day ${serviceName.toLowerCase()} booking in ${areaName}`,
+         `Verified ${serviceName.toLowerCase()} workers near ${areaName}`,
+      ];
 }
 
 export async function generateStaticParams() {
@@ -125,29 +140,48 @@ export async function generateStaticParams() {
       const areaSlug = toAreaSlug(area);
       for (const serviceCitySlug of hyderabadServicePageSlugs) {
          params.push({ area: areaSlug, serviceCitySlug });
+         const categorySlugPart = serviceCitySlug.replace(/-in-hyderabad$/, "");
+         params.push({ area: areaSlug, serviceCitySlug: `${categorySlugPart}-in-${areaSlug}` });
       }
    }
 
    return params;
 }
 
+function parseAreaServiceSlug(serviceCitySlug: string, area: string) {
+   let categorySlugPart = serviceCitySlug;
+   if (categorySlugPart.endsWith("-in-hyderabad")) {
+      categorySlugPart = categorySlugPart.replace(/-in-hyderabad$/, "");
+   } else if (categorySlugPart.endsWith(`-in-${area}`)) {
+      categorySlugPart = categorySlugPart.replace(new RegExp(`-in-${area}$`), "");
+   } else {
+      categorySlugPart = categorySlugPart.replace(/-in-[a-z0-9-]+$/, "");
+   }
+
+   const canonicalHyderabadSlug = `${categorySlugPart}-in-hyderabad`;
+   const areaSlug = `${categorySlugPart}-in-${area}`;
+
+   return { categorySlugPart, canonicalHyderabadSlug, areaSlug };
+}
+
 export async function generateMetadata({
    params,
 }: HyderabadAreaServicePageProps): Promise<Metadata> {
    const { area, serviceCitySlug } = await params;
-   const categorySlugPart = serviceCitySlug.replace(/-in-hyderabad$/, "");
-   const areaSlug = `${categorySlugPart}-in-${area}`;
+   const { canonicalHyderabadSlug, areaSlug } = parseAreaServiceSlug(serviceCitySlug, area);
+
+   const areaCanonicalUrl = buildCanonicalAreaUrl(area, canonicalHyderabadSlug);
 
    const cmsPage = await getPublishedSeoPage(areaSlug);
    if (cmsPage) {
       return {
          title: cmsPage.metaTitle,
          description: cmsPage.metaDescription,
-         alternates: { canonical: cmsPage.canonicalUrl },
+         alternates: { canonical: areaCanonicalUrl },
          openGraph: {
             title: cmsPage.metaTitle,
             description: cmsPage.metaDescription,
-            url: cmsPage.canonicalUrl,
+            url: areaCanonicalUrl,
             type: "website",
          },
          twitter: {
@@ -159,7 +193,9 @@ export async function generateMetadata({
    }
 
    const areaName = fromAreaSlug(area);
-   const servicePage = getHyderabadServicePageBySlug(serviceCitySlug);
+   const servicePage =
+      getHyderabadServicePageBySlug(serviceCitySlug) ??
+      getHyderabadServicePageBySlug(canonicalHyderabadSlug);
 
    if (!areaName || !servicePage) {
       return {
@@ -167,22 +203,20 @@ export async function generateMetadata({
       };
    }
 
-   const areaCanonicalPath = `/locations/hyderabad/${area}/${serviceCitySlug}`;
-
    return {
       title: `${servicePage.serviceName} in ${areaName}, Hyderabad | ExtraHand`,
       description: servicePage.shortDescription.replaceAll(
          "in Hyderabad",
          `in ${areaName}, Hyderabad`
       ),
-      alternates: { canonical: areaCanonicalPath },
+      alternates: { canonical: areaCanonicalUrl },
       openGraph: {
          title: `${servicePage.serviceName} in ${areaName}, Hyderabad`,
          description: servicePage.shortDescription.replaceAll(
             "in Hyderabad",
             `in ${areaName}, Hyderabad`
          ),
-         url: `${process.env.NEXT_PUBLIC_APP_URL || "https://extrahand.in"}${areaCanonicalPath}`,
+         url: areaCanonicalUrl,
          type: "website",
       },
       twitter: {
@@ -200,12 +234,13 @@ export default async function HyderabadAreaServicePage({
    params,
 }: HyderabadAreaServicePageProps) {
    const { area, serviceCitySlug } = await params;
-   const categorySlugPart = serviceCitySlug.replace(/-in-hyderabad$/, "");
-   const areaSlug = `${categorySlugPart}-in-${area}`;
+   const { canonicalHyderabadSlug, areaSlug } = parseAreaServiceSlug(serviceCitySlug, area);
 
    const cmsPage = await getPublishedSeoPage(areaSlug);
    const areaName = fromAreaSlug(area);
-   const servicePage = getHyderabadServicePageBySlug(serviceCitySlug);
+   const servicePage =
+      getHyderabadServicePageBySlug(serviceCitySlug) ??
+      getHyderabadServicePageBySlug(canonicalHyderabadSlug);
 
    // If neither CMS page nor static data found, 404
    if (!cmsPage && (!areaName || !servicePage)) {
