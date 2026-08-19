@@ -109,10 +109,18 @@ function mimeFor(filePath) {
 }
 
 function cacheControlFor(filePath) {
+  const relative = toPosix(filePath);
   const ext = path.extname(filePath).toLowerCase();
-  if (ext === '.html') return 'public, max-age=60';
-  if (ext === '.js' || ext === '.css' || ext === '.woff' || ext === '.woff2') {
+  const hashedNextAsset =
+    relative.includes('/_next/static/') ||
+    /\.[0-9a-f]{8,}\.(?:js|css|woff2?)$/i.test(path.basename(filePath));
+
+  if (ext === '.html') return 'public, max-age=0, must-revalidate';
+  if (hashedNextAsset || ext === '.js' || ext === '.css' || ext === '.woff' || ext === '.woff2') {
     return 'public, max-age=31536000, immutable';
+  }
+  if (['.webp', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.avif'].includes(ext)) {
+    return 'public, max-age=2592000';
   }
   return 'public, max-age=86400';
 }

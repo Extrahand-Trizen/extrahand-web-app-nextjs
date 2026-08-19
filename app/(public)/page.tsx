@@ -1,5 +1,19 @@
 import type { Metadata } from "next";
-import LandingPageClient from "./LandingPageClient";
+import dynamic from "next/dynamic";
+import { HeroSection } from "@/components/landing/HeroSection";
+import { SocialProofBar } from "@/components/landing/SocialProofBar";
+import { HowItWorksSection } from "@/components/landing/HowItWorksSection";
+import { ServicesSection } from "@/components/landing/ServicesSection";
+import { PartnerSection } from "@/components/landing/PartnerSection";
+import { WhyDifferentSection } from "@/components/landing/WhyDifferentSection";
+import { FinalCTASection } from "@/components/landing/FinalCTASection";
+import LandingAuthRedirect from "./LandingAuthRedirect";
+
+const TestimonialsSection = dynamic(
+   () => import("@/components/landing/TestimonialsSection")
+);
+
+const FAQSection = dynamic(() => import("@/components/landing/FAQSection"));
 
 export const metadata: Metadata = {
    title: "Extrahand | Get Expert Professional Local & Home Services Near You",
@@ -99,7 +113,18 @@ export default function LandingPage() {
                }),
             }}
          />
-         <LandingPageClient />
+         <LandingAuthRedirect />
+         <div style={{ minHeight: "100vh", position: "relative" }}>
+            <HeroSection />
+            <SocialProofBar />
+            <HowItWorksSection />
+            <ServicesSection />
+            <PartnerSection />
+            <WhyDifferentSection />
+            <TestimonialsSection />
+            <FAQSection />
+            <FinalCTASection />
+         </div>
       </>
    );
 }

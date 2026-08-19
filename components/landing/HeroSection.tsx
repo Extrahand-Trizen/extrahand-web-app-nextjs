@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Search, MapPin, Loader2 } from "lucide-react";
-import Image from "next/image";
 
 const HERO_IMAGE = "/assets/images/hero-bg1.webp";
 
@@ -152,21 +151,20 @@ export const HeroSection: React.FC = () => {
    };
 
    return (
-      <section className="relative h-[450px] md:h-[650px] flex items-center justify-center">
-         {/* Background Image Carousel */}
-         <div className="absolute inset-0 z-0">
-            <Image
-               src={HERO_IMAGE}
-               alt=""
-               priority
-               fetchPriority="high"
-               fill
-               sizes="100vw"
-               className="object-cover"
-            />
-            {/* Dark Overlay for Text Readability */}
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-xs" />
-         </div>
+      <section
+         className="relative flex h-[450px] items-center justify-center md:h-[650px]"
+         style={{ backgroundColor: "#1a1a1a" }}
+      >
+         <img
+            src={HERO_IMAGE}
+            alt=""
+            width={1920}
+            height={650}
+            fetchPriority="high"
+            decoding="async"
+            className="absolute inset-0 z-0 h-full w-full object-cover"
+         />
+         <div className="absolute inset-0 z-0 bg-black/40" />
 
          {/* 2. The Content Card */}
          <div className="relative z-10 w-full max-w-3xl px-4 text-center">

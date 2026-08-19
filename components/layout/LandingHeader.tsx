@@ -36,17 +36,28 @@ import {
    Grid3x3,
    MessageCircle,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/context";
-import { trackRoleSwitched } from "@/lib/services/mixpanel";
-import { UserMenu } from "./UserMenu";
-import { NotificationCenter } from "@/components/home";
 import { categoriesApi } from "@/lib/api/endpoints/categories";
 import type { CategoriesListItem } from "@/lib/api/endpoints/categories";
 import type { UserCurrentStatus } from "@/types/dashboard";
 import type { Category } from "@/types/category";
 import { mergeCarCategories } from "@/lib/utils/mergeCarCategories";
 import { filterCategoriesByRole } from "@/lib/utils/categoryRoleFilter";
+
+const UserMenu = dynamic(
+   () => import("./UserMenu").then((mod) => ({ default: mod.UserMenu })),
+   { ssr: false }
+);
+
+const NotificationCenter = dynamic(
+   () =>
+      import("@/components/home/NotificationCenter").then((mod) => ({
+         default: mod.NotificationCenter,
+      })),
+   { ssr: false }
+);
 
 const navItems: Array<{
    label: string;
@@ -160,7 +171,7 @@ export const LandingHeader: React.FC = () => {
       const handleScroll = () => {
          setIsScrolled(window.scrollY > 10);
       };
-      window.addEventListener("scroll", handleScroll);
+      window.addEventListener("scroll", handleScroll, { passive: true });
       return () => window.removeEventListener("scroll", handleScroll);
    }, []);
 
@@ -201,21 +212,38 @@ export const LandingHeader: React.FC = () => {
    };
 
    useEffect(() => {
+      let cancelled = false;
       const fetchCategories = async () => {
          try {
             const data = await categoriesApi.getCategories({
                includeUnpublished: false,
             });
-            setCategories(data || []);
+            if (!cancelled) setCategories(data || []);
          } catch (error) {
             console.error("Error fetching categories:", error);
-            setCategories([]);
+            if (!cancelled) setCategories([]);
          } finally {
-            setCategoriesLoading(false);
+            if (!cancelled) setCategoriesLoading(false);
          }
       };
 
-      fetchCategories();
+      const start = () => {
+         void fetchCategories();
+      };
+
+      if ("requestIdleCallback" in window) {
+         const idleId = window.requestIdleCallback(start, { timeout: 2500 });
+         return () => {
+            cancelled = true;
+            window.cancelIdleCallback(idleId);
+         };
+      }
+
+      const timeoutId = window.setTimeout(start, 800);
+      return () => {
+         cancelled = true;
+         window.clearTimeout(timeoutId);
+      };
    }, []);
 
    const handleNavClick = (href: string, openMobileCategories?: boolean) => {
@@ -245,7 +273,9 @@ export const LandingHeader: React.FC = () => {
       (role: "poster" | "tasker") => {
          setActiveRole((prev) => {
             if (prev !== role) {
-               trackRoleSwitched(prev, role);
+               void import("@/lib/services/mixpanel").then(({ trackRoleSwitched }) => {
+                  trackRoleSwitched(prev, role);
+               });
             }
             return role;
          });
@@ -257,7 +287,9 @@ export const LandingHeader: React.FC = () => {
       (role: "poster" | "tasker") => {
          setMobileActiveRole((prev) => {
             if (prev !== role) {
-               trackRoleSwitched(prev, role);
+               void import("@/lib/services/mixpanel").then(({ trackRoleSwitched }) => {
+                  trackRoleSwitched(prev, role);
+               });
             }
             return role;
          });

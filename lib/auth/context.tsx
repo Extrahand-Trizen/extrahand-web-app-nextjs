@@ -14,8 +14,7 @@ import React, {
    useMemo,
    useRef,
 } from "react";
-import { onAuthStateChanged, signOut, User } from "firebase/auth";
-import { auth } from "./firebase";
+import type { User } from "firebase/auth";
 import { api } from "@/lib/api";
 import { sessionsApi } from "@/lib/api/endpoints/sessions";
 import { sessionManager } from "./session";
@@ -23,11 +22,6 @@ import { otpStateManager } from "./otpStateManager";
 import { isOTPAuthInProgress } from "./authFlowState";
 import { UserProfile } from "@/types/user";
 import { useUserStore } from "@/lib/state/userStore";
-import {
-  mixpanelIdentify,
-  mixpanelReset,
-  trackLogoutInitiated,
-} from "@/lib/services/mixpanel";
 
 interface AuthContextType {
    currentUser: User | null;
@@ -65,7 +59,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
    const [currentUser, setCurrentUser] = useState<User | null>(null);
    const [userData, setUserData] = useState<UserProfile | null>(null);
    const [loading, setLoading] = useState(true);
-   const [sessionRestored, setSessionRestored] = useState(false);
    const prevUserRef = useRef<string | null>(null);
    const fetchingProfileRef = useRef(false); // Prevent concurrent api.me() calls
    const storeLogin = useUserStore((state) => state.login);
@@ -73,9 +66,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
    const hydrateFromSession = useUserStore((state) => state.hydrateFromSession);
 
    const resetLocalSession = useCallback(async () => {
-      if (auth) {
+      const { auth: firebaseAuth } = await import("./firebase");
+      if (firebaseAuth) {
          try {
-            await signOut(auth);
+            const { signOut } = await import("firebase/auth");
+            await signOut(firebaseAuth);
          } catch (error) {
             console.warn("signOut skipped", error);
          }
@@ -218,12 +213,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
          console.log("🚪 Logging out user...");
 
          // Mixpanel: log the logout and reset identity so the next session is fresh
-         trackLogoutInitiated();
-         mixpanelReset();
+         void import("@/lib/services/mixpanel").then((mixpanel) => {
+            mixpanel.trackLogoutInitiated();
+            mixpanel.mixpanelReset();
+         });
 
+         const { auth: firebaseAuth } = await import("./firebase");
          await Promise.allSettled([
             sessionsApi.logout(),
-            auth ? signOut(auth) : Promise.resolve(),
+            firebaseAuth
+               ? import("firebase/auth").then(({ signOut }) => signOut(firebaseAuth))
+               : Promise.resolve(),
          ]);
 
          // Clear all session and storage data
@@ -254,15 +254,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
    // inside mixpanelIdentify so it fires once per session per user.
    useEffect(() => {
       if (!userData?.uid) return;
-      mixpanelIdentify(userData.uid, {
-         _id: userData._id,
-         uid: userData.uid,
-         name: userData.name,
-         email: userData.email,
-         phone: userData.phone,
-         roles: userData.roles as string[] | undefined,
-         createdAt: userData.createdAt,
-         location: userData.location,
+      void import("@/lib/services/mixpanel").then(({ mixpanelIdentify }) => {
+         mixpanelIdentify(userData.uid, {
+            _id: userData._id,
+            uid: userData.uid,
+            name: userData.name,
+            email: userData.email,
+            phone: userData.phone,
+            roles: userData.roles as string[] | undefined,
+            createdAt: userData.createdAt,
+            location: userData.location,
+         });
       });
    }, [userData]);
 
@@ -270,176 +272,137 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       hydrateFromSession();
    }, [hydrateFromSession]);
 
-   // Restore session on app start (client-side only)
    useEffect(() => {
       if (typeof window === "undefined") {
-         setSessionRestored(true);
          setLoading(false);
          return;
       }
 
-      const restoreSession = async () => {
-         try {
-            const session = sessionManager.getSession();
-            console.log("🔍 Restoring session:", session);
+      let cancelled = false;
+      let unsubscribe: (() => void) | undefined;
+      let idleId: number | undefined;
+      let timeoutId: number | undefined;
 
-            // Attempt to use Firebase auth state; API calls will validate cookies
-            const user = auth?.currentUser ?? null;
-            if (user) {
-               setCurrentUser(user);
-               
-               // Guard against concurrent api.me() calls
-               if (fetchingProfileRef.current) {
-                  console.log("⏭️ Skipping api.me() in restore - already fetching");
-               } else {
+      const restoreFromCookie = async () => {
+         const hasAuthCookie = document.cookie
+            .split("; ")
+            .some((c) => c.startsWith("extrahand_auth=1"));
+
+         if (!hasAuthCookie) {
+            setLoading(false);
+            return;
+         }
+
+         if (fetchingProfileRef.current) {
+            setLoading(false);
+            return;
+         }
+
+         try {
+            fetchingProfileRef.current = true;
+            const profile = await api.me();
+            if (cancelled) return;
+            setUserData(profile);
+            storeLogin({ user: profile });
+         } catch {
+            // Cookie present but session invalid
+         } finally {
+            fetchingProfileRef.current = false;
+            if (!cancelled) {
+               setLoading(false);
+            }
+         }
+      };
+
+      const attachFirebaseListener = () => {
+         if (cancelled) return;
+         void Promise.all([
+            import("./firebase"),
+            import("firebase/auth"),
+         ]).then(([{ ensureFirebaseAuth }, { onAuthStateChanged }]) => {
+            if (cancelled) return;
+            const firebaseAuth = ensureFirebaseAuth();
+            if (!firebaseAuth) return;
+
+            unsubscribe = onAuthStateChanged(firebaseAuth, async (user) => {
+            const currentUserId = user?.uid || null;
+
+            if (currentUserId !== prevUserRef.current) {
+               prevUserRef.current = currentUserId;
+
+               if (user) {
+                  setCurrentUser(user);
+
+                  const existingSession = sessionManager.getSession();
+                  if (
+                     !existingSession.isAuthenticated ||
+                     existingSession.lastActivity === undefined
+                  ) {
+                     sessionManager.saveSession({
+                        isAuthenticated: true,
+                        lastRoute:
+                           sessionManager.getLastRoute()?.route || "Landing",
+                     });
+                  }
+
+                  if (isOTPAuthInProgress()) {
+                     return;
+                  }
+
+                  if (fetchingProfileRef.current) {
+                     return;
+                  }
+
                   try {
                      fetchingProfileRef.current = true;
-                     const userData = await api.me();
-                     setUserData(userData);
-                     storeLogin({ user: userData });
-                     console.log("✅ Session restored successfully");
+                     const profile = await api.me();
+                     setUserData(profile);
+                     storeLogin({ user: profile });
                   } catch (error: any) {
                      console.warn(
-                        "❌ Failed to restore user data:",
+                        "Backend API offline; proceeding without profile data:",
                         error.message
                      );
                      setUserData(null);
                      if (error?.status === 401 || isDeletedProfileError(error)) {
                         await resetLocalSession();
+                        return;
                      }
                   } finally {
                      fetchingProfileRef.current = false;
                   }
-               }
-            } else {
-               // Cookie-only session (e.g. LOCAL_TEST dummy login): only try api.me() if we have the auth cookie
-               // Otherwise we'd 401 and trigger redirect to login for every anonymous visitor
-               const hasAuthCookie =
-                  typeof document !== "undefined" &&
-                  document.cookie.split("; ").some((c) => c.startsWith("extrahand_auth=1"));
-               if (hasAuthCookie && !fetchingProfileRef.current) {
-                  try {
-                     fetchingProfileRef.current = true;
-                     const userData = await api.me();
-                     setUserData(userData);
-                     storeLogin({ user: userData });
-                     console.log("✅ Session restored from cookies (no Firebase user)");
-                  } catch {
-                     // No valid cookie session
-                  } finally {
-                     fetchingProfileRef.current = false;
-                  }
+               } else {
+                  setCurrentUser(null);
                }
             }
-         } catch (error) {
-            console.warn("❌ Error restoring session:", error);
-            await resetLocalSession();
-         } finally {
-            setSessionRestored(true);
             setLoading(false);
-         }
+         });
+         });
       };
 
-      restoreSession();
-   }, [resetLocalSession, storeLogin]);
+      void restoreFromCookie();
 
-   useEffect(() => {
-      if (!sessionRestored) return;
-      if (typeof window === "undefined") return; // Only run on client
+      const isAuthRoute = /^\/(login|signup|otp-verification|auth)\b/.test(
+         window.location.pathname
+      );
 
-      if (!auth) {
-         setCurrentUser(null);
-         setUserData(null);
-         setLoading(false);
-         setSessionRestored(true);
-         return;
+      if (isAuthRoute) {
+         attachFirebaseListener();
+      } else if ("requestIdleCallback" in window) {
+         idleId = window.requestIdleCallback(attachFirebaseListener, {
+            timeout: 3000,
+         });
+      } else {
+         timeoutId = window.setTimeout(attachFirebaseListener, 1500);
       }
 
-      const unsubscribe = onAuthStateChanged(auth, async (user) => {
-         const currentUserId = user?.uid || null;
-
-         // Only update if user actually changed
-         if (currentUserId !== prevUserRef.current) {
-            prevUserRef.current = currentUserId;
-
-            if (user) {
-               setCurrentUser(user);
-
-               const existingSession = sessionManager.getSession();
-               if (
-                  !existingSession.isAuthenticated ||
-                  existingSession.lastActivity === undefined
-               ) {
-                  sessionManager.saveSession({
-                     isAuthenticated: true,
-                     lastRoute:
-                        sessionManager.getLastRoute()?.route || "Landing",
-                  });
-               }
-
-               // Skip api.me() if OTP auth is in progress (cookies not set yet)
-               if (isOTPAuthInProgress()) {
-                  console.log("⏭️ Skipping api.me() - OTP auth in progress, waiting for /complete to set cookies");
-                  return;
-               }
-
-               // Guard against concurrent api.me() calls
-               if (fetchingProfileRef.current) {
-                  console.log("⏭️ Skipping api.me() - already fetching profile");
-                  return;
-               }
-
-               try {
-                  fetchingProfileRef.current = true;
-                  const userData = await api.me();
-                  setUserData(userData);
-                  storeLogin({ user: userData });
-               } catch (error: any) {
-                  console.warn(
-                     "Backend API offline; proceeding without profile data:",
-                     error.message
-                  );
-                  setUserData(null);
-                  if (error?.status === 401 || isDeletedProfileError(error)) {
-                     await resetLocalSession();
-                     return;
-                  }
-               } finally {
-                  fetchingProfileRef.current = false;
-               }
-            } else {
-               setCurrentUser(null);
-               // Cookie-only session: only try api.me() if auth cookie present, to avoid 401 → redirect for anonymous users
-               const hasAuthCookie =
-                  typeof document !== "undefined" &&
-                  document.cookie.split("; ").some((c) => c.startsWith("extrahand_auth=1"));
-               if (hasAuthCookie) {
-                  try {
-                     const userData = await api.me();
-                     setUserData(userData);
-                     storeLogin({ user: userData });
-                  } catch (e: any) {
-                     if (e?.status === 401) {
-                        prevUserRef.current = null;
-                        setUserData(null);
-                        sessionManager.clearSession();
-                        storeLogout();
-                     }
-                  }
-               }
-            }
-         }
-         setLoading(false);
-      });
-
-      return unsubscribe;
-   }, [
-      hasBackendSession,
-      resetLocalSession,
-      sessionRestored,
-      storeLogin,
-      storeLogout,
-   ]);
+      return () => {
+         cancelled = true;
+         unsubscribe?.();
+         if (idleId !== undefined) window.cancelIdleCallback(idleId);
+         if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+      };
+   }, [resetLocalSession, storeLogin, storeLogout]);
 
    // Memoize context value to prevent unnecessary re-renders
    const value: AuthContextType = useMemo(

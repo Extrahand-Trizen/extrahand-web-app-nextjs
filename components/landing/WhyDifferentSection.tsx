@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import { Coins, Zap, ShieldAlert, Sparkles, Scale, Check } from "lucide-react";
 import { cn } from "@/lib/utils";

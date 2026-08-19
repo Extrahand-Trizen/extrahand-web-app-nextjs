@@ -37,7 +37,7 @@ export function HowTaskingWorks() {
    return (
       <section
          id="how-it-works"
-         className="py-12 bg-linear-to-b from-secondary-50 to-white"
+         className="scroll-mt-[88px] py-12 bg-linear-to-b from-secondary-50 to-white"
       >
          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-10 md:mb-16">

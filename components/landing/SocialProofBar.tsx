@@ -5,8 +5,6 @@
  * Shows key metrics and trust indicators
  */
 
-"use client";
-
 import { Star, Users, CheckCircle, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 

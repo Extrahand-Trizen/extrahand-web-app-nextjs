@@ -9,7 +9,7 @@ import {
    getConsentPreferences,
    saveConsentPreferences,
 } from "@/lib/consent/cookieConsent";
-import { initializeAnalyticsIfConsented } from "@/lib/auth/firebase";
+import { initializeAnalyticsIfConsented } from "@/lib/auth/firebase-analytics";
 
 export function CookiePreferencesManager() {
    const [analyticsEnabled, setAnalyticsEnabled] = useState(false);

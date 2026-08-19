@@ -18,7 +18,6 @@ import {
    Auth,
 } from "firebase/auth";
 import { FIREBASE_CONFIG } from "@/lib/config";
-import { initializeAnalyticsIfConsented } from "@/lib/auth/firebase-analytics";
 
 // Initialize Firebase only when config is present. Local development may not have
 // the Firebase public keys populated yet, and the app should still render the page.
@@ -30,36 +29,42 @@ const isFirebaseConfigured = Boolean(
    FIREBASE_CONFIG.projectId
 );
 
-if (isFirebaseConfigured) {
-   if (typeof window !== "undefined") {
-      // Only initialize if not already initialized
-      if (getApps().length === 0) {
-         app = initializeApp(FIREBASE_CONFIG);
-      } else {
-         app = getApps()[0];
-      }
+export function ensureFirebaseApp(): FirebaseApp | null {
+   if (app) return app;
+   if (!isFirebaseConfigured) return null;
 
-      auth = getAuth(app);
-
-      // Initialize Analytics with consent gating (will be initialized when consent is given)
-      initializeAnalyticsIfConsented(app);
+   if (getApps().length === 0) {
+      app = initializeApp(FIREBASE_CONFIG);
    } else {
-      // Server-side: create minimal app instance
-      if (getApps().length === 0) {
-         app = initializeApp(FIREBASE_CONFIG);
-      } else {
-         app = getApps()[0];
-      }
-      auth = getAuth(app);
+      app = getApps()[0];
    }
-} else {
+   return app;
+}
+
+/** Call this only when auth is needed. getAuth() injects firebaseapp.com/__/auth/iframe.js. */
+export function ensureFirebaseAuth(): Auth | null {
+   if (auth) return auth;
+   const firebaseApp = ensureFirebaseApp();
+   if (!firebaseApp) return null;
+
+   auth = getAuth(firebaseApp);
+
+   if (typeof window !== "undefined") {
+      void import("./firebase-analytics").then(({ initializeAnalyticsIfConsented }) => {
+         initializeAnalyticsIfConsented(firebaseApp);
+      });
+   }
+
+   return auth;
+}
+
+if (!isFirebaseConfigured) {
    console.warn(
       "Firebase auth is not configured. Set NEXT_PUBLIC_FIREBASE_API_KEY, NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN, and NEXT_PUBLIC_FIREBASE_PROJECT_ID to enable sign-in."
    );
 }
 
 export { app, auth };
-export { initializeAnalyticsIfConsented };
 
 // Email/Password Sign Up
 export const signUpWithEmail = async (
@@ -67,7 +72,8 @@ export const signUpWithEmail = async (
    password: string,
    userData: { name: string; role?: string; location?: any }
 ) => {
-   if (!auth) {
+   const currentAuth = ensureFirebaseAuth();
+   if (!currentAuth) {
       return {
          error: "Firebase is not configured in this environment.",
          code: "config/missing",
@@ -77,7 +83,7 @@ export const signUpWithEmail = async (
 
    try {
       const userCredential = await createUserWithEmailAndPassword(
-         auth,
+         currentAuth,
          email,
          password
       );
@@ -98,7 +104,8 @@ export const signUpWithEmail = async (
 
 // Email/Password Sign In
 export const signInWithEmail = async (email: string, password: string) => {
-   if (!auth) {
+   const currentAuth = ensureFirebaseAuth();
+   if (!currentAuth) {
       return {
          error: "Firebase is not configured in this environment.",
          code: "config/missing",
@@ -108,7 +115,7 @@ export const signInWithEmail = async (email: string, password: string) => {
 
    try {
       const userCredential = await signInWithEmailAndPassword(
-         auth,
+         currentAuth,
          email,
          password
       );
@@ -125,7 +132,8 @@ export const signInWithEmail = async (email: string, password: string) => {
 
 // Google Sign In
 export const signInWithGoogle = async () => {
-   if (!auth) {
+   const currentAuth = ensureFirebaseAuth();
+   if (!currentAuth) {
       return {
          error: "Firebase is not configured in this environment.",
          code: "config/missing",
@@ -135,7 +143,7 @@ export const signInWithGoogle = async () => {
 
    try {
       const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(currentAuth, provider);
 
       return {
          user: result.user,
@@ -149,12 +157,13 @@ export const signInWithGoogle = async () => {
 
 // Sign Out
 export const signOutUser = async () => {
-   if (!auth) {
+   const currentAuth = ensureFirebaseAuth();
+   if (!currentAuth) {
       return { success: true };
    }
 
    try {
-      await signOut(auth);
+      await signOut(currentAuth);
       return { success: true };
    } catch (error: any) {
       return { error: error.message, code: error.code, success: false };
@@ -166,7 +175,8 @@ export const signInWithPhone = async (
    phoneNumber: string,
    recaptchaVerifier: RecaptchaVerifier
 ) => {
-   if (!auth) {
+   const currentAuth = ensureFirebaseAuth();
+   if (!currentAuth) {
       const msg =
          "Firebase config missing: set NEXT_PUBLIC_FIREBASE_API_KEY, NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN, and NEXT_PUBLIC_FIREBASE_PROJECT_ID in .env";
       console.error("❌ Phone auth failed:", { code: "config/missing", message: msg });
@@ -192,7 +202,7 @@ export const signInWithPhone = async (
       });
 
       const confirmationResult = await signInWithPhoneNumber(
-         auth,
+         currentAuth,
          phoneNumber,
          recaptchaVerifier
       );
@@ -237,7 +247,7 @@ export const verifyOTP = async (
    confirmationResult: any,
    verificationCode: string
 ) => {
-   if (!auth) {
+   if (!ensureFirebaseAuth()) {
       return {
          error: "Firebase is not configured in this environment.",
          code: "config/missing",
@@ -261,6 +271,10 @@ export const verifyOTP = async (
 // Setup Recaptcha for Phone Auth
 export const setupRecaptcha = (containerId: string, options: any = {}) => {
    console.log("Creating RecaptchaVerifier for container:", containerId);
+   const currentAuth = ensureFirebaseAuth();
+   if (!currentAuth) {
+      throw new Error("Firebase is not configured in this environment.");
+   }
 
    try {
       // Clear any existing reCAPTCHA
@@ -276,7 +290,7 @@ export const setupRecaptcha = (containerId: string, options: any = {}) => {
          }
       }
 
-      const verifier = new RecaptchaVerifier(auth, containerId, {
+      const verifier = new RecaptchaVerifier(currentAuth, containerId, {
          size: "invisible",
          callback: (response: any) => {
             console.log("✅ reCAPTCHA solved:", response);
@@ -303,7 +317,11 @@ export const setupRecaptcha = (containerId: string, options: any = {}) => {
 // Reset Password
 export const resetPassword = async (email: string) => {
    try {
-      await sendPasswordResetEmail(auth, email);
+      const currentAuth = ensureFirebaseAuth();
+      if (!currentAuth) {
+         return { success: false, code: "config/missing", error: "Firebase is not configured." };
+      }
+      await sendPasswordResetEmail(currentAuth, email);
       return { success: true };
    } catch (error: any) {
       return { success: false, code: error.code, error: error.message };

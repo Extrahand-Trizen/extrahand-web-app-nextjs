@@ -12,7 +12,6 @@ import {
    hasConsentDecision,
    saveConsentPreferences,
 } from "@/lib/consent/cookieConsent";
-import { initializeAnalyticsIfConsented } from "@/lib/auth/firebase";
 
 const CONSENT_BANNER_PATHS = new Set(["/", "/home"]);
 
@@ -33,7 +32,9 @@ export default function CookieConsentBanner() {
       setIsVisible(false);
 
       if (preferences.analytics) {
-         void initializeAnalyticsIfConsented();
+         void import("@/lib/auth/firebase-analytics").then(({ initializeAnalyticsIfConsented }) => {
+            initializeAnalyticsIfConsented();
+         });
       }
    };
 
@@ -66,7 +67,9 @@ export default function CookieConsentBanner() {
 
    const handleAcceptAll = () => {
       saveConsentPreferences({ analytics: true, maps: true });
-      void initializeAnalyticsIfConsented();
+      void import("@/lib/auth/firebase-analytics").then(({ initializeAnalyticsIfConsented }) => {
+         initializeAnalyticsIfConsented();
+      });
       setIsVisible(false);
    };
 

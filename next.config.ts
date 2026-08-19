@@ -1,8 +1,13 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const isProd = process.env.NODE_ENV === "production";
 
 const nextConfig: NextConfig = {
+  compress: true,
+  experimental: {
+    optimizePackageImports: ["lucide-react", "date-fns"],
+  },
   // Static HTML/CSS/JS for MinIO / CDN hosting (upload the `out/` folder)
   // Only apply in production builds — dev mode uses the normal Next.js server
   // which supports middleware, API routes, etc.
@@ -34,7 +39,18 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  webpack: (config, { dev }) => {
+  webpack: (config, { dev, isServer }) => {
+    if (!isServer) {
+      const emptyPolyfill = path.join(
+        process.cwd(),
+        "scripts/empty-next-polyfill.js"
+      );
+      config.resolve.alias = {
+        ...(config.resolve.alias as Record<string, string | false>),
+        "next/dist/build/polyfills/polyfill-module": emptyPolyfill,
+        "next/dist/build/polyfills/polyfill-module.js": emptyPolyfill,
+      };
+    }
     if (dev) {
       // Disable filesystem pack cache in dev to prevent
       // "RangeError: Array buffer allocation failed" crash on low-memory systems

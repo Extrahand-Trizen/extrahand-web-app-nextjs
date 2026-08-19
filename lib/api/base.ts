@@ -5,7 +5,6 @@
  */
 
 import axios, { AxiosInstance, AxiosError } from 'axios';
-import { auth } from '@/lib/auth/firebase';
 import { getApiBaseUrl } from '@/lib/config';
 
 let apiInstance: AxiosInstance | null = null;

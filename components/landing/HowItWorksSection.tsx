@@ -2,8 +2,6 @@
  * How It Works Section - Simple 4-step booking flow
  */
 
-"use client";
-
 import React from "react";
 import { FileText, Users, CheckCircle, CalendarCheck, Wallet } from "lucide-react";
 
@@ -87,7 +85,7 @@ const StepCard: React.FC<StepCardProps> = ({
 
 export const HowItWorksSection: React.FC = () => {
    return (
-      <section id="how-it-works" className="py-12 md:py-20 bg-white">
+      <section id="how-it-works" className="scroll-mt-[88px] py-12 md:py-20 bg-white">
          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Section header */}
             <div className="text-center mb-12">

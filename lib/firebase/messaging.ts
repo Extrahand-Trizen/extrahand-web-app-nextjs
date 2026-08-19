@@ -4,7 +4,7 @@
  */
 
 import { getMessaging, getToken, onMessage, Messaging, MessagePayload } from 'firebase/messaging';
-import { app } from '@/lib/auth/firebase';
+import { ensureFirebaseApp } from '@/lib/auth/firebase';
 import { isDevClient } from '@/lib/config';
 
 // VAPID key for web push (should match your Firebase Console settings)
@@ -45,7 +45,12 @@ export const initializeMessaging = (): Messaging | null => {
 
   try {
     if (!messaging) {
-      messaging = getMessaging(app);
+      const firebaseApp = ensureFirebaseApp();
+      if (!firebaseApp) {
+        console.warn("Firebase app is not configured");
+        return null;
+      }
+      messaging = getMessaging(firebaseApp);
       console.log('✅ Firebase Messaging initialized');
     }
     return messaging;
