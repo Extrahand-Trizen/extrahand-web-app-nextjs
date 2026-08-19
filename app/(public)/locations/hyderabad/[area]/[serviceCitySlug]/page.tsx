@@ -170,18 +170,18 @@ export async function generateMetadata({
    const { area, serviceCitySlug } = await params;
    const { canonicalHyderabadSlug, areaSlug } = parseAreaServiceSlug(serviceCitySlug, area);
 
+   const areaCanonicalUrl = buildCanonicalAreaUrl(area, canonicalHyderabadSlug);
+
    const cmsPage = await getPublishedSeoPage(areaSlug);
    if (cmsPage) {
-      const rawCanonical = cmsPage.canonicalUrl || buildCanonicalAreaUrl(area, canonicalHyderabadSlug);
-      const canonicalUrl = rawCanonical.endsWith("/") ? rawCanonical : `${rawCanonical}/`;
       return {
          title: cmsPage.metaTitle,
          description: cmsPage.metaDescription,
-         alternates: { canonical: canonicalUrl },
+         alternates: { canonical: areaCanonicalUrl },
          openGraph: {
             title: cmsPage.metaTitle,
             description: cmsPage.metaDescription,
-            url: canonicalUrl,
+            url: areaCanonicalUrl,
             type: "website",
          },
          twitter: {
@@ -202,8 +202,6 @@ export async function generateMetadata({
          title: "Service Page Not Found | ExtraHand",
       };
    }
-
-   const areaCanonicalUrl = buildCanonicalAreaUrl(area, canonicalHyderabadSlug);
 
    return {
       title: `${servicePage.serviceName} in ${areaName}, Hyderabad | ExtraHand`,
