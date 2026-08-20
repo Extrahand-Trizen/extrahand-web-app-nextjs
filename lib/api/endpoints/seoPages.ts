@@ -2,10 +2,19 @@
  * SEO Pages API - Fetches published SEO pages from content-admin backend
  */
 
+// Server-side: use CONTENT_ADMIN_URL (private, only on server, never localhost in prod)
+// Browser-side: always use the public production backend URL directly.
+// IMPORTANT: Do NOT use NEXT_PUBLIC_CONTENT_ADMIN_URL here because it may be set to
+// localhost:5001 in .env for local dev, and that value gets baked into the static JS
+// bundle — causing browser fetches to hit localhost instead of the production backend.
+const PRODUCTION_BACKEND_URL = 'https://extrahand-content-admin-backend.backend.extrahand.in';
+
 const CONTENT_ADMIN_URL =
-  process.env.CONTENT_ADMIN_URL ||
-  process.env.NEXT_PUBLIC_CONTENT_ADMIN_URL ||
-  'https://extrahand-content-admin-backend.backend.extrahand.in';
+  typeof window === 'undefined'
+    // Server / build time: use private server env var, then production fallback
+    ? (process.env.CONTENT_ADMIN_URL || PRODUCTION_BACKEND_URL)
+    // Browser: always use production backend — never localhost
+    : PRODUCTION_BACKEND_URL;
 
 export interface SeoPage {
   _id: string;
@@ -61,13 +70,10 @@ console.log("[SEO BUILD] Module loaded | CONTENT_ADMIN_URL =", CONTENT_ADMIN_URL
 
 export async function getPublishedSeoPage(slug: string): Promise<SeoPage | null> {
   const url = `${CONTENT_ADMIN_URL}/api/seo-pages/published?slug=${encodeURIComponent(slug)}`;
-  console.log("[SEO FETCH] | slug =", slug, "| url =", url, "| env =", SEO_ENV);
-
   try {
-    // NOTE: no cache option = default 'force-cache'.
-    // cache: 'no-store' would mark the route as dynamic and BLOCK static export
-    // (output: 'export' requires all routes to be statically pre-rendered).
-    const res = await fetch(url);
+    const isBrowser = typeof window !== "undefined";
+    const requestUrl = isBrowser ? `${url}&_t=${Date.now()}` : url;
+    const res = await fetch(requestUrl, isBrowser ? { cache: 'no-cache' } : undefined);
 
     console.log(
       "[SEO RESPONSE] | slug =",
@@ -132,6 +138,19 @@ export async function getPublishedSeoPage(slug: string): Promise<SeoPage | null>
       "| stack =",
       error.stack,
     );
+    return null;
+  }
+}
+
+export async function getAllPublishedSeoPages(): Promise<Array<{ slug: string }> | null> {
+  const url = `${CONTENT_ADMIN_URL}/api/seo-pages/published`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return Array.isArray(data) ? data : null;
+  } catch (err) {
+    console.log('[SEO ERROR] getAllPublishedSeoPages failed:', err);
     return null;
   }
 }
