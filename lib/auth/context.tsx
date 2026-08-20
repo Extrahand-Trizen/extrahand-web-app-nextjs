@@ -397,10 +397,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
          });
       };
 
+      const win = typeof window !== "undefined" ? (window as any) : null;
       if (isFirebaseAuthRoute(pathname)) {
          attachFirebaseListener();
-      } else if ("requestIdleCallback" in window) {
-         window.requestIdleCallback(attachFirebaseListener, { timeout: 8000 });
+      } else if (win && typeof win.requestIdleCallback === "function") {
+         win.requestIdleCallback(attachFirebaseListener, { timeout: 8000 });
       } else {
          window.setTimeout(attachFirebaseListener, 4000);
       }

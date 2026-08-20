@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { getApiBaseUrl } from "@/lib/config";
 import { cookies } from "next/headers";
 import type { Task } from "@/types/task";
@@ -11,7 +12,7 @@ import {
 
 type PageProps = { params: Promise<{ id: string }> };
 
-async function fetchTaskOnServer(id: string): Promise<Task | null> {
+const fetchTaskOnServer = cache(async (id: string): Promise<Task | null> => {
    const apiBase = getApiBaseUrl().replace(/\/$/, "");
    const url = `${apiBase}/api/v1/tasks/${id}`;
    try {
@@ -31,7 +32,7 @@ async function fetchTaskOnServer(id: string): Promise<Task | null> {
    } catch {
       return null;
    }
-}
+});
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
    const { id: handleOrId } = await params;
@@ -40,6 +41,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
    const task = await fetchTaskOnServer(effectiveId);
    const canonicalHandle =
       task?._id && task?.title ? buildPublicTaskHandle(task.title, task._id) : null;
+   const canonicalUrl = canonicalHandle
+      ? `https://extrahand.in/tasks/${canonicalHandle}`
+      : `https://extrahand.in/tasks/${effectiveId}`;
    const ogImagePath = canonicalHandle
       ? `/tasks/${canonicalHandle}/opengraph-image`
       : `/tasks/${effectiveId}/opengraph-image`;
@@ -54,9 +58,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
    return {
       title,
       description,
+      alternates: {
+         canonical: canonicalUrl,
+      },
       openGraph: {
          title,
          description,
+         url: canonicalUrl,
          images: [
             {
                url: ogImagePath,
@@ -81,13 +89,5 @@ export default async function TaskDetailsPage({ params }: PageProps) {
 
    const initialTask = await fetchTaskOnServer(effectiveId);
 
-   // Canonicalize URL to include task title slug when possible.
-   if (initialTask?._id && initialTask?.title) {
-      const canonicalHandle = buildPublicTaskHandle(initialTask.title, initialTask._id);
-      if (handleOrId !== canonicalHandle) {
-         redirect(`/tasks/${canonicalHandle}`);
-      }
-   }
-
-   return <TaskDetailsClient initialTask={initialTask} taskId={effectiveId} />;
+   return <TaskDetailsClient initialTask={initialTask} taskId={effectiveId} currentHandle={handleOrId} />;
 }

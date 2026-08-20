@@ -265,16 +265,19 @@ export default function ChatPage() {
     try {
       setLoading(true);
       const { chats: loadedChats } = await chatsApi.getChats();
-      // Show chat list immediately, then enrich in background.
+      // Show chat list immediately
       setChats(loadedChats);
       setLoading(false);
 
+      // Hydrate missing participant names in background only if missing
       void (async () => {
-        const hydratedChats = await hydrateChats(loadedChats);
-        const chatsWithLiveStatus = await Promise.all(
-          hydratedChats.map((chat) => refreshChatWithLiveTaskStatus(chat))
+        const hasUnresolvedParticipants = loadedChats.some(
+          (chat) => !chat.otherParticipant?.name || chat.otherParticipant.name === "Unknown"
         );
-        setChats(chatsWithLiveStatus);
+        if (hasUnresolvedParticipants) {
+          const hydratedChats = await hydrateChats(loadedChats);
+          setChats(hydratedChats);
+        }
       })();
     } catch (error) {
       console.error("Failed to load chats:", error);

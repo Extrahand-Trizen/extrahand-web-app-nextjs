@@ -54,7 +54,7 @@ function loadGa4() {
    if (document.getElementById("ga4-src")) return;
    if (!getConsentPreferences()?.analytics) return;
 
-   const w = window as Window & {
+   const w = window as unknown as Window & {
       dataLayer: unknown[];
       gtag: (...args: unknown[]) => void;
    };

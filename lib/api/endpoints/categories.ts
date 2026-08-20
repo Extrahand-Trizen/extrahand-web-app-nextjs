@@ -1,8 +1,4 @@
-/**
- * Categories API - Fetches from content-admin backend
- * Directly hits the content-admin backend (not through API gateway)
- */
-
+import { cache } from "react";
 import { CategoryDetail, Subcategory } from "@/types/category";
 
 const DEFAULT_CONTENT_ADMIN_URL =
@@ -209,14 +205,15 @@ export const categoriesApi = {
    /**
     * Get a category or subcategory by slug
     * The content-admin API automatically falls back to subcategories if not found in categories
+    * Wrapped in React cache() for request deduplication in SSR and metadata.
     * @param slug The category/subcategory slug
     * @returns Category data or null if not found
     */
-   async getCategoryBySlug(slug: string): Promise<CategoryDetail | null> {
+   getCategoryBySlug: cache(async (slug: string): Promise<CategoryDetail | null> => {
       return fetchContentAdmin<CategoryDetail>(
          `/api/task-categories?slug=${encodeURIComponent(slug)}`
       );
-   },
+   }),
 
    /**
     * Get all published subcategories for a category
@@ -248,12 +245,13 @@ export const categoriesApi = {
 
    /**
     * Get a subcategory by its slug
+    * Wrapped in React cache() for request deduplication in SSR and metadata.
     * @param slug The subcategory slug
     * @returns Subcategory data or null if not found
     */
-   async getSubcategoryBySlug(slug: string): Promise<CategoryDetail | null> {
+   getSubcategoryBySlug: cache(async (slug: string): Promise<CategoryDetail | null> => {
       return fetchContentAdmin<CategoryDetail>(
          `/api/task-subcategories?slug=${encodeURIComponent(slug)}`
       );
-   },
+   }),
 };

@@ -124,7 +124,26 @@ export default async function ServicesPage() {
 
       // Filter and map categories for poster view
       if (Array.isArray(allCategories)) {
-         const posterCategories = filterCategoriesByRole(allCategories, "poster").map(
+         let subcategoriesMap: Map<string, Subcategory[]> | null = null;
+
+         const hasAnySubcategories = allCategories.some(
+            (cat) => Array.isArray(cat.subcategories) && cat.subcategories.length > 0
+         );
+
+         // If backend did not embed subcategories, fetch all subcategories in 1 single bulk API call
+         if (!hasAnySubcategories) {
+            const allSubcategories = await categoriesApi.getAllSubcategories();
+            subcategoriesMap = new Map();
+            allSubcategories.forEach((sub) => {
+               if (sub.categorySlug) {
+                  const existing = subcategoriesMap!.get(sub.categorySlug) || [];
+                  existing.push(sub);
+                  subcategoriesMap!.set(sub.categorySlug, existing);
+               }
+            });
+         }
+
+         const posterCategories: Category[] = filterCategoriesByRole(allCategories, "poster").map(
             (cat) => ({
                _id: cat._id || "",
                name: cat.name || "",
@@ -132,38 +151,17 @@ export default async function ServicesPage() {
                heroImage: cat.heroImage || "",
                heroTitle: cat.heroTitle || "",
                heroDescription: cat.heroDescription || "",
-               subcategories: Array.isArray(cat.subcategories) ? cat.subcategories : [],
+               subcategories:
+                  Array.isArray(cat.subcategories) && cat.subcategories.length > 0
+                     ? cat.subcategories
+                     : (subcategoriesMap?.get(cat.slug) || []),
             })
          );
 
-         // Fallback: if embedded subcategories are empty, fetch by category slug.
-         categories = await Promise.all(
-            posterCategories.map(async (category) => {
-               const hasEmbeddedSubcategories =
-                  Array.isArray(category.subcategories) &&
-                  category.subcategories.length > 0;
-
-               if (hasEmbeddedSubcategories || !category.slug) {
-                  return category;
-               }
-
-               const fetchedSubcategories = await categoriesApi.getSubcategories(
-                  category.slug
-               );
-
-               return {
-                  ...category,
-                  subcategories: Array.isArray(fetchedSubcategories)
-                     ? fetchedSubcategories
-                     : [],
-               };
-            })
-         );
-
-         categories = mergeCarCategories(categories);
+         categories = mergeCarCategories(posterCategories);
       }
    } catch (error) {
-      console.error("Error fetching categories from content-admin");
+      console.error("Error fetching categories from content-admin:", error);
    }
 
    return <CategoriesClient categories={categories} viewType="services" />;

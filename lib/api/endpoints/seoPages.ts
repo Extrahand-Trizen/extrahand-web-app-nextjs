@@ -1,12 +1,11 @@
+import { cache } from 'react';
+
 /**
  * SEO Pages API - Fetches published SEO pages from content-admin backend
  */
 
 // Server-side: use CONTENT_ADMIN_URL (private, only on server, never localhost in prod)
 // Browser-side: always use the public production backend URL directly.
-// IMPORTANT: Do NOT use NEXT_PUBLIC_CONTENT_ADMIN_URL here because it may be set to
-// localhost:5001 in .env for local dev, and that value gets baked into the static JS
-// bundle — causing browser fetches to hit localhost instead of the production backend.
 const PRODUCTION_BACKEND_URL = 'https://extrahand-content-admin-backend.backend.extrahand.in';
 
 const CONTENT_ADMIN_URL =
@@ -64,94 +63,40 @@ export interface SeoPage {
   isPublished: boolean;
 }
 
-// TEMPORARY DIAGNOSTIC LOGGING — remove after debugging
-const SEO_ENV = typeof window === "undefined" ? "SERVER" : "BROWSER";
-console.log("[SEO BUILD] Module loaded | CONTENT_ADMIN_URL =", CONTENT_ADMIN_URL, "| Env =", SEO_ENV);
-
-export async function getPublishedSeoPage(slug: string): Promise<SeoPage | null> {
+export const getPublishedSeoPage = cache(async (slug: string): Promise<SeoPage | null> => {
   const url = `${CONTENT_ADMIN_URL}/api/seo-pages/published?slug=${encodeURIComponent(slug)}`;
   try {
-    const isBrowser = typeof window !== "undefined";
-    const requestUrl = isBrowser ? `${url}&_t=${Date.now()}` : url;
-    const res = await fetch(requestUrl, isBrowser ? { cache: 'no-cache' } : undefined);
-
-    console.log(
-      "[SEO RESPONSE] | slug =",
-      slug,
-      "| status =",
-      res.status,
-      "| statusText =",
-      res.statusText,
-      "| contentType =",
-      res.headers.get("content-type"),
-    );
+    const res = await fetch(url, {
+      next: { revalidate: 3600 },
+    });
 
     if (!res.ok) {
-      const body = await res.text();
-      console.log(
-        "[SEO RESPONSE] | slug =",
-        slug,
-        "| url =",
-        url,
-        "| !res.ok — body =",
-        body,
-      );
       return null;
     }
 
-    const text = await res.text();
-    let data: SeoPage | null = null;
-    try {
-      data = JSON.parse(text);
-      console.log(
-        "[SEO RESPONSE] | slug =",
-        slug,
-        "| JSON parse ok | data is null?",
-        data === null,
-        "| data keys =",
-        data ? Object.keys(data) : "N/A",
-      );
-    } catch (parseErr) {
-      console.log(
-        "[SEO ERROR] | slug =",
-        slug,
-        "| JSON parse FAILED | raw text preview =",
-        text.slice(0, 500),
-        "| error =",
-        parseErr,
-      );
-      return null;
-    }
-
+    const data: SeoPage = await res.json();
     return data || null;
   } catch (err: unknown) {
-    const error = err instanceof Error ? err : new Error(String(err));
-    console.log(
-      "[SEO ERROR] | slug =",
-      slug,
-      "| url =",
-      url,
-      "| name =",
-      error.name,
-      "| message =",
-      error.message,
-      "| stack =",
-      error.stack,
-    );
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[SEO ERROR] getPublishedSeoPage failed for slug:', slug, err);
+    }
     return null;
   }
-}
+});
 
 export async function getAllPublishedSeoPages(): Promise<Array<{ slug: string }> | null> {
   const url = `${CONTENT_ADMIN_URL}/api/seo-pages/published`;
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, {
+      next: { revalidate: 3600 },
+    });
     if (!res.ok) return null;
     const data = await res.json();
     return Array.isArray(data) ? data : null;
   } catch (err) {
-    console.log('[SEO ERROR] getAllPublishedSeoPages failed:', err);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[SEO ERROR] getAllPublishedSeoPages failed:', err);
+    }
     return null;
   }
 }
-// END TEMPORARY DIAGNOSTIC LOGGING

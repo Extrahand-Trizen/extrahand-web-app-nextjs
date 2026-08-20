@@ -27,8 +27,10 @@ export default function SeoPageWrapper({
   const [cmsPage, setCmsPage] = useState<SeoPage | null>(initialPage);
 
   useEffect(() => {
+    // If initialPage was already provided by SSR/SSG, skip redundant client-side refetch
+    if (initialPage) return;
+
     let isMounted = true;
-    // Always fetch latest published page on client mount to get real-time content and image updates
     getPublishedSeoPage(slug).then((fetchedPage) => {
       if (isMounted && fetchedPage) {
         setCmsPage(fetchedPage);
@@ -38,7 +40,7 @@ export default function SeoPageWrapper({
     return () => {
       isMounted = false;
     };
-  }, [slug]);
+  }, [slug, initialPage]);
 
   if (cmsPage) {
     return (

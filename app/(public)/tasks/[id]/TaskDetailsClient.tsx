@@ -30,21 +30,32 @@ import {
    canEditPendingTaskApplication,
    isActiveTaskApplication,
 } from "@/lib/utils/application";
+import { buildPublicTaskHandle } from "@/lib/utils/taskHandle";
 import { toast } from "sonner";
 
 interface TaskDetailsClientProps {
    initialTask: Task | null;
    taskId: string;
+   currentHandle?: string;
 }
 
 const TASK_STALE_MS = 60 * 1000;
 
-export function TaskDetailsClient({ initialTask, taskId }: TaskDetailsClientProps) {
+export function TaskDetailsClient({ initialTask, taskId, currentHandle }: TaskDetailsClientProps) {
    const router = useRouter();
    const searchParams = useSearchParams();
    const queryClient = useQueryClient();
    const initialForId =
       initialTask && String((initialTask as Task & { _id?: string })._id) === taskId ? initialTask : null;
+
+   useEffect(() => {
+      if (typeof window !== "undefined" && initialTask?._id && initialTask?.title) {
+         const canonicalHandle = buildPublicTaskHandle(initialTask.title, initialTask._id);
+         if (currentHandle && currentHandle !== canonicalHandle) {
+            window.history.replaceState(null, "", `/tasks/${canonicalHandle}`);
+         }
+      }
+   }, [initialTask, currentHandle]);
 
    const taskQuery = useQuery({
       queryKey: taskDetailsQueryKeys.task(taskId),

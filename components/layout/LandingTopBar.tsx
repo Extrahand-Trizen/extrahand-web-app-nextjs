@@ -23,9 +23,10 @@ export function LandingTopBar() {
       if (dismissed) return;
 
       const revealBanner = () => setBannerReady(true);
-      if ("requestIdleCallback" in window) {
-         const id = window.requestIdleCallback(revealBanner, { timeout: 4000 });
-         return () => window.cancelIdleCallback(id);
+      const win = typeof window !== "undefined" ? (window as any) : null;
+      if (win && typeof win.requestIdleCallback === "function") {
+         const id = win.requestIdleCallback(revealBanner, { timeout: 4000 });
+         return () => win.cancelIdleCallback(id);
       }
       const timeoutId = window.setTimeout(revealBanner, 3000);
       return () => window.clearTimeout(timeoutId);
