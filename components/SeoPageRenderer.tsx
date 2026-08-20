@@ -1,13 +1,8 @@
-"use client";
+﻿"use client";
 
 import type { SeoPage } from "@/lib/api/endpoints/seoPages";
 import Link from "next/link";
-import { useState } from "react";
-import {
-  SeoHeroImage,
-  SEO_HERO_DEFAULT_WEBP,
-  SEO_HERO_DIMENSIONS,
-} from "@/components/shared/SeoHeroImage";
+import { useEffect, useState } from "react";
 import {
   ShieldCheck,
   MapPin,
@@ -21,6 +16,56 @@ import {
 
 interface SeoPageRendererProps {
   page: SeoPage;
+}
+
+/** Shown whenever CMS has no hero image uploaded (or the URL fails to load). */
+const SEO_DEFAULT_HERO = "/assets/images/seo/default.png";
+
+function hasUploadedHeroImage(heroImage?: string | null): boolean {
+  const raw = (heroImage || "").trim();
+  if (!raw) return false;
+  const lower = raw.toLowerCase();
+  if (
+    lower === "null" ||
+    lower === "undefined" ||
+    lower === "none" ||
+    lower === "n/a"
+  ) {
+    return false;
+  }
+  // Broken experimental path — treat as missing
+  if (lower.includes("seo/default.webp")) return false;
+  return true;
+}
+
+function resolveHeroSrc(heroImage?: string | null): string {
+  return hasUploadedHeroImage(heroImage)
+    ? (heroImage as string).trim()
+    : SEO_DEFAULT_HERO;
+}
+
+/** Always shows default.png when no upload / load error. */
+function AreaHeroImage({ src, alt }: { src: string; alt: string }) {
+  const initial = resolveHeroSrc(src);
+  const [currentSrc, setCurrentSrc] = useState(initial);
+
+  useEffect(() => {
+    setCurrentSrc(resolveHeroSrc(src));
+  }, [src]);
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={currentSrc}
+      alt={alt}
+      className="max-w-full max-h-full object-contain"
+      onError={() => {
+        setCurrentSrc((prev) =>
+          prev === SEO_DEFAULT_HERO ? prev : SEO_DEFAULT_HERO
+        );
+      }}
+    />
+  );
 }
 
 // Helper styling for rendering HTML text safely without the @tailwindcss/typography plugin
@@ -79,14 +124,14 @@ export default function SeoPageRenderer({ page }: SeoPageRendererProps) {
       <div className="pt-2 flex flex-wrap gap-4 items-center">
         <Link
           href={postTaskHref}
-          className="group inline-flex items-center gap-2 rounded-xl bg-primary-600 px-6 py-3.5 font-bold text-white shadow-sm shadow-primary-600/10 hover:bg-primary-700 hover:shadow-md transition-colors duration-200"
+          className="group inline-flex items-center gap-2 rounded-xl bg-primary-600 px-6 py-3.5 font-bold text-white shadow-sm shadow-primary-600/10 hover:bg-primary-700 hover:shadow-md transition-all duration-200"
         >
           Book this service
           <ArrowRight className="h-4.5 w-4.5 transition-transform group-hover:translate-x-0.5" />
         </Link>
         <a
           href="#faq"
-          className="inline-flex items-center justify-center rounded-xl border border-secondary-300 bg-white px-6 py-3.5 font-semibold text-secondary-700 shadow-2xs hover:bg-secondary-50 transition-colors duration-200"
+          className="inline-flex items-center justify-center rounded-xl border border-secondary-300 bg-white px-6 py-3.5 font-semibold text-secondary-700 shadow-2xs hover:bg-secondary-50 transition-all duration-200"
         >
           View FAQs
         </a>
@@ -127,24 +172,14 @@ export default function SeoPageRenderer({ page }: SeoPageRendererProps) {
         <div className="relative">
           {/* Use provided hero image or fall back to the public default image */}
           {(() => {
-            const heroImageSrc = page.heroImage || SEO_HERO_DEFAULT_WEBP;
             return (
               <div className="grid items-start gap-8 lg:grid-cols-[1fr_1.25fr]">
                 {renderEditorialBlock()}
                 <div className="relative w-full">
-                  <div
-                    className="relative w-full overflow-hidden rounded-2xl bg-secondary-50 aspect-[4/3] sm:aspect-[16/10] lg:aspect-[3/2]"
-                    style={{
-                      minHeight: `${SEO_HERO_DIMENSIONS.height}px`,
-                    }}
-                  >
-                    <SeoHeroImage
-                      src={heroImageSrc}
+                  <div className="relative w-full aspect-[4/3] sm:h-[320px] md:h-[480px] lg:aspect-auto lg:h-[600px] flex items-center justify-center">
+                    <AreaHeroImage
+                      src={page.heroImage || ""}
                       alt={page.heroHeading}
-                      priority
-                      width={SEO_HERO_DIMENSIONS.width}
-                      height={SEO_HERO_DIMENSIONS.height}
-                      objectFit="contain"
                     />
                   </div>
                 </div>

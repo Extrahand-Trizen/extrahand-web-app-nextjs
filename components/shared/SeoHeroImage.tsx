@@ -17,10 +17,6 @@ type SeoHeroImageProps = {
 const DEFAULT_WIDTH = 900;
 const DEFAULT_HEIGHT = 600;
 
-function isRemoteSrc(src: string) {
-   return src.startsWith("http://") || src.startsWith("https://") || src.startsWith("data:");
-}
-
 export function SeoHeroImage({
    src,
    alt,
@@ -31,22 +27,9 @@ export function SeoHeroImage({
    objectFit = "cover",
 }: SeoHeroImageProps) {
    const fitClass = objectFit === "contain" ? "object-contain" : "object-cover";
-
-   if (isRemoteSrc(src)) {
-      return (
-         // eslint-disable-next-line @next/next/no-img-element
-         <img
-            src={src}
-            alt={alt}
-            width={width}
-            height={height}
-            decoding="async"
-            fetchPriority={priority ? "high" : "auto"}
-            loading={priority ? "eager" : "lazy"}
-            className={`h-full w-full ${fitClass} ${className}`.trim()}
-         />
-      );
-   }
+   // contain: match previous CMS hero behavior (max box, not stretched full)
+   const sizeClass =
+      objectFit === "contain" ? "max-w-full max-h-full w-auto h-auto" : "h-full w-full";
 
    return (
       // eslint-disable-next-line @next/next/no-img-element
@@ -58,7 +41,7 @@ export function SeoHeroImage({
          decoding="async"
          fetchPriority={priority ? "high" : "auto"}
          loading={priority ? "eager" : "lazy"}
-         className={`h-full w-full ${fitClass} ${className}`.trim()}
+         className={`${sizeClass} ${fitClass} ${className}`.trim()}
       />
    );
 }
@@ -68,4 +51,8 @@ export const SEO_HERO_DIMENSIONS = {
    height: DEFAULT_HEIGHT,
 } as const;
 
-export const SEO_HERO_DEFAULT_WEBP = "/assets/images/seo/default.webp";
+/** Original CDN fallback used by CMS SEO / area pages (do not change path). */
+export const SEO_HERO_DEFAULT_IMAGE = "/assets/images/seo/default.png";
+
+/** @deprecated use SEO_HERO_DEFAULT_IMAGE */
+export const SEO_HERO_DEFAULT_WEBP = SEO_HERO_DEFAULT_IMAGE;
