@@ -2,6 +2,10 @@
 
 import dynamic from "next/dynamic";
 import { Suspense, useEffect } from "react";
+import {
+   CONSENT_CHANGE_EVENT,
+   getConsentPreferences,
+} from "@/lib/consent/cookieConsent";
 
 const AnalyticsPageView = dynamic(
    () =>
@@ -27,6 +31,7 @@ const Toaster = dynamic(
 function loadGa4() {
    if (typeof window === "undefined") return;
    if (document.getElementById("ga4-src")) return;
+   if (!getConsentPreferences()?.analytics) return;
 
    const w = window as Window & {
       dataLayer: unknown[];
@@ -51,12 +56,20 @@ function loadGa4() {
 export function DeferredClientWidgets() {
    useEffect(() => {
       const start = () => loadGa4();
+      window.addEventListener(CONSENT_CHANGE_EVENT, start);
+
       if ("requestIdleCallback" in window) {
-         const id = window.requestIdleCallback(start, { timeout: 5000 });
-         return () => window.cancelIdleCallback(id);
+         const id = window.requestIdleCallback(start, { timeout: 8000 });
+         return () => {
+            window.cancelIdleCallback(id);
+            window.removeEventListener(CONSENT_CHANGE_EVENT, start);
+         };
       }
-      const timeoutId = window.setTimeout(start, 2500);
-      return () => window.clearTimeout(timeoutId);
+      const timeoutId = window.setTimeout(start, 4000);
+      return () => {
+         window.clearTimeout(timeoutId);
+         window.removeEventListener(CONSENT_CHANGE_EVENT, start);
+      };
    }, []);
 
    return (

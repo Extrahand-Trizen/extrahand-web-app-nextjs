@@ -21,6 +21,7 @@ import { sessionManager } from "./session";
 import { otpStateManager } from "./otpStateManager";
 import { isOTPAuthInProgress } from "./authFlowState";
 import { UserProfile } from "@/types/user";
+import { usePathname } from "next/navigation";
 import { useUserStore } from "@/lib/state/userStore";
 
 interface AuthContextType {
@@ -61,9 +62,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
    const [loading, setLoading] = useState(true);
    const prevUserRef = useRef<string | null>(null);
    const fetchingProfileRef = useRef(false); // Prevent concurrent api.me() calls
+   const pathname = usePathname();
    const storeLogin = useUserStore((state) => state.login);
    const storeLogout = useUserStore((state) => state.logout);
    const hydrateFromSession = useUserStore((state) => state.hydrateFromSession);
+   const firebaseAttachedRef = useRef(false);
 
    const resetLocalSession = useCallback(async () => {
       const { auth: firebaseAuth } = await import("./firebase");
@@ -279,9 +282,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       let cancelled = false;
-      let unsubscribe: (() => void) | undefined;
-      let idleId: number | undefined;
-      let timeoutId: number | undefined;
 
       const restoreFromCookie = async () => {
          const hasAuthCookie = document.cookie
@@ -313,6 +313,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             }
          }
       };
+
+      void restoreFromCookie();
+      return () => {
+         cancelled = true;
+      };
+   }, [storeLogin]);
+
+   useEffect(() => {
+      if (typeof window === "undefined") return;
+      if (firebaseAttachedRef.current) return;
+
+      const isAuthRoute = /^\/(login|signup|otp-verification|auth)\b/.test(
+         pathname
+      );
+      const hasAuthCookie = document.cookie
+         .split("; ")
+         .some((c) => c.startsWith("extrahand_auth=1"));
+
+      // getAuth() injects firebaseapp.com/__/auth/iframe.js (~93 KiB, 30m cache).
+      // PageSpeed counts that iframe on the critical path if we load it within ~3s.
+      // Guests on marketing pages do not need Firebase Auth at all.
+      if (!isAuthRoute && !hasAuthCookie) return;
+
+      firebaseAttachedRef.current = true;
+      let cancelled = false;
+      let unsubscribe: (() => void) | undefined;
 
       const attachFirebaseListener = () => {
          if (cancelled) return;
@@ -380,29 +406,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
          });
       };
 
-      void restoreFromCookie();
-
-      const isAuthRoute = /^\/(login|signup|otp-verification|auth)\b/.test(
-         window.location.pathname
-      );
-
       if (isAuthRoute) {
          attachFirebaseListener();
       } else if ("requestIdleCallback" in window) {
-         idleId = window.requestIdleCallback(attachFirebaseListener, {
-            timeout: 3000,
-         });
+         window.requestIdleCallback(attachFirebaseListener, { timeout: 8000 });
       } else {
-         timeoutId = window.setTimeout(attachFirebaseListener, 1500);
+         window.setTimeout(attachFirebaseListener, 4000);
       }
-
-      return () => {
-         cancelled = true;
-         unsubscribe?.();
-         if (idleId !== undefined) window.cancelIdleCallback(idleId);
-         if (timeoutId !== undefined) window.clearTimeout(timeoutId);
-      };
-   }, [resetLocalSession, storeLogin, storeLogout]);
+      // Pathname only gates the first attach. Do not unsubscribe on route changes
+      // or guests going / → /login would lose the listener, and marketing pages
+      // would reload Firebase after login.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+   }, [pathname, resetLocalSession, storeLogin]);
 
    // Memoize context value to prevent unnecessary re-renders
    const value: AuthContextType = useMemo(

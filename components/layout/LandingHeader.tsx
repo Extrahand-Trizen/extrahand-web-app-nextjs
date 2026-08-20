@@ -324,13 +324,12 @@ export const LandingHeader: React.FC = () => {
                   {/* Logo */}
                   <Link href="/" className="flex items-center gap-2 shrink-0">
                      <Image
-                        src="/assets/images/logo.webp"
+                        src="/assets/images/logo-icon.webp"
                         alt="ExtraHand logo"
                         width={32}
                         height={32}
                         className="size-7 md:size-8"
                         unoptimized
-                        priority
                      />
                      <span className="text-lg md:text-xl font-bold text-secondary-900">
                         ExtraHand
@@ -893,7 +892,7 @@ export const LandingHeader: React.FC = () => {
          )}
 
          {/* Spacer for fixed header */}
-         <div className="h-16" />
+         <div className="h-14 md:h-16" />
       </>
    );
 };

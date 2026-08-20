@@ -613,7 +613,7 @@ export function OTPVerificationForm({
                   {/* Logo */}
                   <div className="flex items-center justify-center mb-4">
                      <Image
-                        src="/assets/images/logo.webp"
+                        src="/assets/images/logo-icon.webp"
                         alt="ExtraHand logo"
                         width={55}
                         height={55}

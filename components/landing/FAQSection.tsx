@@ -58,7 +58,7 @@ const FAQItemComponent: React.FC<FAQItemComponentProps> = ({
    return (
       <div
          className={cn(
-            "rounded-2xl border bg-white overflow-hidden transition-all duration-300",
+            "rounded-2xl border bg-white overflow-hidden transition-[border-color,box-shadow] duration-300",
             isOpen
                ? "border-primary-200 shadow-md shadow-primary-100/40"
                : "border-secondary-200 hover:border-secondary-300 hover:shadow-sm"
@@ -89,7 +89,7 @@ const FAQItemComponent: React.FC<FAQItemComponentProps> = ({
             </div>
             <span
                className={cn(
-                  "inline-flex size-8 items-center justify-center rounded-full border shrink-0 transition-all",
+                  "inline-flex size-8 items-center justify-center rounded-full border shrink-0 transition-[background-color,border-color] duration-300",
                   isOpen
                      ? "border-primary-200 bg-white"
                      : "border-secondary-200 bg-secondary-50"
@@ -106,7 +106,7 @@ const FAQItemComponent: React.FC<FAQItemComponentProps> = ({
 
          <div
             className={cn(
-               "grid transition-all duration-300 ease-out",
+               "grid transition-[grid-template-rows] duration-300 ease-out",
                isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
             )}
          >

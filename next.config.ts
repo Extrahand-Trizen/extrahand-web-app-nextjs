@@ -39,7 +39,7 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  webpack: (config, { dev, isServer }) => {
+  webpack: (config, { dev, isServer, webpack }) => {
     if (!isServer) {
       const emptyPolyfill = path.join(
         process.cwd(),
@@ -49,7 +49,15 @@ const nextConfig: NextConfig = {
         ...(config.resolve.alias as Record<string, string | false>),
         "next/dist/build/polyfills/polyfill-module": emptyPolyfill,
         "next/dist/build/polyfills/polyfill-module.js": emptyPolyfill,
+        "next/dist/esm/build/polyfills/polyfill-module": emptyPolyfill,
+        "next/dist/esm/build/polyfills/polyfill-module.js": emptyPolyfill,
       };
+      config.plugins.push(
+        new webpack.NormalModuleReplacementPlugin(
+          /[\\/]next[\\/]dist[\\/](?:esm[\\/])?build[\\/]polyfills[\\/]polyfill-module/,
+          emptyPolyfill
+        )
+      );
     }
     if (dev) {
       // Disable filesystem pack cache in dev to prevent

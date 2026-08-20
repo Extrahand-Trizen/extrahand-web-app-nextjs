@@ -9,20 +9,29 @@ import {
 } from "@/components/layout/AppDownloadBanner";
 
 export function LandingTopBar() {
-   const [showBanner, setShowBanner] = useState(true);
+   const [bannerDismissed, setBannerDismissed] = useState(false);
 
    useEffect(() => {
-      setShowBanner(!isAppDownloadBannerDismissed());
+      setBannerDismissed(isAppDownloadBannerDismissed());
    }, []);
 
    const handleDismiss = () => {
       dismissAppDownloadBanner();
-      setShowBanner(false);
+      setBannerDismissed(true);
    };
 
-   if (showBanner) {
-      return <AppDownloadBanner onDismiss={handleDismiss} />;
-   }
-
-   return <LandingHeader />;
+   return (
+      <>
+         <div className="md:hidden">
+            {bannerDismissed ? (
+               <LandingHeader />
+            ) : (
+               <AppDownloadBanner onDismiss={handleDismiss} />
+            )}
+         </div>
+         <div className="hidden md:block">
+            <LandingHeader />
+         </div>
+      </>
+   );
 }
