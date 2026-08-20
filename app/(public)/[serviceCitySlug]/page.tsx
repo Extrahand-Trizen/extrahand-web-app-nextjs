@@ -689,7 +689,9 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
                   dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPage.breadcrumbSchema) }}
                />
             )}
-            <SeoPageRenderer page={cmsPage} />
+            <SeoPageWrapper slug={canonicalSlug} initialPage={cmsPage}>
+               <SeoPageRenderer page={cmsPage} />
+            </SeoPageWrapper>
          </>
       );
    }
