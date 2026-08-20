@@ -7,7 +7,7 @@ import {
    type HyderabadServicePage,
    hyderabadServicePageSlugs,
 } from "@/lib/data/hyderabad-service-pages";
-import { getPublishedSeoPage } from "@/lib/api/endpoints/seoPages";
+import { getPublishedSeoPage, getAllPublishedSeoPages } from "@/lib/api/endpoints/seoPages";
 import SeoPageRenderer from "@/components/SeoPageRenderer";
 import SeoPageWrapper from "@/components/SeoPageWrapper";
 
@@ -490,6 +490,21 @@ function getAreaSlice(slug: string) {
 export async function generateStaticParams() {
    const serviceAliases = new Set<string>();
 
+   // 1. Dynamic fetch: include all published CMS pages from backend DB
+   try {
+      const publishedCmsPages = await getAllPublishedSeoPages();
+      if (publishedCmsPages && Array.isArray(publishedCmsPages)) {
+         for (const cmsPage of publishedCmsPages) {
+            if (cmsPage.slug) {
+               serviceAliases.add(cmsPage.slug);
+            }
+         }
+      }
+   } catch (e) {
+      console.log("generateStaticParams CMS fetch error:", e);
+   }
+
+   // 2. Add static fallback service & area combinations
    for (const serviceSlug of hyderabadServicePageSlugs) {
       serviceAliases.add(serviceSlug);
    }

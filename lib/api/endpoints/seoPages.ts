@@ -132,4 +132,17 @@ export async function getPublishedSeoPage(slug: string): Promise<SeoPage | null>
     return null;
   }
 }
+
+export async function getAllPublishedSeoPages(): Promise<Array<{ slug: string }> | null> {
+  const url = `${CONTENT_ADMIN_URL}/api/seo-pages/published`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return Array.isArray(data) ? data : null;
+  } catch (err) {
+    console.log('[SEO ERROR] getAllPublishedSeoPages failed:', err);
+    return null;
+  }
+}
 // END TEMPORARY DIAGNOSTIC LOGGING
