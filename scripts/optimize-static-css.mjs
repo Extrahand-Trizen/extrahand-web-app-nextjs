@@ -46,23 +46,48 @@ function deferStylesheets(html) {
    );
 }
 
+function stripLegacyPolyfillScripts(html) {
+   return html.replace(
+      /<script\b[^>]*\bsrc=(["'])[^"']*polyfills[^"']*\1[^>]*>\s*<\/script>/gi,
+      ""
+   );
+}
+
+function emptyLegacyPolyfillFiles(outDir) {
+   const chunksDir = path.join(outDir, "_next", "static", "chunks");
+   if (!fs.existsSync(chunksDir)) return 0;
+
+   let count = 0;
+   for (const file of fs.readdirSync(chunksDir)) {
+      if (/^polyfills[-.].*\.js$/i.test(file)) {
+         fs.writeFileSync(path.join(chunksDir, file), "!function(){}();\n");
+         count += 1;
+      }
+   }
+   return count;
+}
+
 function main() {
    if (!fs.existsSync(OUT_DIR)) {
       console.warn("optimize-static-css: no out/ folder, skipping");
       return;
    }
 
+   const polyfillFiles = emptyLegacyPolyfillFiles(OUT_DIR);
    const files = walkHtml(OUT_DIR);
    let changed = 0;
    for (const file of files) {
       const original = fs.readFileSync(file, "utf8");
-      const next = deferStylesheets(original);
+      let next = deferStylesheets(original);
+      next = stripLegacyPolyfillScripts(next);
       if (next !== original) {
          fs.writeFileSync(file, next);
          changed += 1;
       }
    }
-   console.log(`optimize-static-css: updated ${changed}/${files.length} HTML files`);
+   console.log(
+      `optimize-static-css: updated ${changed}/${files.length} HTML files; emptied ${polyfillFiles} polyfill chunk(s)`
+   );
 }
 
 main();

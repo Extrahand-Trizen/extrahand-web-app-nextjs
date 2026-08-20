@@ -3,11 +3,21 @@ import dynamic from "next/dynamic";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { SocialProofBar } from "@/components/landing/SocialProofBar";
 import { HowItWorksSection } from "@/components/landing/HowItWorksSection";
-import { ServicesSection } from "@/components/landing/ServicesSection";
-import { PartnerSection } from "@/components/landing/PartnerSection";
 import { WhyDifferentSection } from "@/components/landing/WhyDifferentSection";
-import { FinalCTASection } from "@/components/landing/FinalCTASection";
-import LandingAuthRedirect from "./LandingAuthRedirect";
+
+const LandingAuthRedirect = dynamic(() => import("./LandingAuthRedirect"));
+
+const ServicesSection = dynamic(
+   () => import("@/components/landing/ServicesSection")
+);
+
+const PartnerSection = dynamic(
+   () => import("@/components/landing/PartnerSection")
+);
+
+const FinalCTASection = dynamic(
+   () => import("@/components/landing/FinalCTASection")
+);
 
 const TestimonialsSection = dynamic(
    () => import("@/components/landing/TestimonialsSection")

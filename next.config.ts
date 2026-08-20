@@ -6,7 +6,13 @@ const isProd = process.env.NODE_ENV === "production";
 const nextConfig: NextConfig = {
   compress: true,
   experimental: {
-    optimizePackageImports: ["lucide-react", "date-fns"],
+    optimizePackageImports: [
+      "lucide-react",
+      "date-fns",
+      "@radix-ui/react-accordion",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-dropdown-menu",
+    ],
   },
   // Static HTML/CSS/JS for MinIO / CDN hosting (upload the `out/` folder)
   // Only apply in production builds — dev mode uses the normal Next.js server
