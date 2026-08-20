@@ -9,10 +9,21 @@ import {
 } from "@/components/layout/AppDownloadBanner";
 
 export function LandingTopBar() {
-   const [bannerDismissed, setBannerDismissed] = useState(false);
+   const [bannerDismissed, setBannerDismissed] = useState(true);
+   const [bannerReady, setBannerReady] = useState(false);
 
    useEffect(() => {
-      setBannerDismissed(isAppDownloadBannerDismissed());
+      const dismissed = isAppDownloadBannerDismissed();
+      setBannerDismissed(dismissed);
+      if (dismissed) return;
+
+      const revealBanner = () => setBannerReady(true);
+      if ("requestIdleCallback" in window) {
+         const id = window.requestIdleCallback(revealBanner, { timeout: 4000 });
+         return () => window.cancelIdleCallback(id);
+      }
+      const timeoutId = window.setTimeout(revealBanner, 3000);
+      return () => window.clearTimeout(timeoutId);
    }, []);
 
    const handleDismiss = () => {
@@ -20,13 +31,15 @@ export function LandingTopBar() {
       setBannerDismissed(true);
    };
 
+   const showMobileBanner = bannerReady && !bannerDismissed;
+
    return (
       <>
          <div className="md:hidden">
-            {bannerDismissed ? (
-               <LandingHeader />
-            ) : (
+            {showMobileBanner ? (
                <AppDownloadBanner onDismiss={handleDismiss} />
+            ) : (
+               <LandingHeader />
             )}
          </div>
          <div className="hidden md:block">
