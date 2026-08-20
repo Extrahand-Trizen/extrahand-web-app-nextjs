@@ -27,14 +27,8 @@ export default function SeoPageWrapper({
   const [cmsPage, setCmsPage] = useState<SeoPage | null>(initialPage);
 
   useEffect(() => {
-    // If already have a page from SSG, keep it
-    if (initialPage) {
-      setCmsPage(initialPage);
-      return;
-    }
-
-    // Client-side fallback: fetch CMS page when SSG didn't get it
     let isMounted = true;
+    // Always fetch latest published page on client mount to get real-time content and image updates
     getPublishedSeoPage(slug).then((fetchedPage) => {
       if (isMounted && fetchedPage) {
         setCmsPage(fetchedPage);
@@ -44,7 +38,7 @@ export default function SeoPageWrapper({
     return () => {
       isMounted = false;
     };
-  }, [slug, initialPage]);
+  }, [slug]);
 
   if (cmsPage) {
     return (

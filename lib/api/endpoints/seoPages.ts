@@ -61,13 +61,10 @@ console.log("[SEO BUILD] Module loaded | CONTENT_ADMIN_URL =", CONTENT_ADMIN_URL
 
 export async function getPublishedSeoPage(slug: string): Promise<SeoPage | null> {
   const url = `${CONTENT_ADMIN_URL}/api/seo-pages/published?slug=${encodeURIComponent(slug)}`;
-  console.log("[SEO FETCH] | slug =", slug, "| url =", url, "| env =", SEO_ENV);
-
   try {
-    // NOTE: no cache option = default 'force-cache'.
-    // cache: 'no-store' would mark the route as dynamic and BLOCK static export
-    // (output: 'export' requires all routes to be statically pre-rendered).
-    const res = await fetch(url);
+    const isBrowser = typeof window !== "undefined";
+    const requestUrl = isBrowser ? `${url}&_t=${Date.now()}` : url;
+    const res = await fetch(requestUrl, isBrowser ? { cache: 'no-cache' } : undefined);
 
     console.log(
       "[SEO RESPONSE] | slug =",
