@@ -108,18 +108,6 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
       [page, statusFilter, deferredSearchQuery, sortBy]
    );
 
-   // Fetch total count once so the tab badge stays stable across local filters.
-   const { data: totalCountData } = useQuery<TaskListResponse | any>({
-      queryKey: ["my-tasks-total"],
-      queryFn: async () => {
-         const response = await tasksApi.getMyTasks({ page: 1, limit: 1 });
-         return response;
-      },
-      staleTime: Infinity,
-      refetchOnMount: false,
-      refetchOnWindowFocus: false,
-   });
-
    // Fetch the page the user is actually looking at.
    const {
       data,
@@ -137,9 +125,7 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
          queryParams.sortBy,
       ],
       queryFn: async () => {
-         console.log("📤 Fetching my tasks via React Query...");
          const response = await tasksApi.getMyTasks(queryParams);
-         console.log("✅ My tasks response:", response);
          return response;
       },
       staleTime: Infinity, // Never mark as stale - keep cached data indefinitely
@@ -150,8 +136,8 @@ export function MyTasksContent({ onCountChange }: MyTasksContentProps) {
    const tasks = useMemo(() => extractTaskPage(data), [data]);
    const pagination = useMemo(() => extractPagination(data), [data]);
    const totalTaskCount = useMemo(
-      () => extractPagination(totalCountData).total,
-      [totalCountData]
+      () => pagination.total,
+      [pagination.total]
    );
 
    // Surface non-auth errors via toast (once per error instance)

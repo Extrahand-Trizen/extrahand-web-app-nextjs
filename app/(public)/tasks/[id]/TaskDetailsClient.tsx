@@ -37,11 +37,17 @@ interface TaskDetailsClientProps {
    initialTask: Task | null;
    taskId: string;
    currentHandle?: string;
+   canonicalHandle?: string | null;
 }
 
 const TASK_STALE_MS = 60 * 1000;
 
-export function TaskDetailsClient({ initialTask, taskId, currentHandle }: TaskDetailsClientProps) {
+export function TaskDetailsClient({
+   initialTask,
+   taskId,
+   currentHandle,
+   canonicalHandle,
+}: TaskDetailsClientProps) {
    const router = useRouter();
    const searchParams = useSearchParams();
    const queryClient = useQueryClient();
@@ -49,13 +55,17 @@ export function TaskDetailsClient({ initialTask, taskId, currentHandle }: TaskDe
       initialTask && String((initialTask as Task & { _id?: string })._id) === taskId ? initialTask : null;
 
    useEffect(() => {
-      if (typeof window !== "undefined" && initialTask?._id && initialTask?.title) {
-         const canonicalHandle = buildPublicTaskHandle(initialTask.title, initialTask._id);
-         if (currentHandle && currentHandle !== canonicalHandle) {
-            window.history.replaceState(null, "", `/tasks/${canonicalHandle}`);
+      if (typeof window !== "undefined") {
+         const targetHandle =
+            canonicalHandle ||
+            (initialTask?._id && initialTask?.title
+               ? buildPublicTaskHandle(initialTask.title, initialTask._id)
+               : null);
+         if (targetHandle && currentHandle && currentHandle !== targetHandle) {
+            window.history.replaceState(null, "", `/tasks/${targetHandle}`);
          }
       }
-   }, [initialTask, currentHandle]);
+   }, [canonicalHandle, initialTask, currentHandle]);
 
    const taskQuery = useQuery({
       queryKey: taskDetailsQueryKeys.task(taskId),

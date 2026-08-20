@@ -1,9 +1,7 @@
 import { cache } from "react";
 import { getApiBaseUrl } from "@/lib/config";
-import { cookies } from "next/headers";
 import type { Task } from "@/types/task";
 import { TaskDetailsClient } from "./TaskDetailsClient";
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import {
    buildPublicTaskHandle,
@@ -16,13 +14,7 @@ const fetchTaskOnServer = cache(async (id: string): Promise<Task | null> => {
    const apiBase = getApiBaseUrl().replace(/\/$/, "");
    const url = `${apiBase}/api/v1/tasks/${id}`;
    try {
-      const cookieStore = await cookies();
-      const cookieHeader = cookieStore
-         .getAll()
-         .map((c) => `${c.name}=${c.value}`)
-         .join("; ");
       const res = await fetch(url, {
-         headers: cookieHeader ? { Cookie: cookieHeader } : {},
          next: { revalidate: 30 },
       });
       if (!res.ok) return null;
@@ -88,6 +80,17 @@ export default async function TaskDetailsPage({ params }: PageProps) {
    const effectiveId = taskId || handleOrId;
 
    const initialTask = await fetchTaskOnServer(effectiveId);
+   const canonicalHandle =
+      initialTask?._id && initialTask?.title
+         ? buildPublicTaskHandle(initialTask.title, initialTask._id)
+         : null;
 
-   return <TaskDetailsClient initialTask={initialTask} taskId={effectiveId} currentHandle={handleOrId} />;
+   return (
+      <TaskDetailsClient
+         initialTask={initialTask}
+         taskId={effectiveId}
+         currentHandle={handleOrId}
+         canonicalHandle={canonicalHandle}
+      />
+   );
 }

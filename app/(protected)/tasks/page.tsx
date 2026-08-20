@@ -20,6 +20,8 @@ export default function TasksPage() {
    const [tasksCount, setTasksCount] = useState<number | null>(null);
    const [applicationsCount, setApplicationsCount] = useState<number | null>(null);
    const [selectedTab, setSelectedTab] = useState<"mytasks" | "myapplications" | null>(null);
+   const [myTasksMounted, setMyTasksMounted] = useState(false);
+   const [myAppsMounted, setMyAppsMounted] = useState(false);
 
    // Determine user role
    const userRole = useMemo<"tasker" | "poster" | null>(() => {
@@ -101,6 +103,13 @@ export default function TasksPage() {
       return visibleTabs.length > 0 ? visibleTabs[0] : defaultTab;
    }, [isRoleReady, searchParams, visibleTabs, defaultTab, selectedTab]);
 
+   useEffect(() => {
+      if (activeTab === "mytasks") {
+         setMyTasksMounted(true);
+      } else if (activeTab === "myapplications") {
+         setMyAppsMounted(true);
+      }
+   }, [activeTab]);
 
    const handleTabChange = (value: string) => {
       if (value === "mytasks" || value === "myapplications") {
@@ -187,13 +196,13 @@ export default function TasksPage() {
                   </div>
                )}
 
-               {/* Both components are always rendered to fetch counts, but only show the active one */}
+               {/* Inactive tab is not mounted until first selected to prevent unnecessary network queries */}
                <div className={isRoleReady && activeTab === "mytasks" ? "" : "hidden"}>
-                  <MyTasksContent onCountChange={setTasksCount} />
+                  {myTasksMounted && <MyTasksContent onCountChange={setTasksCount} />}
                </div>
 
                <div className={isRoleReady && activeTab === "myapplications" ? "" : "hidden"}>
-                  <MyApplicationsContent onCountChange={setApplicationsCount} />
+                  {myAppsMounted && <MyApplicationsContent onCountChange={setApplicationsCount} />}
                </div>
             </main>
          </Tabs>
