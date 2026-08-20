@@ -12,6 +12,9 @@ const nextConfig: NextConfig = {
       "@radix-ui/react-accordion",
       "@radix-ui/react-dialog",
       "@radix-ui/react-dropdown-menu",
+      "mixpanel-browser",
+      "@tanstack/react-query",
+      "recharts",
     ],
   },
   // Static HTML/CSS/JS for MinIO / CDN hosting (upload the `out/` folder)

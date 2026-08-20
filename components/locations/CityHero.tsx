@@ -9,22 +9,26 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, TrendingUp } from "lucide-react";
 import { CityInfo } from "@/lib/data/cities";
+import { SeoHeroImage } from "@/components/shared/SeoHeroImage";
 
 interface CityHeroProps {
    city: CityInfo;
 }
 
 export function CityHero({ city }: CityHeroProps) {
+   const heroImage =
+      city.heroImage || "/assets/images/cities/default.webp";
+
    return (
       <section className="relative h-[600px] lg:h-[700px] flex items-center justify-center overflow-hidden">
          <div className="absolute inset-0">
-            <div
-               className="absolute opacity-70 inset-0 bg-cover bg-center"
-               style={{
-                  backgroundImage: `url('${
-                     city.heroImage || "/assets/images/cities/default.webp"
-                  }')`,
-               }}
+            <SeoHeroImage
+               src={heroImage}
+               alt={`${city.name} local services`}
+               priority
+               width={1200}
+               height={700}
+               className="opacity-70"
             />
             <div className="absolute inset-0 bg-linear-to-br from-black/60 via-black/50 to-black/60" />
          </div>
@@ -57,7 +61,7 @@ export function CityHero({ city }: CityHeroProps) {
                <Link href="/tasks/new" className="group">
                   <Button
                      size="lg"
-                     className="w-full sm:w-auto bg-primary-500 hover:bg-primary-600 text-white font-bold text-lg px-10 py-7 rounded-2xl shadow-2xl transition-all hover:scale-105"
+                     className="w-full sm:w-auto bg-primary-500 hover:bg-primary-600 text-white font-bold text-lg px-10 py-7 rounded-2xl shadow-2xl transition-colors"
                   >
                      Get Help
                      <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
@@ -67,7 +71,7 @@ export function CityHero({ city }: CityHeroProps) {
                   <Button
                      variant="outline"
                      size="lg"
-                     className="w-full sm:w-auto border-2 border-white/80 font-semibold text-lg px-8 py-7 rounded-2xl backdrop-blur-sm transition-all hover:bg-white/90"
+                     className="w-full sm:w-auto border-2 border-white/80 font-semibold text-lg px-8 py-7 rounded-2xl backdrop-blur-sm transition-colors hover:bg-white/90"
                   >
                      Become a Helper
                   </Button>

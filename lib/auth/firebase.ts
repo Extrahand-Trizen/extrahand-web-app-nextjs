@@ -18,6 +18,7 @@ import {
    Auth,
 } from "firebase/auth";
 import { FIREBASE_CONFIG } from "@/lib/config";
+import { getScriptTier } from "@/lib/thirdParty/scriptPolicy";
 
 // Initialize Firebase only when config is present. Local development may not have
 // the Firebase public keys populated yet, and the app should still render the page.
@@ -49,7 +50,7 @@ export function ensureFirebaseAuth(): Auth | null {
 
    auth = getAuth(firebaseApp);
 
-   if (typeof window !== "undefined") {
+   if (typeof window !== "undefined" && getScriptTier(window.location.pathname) !== "marketing") {
       void import("./firebase-analytics").then(({ initializeAnalyticsIfConsented }) => {
          initializeAnalyticsIfConsented(firebaseApp);
       });

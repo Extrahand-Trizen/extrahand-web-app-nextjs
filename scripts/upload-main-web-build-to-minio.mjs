@@ -115,7 +115,9 @@ function cacheControlFor(filePath) {
     relative.includes('/_next/static/') ||
     /\.[0-9a-f]{8,}\.(?:js|css|woff2?)$/i.test(path.basename(filePath));
 
-  if (ext === '.html') return 'public, max-age=0, must-revalidate';
+  if (ext === '.html') {
+    return 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400';
+  }
   if (hashedNextAsset || ext === '.js' || ext === '.css' || ext === '.woff' || ext === '.woff2') {
     return 'public, max-age=31536000, immutable';
   }

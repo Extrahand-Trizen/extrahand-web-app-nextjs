@@ -2,6 +2,16 @@
 
 import dynamic from "next/dynamic";
 
+/** Matches HeroSearchForm bar + popular-tags row so lazy load does not shift layout. */
+function HeroSearchFormPlaceholder() {
+   return (
+      <div className="max-w-2xl mx-auto" aria-hidden>
+         <div className="bg-white px-2 md:py-2 rounded-lg shadow-lg h-[44px] md:h-[56px]" />
+         <div className="mt-8 flex flex-wrap justify-center gap-3 min-h-[28px] md:min-h-[36px]" />
+      </div>
+   );
+}
+
 export const HeroSearchFormLazy = dynamic(
    () =>
       import("@/components/landing/HeroSearchForm").then((mod) => ({
@@ -9,11 +19,6 @@ export const HeroSearchFormLazy = dynamic(
       })),
    {
       ssr: false,
-      loading: () => (
-         <div
-            className="bg-white px-2 md:py-2 rounded-lg shadow-lg max-w-2xl mx-auto h-[52px] md:h-[56px]"
-            aria-hidden
-         />
-      ),
+      loading: () => <HeroSearchFormPlaceholder />,
    }
 );

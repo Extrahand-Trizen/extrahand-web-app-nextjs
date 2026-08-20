@@ -4,6 +4,11 @@ import type { SeoPage } from "@/lib/api/endpoints/seoPages";
 import Link from "next/link";
 import { useState } from "react";
 import {
+  SeoHeroImage,
+  SEO_HERO_DEFAULT_WEBP,
+  SEO_HERO_DIMENSIONS,
+} from "@/components/shared/SeoHeroImage";
+import {
   ShieldCheck,
   MapPin,
   Tag,
@@ -74,14 +79,14 @@ export default function SeoPageRenderer({ page }: SeoPageRendererProps) {
       <div className="pt-2 flex flex-wrap gap-4 items-center">
         <Link
           href={postTaskHref}
-          className="group inline-flex items-center gap-2 rounded-xl bg-primary-600 px-6 py-3.5 font-bold text-white shadow-sm shadow-primary-600/10 hover:bg-primary-700 hover:shadow-md transition-all duration-200"
+          className="group inline-flex items-center gap-2 rounded-xl bg-primary-600 px-6 py-3.5 font-bold text-white shadow-sm shadow-primary-600/10 hover:bg-primary-700 hover:shadow-md transition-colors duration-200"
         >
           Book this service
           <ArrowRight className="h-4.5 w-4.5 transition-transform group-hover:translate-x-0.5" />
         </Link>
         <a
           href="#faq"
-          className="inline-flex items-center justify-center rounded-xl border border-secondary-300 bg-white px-6 py-3.5 font-semibold text-secondary-700 shadow-2xs hover:bg-secondary-50 transition-all duration-200"
+          className="inline-flex items-center justify-center rounded-xl border border-secondary-300 bg-white px-6 py-3.5 font-semibold text-secondary-700 shadow-2xs hover:bg-secondary-50 transition-colors duration-200"
         >
           View FAQs
         </a>
@@ -122,17 +127,24 @@ export default function SeoPageRenderer({ page }: SeoPageRendererProps) {
         <div className="relative">
           {/* Use provided hero image or fall back to the public default image */}
           {(() => {
-            const heroImageSrc = page.heroImage || "/assets/images/seo/default.png";
+            const heroImageSrc = page.heroImage || SEO_HERO_DEFAULT_WEBP;
             return (
               <div className="grid items-start gap-8 lg:grid-cols-[1fr_1.25fr]">
                 {renderEditorialBlock()}
                 <div className="relative w-full">
-                  <div className="relative w-full aspect-[4/3] sm:h-[320px] md:h-[480px] lg:aspect-auto lg:h-[600px] flex items-center justify-center">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                  <div
+                    className="relative w-full overflow-hidden rounded-2xl bg-secondary-50 aspect-[4/3] sm:aspect-[16/10] lg:aspect-[3/2]"
+                    style={{
+                      minHeight: `${SEO_HERO_DIMENSIONS.height}px`,
+                    }}
+                  >
+                    <SeoHeroImage
                       src={heroImageSrc}
                       alt={page.heroHeading}
-                      className="max-w-full max-h-full object-contain"
+                      priority
+                      width={SEO_HERO_DIMENSIONS.width}
+                      height={SEO_HERO_DIMENSIONS.height}
+                      objectFit="contain"
                     />
                   </div>
                 </div>

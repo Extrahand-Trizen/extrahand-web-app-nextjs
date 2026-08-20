@@ -153,11 +153,11 @@ export function HeroSearchForm() {
    };
 
    return (
-      <>
-         <div className="bg-white px-2 md:py-2 rounded-lg shadow-lg max-w-2xl mx-auto">
+      <div className="max-w-2xl mx-auto">
+         <div className="bg-white px-2 md:py-2 rounded-lg shadow-lg">
             <form
                onSubmit={handleSearch}
-               className="flex items-center gap-1 md:gap-2"
+               className="flex items-center gap-1 md:gap-2 min-h-[40px] md:min-h-[48px]"
             >
                <div
                   className="relative flex-1 md:w-1/3"
@@ -291,7 +291,7 @@ export function HeroSearchForm() {
             </form>
          </div>
 
-         <div className="mt-8 flex flex-wrap justify-center gap-3">
+         <div className="mt-8 flex flex-wrap justify-center gap-3 min-h-[28px] md:min-h-[36px]">
             {[
                "Cleaning",
                "Moving",
@@ -305,12 +305,12 @@ export function HeroSearchForm() {
                   key={tag}
                   type="button"
                   onClick={() => navigateWithTag(tag)}
-                  className="px-3 md:px-4 py-1 md:py-2 rounded-full bg-white/20 hover:bg-white/30 text-white backdrop-blur-md text-xs md:text-sm font-medium transition-all border border-white/30"
+                  className="px-3 md:px-4 py-1 md:py-2 rounded-full bg-white/20 hover:bg-white/30 text-white backdrop-blur-md text-xs md:text-sm font-medium transition-colors border border-white/30"
                >
                   {tag}
                </button>
             ))}
          </div>
-      </>
+      </div>
    );
 }

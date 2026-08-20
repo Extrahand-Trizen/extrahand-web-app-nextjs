@@ -32,9 +32,11 @@ export default function CookieConsentBanner() {
       setIsVisible(false);
 
       if (preferences.analytics) {
-         void import("@/lib/auth/firebase-analytics").then(({ initializeAnalyticsIfConsented }) => {
-            initializeAnalyticsIfConsented();
-         });
+         void import("@/lib/auth/firebase-analytics").then(
+            ({ initializeAnalyticsIfConsented }) => {
+               initializeAnalyticsIfConsented();
+            }
+         );
       }
    };
 

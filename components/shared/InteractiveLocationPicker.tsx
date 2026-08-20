@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { useQuery } from "@tanstack/react-query";
 import { MapPin, Locate, Loader2, Navigation, Home, Plus, X, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,6 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { isValidCoordinate, sanitizeString } from "@/lib/utils/sanitization";
-import { GoogleMapPicker } from "@/components/maps/GoogleMapPicker";
 import { addressesApi } from "@/lib/api/endpoints/addresses";
 import { useMapsApiKey } from "@/lib/hooks/useMapsApiKey";
 import {
@@ -22,6 +22,21 @@ import {
    updateConsentPreference,
 } from "@/lib/consent/cookieConsent";
 import type { SavedAddress } from "@/types/profile";
+
+const GoogleMapPicker = dynamic(
+   () =>
+      import("@/components/maps/GoogleMapPicker").then((mod) => ({
+         default: mod.GoogleMapPicker,
+      })),
+   {
+      ssr: false,
+      loading: () => (
+         <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+            <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+         </div>
+      ),
+   }
+);
 
 // Query key for React Query caching
 export const ADDRESSES_QUERY_KEY = ["saved-addresses"];

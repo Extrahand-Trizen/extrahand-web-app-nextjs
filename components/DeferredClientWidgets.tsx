@@ -1,11 +1,18 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import {
    CONSENT_CHANGE_EVENT,
    getConsentPreferences,
 } from "@/lib/consent/cookieConsent";
+import {
+   getGa4IdleTimeoutMs,
+   scheduleWhenIdle,
+   shouldLoadGa4,
+   shouldLoadOtpPollingBridge,
+} from "@/lib/thirdParty/scriptPolicy";
 
 const AnalyticsPageView = dynamic(
    () =>
@@ -27,6 +34,20 @@ const Toaster = dynamic(
    () => import("@/components/ui/sonner").then((mod) => ({ default: mod.Toaster })),
    { ssr: false }
 );
+
+function AuthenticatedOtpBridge() {
+   const pathname = usePathname();
+   const [enabled, setEnabled] = useState(false);
+
+   useEffect(() => {
+      if (shouldLoadOtpPollingBridge(pathname)) {
+         setEnabled(true);
+      }
+   }, [pathname]);
+
+   if (!enabled) return null;
+   return <PollingOtpToastBridge />;
+}
 
 function loadGa4() {
    if (typeof window === "undefined") return;
@@ -53,29 +74,38 @@ function loadGa4() {
    document.head.appendChild(script);
 }
 
-export function DeferredClientWidgets() {
+function Ga4Loader() {
+   const pathname = usePathname();
+
    useEffect(() => {
+      if (!shouldLoadGa4(pathname)) return;
+
       const start = () => loadGa4();
-      window.addEventListener(CONSENT_CHANGE_EVENT, start);
+      const onConsent = () => start();
 
-      if ("requestIdleCallback" in window) {
-         const id = window.requestIdleCallback(start, { timeout: 8000 });
-         return () => {
-            window.cancelIdleCallback(id);
-            window.removeEventListener(CONSENT_CHANGE_EVENT, start);
-         };
+      window.addEventListener(CONSENT_CHANGE_EVENT, onConsent);
+
+      if (!getConsentPreferences()?.analytics) {
+         return () => window.removeEventListener(CONSENT_CHANGE_EVENT, onConsent);
       }
-      const timeoutId = window.setTimeout(start, 4000);
-      return () => {
-         window.clearTimeout(timeoutId);
-         window.removeEventListener(CONSENT_CHANGE_EVENT, start);
-      };
-   }, []);
 
+      const cancelIdle = scheduleWhenIdle(start, getGa4IdleTimeoutMs(pathname));
+
+      return () => {
+         cancelIdle();
+         window.removeEventListener(CONSENT_CHANGE_EVENT, onConsent);
+      };
+   }, [pathname]);
+
+   return null;
+}
+
+export function DeferredClientWidgets() {
    return (
       <Suspense fallback={null}>
+         <Ga4Loader />
          <AnalyticsPageView />
-         <PollingOtpToastBridge />
+         <AuthenticatedOtpBridge />
          <Toaster
             position="top-right"
             expand

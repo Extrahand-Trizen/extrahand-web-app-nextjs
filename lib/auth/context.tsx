@@ -23,6 +23,7 @@ import { isOTPAuthInProgress } from "./authFlowState";
 import { UserProfile } from "@/types/user";
 import { usePathname } from "next/navigation";
 import { useUserStore } from "@/lib/state/userStore";
+import { shouldAttachFirebaseAuth, isFirebaseAuthRoute } from "@/lib/thirdParty/scriptPolicy";
 
 interface AuthContextType {
    currentUser: User | null;
@@ -324,17 +325,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       if (typeof window === "undefined") return;
       if (firebaseAttachedRef.current) return;
 
-      const isAuthRoute = /^\/(login|signup|otp-verification|auth)\b/.test(
-         pathname
-      );
-      const hasAuthCookie = document.cookie
-         .split("; ")
-         .some((c) => c.startsWith("extrahand_auth=1"));
-
-      // getAuth() injects firebaseapp.com/__/auth/iframe.js (~93 KiB, 30m cache).
-      // PageSpeed counts that iframe on the critical path if we load it within ~3s.
-      // Guests on marketing pages do not need Firebase Auth at all.
-      if (!isAuthRoute && !hasAuthCookie) return;
+      if (!shouldAttachFirebaseAuth(pathname)) return;
 
       firebaseAttachedRef.current = true;
       let cancelled = false;
@@ -406,7 +397,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
          });
       };
 
-      if (isAuthRoute) {
+      if (isFirebaseAuthRoute(pathname)) {
          attachFirebaseListener();
       } else if ("requestIdleCallback" in window) {
          window.requestIdleCallback(attachFirebaseListener, { timeout: 8000 });

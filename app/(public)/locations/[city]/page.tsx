@@ -69,6 +69,12 @@ export default async function CityPage({ params }: PageProps) {
 
    return (
       <>
+         <link
+            rel="preload"
+            as="image"
+            href={cityInfo.heroImage || "/assets/images/cities/default.webp"}
+            fetchPriority="high"
+         />
          <main>
             {/* Hero Section */}
             <CityHero city={cityInfo} />

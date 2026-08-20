@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronRight } from "lucide-react";
+import { SeoHeroImage } from "@/components/shared/SeoHeroImage";
 
 interface HeroSectionProps {
    categoryName: string;
@@ -32,13 +33,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
    return (
       <section className="relative w-full bg-slate-900">
          {/* Background Image with Overlay */}
-         <div className="absolute inset-0">
+         <div className="absolute inset-0 min-h-[420px]">
             {heroImage ? (
                heroImage.startsWith("data:") || heroImage.startsWith("http") ? (
-                  <img
+                  <SeoHeroImage
                      src={heroImage}
                      alt={categoryName}
-                     className="w-full h-full object-cover"
+                     priority
+                     width={1200}
+                     height={630}
                   />
                ) : (
                   <Image

@@ -130,7 +130,8 @@ export const LandingHeader: React.FC = () => {
       "poster"
    );
    const [categories, setCategories] = useState<CategoriesListItem[]>([]);
-   const [categoriesLoading, setCategoriesLoading] = useState(true);
+   const [categoriesLoading, setCategoriesLoading] = useState(false);
+   const categoriesFetchStartedRef = useRef(false);
 
    const categoriesRef = useRef<HTMLDivElement>(null);
    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -199,10 +200,28 @@ export const LandingHeader: React.FC = () => {
       };
    }, [isMobileMenuOpen]);
 
+   const loadCategories = useCallback(async () => {
+      if (categoriesFetchStartedRef.current) return;
+      categoriesFetchStartedRef.current = true;
+      setCategoriesLoading(true);
+      try {
+         const data = await categoriesApi.getCategories({
+            includeUnpublished: false,
+         });
+         setCategories(data || []);
+      } catch (error) {
+         console.error("Error fetching categories:", error);
+         setCategories([]);
+      } finally {
+         setCategoriesLoading(false);
+      }
+   }, []);
+
    const handleMouseEnter = () => {
       if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
       setIsUserMenuOpen(false);
       setIsCategoriesOpen(true);
+      void loadCategories();
    };
 
    const handleMouseLeave = () => {
@@ -212,43 +231,15 @@ export const LandingHeader: React.FC = () => {
    };
 
    useEffect(() => {
-      let cancelled = false;
-      const fetchCategories = async () => {
-         try {
-            const data = await categoriesApi.getCategories({
-               includeUnpublished: false,
-            });
-            if (!cancelled) setCategories(data || []);
-         } catch (error) {
-            console.error("Error fetching categories:", error);
-            if (!cancelled) setCategories([]);
-         } finally {
-            if (!cancelled) setCategoriesLoading(false);
-         }
-      };
-
-      const start = () => {
-         void fetchCategories();
-      };
-
-      if ("requestIdleCallback" in window) {
-         const idleId = window.requestIdleCallback(start, { timeout: 2500 });
-         return () => {
-            cancelled = true;
-            window.cancelIdleCallback(idleId);
-         };
+      if (isMobileCategoriesOpen) {
+         void loadCategories();
       }
-
-      const timeoutId = window.setTimeout(start, 800);
-      return () => {
-         cancelled = true;
-         window.clearTimeout(timeoutId);
-      };
-   }, []);
+   }, [isMobileCategoriesOpen, loadCategories]);
 
    const handleNavClick = (href: string, openMobileCategories?: boolean) => {
       if (openMobileCategories) {
          setIsMobileCategoriesOpen(true);
+         void loadCategories();
          return;
       }
 
@@ -315,7 +306,7 @@ export const LandingHeader: React.FC = () => {
       <>
          <header
             className={cn(
-               "fixed top-0 left-0 right-4 z-40 transition-all duration-300",
+               "fixed top-0 left-0 right-0 z-40 transition-[background-color,box-shadow,border-color] duration-300",
                "bg-white/95 backdrop-blur-md shadow-sm border-b border-secondary-100"
             )}
          >
@@ -510,8 +501,8 @@ export const LandingHeader: React.FC = () => {
                      )}
                   </nav>
 
-                  {/* Desktop CTA Group */}
-                  <div className="hidden lg:flex items-center gap-2">
+                  {/* Desktop CTA Group — fixed min width avoids auth-state swap CLS */}
+                  <div className="hidden lg:flex items-center justify-end gap-2 min-w-[280px]">
                      {!isAuthenticated ? (
                         <GuestCtaButtons onBecomeTasker={handleBecomeTasker} />
                      ) : (
@@ -536,8 +527,8 @@ export const LandingHeader: React.FC = () => {
                      )}
                   </div>
 
-                  {/* Mobile: Post Task + Menu Button */}
-                  <div className="flex items-center gap-2 lg:hidden">
+                  {/* Mobile: Post Task + Menu Button — reserved width for stable header */}
+                  <div className="flex items-center justify-end gap-2 lg:hidden min-w-[148px]">
                      <Button
                         size="sm"
                         className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold shadow-sm"

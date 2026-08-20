@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
 
 type Subcategory = {
@@ -194,36 +193,31 @@ export const CategoriesExplorer = () => {
 
                {/* Scrolling cards */}
                {Array.from({ length: 2 }).map((_, i) => (
-                  <motion.div
+                  <div
                      key={i}
-                     className="flex w-max gap-6 py-2 md:py-4"
-                     animate={
-                        i === 0
-                           ? { x: ["0%", "-33.333%"] }
-                           : { x: ["-33.333%", "0%"] }
-                     }
-                     transition={{
-                        duration: CATEGORY_MARQUEE_DURATION_SECONDS,
-                        ease: "linear",
-                        repeat: Infinity,
+                     className={`flex w-max gap-6 py-2 md:py-4 ${
+                        i === 0 ? "category-marquee-left" : "category-marquee-right"
+                     }`}
+                     style={{
+                        animationDuration: `${CATEGORY_MARQUEE_DURATION_SECONDS}s`,
                      }}
                   >
                      {marqueeItems.map((item, index) => (
-                        <motion.div
+                        <div
                            key={`${item.title}-${index}`}
-                           className="group flex min-w-[260px] sm:min-w-[320px] lg:min-w-[340px] items-center gap-5 rounded-2xl bg-white p-3 md:p-5 shadow-sm md:shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-primary-200"
-                           whileHover={{ scale: 1.02, y: -4 }}
-                           transition={{ duration: 0.2 }}
+                           className="group flex min-w-[260px] sm:min-w-[320px] lg:min-w-[340px] items-center gap-5 rounded-2xl bg-white p-3 md:p-5 shadow-sm md:shadow-lg hover:shadow-xl transition-[box-shadow,border-color] duration-300 border border-gray-100 hover:border-primary-200"
                         >
                            <div
-                              className={`relative h-16 w-16 md:h-24 md:w-24 shrink-0 overflow-hidden rounded-xl bg-linear-to-br ${item.color}`}
+                              className={`relative size-16 md:size-24 shrink-0 overflow-hidden rounded-xl bg-linear-to-br ${item.color}`}
                            >
-                              <div className="relative h-full w-full overflow-hidden rounded-lg bg-white">
+                              <div className="relative size-full overflow-hidden rounded-lg bg-white">
                                  <Image
                                     src={item.image}
                                     alt={item.title}
-                                    fill
-                                    className="object-cover group-hover:scale-120 transition-transform duration-300"
+                                    width={96}
+                                    height={96}
+                                    sizes="(max-width: 768px) 64px, 96px"
+                                    className="size-full object-cover group-hover:scale-110 transition-transform duration-300"
                                  />
                               </div>
                            </div>
@@ -256,9 +250,9 @@ export const CategoriesExplorer = () => {
                                  </div>
                               )}
                            </div>
-                        </motion.div>
+                        </div>
                      ))}
-                  </motion.div>
+                  </div>
                ))}
             </div>
 

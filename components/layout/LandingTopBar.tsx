@@ -8,6 +8,11 @@ import {
    isAppDownloadBannerDismissed,
 } from "@/components/layout/AppDownloadBanner";
 
+/**
+ * Always keep LandingHeader in document flow.
+ * App download prompt is a fixed overlay (no spacer) so it cannot push
+ * hero/CTA content and inflate CLS when it appears after idle.
+ */
 export function LandingTopBar() {
    const [bannerDismissed, setBannerDismissed] = useState(true);
    const [bannerReady, setBannerReady] = useState(false);
@@ -35,16 +40,12 @@ export function LandingTopBar() {
 
    return (
       <>
-         <div className="md:hidden">
-            {showMobileBanner ? (
+         <LandingHeader />
+         {showMobileBanner ? (
+            <div className="md:hidden">
                <AppDownloadBanner onDismiss={handleDismiss} />
-            ) : (
-               <LandingHeader />
-            )}
-         </div>
-         <div className="hidden md:block">
-            <LandingHeader />
-         </div>
+            </div>
+         ) : null}
       </>
    );
 }

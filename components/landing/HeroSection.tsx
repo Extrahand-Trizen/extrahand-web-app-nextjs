@@ -3,13 +3,15 @@ import { HeroSearchFormLazy } from "@/components/landing/HeroSearchFormLazy";
 const HERO_IMAGE = "/assets/images/hero-bg1.webp";
 const HERO_IMAGE_MOBILE = "/assets/images/hero-bg1-mobile.webp";
 
+// Height comes from className (h-[450px] md:h-[650px]) so mobile/desktop
+// reserved space stays correct. Do not set height here — it overrides md:.
 const heroSectionStyle = {
    position: "relative",
    display: "flex",
-   height: "450px",
    alignItems: "center",
    justifyContent: "center",
    backgroundColor: "#1a1a1a",
+   minHeight: "450px",
 } as const;
 
 const heroImageStyle = {
@@ -68,7 +70,7 @@ export function HeroSection() {
             sizes="100vw"
             alt=""
             width={828}
-            height={280}
+            height={450}
             fetchPriority="high"
             decoding="sync"
             className="absolute inset-0 z-0 h-full w-full object-cover"

@@ -441,6 +441,33 @@ html .toaster {
    transform: translateY(-1px);
 }
 
+/* Category explorer marquee (replaces framer-motion on how-it-works) */
+@keyframes categoryMarqueeLeft {
+   from {
+      transform: translateX(0);
+   }
+   to {
+      transform: translateX(-33.333%);
+   }
+}
+
+@keyframes categoryMarqueeRight {
+   from {
+      transform: translateX(-33.333%);
+   }
+   to {
+      transform: translateX(0);
+   }
+}
+
+.category-marquee-left {
+   animation: categoryMarqueeLeft 50s linear infinite;
+}
+
+.category-marquee-right {
+   animation: categoryMarqueeRight 50s linear infinite;
+}
+
 /* Custom slide-in animation */
 @keyframes slideInRight {
    from {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, startTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { TaskMap } from "@/components/tasks/TaskMap";
@@ -324,13 +324,14 @@ export function DiscoverClient({
 
   // Handle filter changes and compute location coordinates
   const handleFilterChange = (newFilters: CompactFilterState) => {
-    // If suburb or address changed, update location coordinates
-    if (newFilters.suburb || newFilters.address) {
-      const location = newFilters.suburb || newFilters.address || "Hyderabad";
-      const coordinates = getLocationCoordinates(location);
-      newFilters.location = coordinates;
+    const nextFilters = { ...newFilters };
+    if (nextFilters.suburb || nextFilters.address) {
+      const location = nextFilters.suburb || nextFilters.address || "Hyderabad";
+      nextFilters.location = getLocationCoordinates(location);
     }
-    setFilters(newFilters);
+    startTransition(() => {
+      setFilters(nextFilters);
+    });
   };
 
   return (
