@@ -77,8 +77,12 @@ function main() {
    const files = walkHtml(OUT_DIR);
    let changed = 0;
    for (const file of files) {
+      const isIndexHtml =
+         file === path.join(OUT_DIR, "index.html") ||
+         file.endsWith("/index.html") && file === path.resolve(OUT_DIR, "index.html");
+
       const original = fs.readFileSync(file, "utf8");
-      let next = deferStylesheets(original);
+      let next = isIndexHtml ? original : deferStylesheets(original);
       next = stripLegacyPolyfillScripts(next);
       if (next !== original) {
          fs.writeFileSync(file, next);

@@ -1,4 +1,4 @@
-import { HeroSearchFormLazy } from "@/components/landing/HeroSearchFormLazy";
+import { HeroSearchForm } from "@/components/landing/HeroSearchForm";
 
 const HERO_IMAGE = "/assets/images/hero-bg1.webp";
 const HERO_IMAGE_MOBILE = "/assets/images/hero-bg1-mobile.webp";
@@ -94,7 +94,7 @@ export function HeroSection() {
                Choose Your Budget or Book Instantly. The Choice is Yours.
             </p>
 
-            <HeroSearchFormLazy />
+            <HeroSearchForm />
          </div>
       </section>
    );

@@ -39,7 +39,6 @@ import {
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/context";
-import { categoriesApi } from "@/lib/api/endpoints/categories";
 import type { CategoriesListItem } from "@/lib/api/endpoints/categories";
 import type { UserCurrentStatus } from "@/types/dashboard";
 import type { Category } from "@/types/category";
@@ -205,6 +204,7 @@ export const LandingHeader: React.FC = () => {
       categoriesFetchStartedRef.current = true;
       setCategoriesLoading(true);
       try {
+         const { categoriesApi } = await import("@/lib/api/endpoints/categories");
          const data = await categoriesApi.getCategories({
             includeUnpublished: false,
          });
@@ -305,6 +305,7 @@ export const LandingHeader: React.FC = () => {
    return (
       <>
          <header
+            style={{ minHeight: "56px" }}
             className={cn(
                "fixed top-0 left-0 right-0 z-40 transition-[background-color,box-shadow,border-color] duration-300",
                "bg-white/95 backdrop-blur-md shadow-sm border-b border-secondary-100"
