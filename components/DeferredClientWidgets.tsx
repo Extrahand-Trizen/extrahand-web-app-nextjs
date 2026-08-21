@@ -100,19 +100,33 @@ function Ga4Loader() {
    return null;
 }
 
+function LazyToaster() {
+   const [mounted, setMounted] = useState(false);
+
+   useEffect(() => {
+      const cancel = scheduleWhenIdle(() => setMounted(true), 3000);
+      return () => cancel();
+   }, []);
+
+   if (!mounted) return null;
+   return (
+      <Toaster
+         position="top-right"
+         expand
+         visibleToasts={5}
+         closeButton
+         richColors
+      />
+   );
+}
+
 export function DeferredClientWidgets() {
    return (
       <Suspense fallback={null}>
          <Ga4Loader />
          <AnalyticsPageView />
          <AuthenticatedOtpBridge />
-         <Toaster
-            position="top-right"
-            expand
-            visibleToasts={5}
-            closeButton
-            richColors
-         />
+         <LazyToaster />
       </Suspense>
    );
 }

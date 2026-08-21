@@ -672,9 +672,9 @@ html .toaster {
    animation: progress 2s ease-in-out infinite;
 }
 
-/* Fix for hero title text overlap */
+/* Hero title font and line-height stability */
 section h1 {
-   line-height: 2 !important;
+   line-height: 1.25 !important;
    display: block !important;
    word-spacing: normal !important;
    letter-spacing: normal !important;

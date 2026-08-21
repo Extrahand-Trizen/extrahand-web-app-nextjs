@@ -305,13 +305,22 @@ export const LandingHeader: React.FC = () => {
    return (
       <>
          <header
+            style={{
+               position: "fixed",
+               top: 0,
+               left: 0,
+               right: 0,
+               zIndex: 40,
+               width: "100%",
+               backgroundColor: "rgba(255, 255, 255, 0.95)",
+            }}
             className={cn(
                "fixed top-0 left-0 right-0 z-40 transition-[background-color,box-shadow,border-color] duration-300",
                "bg-white/95 backdrop-blur-md shadow-sm border-b border-secondary-100"
             )}
          >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-               <div className="flex items-center justify-between h-14 md:h-16">
+               <div className="flex items-center justify-between h-14 md:h-16" style={{ minHeight: "3.5rem" }}>
                   {/* Logo */}
                   <Link href="/" className="flex items-center gap-2 shrink-0">
                      <Image
@@ -883,7 +892,7 @@ export const LandingHeader: React.FC = () => {
          )}
 
          {/* Spacer for fixed header */}
-         <div className="h-14 md:h-16" />
+         <div className="h-14 md:h-16" style={{ minHeight: "3.5rem" }} />
       </>
    );
 };
