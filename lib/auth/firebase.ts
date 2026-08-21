@@ -3,20 +3,8 @@
  * Matches task-connect-relay Firebase setup
  */
 
-import { initializeApp, getApps, FirebaseApp } from "firebase/app";
-import {
-   getAuth,
-   createUserWithEmailAndPassword,
-   signInWithEmailAndPassword,
-   signOut,
-   sendPasswordResetEmail,
-   updateProfile,
-   GoogleAuthProvider,
-   signInWithPopup,
-   RecaptchaVerifier,
-   signInWithPhoneNumber,
-   Auth,
-} from "firebase/auth";
+import type { FirebaseApp } from "firebase/app";
+import type { Auth, RecaptchaVerifier } from "firebase/auth";
 import { FIREBASE_CONFIG } from "@/lib/config";
 import { getScriptTier } from "@/lib/thirdParty/scriptPolicy";
 
@@ -34,12 +22,18 @@ export function ensureFirebaseApp(): FirebaseApp | null {
    if (app) return app;
    if (!isFirebaseConfigured) return null;
 
-   if (getApps().length === 0) {
-      app = initializeApp(FIREBASE_CONFIG);
-   } else {
-      app = getApps()[0];
+   try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { initializeApp, getApps } = require("firebase/app");
+      if (getApps().length === 0) {
+         app = initializeApp(FIREBASE_CONFIG);
+      } else {
+         app = getApps()[0];
+      }
+      return app;
+   } catch {
+      return null;
    }
-   return app;
 }
 
 /** Call this only when auth is needed. getAuth() injects firebaseapp.com/__/auth/iframe.js. */
@@ -48,15 +42,21 @@ export function ensureFirebaseAuth(): Auth | null {
    const firebaseApp = ensureFirebaseApp();
    if (!firebaseApp) return null;
 
-   auth = getAuth(firebaseApp);
+   try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { getAuth } = require("firebase/auth");
+      auth = getAuth(firebaseApp);
 
-   if (typeof window !== "undefined" && getScriptTier(window.location.pathname) !== "marketing") {
-      void import("./firebase-analytics").then(({ initializeAnalyticsIfConsented }) => {
-         initializeAnalyticsIfConsented(firebaseApp);
-      });
+      if (typeof window !== "undefined" && getScriptTier(window.location.pathname) !== "marketing") {
+         void import("./firebase-analytics").then(({ initializeAnalyticsIfConsented }) => {
+            initializeAnalyticsIfConsented(firebaseApp);
+         });
+      }
+
+      return auth;
+   } catch {
+      return null;
    }
-
-   return auth;
 }
 
 if (!isFirebaseConfigured) {
@@ -83,6 +83,7 @@ export const signUpWithEmail = async (
    }
 
    try {
+      const { createUserWithEmailAndPassword, updateProfile } = await import("firebase/auth");
       const userCredential = await createUserWithEmailAndPassword(
          currentAuth,
          email,
@@ -115,6 +116,7 @@ export const signInWithEmail = async (email: string, password: string) => {
    }
 
    try {
+      const { signInWithEmailAndPassword } = await import("firebase/auth");
       const userCredential = await signInWithEmailAndPassword(
          currentAuth,
          email,
@@ -143,6 +145,7 @@ export const signInWithGoogle = async () => {
    }
 
    try {
+      const { GoogleAuthProvider, signInWithPopup } = await import("firebase/auth");
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(currentAuth, provider);
 
@@ -164,6 +167,7 @@ export const signOutUser = async () => {
    }
 
    try {
+      const { signOut } = await import("firebase/auth");
       await signOut(currentAuth);
       return { success: true };
    } catch (error: any) {
@@ -202,6 +206,7 @@ export const signInWithPhone = async (
          currentOrigin,
       });
 
+      const { signInWithPhoneNumber } = await import("firebase/auth");
       const confirmationResult = await signInWithPhoneNumber(
          currentAuth,
          phoneNumber,
@@ -291,7 +296,9 @@ export const setupRecaptcha = (containerId: string, options: any = {}) => {
          }
       }
 
-      const verifier = new RecaptchaVerifier(currentAuth, containerId, {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { RecaptchaVerifier: FirebaseRecaptchaVerifier } = require("firebase/auth");
+      const verifier = new FirebaseRecaptchaVerifier(currentAuth, containerId, {
          size: "invisible",
          callback: (response: any) => {
             console.log("✅ reCAPTCHA solved:", response);
@@ -322,6 +329,7 @@ export const resetPassword = async (email: string) => {
       if (!currentAuth) {
          return { success: false, code: "config/missing", error: "Firebase is not configured." };
       }
+      const { sendPasswordResetEmail } = await import("firebase/auth");
       await sendPasswordResetEmail(currentAuth, email);
       return { success: true };
    } catch (error: any) {
