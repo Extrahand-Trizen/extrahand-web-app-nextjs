@@ -64,18 +64,19 @@ const heroSubtitleStyle = {
 export function HeroSection() {
    return (
       <section className="relative flex h-[450px] items-center justify-center md:h-[650px]" style={heroSectionStyle}>
-         <img
-            src={HERO_IMAGE_MOBILE}
-            srcSet={`${HERO_IMAGE_MOBILE} 828w, ${HERO_IMAGE} 1920w`}
-            sizes="100vw"
-            alt=""
-            width={828}
-            height={450}
-            fetchPriority="high"
-            decoding="sync"
-            className="absolute inset-0 z-0 h-full w-full object-cover"
-            style={heroImageStyle}
-         />
+         <picture className="absolute inset-0 z-0 h-full w-full">
+            <source media="(max-width: 767px)" srcSet={HERO_IMAGE_MOBILE} />
+            <img
+               src={HERO_IMAGE}
+               alt=""
+               width={1920}
+               height={650}
+               fetchPriority="high"
+               decoding="sync"
+               className="h-full w-full object-cover"
+               style={heroImageStyle}
+            />
+         </picture>
          <div className="absolute inset-0 z-0 bg-black/40" style={heroOverlayStyle} />
 
          <div className="relative z-10 w-full max-w-3xl px-4 text-center" style={heroContentStyle}>

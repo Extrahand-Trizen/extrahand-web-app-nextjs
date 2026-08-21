@@ -1,6 +1,13 @@
+"use client";
+
+import dynamic from "next/dynamic";
 import { RouteChrome } from "@/components/layout/RouteChrome";
 import { PublicHashScroll } from "@/components/layout/PublicHashScroll";
-import CookieConsentBanner from "@/components/layout/CookieConsentBanner";
+
+const CookieConsentBanner = dynamic(
+   () => import("@/components/layout/CookieConsentBanner"),
+   { ssr: false }
+);
 
 export default function PublicLayout({
    children,

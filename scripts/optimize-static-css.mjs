@@ -78,10 +78,7 @@ function main() {
    let changed = 0;
    for (const file of files) {
       const original = fs.readFileSync(file, "utf8");
-      const isHomepage =
-         path.basename(file) === "index.html" &&
-         path.basename(path.dirname(file)) === "out";
-      let next = isHomepage ? original : deferStylesheets(original);
+      let next = deferStylesheets(original);
       next = stripLegacyPolyfillScripts(next);
       if (next !== original) {
          fs.writeFileSync(file, next);

@@ -3,7 +3,10 @@ import dynamic from "next/dynamic";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { SocialProofBar } from "@/components/landing/SocialProofBar";
 import { HowItWorksSection } from "@/components/landing/HowItWorksSection";
-import { WhyDifferentSection } from "@/components/landing/WhyDifferentSection";
+
+const WhyDifferentSection = dynamic(
+   () => import("@/components/landing/WhyDifferentSection")
+);
 
 const LandingAuthRedirect = dynamic(() => import("./LandingAuthRedirect"));
 
