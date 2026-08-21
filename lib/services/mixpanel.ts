@@ -16,6 +16,7 @@
  * who land anywhere other than the consent banner paths.
  */
 
+import mixpanel from 'mixpanel-browser';
 import { useUserStore } from '@/lib/state/userStore';
 import {
   buildMixpanelPeopleProperties,
@@ -27,8 +28,6 @@ import {
   type MixpanelProfileLike,
 } from './mixpanelIdentity';
 
-type MixpanelBrowser = typeof import('mixpanel-browser').default;
-
 // ─── Token ───────────────────────────────────────────────────────────────────
 
 // Shared with the Helper Mobile App project token so funnel data joins across
@@ -36,28 +35,9 @@ type MixpanelBrowser = typeof import('mixpanel-browser').default;
 const MIXPANEL_TOKEN =
   process.env.NEXT_PUBLIC_MIXPANEL_TOKEN || 'a4fbb9d01d29edad734ab23d1159437f';
 
-// ─── Singleton & Lazy Loader ─────────────────────────────────────────────────
+// ─── Singleton ───────────────────────────────────────────────────────────────
 
 let initialized = false;
-let mixpanelInstance: MixpanelBrowser | null = null;
-let mixpanelPromise: Promise<MixpanelBrowser | null> | null = null;
-
-export async function getMixpanel(): Promise<MixpanelBrowser | null> {
-  if (mixpanelInstance) return mixpanelInstance;
-  if (typeof window === 'undefined') return null;
-  if (!mixpanelPromise) {
-    mixpanelPromise = import('mixpanel-browser')
-      .then((mod) => {
-        mixpanelInstance = (mod.default || mod) as MixpanelBrowser;
-        return mixpanelInstance;
-      })
-      .catch((error) => {
-        console.warn('⚠️ [Mixpanel] Failed to load mixpanel-browser:', error);
-        return null;
-      });
-  }
-  return mixpanelPromise;
-}
 
 /** Current active role for event properties: "tasker" | "poster" | "partner" | "guest" */
 export function getCurrentRole(): 'tasker' | 'poster' | 'partner' | 'guest' {
@@ -78,22 +58,19 @@ export function getCurrentRole(): 'tasker' | 'poster' | 'partner' | 'guest' {
  * Initialize Mixpanel. Safe to call multiple times — subsequent calls are
  * no-ops. Only ever runs on the client.
  */
-export async function initMixpanel(): Promise<void> {
+export function initMixpanel(): void {
   if (initialized) return;
   if (typeof window === 'undefined') return;
 
-  const mp = await getMixpanel();
-  if (!mp) return;
-
   try {
-    mp.init(MIXPANEL_TOKEN, {
+    mixpanel.init(MIXPANEL_TOKEN, {
       debug: process.env.NODE_ENV !== 'production',
       track_pageview: false, // page views are tracked manually via AnalyticsPageView
       persistence: 'localStorage',
       ignore_dnt: true,
     });
     // Super properties attached to every event automatically
-    mp.register({
+    mixpanel.register({
       platform: 'web',
       app: 'web',
     });
@@ -104,13 +81,14 @@ export async function initMixpanel(): Promise<void> {
   }
 }
 
-/** Internal safe accessor — ensures Mixpanel is initialized and returned. */
-async function getInitializedMp(): Promise<MixpanelBrowser | null> {
-  if (typeof window === 'undefined') return null;
+/** Internal safe accessor — silently no-ops when Mixpanel is not initialized. */
+function mp(): boolean {
+  if (typeof window === 'undefined') return false;
   if (!initialized) {
-    await initMixpanel();
+    // Lazy init so events fire even if the explicit init was missed.
+    initMixpanel();
   }
-  return mixpanelInstance;
+  return initialized;
 }
 
 // ─── Identity ────────────────────────────────────────────────────────────────
@@ -121,7 +99,7 @@ async function getInitializedMp(): Promise<MixpanelBrowser | null> {
  * @param uid Firebase UID (fallback distinct_id)
  * @param profile Optional user profile fields for the People record
  */
-export async function mixpanelIdentify(
+export function mixpanelIdentify(
   uid: string,
   profile?: {
     _id?: string | null;
@@ -141,9 +119,8 @@ export async function mixpanelIdentify(
       state?: string | null;
     } | null;
   },
-): Promise<void> {
-  const mp = await getInitializedMp();
-  if (!mp) return;
+): void {
+  if (!mp()) return;
 
   const resolvedUserId = resolveMixpanelUserId(profile as MixpanelProfileLike | undefined, uid);
   if (!resolvedUserId || !shouldIdentifyMixpanelUser(resolvedUserId)) {
@@ -151,7 +128,7 @@ export async function mixpanelIdentify(
   }
 
   try {
-    mp.identify(resolvedUserId);
+    mixpanel.identify(resolvedUserId);
     markMixpanelUserIdentified(resolvedUserId);
 
     const role = resolveMixpanelRole(profile?.roles, profile?.role, profile?.primaryRole);
@@ -170,7 +147,7 @@ export async function mixpanelIdentify(
       if (peopleProps[k] === undefined) delete peopleProps[k];
     });
 
-    mp.people.set(peopleProps);
+    mixpanel.people.set(peopleProps);
     console.log('✅ [Mixpanel] Identified user:', resolvedUserId);
   } catch (error) {
     console.warn('⚠️ [Mixpanel] identify failed:', error);
@@ -181,11 +158,10 @@ export async function mixpanelIdentify(
  * Reset the Mixpanel identity. Call on logout.
  * This clears the distinct_id so the next session starts fresh.
  */
-export async function mixpanelReset(): Promise<void> {
-  const mp = await getInitializedMp();
-  if (!mp) return;
+export function mixpanelReset(): void {
+  if (!mp()) return;
   try {
-    mp.reset();
+    mixpanel.reset();
     clearMixpanelIdentitySession();
     console.log('✅ [Mixpanel] Identity reset on logout');
   } catch (error) {
@@ -199,12 +175,11 @@ export async function mixpanelReset(): Promise<void> {
  * EVENT: Screen Viewed
  * Fires on every route change (mirrors mobile app's screen tracking)
  */
-export async function trackScreenViewed(screenName: string): Promise<void> {
-  const mp = await getInitializedMp();
-  if (!mp) return;
+export function trackScreenViewed(screenName: string): void {
+  if (!mp()) return;
   try {
     const role = getCurrentRole();
-    mp.track('Screen Viewed', {
+    mixpanel.track('Screen Viewed', {
       screen_name: screenName,
       role,
     });
@@ -218,17 +193,16 @@ export async function trackScreenViewed(screenName: string): Promise<void> {
  * EVENT: Switched Role
  * Fires when user switches the active role mode in the navigation (poster/tasker)
  */
-export async function trackRoleSwitched(
+export function trackRoleSwitched(
   fromRole: 'poster' | 'tasker',
   toRole: 'poster' | 'tasker',
-): Promise<void> {
-  const mp = await getInitializedMp();
-  if (!mp) return;
+): void {
+  if (!mp()) return;
   try {
     // Keep People property current
-    mp.people.set({ current_role: toRole });
+    mixpanel.people.set({ current_role: toRole });
 
-    mp.track('Switched Role', {
+    mixpanel.track('Switched Role', {
       from_role: fromRole,
       to_role: toRole,
       role: toRole,
@@ -243,14 +217,13 @@ export async function trackRoleSwitched(
  * EVENT: sign_up_completed
  * Fires once when a new website account is created and OTP is verified.
  */
-export async function trackSignUpCompleted(params: {
+export function trackSignUpCompleted(params: {
   supplyMode?: string;
   hasReferral?: boolean;
-}): Promise<void> {
-  const mp = await getInitializedMp();
-  if (!mp) return;
+}): void {
+  if (!mp()) return;
   try {
-    mp.track('sign_up_completed', {
+    mixpanel.track('sign_up_completed', {
       sign_up_method: 'phone_otp',
       supply_mode: params.supplyMode || 'web',
       has_referral: params.hasReferral ?? false,
@@ -266,11 +239,10 @@ export async function trackSignUpCompleted(params: {
  * EVENT: login_completed
  * Fires when an existing user logs in successfully via OTP.
  */
-export async function trackLoginCompleted(): Promise<void> {
-  const mp = await getInitializedMp();
-  if (!mp) return;
+export function trackLoginCompleted(): void {
+  if (!mp()) return;
   try {
-    mp.track('login_completed', {
+    mixpanel.track('login_completed', {
       sign_up_method: 'phone_otp',
       role: getCurrentRole(),
     });
@@ -284,11 +256,10 @@ export async function trackLoginCompleted(): Promise<void> {
  * EVENT: logout_initiated
  * Fires just before the user's session is cleared.
  */
-export async function trackLogoutInitiated(): Promise<void> {
-  const mp = await getInitializedMp();
-  if (!mp) return;
+export function trackLogoutInitiated(): void {
+  if (!mp()) return;
   try {
-    mp.track('logout_initiated', {
+    mixpanel.track('logout_initiated', {
       role: getCurrentRole(),
     });
     console.log('✅ [Mixpanel] Tracked: logout_initiated');
@@ -302,13 +273,12 @@ export async function trackLogoutInitiated(): Promise<void> {
  * Fires when a tasker submits an offer/application for a task.
  * Same event name + props as the Helper Mobile App.
  */
-export async function trackTaskApplied(params: {
+export function trackTaskApplied(params: {
   taskId?: string;
   taskCategory?: string;
   offerPrice?: number;
-}): Promise<void> {
-  const mp = await getInitializedMp();
-  if (!mp) return;
+}): void {
+  if (!mp()) return;
   try {
     const props: Record<string, unknown> = {
       task_id: params.taskId || 'unknown',
@@ -319,7 +289,7 @@ export async function trackTaskApplied(params: {
     if (params.offerPrice != null) {
       props.offer_price = params.offerPrice;
     }
-    mp.track('task_applied', props);
+    mixpanel.track('task_applied', props);
     console.log('✅ [Mixpanel] Tracked: task_applied', props);
   } catch (error) {
     console.warn('⚠️ [Mixpanel] track task_applied failed:', error);
@@ -330,15 +300,14 @@ export async function trackTaskApplied(params: {
  * EVENT: Task Posted  ← Value Moment (web-only)
  * Fires when a customer successfully posts a new task.
  */
-export async function trackTaskPosted(params: {
+export function trackTaskPosted(params: {
   taskId?: string;
   taskCategory?: string;
   budgetType?: string;
   budget?: number;
   urgency?: string;
-}): Promise<void> {
-  const mp = await getInitializedMp();
-  if (!mp) return;
+}): void {
+  if (!mp()) return;
   try {
     const props: Record<string, unknown> = {
       task_id: params.taskId || 'unknown',
@@ -350,7 +319,7 @@ export async function trackTaskPosted(params: {
     if (params.budget != null) {
       props.budget = params.budget;
     }
-    mp.track('Task Posted', props);
+    mixpanel.track('Task Posted', props);
     console.log('✅ [Mixpanel] Tracked: Task Posted', props);
   } catch (error) {
     console.warn('⚠️ [Mixpanel] track Task Posted failed:', error);
@@ -364,12 +333,11 @@ export async function trackTaskPosted(params: {
  * Fires when a poster accepts a helper's offer (task is assigned).
  * booking_id = task id (joins web + mobile app funnels).
  */
-export async function trackLeadAccepted(params: {
+export function trackLeadAccepted(params: {
   booking_id: string;
   time_to_accept_seconds?: number;
-}): Promise<void> {
-  const mp = await getInitializedMp();
-  if (!mp) return;
+}): void {
+  if (!mp()) return;
   try {
     const props: Record<string, unknown> = {
       booking_id: params.booking_id,
@@ -378,7 +346,7 @@ export async function trackLeadAccepted(params: {
     if (params.time_to_accept_seconds !== undefined) {
       props.time_to_accept_seconds = params.time_to_accept_seconds;
     }
-    mp.track('Lead Accepted', props);
+    mixpanel.track('Lead Accepted', props);
     console.log(`✅ [Mixpanel] Tracked Lead Accepted: ${params.booking_id}`);
   } catch (error) {
     console.warn('⚠️ [Mixpanel] trackLeadAccepted failed:', error);
@@ -389,14 +357,13 @@ export async function trackLeadAccepted(params: {
  * EVENT: Lead Rejected
  * Fires when a poster rejects a helper's offer.
  */
-export async function trackLeadRejected(params: {
+export function trackLeadRejected(params: {
   booking_id: string;
   reason?: string;
-}): Promise<void> {
-  const mp = await getInitializedMp();
-  if (!mp) return;
+}): void {
+  if (!mp()) return;
   try {
-    mp.track('Lead Rejected', {
+    mixpanel.track('Lead Rejected', {
       booking_id: params.booking_id,
       reason: params.reason || 'unknown',
       role: getCurrentRole(),
@@ -411,12 +378,11 @@ export async function trackLeadRejected(params: {
  * EVENT: Job Completed
  * Fires when a task is marked completed (poster approves the work).
  */
-export async function trackJobCompleted(params: {
+export function trackJobCompleted(params: {
   booking_id: string;
   amount?: number;
-}): Promise<void> {
-  const mp = await getInitializedMp();
-  if (!mp) return;
+}): void {
+  if (!mp()) return;
   try {
     const props: Record<string, unknown> = {
       booking_id: params.booking_id,
@@ -425,7 +391,7 @@ export async function trackJobCompleted(params: {
     if (params.amount !== undefined) {
       props.amount = params.amount;
     }
-    mp.track('Job Completed', props);
+    mixpanel.track('Job Completed', props);
     console.log(`✅ [Mixpanel] Tracked Job Completed: ${params.booking_id}`);
   } catch (error) {
     console.warn('⚠️ [Mixpanel] trackJobCompleted failed:', error);
@@ -436,14 +402,13 @@ export async function trackJobCompleted(params: {
  * EVENT: Task Proof Submitted (web-only)
  * Fires when a tasker submits completion proof for review.
  */
-export async function trackTaskProofSubmitted(params: {
+export function trackTaskProofSubmitted(params: {
   task_id: string;
   has_proof: boolean;
-}): Promise<void> {
-  const mp = await getInitializedMp();
-  if (!mp) return;
+}): void {
+  if (!mp()) return;
   try {
-    mp.track('Task Proof Submitted', {
+    mixpanel.track('Task Proof Submitted', {
       task_id: params.task_id,
       has_proof: params.has_proof,
       role: getCurrentRole(),
@@ -458,14 +423,13 @@ export async function trackTaskProofSubmitted(params: {
  * EVENT: Review Submitted (web-only)
  * Fires when a review is successfully created for a completed task.
  */
-export async function trackReviewSubmitted(params: {
+export function trackReviewSubmitted(params: {
   task_id: string;
   rating: number;
-}): Promise<void> {
-  const mp = await getInitializedMp();
-  if (!mp) return;
+}): void {
+  if (!mp()) return;
   try {
-    mp.track('Review Submitted', {
+    mixpanel.track('Review Submitted', {
       task_id: params.task_id,
       rating: params.rating,
       role: getCurrentRole(),
@@ -480,15 +444,14 @@ export async function trackReviewSubmitted(params: {
  * EVENT: Chat Message Sent (web-only)
  * Fires when a user sends a chat message about a task.
  */
-export async function trackChatMessageSent(params: {
+export function trackChatMessageSent(params: {
   task_id?: string;
   chat_id?: string;
   message_type?: string;
-}): Promise<void> {
-  const mp = await getInitializedMp();
-  if (!mp) return;
+}): void {
+  if (!mp()) return;
   try {
-    mp.track('Chat Message Sent', {
+    mixpanel.track('Chat Message Sent', {
       task_id: params.task_id || 'unknown',
       chat_id: params.chat_id || 'unknown',
       message_type: params.message_type || 'text',
@@ -504,15 +467,14 @@ export async function trackChatMessageSent(params: {
  * EVENT: Onboarding Completed (web-only)
  * Fires when a new user completes role selection during onboarding.
  */
-export async function trackOnboardingCompleted(params: {
+export function trackOnboardingCompleted(params: {
   goal?: string;
   userType?: string;
   roles?: string[];
-}): Promise<void> {
-  const mp = await getInitializedMp();
-  if (!mp) return;
+}): void {
+  if (!mp()) return;
   try {
-    mp.track('Onboarding Completed', {
+    mixpanel.track('Onboarding Completed', {
       goal: params.goal || 'unknown',
       user_type: params.userType || 'unknown',
       roles: params.roles || [],
@@ -528,11 +490,10 @@ export async function trackOnboardingCompleted(params: {
  * EVENT: Referral Code Applied (web-only)
  * Fires when a referral code is successfully applied after sign-up.
  */
-export async function trackReferralCodeApplied(): Promise<void> {
-  const mp = await getInitializedMp();
-  if (!mp) return;
+export function trackReferralCodeApplied(): void {
+  if (!mp()) return;
   try {
-    mp.track('Referral Code Applied', {
+    mixpanel.track('Referral Code Applied', {
       role: getCurrentRole(),
     });
     console.log('✅ [Mixpanel] Tracked: Referral Code Applied');

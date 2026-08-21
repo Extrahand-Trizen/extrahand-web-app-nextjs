@@ -3,7 +3,7 @@
  * Checks consent preferences before initializing Firebase Analytics
  */
 
-import type { Analytics } from 'firebase/analytics';
+import { Analytics, getAnalytics as firebaseGetAnalytics } from 'firebase/analytics';
 import type { FirebaseApp } from 'firebase/app';
 import { getConsentPreferences, CONSENT_CHANGE_EVENT } from '@/lib/consent/cookieConsent';
 
@@ -24,7 +24,7 @@ function resolveFirebaseApp(providedApp?: FirebaseApp): FirebaseApp | null {
   }
 }
 
-async function tryInitializeAnalytics(app?: FirebaseApp): Promise<void> {
+function tryInitializeAnalytics(app?: FirebaseApp): void {
   if (analyticsInstance) {
     return;
   }
@@ -36,16 +36,12 @@ async function tryInitializeAnalytics(app?: FirebaseApp): Promise<void> {
 
   const resolvedApp = resolveFirebaseApp(app);
   if (!resolvedApp) {
+    console.warn('Firebase app not initialized yet');
     return;
   }
 
-  try {
-    const { getAnalytics: firebaseGetAnalytics } = await import('firebase/analytics');
-    analyticsInstance = firebaseGetAnalytics(resolvedApp);
-    console.debug('Analytics initialized with user consent');
-  } catch (error) {
-    console.warn('Failed to load firebase/analytics:', error);
-  }
+  analyticsInstance = firebaseGetAnalytics(resolvedApp);
+  console.debug('Analytics initialized with user consent');
 }
 
 /**

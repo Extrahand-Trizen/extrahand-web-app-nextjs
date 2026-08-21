@@ -31,7 +31,7 @@ export default function CookieConsentBanner() {
 
       setIsVisible(false);
 
-      if (preferences.analytics && typeof window !== "undefined" && window.location.pathname !== "/" && window.location.pathname !== "/how-it-works") {
+      if (preferences.analytics) {
          void import("@/lib/auth/firebase-analytics").then(
             ({ initializeAnalyticsIfConsented }) => {
                initializeAnalyticsIfConsented();
@@ -69,11 +69,9 @@ export default function CookieConsentBanner() {
 
    const handleAcceptAll = () => {
       saveConsentPreferences({ analytics: true, maps: true });
-      if (typeof window !== "undefined" && window.location.pathname !== "/" && window.location.pathname !== "/how-it-works") {
-         void import("@/lib/auth/firebase-analytics").then(({ initializeAnalyticsIfConsented }) => {
-            initializeAnalyticsIfConsented();
-         });
-      }
+      void import("@/lib/auth/firebase-analytics").then(({ initializeAnalyticsIfConsented }) => {
+         initializeAnalyticsIfConsented();
+      });
       setIsVisible(false);
    };
 
