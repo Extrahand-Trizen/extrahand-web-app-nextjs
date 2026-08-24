@@ -219,6 +219,8 @@ export const cities: Record<string, CityInfo> = {
          "Kukatpally",
          "Miyapur",
          "Uppal",
+         "Siddipet",
+         "Mahabubnagar",
       ],
       heroImage: "/assets/cities/hyderabad.webp",
       coordinates: {

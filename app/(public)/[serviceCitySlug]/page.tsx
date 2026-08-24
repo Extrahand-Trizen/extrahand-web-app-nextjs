@@ -495,7 +495,8 @@ export async function generateStaticParams() {
       const publishedCmsPages = await getAllPublishedSeoPages();
       if (publishedCmsPages && Array.isArray(publishedCmsPages)) {
          for (const cmsPage of publishedCmsPages) {
-            if (cmsPage.slug) {
+            // Ignore demo/test dummy slugs that are not valid live pages
+            if (cmsPage.slug && !cmsPage.slug.toLowerCase().includes("demo")) {
                serviceAliases.add(cmsPage.slug);
             }
          }
@@ -641,7 +642,41 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
    const servicePage = getHyderabadServicePageBySlug(canonicalSlug);
 
    if (!servicePage && !cmsPage) {
-      notFound();
+      return (
+         <SeoPageWrapper slug={serviceCitySlug} initialPage={null}>
+            <main className="min-h-[50vh] flex items-center justify-center text-center p-8">
+               <div className="max-w-md space-y-4">
+                  <h1 className="text-2xl font-bold text-secondary-800">Page Not Found</h1>
+                  <p className="text-sm text-secondary-500">The requested service page is currently unavailable.</p>
+                  <Link href="/" className="inline-block rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 transition-colors">
+                     Go to Homepage
+                  </Link>
+               </div>
+            </main>
+         </SeoPageWrapper>
+      );
+   }
+
+   if (!servicePage && cmsPage) {
+      return (
+         <>
+            {cmsPage.faqSchema && (
+               <script
+                  type="application/ld+json"
+                  dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPage.faqSchema) }}
+               />
+            )}
+            {cmsPage.breadcrumbSchema && (
+               <script
+                  type="application/ld+json"
+                  dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPage.breadcrumbSchema) }}
+               />
+            )}
+            <SeoPageWrapper slug={canonicalSlug} initialPage={cmsPage}>
+               <SeoPageRenderer page={cmsPage} />
+            </SeoPageWrapper>
+         </>
+      );
    }
 
    const enhancement = servicePage ? getServicePageEnhancement(servicePage) : null;
@@ -667,34 +702,6 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
          description: "Service is delivered, verified, and followed by clear next-step guidance if needed.",
       },
    ];
-
-   // If there is no matching static service page but we DO have a published CMS page,
-   // render it directly — this is the normal path for area-level pages like
-   // "ac-repair-in-gachibowl" that are published via Content Admin.
-   if (!servicePage) {
-      if (!cmsPage) {
-         notFound();
-      }
-      return (
-         <>
-            {cmsPage.faqSchema && (
-               <script
-                  type="application/ld+json"
-                  dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPage.faqSchema) }}
-               />
-            )}
-            {cmsPage.breadcrumbSchema && (
-               <script
-                  type="application/ld+json"
-                  dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPage.breadcrumbSchema) }}
-               />
-            )}
-            <SeoPageWrapper slug={canonicalSlug} initialPage={cmsPage}>
-               <SeoPageRenderer page={cmsPage} />
-            </SeoPageWrapper>
-         </>
-      );
-   }
 
    return (
       <>

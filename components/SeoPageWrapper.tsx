@@ -27,20 +27,23 @@ export default function SeoPageWrapper({
   const [cmsPage, setCmsPage] = useState<SeoPage | null>(initialPage);
 
   useEffect(() => {
-    // If initialPage was already provided by SSR/SSG, skip redundant client-side refetch
-    if (initialPage) return;
-
     let isMounted = true;
-    getPublishedSeoPage(slug).then((fetchedPage) => {
-      if (isMounted && fetchedPage) {
-        setCmsPage(fetchedPage);
-      }
-    });
+
+    // Fetch freshest published data from CMS in background without blocking initial paint
+    getPublishedSeoPage(slug)
+      .then((fetchedPage) => {
+        if (isMounted && fetchedPage) {
+          setCmsPage(fetchedPage);
+        }
+      })
+      .catch(() => {
+        // Silently keep initialPage if network or backend fails
+      });
 
     return () => {
       isMounted = false;
     };
-  }, [slug, initialPage]);
+  }, [slug]);
 
   if (cmsPage) {
     return (
