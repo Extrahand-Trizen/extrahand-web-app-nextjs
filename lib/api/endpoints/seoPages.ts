@@ -63,31 +63,69 @@ export interface SeoPage {
   isPublished: boolean;
 }
 
-export const getPublishedSeoPage = cache(async (slug: string): Promise<SeoPage | null> => {
-  const url = `${CONTENT_ADMIN_URL}/api/seo-pages/published?slug=${encodeURIComponent(slug)}`;
-  try {
-    const res = await fetch(url, {
-      next: { revalidate: 3600 },
-    });
+const seoPagePromiseCache = new Map<string, Promise<SeoPage | null>>();
 
-    if (!res.ok) {
+export const getPublishedSeoPage = cache(async (slug: string): Promise<SeoPage | null> => {
+  const normalized = (slug || '').trim().toLowerCase();
+  if (!normalized) return null;
+
+  if (seoPagePromiseCache.has(normalized)) {
+    return seoPagePromiseCache.get(normalized)!;
+  }
+
+  const fetchPromise = (async () => {
+    const url = `${CONTENT_ADMIN_URL}/api/seo-pages/published?slug=${encodeURIComponent(normalized)}`;
+    try {
+      const res = await fetch(url, {
+        next: { revalidate: 3600 },
+      });
+
+      if (!res.ok) {
+        return null;
+      }
+
+      const data: SeoPage = await res.json();
+      return data || null;
+    } catch (err: unknown) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[SEO ERROR] getPublishedSeoPage failed for slug:', slug, err);
+      }
       return null;
     }
+  })();
 
-    const data: SeoPage = await res.json();
-    return data || null;
-  } catch (err: unknown) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('[SEO ERROR] getPublishedSeoPage failed for slug:', slug, err);
-    }
-    return null;
-  }
+  seoPagePromiseCache.set(normalized, fetchPromise);
+  return fetchPromise;
 });
 
-export async function getAllPublishedSeoPages(): Promise<Array<{ slug: string }> | null> {
-  const url = `${CONTENT_ADMIN_URL}/api/seo-pages/published`;
+export interface PublishedSeoSlug {
+  slug: string;
+  isPublished?: boolean;
+  updatedAt?: string;
+}
+
+/**
+ * Lightweight endpoint for build-time generateStaticParams().
+ * Fetches only slug, isPublished, and updatedAt fields.
+ */
+export async function getAllPublishedSeoPages(): Promise<Array<PublishedSeoSlug> | null> {
+  const slugsUrl = `${CONTENT_ADMIN_URL}/api/seo-pages/published/slugs`;
+  const fallbackUrl = `${CONTENT_ADMIN_URL}/api/seo-pages/published`;
+
   try {
-    const res = await fetch(url, {
+    const res = await fetch(slugsUrl, {
+      next: { revalidate: 3600 },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data)) return data;
+    }
+  } catch (err) {
+    // Try fallback endpoint
+  }
+
+  try {
+    const res = await fetch(fallbackUrl, {
       next: { revalidate: 3600 },
     });
     if (!res.ok) return null;
@@ -100,3 +138,4 @@ export async function getAllPublishedSeoPages(): Promise<Array<{ slug: string }>
     return null;
   }
 }
+

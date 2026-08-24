@@ -65,7 +65,7 @@ export const getPublishedBlog = cache(async (slug: string): Promise<BlogPost | n
   if (!slug) return null;
   const url = `${CONTENT_ADMIN_URL}/api/blogs/published?slug=${encodeURIComponent(slug)}`;
   try {
-    const res = await fetch(url, { cache: 'no-store' });
+    const res = await fetch(url, { next: { revalidate: 60, tags: ['blogs', `blog-${slug}`] } });
 
     if (!res.ok) {
       return null;
@@ -98,7 +98,7 @@ export async function getAllPublishedBlogs(params: {
 
   const url = `${CONTENT_ADMIN_URL}/api/blogs/published?${query.toString()}`;
   try {
-    const res = await fetch(url, { cache: 'no-store' });
+    const res = await fetch(url, { next: { revalidate: 60, tags: ['blogs'] } });
     if (!res.ok) return null;
     const data: BlogsListResponse = await res.json();
     return data || null;
