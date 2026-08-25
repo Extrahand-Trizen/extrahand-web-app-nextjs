@@ -146,18 +146,17 @@ function buildPopularJobs(serviceName: string, commonNeeds: string[], areaName: 
 export async function generateStaticParams() {
    const params: Array<{ area: string; serviceCitySlug: string }> = [];
 
-   // Build ONLY the 406 city-level aliases during build (14 areas x 29 services)
    for (const area of hyderabadAreas) {
       const areaSlug = toAreaSlug(area);
       for (const serviceCitySlug of hyderabadServicePageSlugs) {
          params.push({ area: areaSlug, serviceCitySlug });
+         const categorySlugPart = serviceCitySlug.replace(/-in-hyderabad$/, "");
+         params.push({ area: areaSlug, serviceCitySlug: `${categorySlugPart}-in-${areaSlug}` });
       }
    }
 
    return params;
 }
-
-export const dynamicParams = true;
 
 function parseAreaServiceSlug(serviceCitySlug: string, area: string) {
    let categorySlugPart = serviceCitySlug;
