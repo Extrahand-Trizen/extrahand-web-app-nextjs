@@ -75,13 +75,20 @@ COPY . .
 RUN npm run build
 
 # -------------------------------
-# Stage 3: Production Runner
+# Stage 3: Production Runner (Standalone Next.js Server with ISR support)
 # -------------------------------
-FROM nginx:alpine AS runner
+FROM node:20-slim AS runner
 
-COPY --from=builder /app/out/ /usr/share/nginx/html/
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 
 EXPOSE 3000
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["node", "server.js"]

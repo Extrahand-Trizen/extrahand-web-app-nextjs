@@ -10,8 +10,8 @@ export async function generateStaticParams() {
    return getJobCategoryStaticParams();
 }
 
-// Prevent 404 for slugs not returned by the API — show CategoryNotFound instead.
-export const dynamicParams = false;
+// Allow un-prebuilt category slugs to render on-demand via ISR
+export const dynamicParams = true;
 
 interface JobPageProps {
    params: Promise<{

@@ -14,7 +14,8 @@ export async function generateStaticParams() {
    return getSubcategoryStaticParams("poster");
 }
 
-export const dynamicParams = false;
+// Allow un-prebuilt subcategory slugs to render on-demand via ISR
+export const dynamicParams = true;
 
 interface ServiceSubcategoryPageProps {
    params: Promise<{

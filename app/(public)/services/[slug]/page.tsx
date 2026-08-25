@@ -20,8 +20,8 @@ export async function generateStaticParams() {
    return getServiceCategoryStaticParams();
 }
 
-// Allow any slug not in staticParams to fall through to notFound instead of crash
-export const dynamicParams = false;
+// Allow un-prebuilt category slugs to render on-demand via ISR
+export const dynamicParams = true;
 
 /**
  * Ensure incomeOpportunitiesData has proper array structure

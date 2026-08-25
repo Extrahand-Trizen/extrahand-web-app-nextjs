@@ -17,13 +17,9 @@ const nextConfig: NextConfig = {
       "recharts",
     ],
   },
-  // Static HTML/CSS/JS for MinIO / CDN hosting (upload the `out/` folder)
-  // Only apply in production builds — dev mode uses the normal Next.js server
-  // which supports middleware, API routes, etc.
+  // Standalone server output for Docker/CapRover hosting with ISR / on-demand generation support
   ...(isProd && {
-    output: "export",
-    // Relative asset URLs for MinIO subfolder (…/build-001/index.html → ./_next/…)
-    assetPrefix: "./",
+    output: "standalone",
   }),
   // trailingSlash: false ensures Next.js does NOT append "/" to canonical URLs
   // set in metadata alternates. With trailingSlash:true, Next.js 16 forcibly

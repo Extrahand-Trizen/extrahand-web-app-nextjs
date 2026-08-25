@@ -9,8 +9,8 @@ export async function generateStaticParams() {
    return getSubcategoryStaticParams("tasker");
 }
 
-// Do not attempt to render slugs outside the static set at runtime.
-export const dynamicParams = false;
+// Allow un-prebuilt subcategory slugs to render on-demand via ISR
+export const dynamicParams = true;
 
 interface JobSubcategoryPageProps {
    params: Promise<{

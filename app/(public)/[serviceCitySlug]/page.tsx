@@ -487,41 +487,12 @@ function getAreaSlice(slug: string) {
    return Array.from(selected);
 }
 
+// On-demand generation via ISR: 0 pages built at build time, all rendered on-demand when requested.
 export async function generateStaticParams() {
-   const serviceAliases = new Set<string>();
-
-   // 1. Dynamic fetch: include all published CMS pages from backend DB
-   try {
-      const publishedCmsPages = await getAllPublishedSeoPages();
-      if (publishedCmsPages && Array.isArray(publishedCmsPages)) {
-         for (const cmsPage of publishedCmsPages) {
-            // Ignore demo/test dummy slugs that are not valid live pages
-            if (cmsPage.slug && !cmsPage.slug.toLowerCase().includes("demo")) {
-               serviceAliases.add(cmsPage.slug);
-            }
-         }
-      }
-   } catch (e) {
-      console.log("generateStaticParams CMS fetch error:", e);
-   }
-
-   // 2. Add static fallback service & area combinations
-   for (const serviceSlug of hyderabadServicePageSlugs) {
-      serviceAliases.add(serviceSlug);
-   }
-
-   for (const area of hyderabadAreas) {
-      const areaSlug = toAreaSlug(area);
-      for (const serviceSlug of hyderabadServicePageSlugs) {
-         const baseServiceSlug = serviceSlug.replace(/-in-hyderabad$/, "");
-         serviceAliases.add(`${baseServiceSlug}-in-${areaSlug}`);
-      }
-   }
-
-   return Array.from(serviceAliases).map((serviceCitySlug) => ({
-      serviceCitySlug,
-   }));
+   return [];
 }
+
+export const dynamicParams = true;
 
 export async function generateMetadata({
    params,

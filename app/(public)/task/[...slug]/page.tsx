@@ -10,8 +10,8 @@ export async function generateStaticParams() {
    return getTaskCatchAllStaticParams();
 }
 
-// Do not attempt to render paths outside the static set at runtime.
-export const dynamicParams = false;
+// Allow un-prebuilt task paths to render on-demand via ISR
+export const dynamicParams = true;
 
 interface TaskPageProps {
    params: Promise<{
