@@ -100,6 +100,7 @@ export const getPublishedSeoPage = cache(async (slug: string): Promise<SeoPage |
 
 export interface PublishedSeoSlug {
   slug: string;
+  canonicalUrl?: string;
   isPublished?: boolean;
   updatedAt?: string;
 }
@@ -114,7 +115,7 @@ export async function getAllPublishedSeoPages(): Promise<Array<PublishedSeoSlug>
 
   try {
     const res = await fetch(slugsUrl, {
-      next: { revalidate: 3600 },
+      next: { revalidate: 300 },
     });
     if (res.ok) {
       const data = await res.json();
@@ -126,7 +127,7 @@ export async function getAllPublishedSeoPages(): Promise<Array<PublishedSeoSlug>
 
   try {
     const res = await fetch(fallbackUrl, {
-      next: { revalidate: 3600 },
+      next: { revalidate: 300 },
     });
     if (!res.ok) return null;
     const data = await res.json();

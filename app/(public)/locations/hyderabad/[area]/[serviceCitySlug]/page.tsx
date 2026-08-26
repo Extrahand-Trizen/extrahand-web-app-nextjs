@@ -184,14 +184,15 @@ export async function generateMetadata({
 
    const cmsPage = await getPublishedSeoPage(areaSlug);
    if (cmsPage) {
+      const canonicalUrl = cmsPage.canonicalUrl || areaCanonicalUrl;
       return {
          title: cmsPage.metaTitle,
          description: cmsPage.metaDescription,
-         alternates: { canonical: areaCanonicalUrl },
+         alternates: { canonical: canonicalUrl },
          openGraph: {
             title: cmsPage.metaTitle,
             description: cmsPage.metaDescription,
-            url: areaCanonicalUrl,
+            url: canonicalUrl,
             type: "website",
          },
          twitter: {

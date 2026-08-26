@@ -507,9 +507,7 @@ export async function generateMetadata({
       (await getPublishedSeoPage(normalizeServiceCitySlug(serviceCitySlug) ?? serviceCitySlug));
 
    if (cmsPage) {
-      const canonicalUrl = cmsPage.canonicalUrl
-         ? (cmsPage.canonicalUrl.endsWith("/") ? cmsPage.canonicalUrl : `${cmsPage.canonicalUrl}/`)
-         : buildCanonicalServiceUrl(serviceCitySlug);
+      const canonicalUrl = cmsPage.canonicalUrl || buildCanonicalServiceUrl(serviceCitySlug);
 
       return {
          title: cmsPage.metaTitle,
