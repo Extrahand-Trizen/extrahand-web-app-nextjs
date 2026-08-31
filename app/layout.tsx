@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth/context";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -94,6 +95,20 @@ export default function RootLayout({
             suppressHydrationWarning
             style={{ margin: 0, padding: 0, overflowX: 'hidden', ['--font-inter' as string]: "'Inter', sans-serif" }}
          >
+            <Script
+               src="https://www.googletagmanager.com/gtag/js?id=G-C9E6GBS27L"
+               strategy="afterInteractive"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+               {`
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('js', new Date());
+                  gtag('config', 'G-C9E6GBS27L', {
+                     page_path: window.location.pathname,
+                  });
+               `}
+            </Script>
             <ErrorBoundary>
                <QueryProvider>
                   <AuthProvider>

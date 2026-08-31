@@ -58,5 +58,17 @@ export function AnalyticsPageView() {
       }, getMixpanelIdleTimeoutMs(pathname));
    }, [pathname, searchParams]);
 
+   useEffect(() => {
+      if (typeof window !== "undefined" && typeof (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag === "function") {
+         const query = searchParams.toString();
+         const pagePath = query ? `${pathname}?${query}` : pathname;
+         (window as unknown as { gtag: (...args: unknown[]) => void }).gtag("config", "G-C9E6GBS27L", {
+            page_path: pagePath,
+            page_location: window.location.href,
+         });
+      }
+   }, [pathname, searchParams]);
+
    return null;
 }
+
