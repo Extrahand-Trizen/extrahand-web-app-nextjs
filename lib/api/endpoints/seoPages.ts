@@ -101,6 +101,10 @@ export const getPublishedSeoPage = cache(async (slug: string): Promise<SeoPage |
 export interface PublishedSeoSlug {
   slug: string;
   canonicalUrl?: string;
+  pageType?: 'city' | 'area';
+  categorySlug?: string;
+  citySlug?: string;
+  areaSlug?: string | null;
   isPublished?: boolean;
   updatedAt?: string;
 }

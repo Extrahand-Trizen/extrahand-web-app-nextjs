@@ -184,7 +184,7 @@ export async function generateMetadata({
 
    const cmsPage = await getPublishedSeoPage(areaSlug);
    if (cmsPage) {
-      const canonicalUrl = cmsPage.canonicalUrl || areaCanonicalUrl;
+      const canonicalUrl = areaCanonicalUrl;
       return {
          title: cmsPage.metaTitle,
          description: cmsPage.metaDescription,

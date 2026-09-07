@@ -94,6 +94,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
          lastModified: page.updatedAt || now,
          priority: 0.8,
       });
+
+      if (page.pageType === "area" && page.areaSlug && page.citySlug && page.categorySlug) {
+         const locationUrl = `${joinUrl(baseUrl, `/locations/${page.citySlug}/${page.areaSlug}/${page.categorySlug}-in-${page.citySlug}`)}/`;
+         addEntry(locationUrl, 0.8, page.updatedAt || now);
+      }
    }
 
    const allCategories = await categoriesApi.getCategories({

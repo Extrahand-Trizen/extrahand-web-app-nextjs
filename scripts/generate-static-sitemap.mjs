@@ -54,12 +54,18 @@ const existingEntries = await readExistingEntries();
 const entriesByUrl = new Map(existingEntries.map((entry) => [normalizeUrl(entry.url), entry.xml]));
 
 for (const page of await getPublishedPages()) {
-  const url = page.canonicalUrl?.trim() || `${baseUrl}/${page.slug}`;
-  const normalizedUrl = normalizeUrl(url);
   const lastmod = page.updatedAt
     ? new Date(page.updatedAt).toISOString().slice(0, 10)
     : new Date().toISOString().slice(0, 10);
-  entriesByUrl.set(normalizedUrl, `  <url>\n    <loc>${escapeXml(url)}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>`);
+  const addPublishedUrl = (url) => {
+    entriesByUrl.set(normalizeUrl(url), `  <url>\n    <loc>${escapeXml(url)}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>`);
+  };
+
+  addPublishedUrl(page.canonicalUrl?.trim() || `${baseUrl}/${page.slug}`);
+
+  if (page.pageType === "area" && page.areaSlug && page.citySlug && page.categorySlug) {
+    addPublishedUrl(`${baseUrl}/locations/${page.citySlug}/${page.areaSlug}/${page.categorySlug}-in-${page.citySlug}/`);
+  }
 }
 
 const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...entriesByUrl.values()].join("\n")}\n</urlset>\n`;
