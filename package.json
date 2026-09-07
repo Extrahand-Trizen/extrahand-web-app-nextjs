@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "node --max-old-space-size=4096 ./node_modules/next/dist/bin/next dev -p 4000 --webpack 2>&1",
-    "build": "node --max-old-space-size=4096 ./node_modules/next/dist/bin/next build --webpack && node scripts/optimize-static-css.mjs",
+    "build": "node scripts/generate-static-sitemap.mjs && node --max-old-space-size=4096 ./node_modules/next/dist/bin/next build --webpack && node scripts/optimize-static-css.mjs",
     "start": "next start",
     "lint": "eslint",
     "upload:build": "node scripts/upload-main-web-build-to-minio.mjs",

@@ -43,6 +43,7 @@ docs
 
 # SEO / sitemap text files (not needed at build time)
 *.xml
+!sitemap.xml
 *.txt
 
 # Testing
