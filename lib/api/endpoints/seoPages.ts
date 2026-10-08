@@ -1,5 +1,3 @@
-import { cache } from 'react';
-
 /**
  * SEO Pages API - Fetches published SEO pages from content-admin backend
  */
@@ -63,40 +61,29 @@ export interface SeoPage {
   isPublished: boolean;
 }
 
-const seoPagePromiseCache = new Map<string, Promise<SeoPage | null>>();
-
-export const getPublishedSeoPage = cache(async (slug: string): Promise<SeoPage | null> => {
+export async function getPublishedSeoPage(slug: string): Promise<SeoPage | null> {
   const normalized = (slug || '').trim().toLowerCase();
   if (!normalized) return null;
 
-  if (seoPagePromiseCache.has(normalized)) {
-    return seoPagePromiseCache.get(normalized)!;
-  }
+  const url = `${CONTENT_ADMIN_URL}/api/seo-pages/published?slug=${encodeURIComponent(normalized)}`;
+  try {
+    const res = await fetch(url, {
+      next: { revalidate: 300 },
+    });
 
-  const fetchPromise = (async () => {
-    const url = `${CONTENT_ADMIN_URL}/api/seo-pages/published?slug=${encodeURIComponent(normalized)}`;
-    try {
-      const res = await fetch(url, {
-        next: { revalidate: 3600 },
-      });
-
-      if (!res.ok) {
-        return null;
-      }
-
-      const data: SeoPage = await res.json();
-      return data || null;
-    } catch (err: unknown) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[SEO ERROR] getPublishedSeoPage failed for slug:', slug, err);
-      }
+    if (!res.ok) {
       return null;
     }
-  })();
 
-  seoPagePromiseCache.set(normalized, fetchPromise);
-  return fetchPromise;
-});
+    const data: SeoPage = await res.json();
+    return data || null;
+  } catch (err: unknown) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[SEO ERROR] getPublishedSeoPage failed for slug:', slug, err);
+    }
+    return null;
+  }
+}
 
 export interface PublishedSeoSlug {
   slug: string;
@@ -125,7 +112,7 @@ export async function getAllPublishedSeoPages(): Promise<Array<PublishedSeoSlug>
       const data = await res.json();
       if (Array.isArray(data)) return data;
     }
-  } catch (err) {
+  } catch {
     // Try fallback endpoint
   }
 
@@ -143,4 +130,3 @@ export async function getAllPublishedSeoPages(): Promise<Array<PublishedSeoSlug>
     return null;
   }
 }
-

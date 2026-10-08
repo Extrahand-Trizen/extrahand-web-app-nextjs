@@ -219,13 +219,71 @@ export const cities: Record<string, CityInfo> = {
          "Kukatpally",
          "Miyapur",
          "Uppal",
-         "Siddipet",
-         "Mahabubnagar",
       ],
       heroImage: "/assets/cities/hyderabad.webp",
       coordinates: {
          lat: 17.385,
          lng: 78.4867,
+      },
+   },
+
+   mahabubnagar: {
+      name: "Mahabubnagar",
+      state: "Telangana",
+      slug: "mahabubnagar",
+      description:
+         "Find trusted local helpers in Mahabubnagar for home repairs, cleaning, moving, and everyday services.",
+      longDescription:
+         "ExtraHand connects Mahabubnagar residents with local professionals for home maintenance, cleaning, moving, and other everyday services.",
+      population: "0.2M+",
+      activeTasks: 180,
+      activeTaskers: 420,
+      avgRating: 4.6,
+      completedTasks: 1560,
+      neighborhoods: [
+         "New Town",
+         "Old Town",
+         "Badepally",
+         "Mettugadda",
+         "Ramanpally",
+         "Boyapally",
+         "Yenugonda",
+         "Palakonda",
+      ],
+      heroImage: "/assets/cities/mahabubnagar.jpg",
+      coordinates: {
+         lat: 16.737,
+         lng: 78.009,
+      },
+   },
+
+   siddipet: {
+      name: "Siddipet",
+      state: "Telangana",
+      slug: "siddipet",
+      description:
+         "Connect with local helpers in Siddipet for home services, repairs, cleaning, moving, and more.",
+      longDescription:
+         "ExtraHand helps Siddipet residents find local professionals for home repairs, cleaning, moving, and a wide range of everyday tasks.",
+      population: "0.1M+",
+      activeTasks: 140,
+      activeTaskers: 310,
+      avgRating: 4.6,
+      completedTasks: 1180,
+      neighborhoods: [
+         "Old Bus Stand",
+         "New Bus Stand",
+         "Komati Cheruvu",
+         "Raghavendra Nagar",
+         "Gajwel Road",
+         "Hyderabad Road",
+         "Medak Road",
+         "Ponnala",
+      ],
+      heroImage: "/assets/cities/siddipet.jpg",
+      coordinates: {
+         lat: 18.1048,
+         lng: 78.852,
       },
    },
 

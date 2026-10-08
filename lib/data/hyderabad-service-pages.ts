@@ -420,6 +420,38 @@ export const hyderabadServicePages: HyderabadServicePage[] = [
    },
 ];
 
+const serviceCategoryByPageSlug: Record<string, string> = {
+   "electrician-in-hyderabad": "electrical",
+   "plumber-in-hyderabad": "plumbing",
+   "ac-repair-in-hyderabad": "ac-repair",
+   "appliance-repair-in-hyderabad": "appliance-repair",
+   "beauty-services-in-hyderabad": "beauty-services",
+   "car-washing-in-hyderabad": "car-washing",
+   "washing-machine-repair-in-hyderabad": "appliance-repair",
+   "refrigerator-repair-in-hyderabad": "appliance-repair",
+   "tv-repair-in-hyderabad": "appliance-repair",
+   "microwave-repair-in-hyderabad": "appliance-repair",
+   "geyser-repair-in-hyderabad": "appliance-repair",
+   "ro-water-purifier-repair-in-hyderabad": "appliance-repair",
+   "carpenter-in-hyderabad": "carpenter",
+   "home-cleaning-in-hyderabad": "home-cleaning",
+   "deep-cleaning-in-hyderabad": "deep-cleaning",
+   "sofa-cleaning-in-hyderabad": "deep-cleaning",
+   "bathroom-cleaning-in-hyderabad": "deep-cleaning",
+   "kitchen-cleaning-in-hyderabad": "deep-cleaning",
+   "pest-control-in-hyderabad": "pest-control",
+   "painting-services-in-hyderabad": "painting",
+   "packers-and-movers-in-hyderabad": "packers-movers",
+   "house-shifting-in-hyderabad": "packers-movers",
+   "office-relocation-in-hyderabad": "packers-movers",
+   "home-chef-services-in-hyderabad": "cooking-home-chef",
+   "driver-services-in-hyderabad": "driver-chauffeur",
+   "event-services-in-hyderabad": "event-services",
+   "fitness-trainers-in-hyderabad": "fitness-trainers",
+   "furniture-assembly-in-hyderabad": "furniture-assembly",
+   "cctv-installation-in-hyderabad": "electrical",
+};
+
 export const hyderabadServicePageSlugs = hyderabadServicePages.map(
    (servicePage) => servicePage.slug
 );
@@ -452,4 +484,22 @@ export function getLegacyServiceCitySlug(
 
 export function getHyderabadServicePageBySlug(slug: string) {
    return hyderabadServicePages.find((servicePage) => servicePage.slug === slug);
+}
+
+export function getServiceCategoryIdForPageSlug(slug: string): string | null {
+   return serviceCategoryByPageSlug[slug] ?? null;
+}
+
+export function getHyderabadServicePageByCategoryId(categoryId: string) {
+   const servicePage = hyderabadServicePages.find(
+      (page) => serviceCategoryByPageSlug[page.slug] === categoryId
+   );
+
+   return servicePage;
+}
+
+export function getHyderabadServicePageByLocationSlug(locationSlug: string) {
+   return hyderabadServicePages.find(
+      (page) => page.slug.replace(/-in-hyderabad$/, "") === locationSlug
+   );
 }

@@ -71,10 +71,12 @@ const footerLinks = {
   cities: {
     title: "Popular Cities",
     links: [
+      { label: "Hyderabad", href: "/locations/hyderabad" },
+      { label: "Siddipet", href: "/locations/siddipet" },
+      { label: "Mahabubnagar", href: "/locations/mahabubnagar" },
       { label: "Delhi NCR", href: "/locations/delhi" },
       { label: "Mumbai", href: "/locations/mumbai" },
       { label: "Bangalore", href: "/locations/bangalore" },
-      { label: "Hyderabad", href: "/locations/hyderabad" },
       { label: "Chennai", href: "/locations/chennai" },
       { label: "Kolkata", href: "/locations/kolkata" },
       { label: "Pune", href: "/locations/pune" },

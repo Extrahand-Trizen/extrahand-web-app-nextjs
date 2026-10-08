@@ -10,6 +10,7 @@ import {
 import { getPublishedSeoPage, getAllPublishedSeoPages } from "@/lib/api/endpoints/seoPages";
 import SeoPageRenderer from "@/components/SeoPageRenderer";
 import SeoPageWrapper from "@/components/SeoPageWrapper";
+import { getCityBySlug } from "@/lib/data/cities";
 
 interface ServiceCityPageProps {
    params: Promise<{ serviceCitySlug: string }>;
@@ -71,7 +72,10 @@ function toAreaSlug(area: string) {
    return area.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
-function normalizeServiceCitySlug(slug: string) {
+const supportedNonHyderabadCities = ["mahabubnagar", "siddipet"] as const;
+type SupportedCity = (typeof supportedNonHyderabadCities)[number];
+
+function normalizeServiceCitySlug(slug: string): string | null {
    const trimmed = slug?.trim();
    if (!trimmed) return null;
 
@@ -86,12 +90,31 @@ function normalizeServiceCitySlug(slug: string) {
    const [, serviceBase, areaSlug] = areaAliasMatch;
    if (!serviceBase || !areaSlug) return null;
 
+   // Handle mahabubnagar / siddipet slugs like "plumber-in-mahabubnagar"
+   if (supportedNonHyderabadCities.includes(areaSlug as SupportedCity)) {
+      const canonicalServiceSlug = `${serviceBase}-in-hyderabad`;
+      return hyderabadServicePageSlugs.includes(canonicalServiceSlug)
+         ? canonicalServiceSlug
+         : null;
+   }
+
+   // Handle Hyderabad area aliases like "plumber-in-gachibowli"
    const areaName = hyderabadAreas.find((area) => toAreaSlug(area) === areaSlug);
    if (!areaName) return null;
 
    const canonicalServiceSlug = `${serviceBase}-in-hyderabad`;
    return hyderabadServicePageSlugs.includes(canonicalServiceSlug)
       ? canonicalServiceSlug
+      : null;
+}
+
+/** Extract the city slug from a non-Hyderabad service slug like "plumber-in-mahabubnagar" */
+function extractNonHyderabadCity(slug: string): SupportedCity | null {
+   const match = slug.match(/^(.*)-in-([a-z0-9-]+)$/i);
+   if (!match) return null;
+   const city = match[2];
+   return supportedNonHyderabadCities.includes(city as SupportedCity)
+      ? (city as SupportedCity)
       : null;
 }
 
@@ -501,10 +524,14 @@ export async function generateMetadata({
 
    // 1. Try CMS lookup with the exact slug from the URL first (e.g. "ac-repair-in-gachibowli").
    //    Area-level pages published via Content Admin live under their own slug, not the canonical.
-   // 2. If no match, fall back to the canonical Hyderabad slug for static metadata.
-   const cmsPage =
-      (await getPublishedSeoPage(serviceCitySlug)) ??
-      (await getPublishedSeoPage(normalizeServiceCitySlug(serviceCitySlug) ?? serviceCitySlug));
+   // 2. For non-Hyderabad cities (mahabubnagar/siddipet), NEVER fall back to the Hyderabad CMS
+   //    page — metadata must reflect the actual city, not Hyderabad's content.
+   const isNonHyderabadCitySlug = !!extractNonHyderabadCity(serviceCitySlug);
+   const cmsPageForExactSlug = await getPublishedSeoPage(serviceCitySlug);
+   const cmsPage = cmsPageForExactSlug
+      ?? (isNonHyderabadCitySlug
+         ? null
+         : await getPublishedSeoPage(normalizeServiceCitySlug(serviceCitySlug) ?? serviceCitySlug));
 
    if (cmsPage) {
       const canonicalUrl = cmsPage.canonicalUrl || buildCanonicalServiceUrl(serviceCitySlug);
@@ -527,7 +554,8 @@ export async function generateMetadata({
       };
    }
 
-   const servicePage = getHyderabadServicePageBySlug(serviceCitySlug);
+   const canonicalSlug = normalizeServiceCitySlug(serviceCitySlug) ?? serviceCitySlug;
+   const servicePage = getHyderabadServicePageBySlug(canonicalSlug);
 
    if (!servicePage) {
       return {
@@ -537,20 +565,25 @@ export async function generateMetadata({
 
    const enhancement = getServicePageEnhancement(servicePage);
 
+   // Detect if this is a non-Hyderabad city slug (e.g. "plumber-in-mahabubnagar")
+   const detectedCitySlug = extractNonHyderabadCity(serviceCitySlug);
+   const city = detectedCitySlug ? getCityBySlug(detectedCitySlug) : null;
+   const cityName = city?.name ?? "Hyderabad";
+
    // Use the FULL absolute canonical URL so Next.js trailingSlash normalisation
    // does not alter it.  Area slugs (e.g. ac-repair-in-gachibowli) self-
    // canonicalise to their own URL, not to the Hyderabad parent.
    const canonicalUrl = buildCanonicalServiceUrl(serviceCitySlug);
 
    return {
-      title: `${servicePage.serviceName} in Hyderabad | ExtraHand`,
-      description: servicePage.shortDescription,
+      title: `${servicePage.serviceName} in ${cityName} | ExtraHand`,
+      description: servicePage.shortDescription.replaceAll("Hyderabad", cityName),
       alternates: {
          canonical: canonicalUrl,
       },
       openGraph: {
-         title: `${servicePage.serviceName} in Hyderabad`,
-         description: servicePage.shortDescription,
+         title: `${servicePage.serviceName} in ${cityName}`,
+         description: servicePage.shortDescription.replaceAll("Hyderabad", cityName),
          url: canonicalUrl,
          type: "website",
          images: [
@@ -558,14 +591,14 @@ export async function generateMetadata({
                url: enhancement.imagePath,
                width: 1200,
                height: 630,
-               alt: `${servicePage.serviceName} in Hyderabad`,
+               alt: `${servicePage.serviceName} in ${cityName}`,
             },
          ],
       },
       twitter: {
          card: "summary_large_image",
-         title: `${servicePage.serviceName} in Hyderabad | ExtraHand`,
-         description: servicePage.shortDescription,
+         title: `${servicePage.serviceName} in ${cityName} | ExtraHand`,
+         description: servicePage.shortDescription.replaceAll("Hyderabad", cityName),
          images: [enhancement.imagePath],
       },
    };
@@ -604,10 +637,21 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
       );
    }
 
+   // Detect non-Hyderabad city early (e.g. "plumber-in-mahabubnagar" → "mahabubnagar")
+   const detectedCitySlug = extractNonHyderabadCity(serviceCitySlug);
+   const isNonHyderabadCity = !!detectedCitySlug;
+
    // No area-specific CMS page — fall back to canonical Hyderabad slug for the
    // static template (e.g. "ac-repair-in-hyderabad").
    const canonicalSlug = normalizeServiceCitySlug(serviceCitySlug) ?? serviceCitySlug;
-   const cmsPage = await getPublishedSeoPage(canonicalSlug);
+
+   // For non-Hyderabad cities (mahabubnagar, siddipet), NEVER render the Hyderabad
+   // CMS page — those pages are city-specific and the Hyderabad content would be
+   // incorrect. Only fetch the CMS page when serving Hyderabad or area slugs.
+   const cmsPage = isNonHyderabadCity
+      ? null
+      : await getPublishedSeoPage(canonicalSlug);
+
    const servicePage = getHyderabadServicePageBySlug(canonicalSlug);
 
    if (!servicePage && !cmsPage) {
@@ -651,16 +695,22 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
    const enhancement = servicePage ? getServicePageEnhancement(servicePage) : null;
    const coverageAreas = servicePage ? getAreaSlice(servicePage.slug) : [];
    const postTaskHref = servicePage ? `/tasks/new?source=seo&service=${servicePage.slug}` : "/tasks/new";
+
+   // Resolve city display name and slug from the already-detected city
+   const detectedCity = detectedCitySlug ? getCityBySlug(detectedCitySlug) : null;
+   const cityName = detectedCity?.name ?? "Hyderabad";
+   const citySlug = detectedCity?.slug ?? "hyderabad";
+
    const trustPoints = [
       "Verified professionals with service-category experience",
       "Clear scoping before work begins",
-      "Convenient booking with Hyderabad-wide coverage",
+      `Convenient booking with ${cityName}-wide coverage`,
    ];
 
    const serviceFlow = [
       {
          title: "Share Your Requirement",
-         description: `Tell us the issue and location details for ${servicePage ? servicePage.serviceName.toLowerCase() : 'service'} in Hyderabad.`,
+         description: `Tell us the issue and location details for ${servicePage ? servicePage.serviceName.toLowerCase() : 'service'} in ${cityName}.`,
       },
       {
          title: "Get Matched Quickly",
@@ -688,21 +738,21 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
                dangerouslySetInnerHTML={{ __html: JSON.stringify(cmsPage.breadcrumbSchema) }}
             />
          )}
-         <SeoPageWrapper slug={serviceCitySlug} initialPage={cmsPage}>
+          <SeoPageWrapper slug={serviceCitySlug} initialPage={cmsPage}>
             <main className="min-h-screen bg-linear-to-b from-white to-secondary-50">
                <section className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:px-8 lg:py-16">
                   <div>
                      <p className="text-sm font-semibold uppercase tracking-wide text-primary-600">
-                        Hyderabad Local Services
+                        {cityName} Local Services
                      </p>
                      <h1 className="mt-3 text-3xl font-bold text-secondary-900 sm:text-4xl">
-                        {servicePage.serviceName} in Hyderabad
+                        {servicePage.serviceName} in {cityName}
                      </h1>
                      <p className="mt-4 max-w-2xl text-base text-secondary-700 sm:text-lg">
-                        {servicePage.heroDescription}
+                        {servicePage.heroDescription.replaceAll("Hyderabad", cityName)}
                      </p>
                      <p className="mt-4 max-w-2xl text-sm leading-6 text-secondary-600">
-                        {enhancement?.overview}
+                        {enhancement?.overview.replaceAll("Hyderabad", cityName)}
                      </p>
 
                      <div className="mt-8 flex flex-wrap gap-3">
@@ -713,21 +763,21 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
                            Book This Service
                         </Link>
                         <Link
-                           href="/locations/hyderabad"
+                           href={`/locations/${citySlug}`}
                            className="rounded-lg border border-secondary-300 bg-white px-5 py-3 text-sm font-semibold text-secondary-800 transition hover:bg-secondary-100"
                         >
-                           Explore Hyderabad Services
+                           Explore {cityName} Services
                         </Link>
                      </div>
 
                      <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <div className="rounded-lg border border-secondary-200 bg-white p-3 text-sm text-secondary-700">
                            <p className="font-semibold text-secondary-900">Best For</p>
-                           <p className="mt-1">{enhancement?.bestFor}</p>
+                           <p className="mt-1">{enhancement?.bestFor.replaceAll("Hyderabad", cityName)}</p>
                         </div>
                         <div className="rounded-lg border border-secondary-200 bg-white p-3 text-sm text-secondary-700">
                            <p className="font-semibold text-secondary-900">Coverage</p>
-                           <p className="mt-1">Available across key Hyderabad neighborhoods.</p>
+                           <p className="mt-1">Available across key {cityName} neighborhoods.</p>
                         </div>
                      </div>
                   </div>
@@ -736,7 +786,7 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
                      <div className="overflow-hidden rounded-2xl border border-secondary-200 bg-white">
                         <Image
                            src={enhancement?.imagePath ?? "/assets/images/default.webp"}
-                           alt={`${servicePage.serviceName} in Hyderabad`}
+                           alt={`${servicePage.serviceName} in ${cityName}`}
                            width={900}
                            height={560}
                            className="h-80 w-full object-cover object-center sm:h-96 lg:h-112"
@@ -810,30 +860,37 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
 
                   <article className="rounded-2xl border border-secondary-200 bg-white p-6 shadow-xs lg:col-span-2">
                      <h2 className="text-xl font-semibold text-secondary-900">
-                        Popular Hyderabad Service Areas
+                        Popular {cityName} Service Areas
                      </h2>
                      <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                        {coverageAreas.map((area) => (
-                           <Link
-                              key={area}
-                              href={`/locations/hyderabad/${toAreaSlug(area)}/${servicePage.slug}`}
-                              className="rounded-lg border border-secondary-200 bg-secondary-50 px-3 py-2 text-sm text-secondary-800 transition hover:border-primary-300 hover:bg-white"
-                           >
-                              {area}
-                           </Link>
-                        ))}
+                        {isNonHyderabadCity
+                           ? (
+                              <p className="text-sm text-secondary-700 col-span-full">
+                                 Service available across {cityName} and nearby localities.
+                              </p>
+                           )
+                           : coverageAreas.map((area) => (
+                              <Link
+                                 key={area}
+                                 href={`/locations/hyderabad/${toAreaSlug(area)}/${servicePage.slug}`}
+                                 className="rounded-lg border border-secondary-200 bg-secondary-50 px-3 py-2 text-sm text-secondary-800 transition hover:border-primary-300 hover:bg-white"
+                              >
+                                 {area}
+                              </Link>
+                           ))
+                        }
                      </div>
                   </article>
 
                   <article className="rounded-2xl border border-secondary-200 bg-white p-6 shadow-xs lg:col-span-2">
                      <h2 className="text-xl font-semibold text-secondary-900">
-                        About {servicePage.serviceName} in Hyderabad
+                        About {servicePage.serviceName} in {cityName}
                      </h2>
-                     <p className="mt-4 text-secondary-700">{servicePage.shortDescription}</p>
-                     <p className="mt-3 text-secondary-700">{enhancement?.overview}</p>
-                     <p className="mt-3 text-secondary-700">{enhancement?.serviceDeepDive}</p>
+                     <p className="mt-4 text-secondary-700">{servicePage.shortDescription.replaceAll("Hyderabad", cityName)}</p>
+                     <p className="mt-3 text-secondary-700">{enhancement?.overview.replaceAll("Hyderabad", cityName)}</p>
+                     <p className="mt-3 text-secondary-700">{enhancement?.serviceDeepDive.replaceAll("Hyderabad", cityName)}</p>
                      <p className="mt-3 text-secondary-700">
-                        Commonly requested outcomes include {servicePage.whatYouGet[0].toLowerCase()}, {servicePage.whatYouGet[1].toLowerCase()}, and {servicePage.whatYouGet[2].toLowerCase()} with local coverage across residential and commercial areas of Hyderabad.
+                        Commonly requested outcomes include {servicePage.whatYouGet[0].toLowerCase()}, {servicePage.whatYouGet[1].toLowerCase()}, and {servicePage.whatYouGet[2].toLowerCase()} with local coverage across residential and commercial areas of {cityName}.
                      </p>
                   </article>
 
@@ -876,17 +933,17 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
                      {servicePage.faq.map((item) => (
                         <div key={item.question} className="mt-4 border-t border-secondary-100 pt-4">
                            <h3 className="text-base font-semibold text-secondary-900">
-                              {item.question}
+                              {item.question.replaceAll("Hyderabad", cityName)}
                            </h3>
-                           <p className="mt-2 text-secondary-700">{item.answer}</p>
+                           <p className="mt-2 text-secondary-700">{item.answer.replaceAll("Hyderabad", cityName)}</p>
                         </div>
                      ))}
                      {enhancement?.secondFaq && (
                         <div className="mt-4 border-t border-secondary-100 pt-4">
                            <h3 className="text-base font-semibold text-secondary-900">
-                              {enhancement.secondFaq.question}
+                              {enhancement.secondFaq.question.replaceAll("Hyderabad", cityName)}
                            </h3>
-                           <p className="mt-2 text-secondary-700">{enhancement.secondFaq.answer}</p>
+                           <p className="mt-2 text-secondary-700">{enhancement.secondFaq.answer.replaceAll("Hyderabad", cityName)}</p>
                         </div>
                      )}
                   </article>

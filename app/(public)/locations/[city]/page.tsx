@@ -49,7 +49,7 @@ export default async function CityPage({ params }: PageProps) {
                   City Not Found
                </h1>
                <p className="text-xl text-secondary-600 mb-8">
-                  We don't have information for this location yet.
+                  We don&apos;t have information for this location yet.
                </p>
                <Link href="/">
                   <Button
@@ -89,38 +89,53 @@ export default async function CityPage({ params }: PageProps) {
             {/* Stats & Trust Indicators */}
             <CityStats city={cityInfo} />
 
-            {/* Neighborhoods */}
-            <NeighborhoodsGrid
-               neighborhoods={cityInfo.neighborhoods}
-               citySlug={cityInfo.slug}
-               cityName={cityInfo.name}
-            />
+            {cityInfo.slug !== "mahabubnagar" &&
+               cityInfo.slug !== "siddipet" && (
+                  <NeighborhoodsGrid
+                     neighborhoods={cityInfo.neighborhoods}
+                     citySlug={cityInfo.slug}
+                     cityName={cityInfo.name}
+                  />
+               )}
 
-            {cityInfo.slug === "hyderabad" && (
+            {(cityInfo.slug === "hyderabad" ||
+               cityInfo.slug === "mahabubnagar" ||
+               cityInfo.slug === "siddipet") && (
                <section
-                  id="hyderabad-service-pages"
+                  id={
+                     cityInfo.slug === "hyderabad"
+                        ? "hyderabad-service-pages"
+                        : "city-service-pages"
+                  }
                   className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8"
                >
                   <div className="rounded-2xl border border-secondary-200 bg-white p-6 sm:p-8">
                      <h2 className="text-2xl font-bold text-secondary-900 sm:text-3xl">
-                        Explore Services in Hyderabad
+                        Explore Services in {cityInfo.name}
                      </h2>
                      <p className="mt-3 max-w-3xl text-secondary-700">
-                        Explore all service-specific pages for Hyderabad. Each page includes focused content to help users quickly find the right service.
+                        Explore all available services in {cityInfo.name} and find the right local help for your task.
                      </p>
 
                      <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                         {hyderabadServicePages.map((servicePage) => (
                            <li key={servicePage.slug}>
                               <Link
-                                 href={`/${servicePage.slug}`}
+                                 href={
+                                    cityInfo.slug === "hyderabad"
+                                       ? `/${servicePage.slug}`
+                                       : `/${servicePage.slug.replace(/-in-hyderabad$/, "")}-in-${cityInfo.slug}`
+                                 }
                                  className="block rounded-xl border border-secondary-200 bg-secondary-50 p-4 transition hover:border-primary-300 hover:bg-white"
                               >
                                  <p className="text-sm font-semibold text-secondary-900">
-                                    {servicePage.serviceName} in Hyderabad
+                                    {servicePage.serviceName} in {cityInfo.name}
                                  </p>
                                  <p className="mt-1 text-xs text-secondary-700 line-clamp-2">
-                                    {servicePage.shortDescription}
+                                    {servicePage.shortDescription.replaceAll(
+                                       "Hyderabad",
+                                       cityInfo.name
+                                    )}
                                  </p>
                               </Link>
                            </li>

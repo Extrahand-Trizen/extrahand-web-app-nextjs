@@ -8,36 +8,25 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { ServiceCategory } from "@/lib/data/categories";
-
-const hyderabadCategoryToServicePageSlug: Record<string, string> = {
-   "ac-repair": "ac-repair-in-hyderabad",
-   "appliance-repair": "appliance-repair-in-hyderabad",
-   "beauty-services": "beauty-services-in-hyderabad",
-   "car-washing": "car-washing-in-hyderabad",
-   "cooking-home-chef": "home-chef-services-in-hyderabad",
-   "driver-chauffeur": "driver-services-in-hyderabad",
-   electrical: "electrician-in-hyderabad",
-   "event-services": "event-services-in-hyderabad",
-   "fitness-trainers": "fitness-trainers-in-hyderabad",
-   "furniture-assembly": "furniture-assembly-in-hyderabad",
-   plumbing: "plumber-in-hyderabad",
-   carpenter: "carpenter-in-hyderabad",
-   "home-cleaning": "home-cleaning-in-hyderabad",
-   "deep-cleaning": "deep-cleaning-in-hyderabad",
-   "pest-control": "pest-control-in-hyderabad",
-   painting: "painting-services-in-hyderabad",
-   "packers-movers": "packers-and-movers-in-hyderabad",
-};
+import { getHyderabadServicePageByCategoryId } from "@/lib/data/hyderabad-service-pages";
 
 function getCategoryHref(categoryId: string, citySlug: string): string {
+   if (citySlug === "siddipet" || citySlug === "mahabubnagar") {
+      const matchingServicePage = getHyderabadServicePageByCategoryId(categoryId);
+      const serviceSlug = matchingServicePage
+         ? matchingServicePage.slug.replace(/-in-hyderabad$/, "")
+         : categoryId;
+      return `/${serviceSlug}-in-${citySlug}`;
+   }
+
    if (citySlug !== "hyderabad") {
       return `/tasks/new?category=${categoryId}&location=${citySlug}`;
    }
 
-   const matchingServicePageSlug = hyderabadCategoryToServicePageSlug[categoryId];
+   const matchingServicePage = getHyderabadServicePageByCategoryId(categoryId);
 
-   if (matchingServicePageSlug) {
-      return `/${matchingServicePageSlug}`;
+   if (matchingServicePage) {
+      return `/${matchingServicePage.slug}`;
    }
 
    return "/locations/hyderabad#hyderabad-service-pages";

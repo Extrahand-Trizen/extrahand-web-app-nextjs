@@ -69,6 +69,16 @@ const navItems: Array<{
    { label: "How it works", href: "/how-it-works#how-it-works" },
 ];
 
+const locationItems: Array<{
+   name: string;
+   slug: string;
+   href: string;
+}> = [
+   { name: "Hyderabad", slug: "hyderabad", href: "/locations/hyderabad" },
+   { name: "Siddipet", slug: "siddipet", href: "/locations/siddipet" },
+   { name: "Mahabubnagar", slug: "mahabubnagar", href: "/locations/mahabubnagar" },
+];
+
 /** Strip role-specific suffix from CMS labels: poster → no "Services", tasker → no "Tasks". */
 const getCategoryDisplayName = (name: string, role: "poster" | "tasker") => {
    const trimmed = (name || "").trim();
@@ -123,6 +133,8 @@ export const LandingHeader: React.FC = () => {
    const { currentUser, userData, logout } = useAuth();
    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
    const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
+   const [isLocationsOpen, setIsLocationsOpen] = useState(false);
+   const [isMobileLocationsOpen, setIsMobileLocationsOpen] = useState(false);
    const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
    const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false);
    const [activeRole, setActiveRole] = useState<"poster" | "tasker">("poster");
@@ -134,6 +146,7 @@ export const LandingHeader: React.FC = () => {
    const categoriesFetchStartedRef = useRef(false);
 
    const categoriesRef = useRef<HTMLDivElement>(null);
+   const locationsRef = useRef<HTMLDivElement>(null);
    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
    // Show profile when we have Firebase user OR backend userData (e.g. LOCAL_TEST dummy login)
    const isAuthenticated = Boolean(currentUser) || Boolean(userData);
@@ -220,6 +233,7 @@ export const LandingHeader: React.FC = () => {
    const handleMouseEnter = () => {
       if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
       setIsUserMenuOpen(false);
+      setIsLocationsOpen(false);
       setIsCategoriesOpen(true);
       void loadCategories();
    };
@@ -229,6 +243,37 @@ export const LandingHeader: React.FC = () => {
          setIsCategoriesOpen(false);
       }, 150);
    };
+
+   useEffect(() => {
+      if (!isLocationsOpen) return;
+
+      const handleClickOutside = (event: MouseEvent) => {
+         if (
+            locationsRef.current &&
+            !locationsRef.current.contains(event.target as Node)
+         ) {
+            setIsLocationsOpen(false);
+         }
+      };
+
+      const handleKeyDown = (event: KeyboardEvent) => {
+         if (event.key === "Escape") {
+            setIsLocationsOpen(false);
+         }
+      };
+
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
+      return () => {
+         document.removeEventListener("mousedown", handleClickOutside);
+         document.removeEventListener("keydown", handleKeyDown);
+      };
+   }, [isLocationsOpen]);
+
+   useEffect(() => {
+      setIsLocationsOpen(false);
+      setIsMobileLocationsOpen(false);
+   }, [pathname]);
 
    useEffect(() => {
       if (isMobileCategoriesOpen) {
@@ -302,6 +347,10 @@ export const LandingHeader: React.FC = () => {
       router.push("/earn-money");
    }, [router]);
 
+   const isLocationActive =
+      locationItems.some((loc) => pathname === loc.href) ||
+      pathname.startsWith("/locations");
+
    return (
       <>
          <header
@@ -337,7 +386,7 @@ export const LandingHeader: React.FC = () => {
                   </Link>
 
                   {/* Desktop Navigation */}
-                  <nav className="hidden lg:flex items-center gap-6">
+                  <nav className="hidden lg:flex items-center gap-4 xl:gap-6">
                      <Button 
                         variant={pathname === "/tasks/new" ? "default" : "ghost"}
                         className={cn(
@@ -508,6 +557,69 @@ export const LandingHeader: React.FC = () => {
                            </Button>
                         )
                      )}
+
+                     {/* Our Locations Dropdown */}
+                     <div className="relative" ref={locationsRef}>
+                        <Button
+                           type="button"
+                           onClick={() => {
+                              setIsLocationsOpen((prev) => !prev);
+                              setIsCategoriesOpen(false);
+                              setIsUserMenuOpen(false);
+                           }}
+                           variant="ghost"
+                           size="sm"
+                           className={cn(
+                              "font-semibold flex items-center gap-1",
+                              isLocationActive
+                                 ? "bg-primary-500 hover:bg-primary-600 text-secondary-900 shadow-sm"
+                                 : isLocationsOpen
+                                 ? "text-primary-600 bg-secondary-50"
+                                 : "text-secondary-600 hover:text-secondary-900 hover:bg-secondary-50"
+                           )}
+                           aria-expanded={isLocationsOpen}
+                           aria-haspopup="true"
+                        >
+                           <span>Our Locations</span>
+                           <ChevronDown
+                              className={cn(
+                                 "h-4 w-4 transition-transform duration-200",
+                                 isLocationsOpen && "rotate-180"
+                              )}
+                           />
+                        </Button>
+
+                        {/* Our Locations Dropdown Menu */}
+                        {isLocationsOpen && (
+                           <div className="absolute left-0 top-full pt-2 z-50">
+                              <div className="w-48 bg-white rounded-xl shadow-xl border border-secondary-200 p-2">
+                                 <div className="px-3 py-1.5 text-[11px] font-semibold text-secondary-400 uppercase tracking-wider">
+                                    Our Locations
+                                 </div>
+                                 <div className="flex flex-col gap-1">
+                                    {locationItems.map((loc) => {
+                                       const isActive = pathname === loc.href;
+                                       return (
+                                          <Link
+                                             key={loc.slug}
+                                             href={loc.href}
+                                             onClick={() => setIsLocationsOpen(false)}
+                                             className={cn(
+                                                "block rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                                                isActive
+                                                   ? "bg-primary-50 text-primary-700 font-semibold"
+                                                   : "text-secondary-700 hover:bg-secondary-50 hover:text-secondary-900"
+                                             )}
+                                          >
+                                             {loc.name}
+                                          </Link>
+                                       );
+                                    })}
+                                 </div>
+                              </div>
+                           </div>
+                        )}
+                     </div>
                   </nav>
 
                   {/* Desktop CTA Group — fixed min width avoids auth-state swap CLS */}
@@ -529,6 +641,7 @@ export const LandingHeader: React.FC = () => {
                                  setIsUserMenuOpen(nextOpen);
                                  if (nextOpen) {
                                     setIsCategoriesOpen(false);
+                                    setIsLocationsOpen(false);
                                  }
                               }}
                            />
@@ -710,6 +823,54 @@ export const LandingHeader: React.FC = () => {
                                  <HelpCircle className="w-4 h-4" />
                                  <span className="text-sm font-medium">How it Works</span>
                               </button>
+
+                              {/* Our Locations Mobile Section */}
+                              <div>
+                                 <button
+                                    onClick={() =>
+                                       setIsMobileLocationsOpen((prev) => !prev)
+                                    }
+                                    className={cn(
+                                       "w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors",
+                                       isLocationActive
+                                          ? "text-primary-600 bg-primary-50 font-semibold"
+                                          : "text-secondary-700 hover:bg-secondary-50"
+                                    )}
+                                 >
+                                    <span className="text-sm font-medium">Our Locations</span>
+                                    <ChevronDown
+                                       className={cn(
+                                          "w-4 h-4 text-secondary-500 transition-transform duration-200",
+                                          isMobileLocationsOpen && "rotate-180"
+                                       )}
+                                    />
+                                 </button>
+                                 {isMobileLocationsOpen && (
+                                    <div className="pl-6 pr-2 py-1 space-y-1 bg-secondary-50/60 rounded-lg mt-1">
+                                       {locationItems.map((loc) => {
+                                          const isActive = pathname === loc.href;
+                                          return (
+                                             <Link
+                                                key={loc.slug}
+                                                href={loc.href}
+                                                onClick={() => {
+                                                   setIsMobileMenuOpen(false);
+                                                   setIsMobileLocationsOpen(false);
+                                                }}
+                                                className={cn(
+                                                   "block px-3 py-2 rounded-md text-sm transition-colors",
+                                                   isActive
+                                                      ? "text-primary-600 font-semibold bg-white shadow-xs"
+                                                      : "text-secondary-700 hover:text-secondary-900 hover:bg-white/60"
+                                                )}
+                                             >
+                                                {loc.name}
+                                             </Link>
+                                          );
+                                       })}
+                                    </div>
+                                 )}
+                              </div>
                            </div>
 
                            <div className="h-px bg-secondary-200 my-1" />
