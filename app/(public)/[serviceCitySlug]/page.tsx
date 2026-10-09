@@ -34,11 +34,7 @@ const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://extrahand.in";
 /**
  * Build the full absolute canonical URL for a [serviceCitySlug] page.
  *
- * Rules:
- *  - /categories                             → https://extrahand.in/categories   (no trailing slash)
- *  - /ac-repair-in-gachibowli               → https://extrahand.in/ac-repair-in-gachibowli  (no trailing slash)
- *  - /ac-repair-in-hyderabad                 → https://extrahand.in/ac-repair-in-hyderabad/ (trailing slash)
- *  - all other non-SEO route groups remain untouched and are handled separately
+ * Service-page canonicals use the same no-trailing-slash format as CMS pages.
  *
  * Using a full URL (https://…) is essential: Next.js `trailingSlash: true`
  * normalises *relative* canonical paths by appending "/", which would break
@@ -46,11 +42,7 @@ const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://extrahand.in";
  * unchanged.
  */
 function buildCanonicalServiceUrl(slug: string): string {
-   if (slug === "categories") {
-      return `${baseUrl}/categories`;
-   }
-
-   return `${baseUrl}/${slug.replace(/\/+$/, "")}/`;
+   return `${baseUrl.replace(/\/+$/, "")}/${slug.replace(/^\/+|\/+$/g, "")}`;
 }
 
 const hyderabadAreas = [
@@ -534,7 +526,9 @@ export async function generateMetadata({
          : await getPublishedSeoPage(normalizeServiceCitySlug(serviceCitySlug) ?? serviceCitySlug));
 
    if (cmsPage) {
-      const canonicalUrl = cmsPage.canonicalUrl || buildCanonicalServiceUrl(serviceCitySlug);
+      const canonicalUrl = cmsPage.canonicalUrl
+         ? cmsPage.canonicalUrl.replace(/\/+$/, "")
+         : buildCanonicalServiceUrl(serviceCitySlug);
 
       return {
          title: cmsPage.metaTitle,

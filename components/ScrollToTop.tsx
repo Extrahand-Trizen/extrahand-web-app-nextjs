@@ -16,11 +16,17 @@ export function ScrollToTop() {
    useEffect(() => {
       if (window.location.hash) return;
 
+      let secondFrame = 0;
       const frame = window.requestAnimationFrame(() => {
-         window.scrollTo(0, 0);
+         secondFrame = window.requestAnimationFrame(() => {
+            window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+         });
       });
 
-      return () => window.cancelAnimationFrame(frame);
+      return () => {
+         window.cancelAnimationFrame(frame);
+         window.cancelAnimationFrame(secondFrame);
+      };
    }, [pathname, searchParams]);
 
    return null;
