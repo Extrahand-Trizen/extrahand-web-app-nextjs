@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, TrendingUp } from "lucide-react";
 import { CityInfo } from "@/lib/data/cities";
 import { SeoHeroImage } from "@/components/shared/SeoHeroImage";
+import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
 interface CityHeroProps {
    city: CityInfo;
@@ -58,15 +59,14 @@ export function CityHero({ city }: CityHeroProps) {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-               <Link href="/tasks/new" className="group">
-                  <Button
-                     size="lg"
-                     className="w-full sm:w-auto bg-primary-500 hover:bg-primary-600 text-white font-bold text-lg px-10 py-7 rounded-2xl shadow-2xl transition-colors"
-                  >
-                     Get Help
-                     <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-               </Link>
+               <Button
+                  size="lg"
+                  onClick={() => redirectToAppStore()}
+                  className="w-full sm:w-auto bg-primary-500 hover:bg-primary-600 text-white font-bold text-lg px-10 py-7 rounded-2xl shadow-2xl transition-colors cursor-pointer"
+               >
+                  Get Help
+                  <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+               </Button>
                <Link href="/earn-money">
                   <Button
                      variant="outline"

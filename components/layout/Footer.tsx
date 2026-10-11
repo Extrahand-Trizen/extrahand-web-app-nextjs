@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { APP_STORE_URL } from '@/lib/openAppBridge';
+import { redirectToAppStore } from '@/lib/utils/getAppStoreUrl';
 
 const footerColumns = [
   {
@@ -127,7 +128,15 @@ export const Footer: React.FC = () => {
               <ul className="list-none p-0 m-0">
                 {col.links.map((link, linkIdx) => (
                   <li key={linkIdx}>
-                    {isExternalLink(link.href) ? (
+                    {link.href === '/tasks/new' || link.label === 'Get Help' ? (
+                      <button
+                        type="button"
+                        onClick={() => redirectToAppStore()}
+                        className="text-neutral-gray-50/60 no-underline text-xs md:text-sm font-normal block mb-1.5 md:mb-2 transition-colors duration-200 leading-snug hover:text-white text-left cursor-pointer bg-transparent border-0 p-0"
+                      >
+                        {link.label}
+                      </button>
+                    ) : isExternalLink(link.href) ? (
                       <a
                         href={link.href}
                         className="text-neutral-gray-50/60 no-underline text-xs md:text-sm font-normal block mb-1.5 md:mb-2 transition-colors duration-200 leading-snug hover:text-white"

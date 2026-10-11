@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/design/utils";
 import { Button } from "@/components/ui/button";
 import { categoriesApi } from "@/lib/api/endpoints/categories";
+import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
 const menuItems = [
    { label: "Get Help", type: "button", route: "/tasks/new" },
@@ -99,6 +100,15 @@ export const Header: React.FC = () => {
 
    const handleNavigate = (item: (typeof menuItems)[0]) => {
       setActiveItem(item.label);
+
+      if (item.label === "Get Help") {
+         // Detect device and redirect to the appropriate app store.
+         // Android → Play Store | iOS → App Store | unknown → Play Store (fallback)
+         redirectToAppStore();
+         setShowCategories(false);
+         setShowMobileMenu(false);
+         return;
+      }
 
       if (item.label === "How it works") {
          const el = document.getElementById("how-it-works");

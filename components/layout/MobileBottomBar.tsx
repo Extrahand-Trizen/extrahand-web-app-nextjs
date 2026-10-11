@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, ListChecks, MessageSquare, Plus, User } from "lucide-react";
+import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
 type Item = {
    href: string;
@@ -35,14 +36,28 @@ export default function MobileBottomBar() {
                      ? pathname === "/"
                      : pathname.startsWith(item.href);
 
-               // Make the center action (Post) visually prominent
+               // Make the center action (Post) visually prominent and redirect to app store
                const isCenter = i === 2;
+
+               if (item.href === "/tasks/new") {
+                  return (
+                     <li key={item.href} className="">
+                        <button
+                           type="button"
+                           onClick={() => redirectToAppStore()}
+                           aria-label={item.ariaLabel || item.label}
+                           className="relative -translate-y-3 mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary-500 text-secondary-900 shadow-lg shadow-primary-500/30 ring-1 ring-primary-600/20 cursor-pointer border-0"
+                        >
+                           <item.icon className="h-6 w-6" />
+                        </button>
+                     </li>
+                  );
+               }
 
                return (
                   <li key={item.href} className="">
                      <Link
                         href={item.href}
-                        prefetch={item.href === "/tasks/new" ? false : undefined}
                         aria-label={item.ariaLabel || item.label}
                         aria-current={isActive ? "page" : undefined}
                         className={

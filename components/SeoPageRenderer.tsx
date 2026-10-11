@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { SeoPage } from "@/lib/api/endpoints/seoPages";
 import Link from "next/link";
@@ -13,6 +13,7 @@ import {
   ChevronDown,
   ArrowRight,
 } from "lucide-react";
+import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
 interface SeoPageRendererProps {
   page: SeoPage;
@@ -122,13 +123,13 @@ export default function SeoPageRenderer({ page }: SeoPageRendererProps) {
 
       {/* CTA buttons */}
       <div className="pt-2 flex flex-wrap gap-4 items-center">
-        <Link
-          href={postTaskHref}
-          className="group inline-flex items-center gap-2 rounded-xl bg-primary-600 px-6 py-3.5 font-bold text-white shadow-sm shadow-primary-600/10 hover:bg-primary-700 hover:shadow-md transition-all duration-200"
+        <button
+          onClick={() => redirectToAppStore()}
+          className="group inline-flex items-center gap-2 rounded-xl bg-primary-600 px-6 py-3.5 font-bold text-white shadow-sm shadow-primary-600/10 hover:bg-primary-700 hover:shadow-md transition-all duration-200 cursor-pointer"
         >
           Book this service
           <ArrowRight className="h-4.5 w-4.5 transition-transform group-hover:translate-x-0.5" />
-        </Link>
+        </button>
         <a
           href="#faq"
           className="inline-flex items-center justify-center rounded-xl border border-secondary-300 bg-white px-6 py-3.5 font-semibold text-secondary-700 shadow-2xs hover:bg-secondary-50 transition-all duration-200"

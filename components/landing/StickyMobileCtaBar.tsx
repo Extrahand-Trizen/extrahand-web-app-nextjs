@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
 /**
  * StickyMobileCtaBar
@@ -11,11 +12,12 @@ export const StickyMobileCtaBar: React.FC = () => {
   return (
     <div className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-white/95 backdrop-blur border-t border-secondary-200 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-6px_20px_-12px_rgba(0,0,0,0.2)]">
       <div className="flex gap-3">
-        <Link href="/tasks/new" className="flex-1">
-          <Button className="w-full bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold py-6 rounded-xl">
-            Get Help
-          </Button>
-        </Link>
+        <Button
+          onClick={() => redirectToAppStore()}
+          className="flex-1 bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold py-6 rounded-xl cursor-pointer"
+        >
+          Get Help
+        </Button>
         <Link href="/login">
           <Button variant="outline" className="border-secondary-300 text-secondary-700 font-medium py-6 rounded-xl">
             Helper

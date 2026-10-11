@@ -45,6 +45,7 @@ import type { UserCurrentStatus } from "@/types/dashboard";
 import type { Category } from "@/types/category";
 import { mergeCarCategories } from "@/lib/utils/mergeCarCategories";
 import { filterCategoriesByRole } from "@/lib/utils/categoryRoleFilter";
+import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
 const UserMenu = dynamic(
    () => import("./UserMenu").then((mod) => ({ default: mod.UserMenu })),
@@ -300,6 +301,10 @@ export const LandingHeader: React.FC = () => {
 
    const handleRouteChange = useCallback(
       (path: string) => {
+         if (path === "/tasks/new" || path.startsWith("/tasks/new")) {
+            redirectToAppStore();
+            return;
+         }
          router.push(path);
       },
       [router]
@@ -395,7 +400,7 @@ export const LandingHeader: React.FC = () => {
                               ? "bg-primary-500 hover:bg-primary-600 text-secondary-900 shadow-sm"
                               : "text-secondary-600 hover:text-secondary-900 hover:bg-secondary-50"
                         )}
-                        onClick={() => handleRouteChange("/tasks/new")}
+                        onClick={() => redirectToAppStore()}
                      >
                         Get Help
                      </Button>
@@ -654,7 +659,7 @@ export const LandingHeader: React.FC = () => {
                      <Button
                         size="sm"
                         className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold shadow-sm"
-                        onClick={() => handleRouteChange("/tasks/new")}
+                        onClick={() => redirectToAppStore()}
                      >
                         <PlusCircle className="w-4 h-4 mr-1.5" />
                         Get Help
@@ -880,7 +885,7 @@ export const LandingHeader: React.FC = () => {
                               <button 
                                  onClick={() => {
                                     setIsMobileMenuOpen(false);
-                                    handleRouteChange("/tasks/new");
+                                    redirectToAppStore();
                                  }}
                                  className={cn(
                                     "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors font-semibold",

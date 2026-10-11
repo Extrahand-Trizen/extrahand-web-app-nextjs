@@ -10,6 +10,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/lib/auth/context";
+import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
 const DARK = "#222";
 
@@ -35,6 +36,10 @@ export const NavBar: React.FC<NavBarProps> = ({
 
    const handleNavigation = (route: string) => {
       setIsMenuOpen(false);
+      if (route === "/tasks/new" || route.startsWith("/tasks/new")) {
+         redirectToAppStore();
+         return;
+      }
       router.push(route);
    };
 

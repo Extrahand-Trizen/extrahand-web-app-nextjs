@@ -13,6 +13,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle } from "lucide-react";
+import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
 const benefits = [
    "Free to post any task",
@@ -61,20 +62,19 @@ export const FinalCTASection: React.FC = () => {
 
             {/* CTA buttons */}
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
-               <Link href="/tasks/new">
-                  <Button
-                     size="lg"
-                     className="bg-primary-500 hover:bg-primary-400 text-secondary-900 font-semibold md:text-lg px-8 py-4 md:px-10 md:py-6 rounded-xl shadow-lg shadow-primary-500/25 transition-all hover:shadow-xl hover:-translate-y-0.5 w-full sm:w-auto"
-                  >
-                     Get Help Now
-                     <ArrowRight className="w-5 h-5 ml-2" />
-                  </Button>
-               </Link>
+               <Button
+                  size="lg"
+                  onClick={() => redirectToAppStore()}
+                  className="bg-primary-500 hover:bg-primary-400 text-secondary-900 font-semibold md:text-lg px-8 py-4 md:px-10 md:py-6 rounded-xl shadow-lg shadow-primary-500/25 transition-all hover:shadow-xl hover:-translate-y-0.5 w-full sm:w-auto cursor-pointer"
+               >
+                  Get Help Now
+                  <ArrowRight className="w-5 h-5 ml-2" />
+               </Button>
                <Link href="/earn-money">
                   <Button
                      variant="outline"
                      size="lg"
-                     className="border-2 border-secondary-600 font-semibold md:text-lg px-8 py-4 md:px-10 md:py-6 rounded-xl w-full sm:w-auto"
+                     className="border-2 border-secondary-600 font-semibold md:text-lg px-8 py-4 md:px-10 md:py-6 rounded-xl w-full sm:w-auto cursor-pointer"
                   >
                      Become a Helper
                   </Button>

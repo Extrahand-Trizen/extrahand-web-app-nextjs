@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
 const whyChoosePoints = [
    {
@@ -92,12 +93,10 @@ export const ServicesSection: React.FC = () => {
                         </p>
 
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                           <Link href="/tasks/new" className="w-full sm:w-auto">
-                              <Button size="lg" className="group w-full sm:w-auto gap-2.5 bg-gradient-to-r from-primary-500 to-amber-500 hover:from-primary-600 hover:to-amber-600 text-white font-bold px-8 py-6 rounded-xl shadow-md shadow-primary-500/20 hover:shadow-primary-500/35 transition-all duration-300 hover:-translate-y-0.5">
-                                 Get Started Today
-                                 <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
-                              </Button>
-                           </Link>
+                           <Button size="lg" onClick={() => redirectToAppStore()} className="group w-full sm:w-auto gap-2.5 bg-gradient-to-r from-primary-500 to-amber-500 hover:from-primary-600 hover:to-amber-600 text-white font-bold px-8 py-6 rounded-xl shadow-md shadow-primary-500/20 hover:shadow-primary-500/35 transition-all duration-300 hover:-translate-y-0.5 cursor-pointer">
+                              Get Started Today
+                              <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
+                           </Button>
                         </div>
                      </div>
                   </div>

@@ -104,6 +104,21 @@ function checkAuthenticated(req: NextRequest): boolean {
 export function proxy(request: NextRequest) {
    const { pathname } = request.nextUrl;
 
+   // Immediately redirect any request to post work / new task page to the app store
+   if (
+      pathname === "/tasks/new" ||
+      pathname.startsWith("/tasks/new/") ||
+      pathname.startsWith("/tasks/new?") ||
+      pathname.startsWith("/tasks/new#")
+   ) {
+      const userAgent = request.headers.get("user-agent") || "";
+      const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
+      const storeUrl = isIOS
+         ? "https://apps.apple.com/in/app/extrahands/id6768239211"
+         : "https://play.google.com/store/apps/details?id=com.extrahand";
+      return NextResponse.redirect(storeUrl, { status: 307 });
+   }
+
    const authenticated = checkAuthenticated(request);
 
    // Allow public routes without authentication check
