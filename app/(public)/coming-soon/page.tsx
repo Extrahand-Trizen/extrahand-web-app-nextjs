@@ -1,12 +1,13 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Construction, ArrowRight } from "lucide-react";
 import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
-export default function ComingSoonPage() {
+function ComingSoonContent() {
   const searchParams = useSearchParams();
   const feature = searchParams.get("feature");
   const label = searchParams.get("label");
@@ -51,5 +52,26 @@ export default function ComingSoonPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ComingSoonPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[60vh] flex items-center justify-center px-4 py-16 text-center">
+          <div className="max-w-md mx-auto space-y-6">
+            <div className="w-20 h-20 mx-auto rounded-2xl bg-primary-100 flex items-center justify-center">
+              <Construction className="w-10 h-10 text-primary-600" />
+            </div>
+            <h1 className="text-2xl md:text-3xl font-bold text-secondary-900">
+              Coming Soon
+            </h1>
+          </div>
+        </div>
+      }
+    >
+      <ComingSoonContent />
+    </Suspense>
   );
 }
