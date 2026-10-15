@@ -16,6 +16,7 @@ import {
 } from "@/components/home";
 import { useUserStore } from "@/lib/state/userStore";
 import { useDashboardStore } from "@/lib/state/dashboardStore";
+import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
 type CardState =
    | "first_time"
@@ -101,29 +102,11 @@ export default function HomePage() {
 
    const handleSearch = (e: React.FormEvent) => {
       e.preventDefault();
-      const trimmed = searchQuery.trim();
-
-      const params = new URLSearchParams();
-      if (trimmed) {
-         // Use search text as initial task title
-         params.set("title", trimmed);
-      }
-
-      const qs = params.toString();
-      router.push(qs ? `/tasks/new?${qs}` : "/tasks/new");
+      redirectToAppStore();
    };
 
-   const handleCategoryClick = (category: string) => {
-      const params = new URLSearchParams();
-      // Use the chip label as a helpful starter title
-      params.set("title", category);
-
-      const categoryId = CATEGORY_PARAM_MAP[category];
-      if (categoryId) {
-         params.set("category", categoryId);
-      }
-
-      router.push(`/tasks/new?${params.toString()}`);
+   const handleCategoryClick = (_category: string) => {
+      redirectToAppStore();
    };
 
    return (

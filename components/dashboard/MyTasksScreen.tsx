@@ -11,6 +11,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { getTaskCategoryLabel } from "@/lib/utils/taskCategory";
+import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
 // Mock tasks data (tasks created by current user)
 const mockMyTasks = [
@@ -127,7 +128,7 @@ export default function MyTasksScreen() {
                started!
             </p>
             <button
-               onClick={() => router.push("/tasks/new")}
+               onClick={() => redirectToAppStore()}
                className="px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold text-base"
             >
                Post Your First Task

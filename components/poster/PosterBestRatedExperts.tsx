@@ -2,6 +2,7 @@
 
 import React from "react";
 import type { PosterTopTasker } from "@/types/category";
+import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
 interface PosterBestRatedExpertsProps {
    serviceLabel: string;
@@ -69,12 +70,13 @@ export default function PosterBestRatedExperts({ serviceLabel, topTaskers }: Pos
                         )}
                      </div>
                   </div>
-                  <a
-                     href="/tasks/new"
-                     className="block w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors duration-200 text-sm sm:text-base mt-auto text-center"
+                  <button
+                     type="button"
+                     onClick={() => redirectToAppStore()}
+                     className="block w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors duration-200 text-sm sm:text-base mt-auto text-center cursor-pointer border-0"
                   >
                      Request a Quote
-                  </a>
+                  </button>
                </div>
             ))}
          </div>

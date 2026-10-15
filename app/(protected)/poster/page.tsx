@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { NavBar } from '@/components/layout/NavBar';
 import { Footer } from '@/components/layout/Footer';
+import { redirectToAppStore } from '@/lib/utils/getAppStoreUrl';
 
 const serviceCategories = [
   {
@@ -148,12 +149,12 @@ export default function PosterPage() {
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
-  const handleCategoryClick = (categoryId: number) => {
-    router.push(`/tasks/new?category=${categoryId}`);
+  const handleCategoryClick = (_categoryId: number) => {
+    redirectToAppStore();
   };
 
   const handleCustomTask = () => {
-    router.push('/tasks/new');
+    redirectToAppStore();
   };
 
   // Mobile layout

@@ -21,6 +21,7 @@ import {
    BadgeCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 import { UserProfile } from "@/types/user";
 
 interface DynamicActionCardProps {
@@ -119,7 +120,7 @@ function FirstTimeCard() {
                </p>
                <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button
-                     onClick={() => router.push("/tasks/new")}
+                     onClick={() => redirectToAppStore()}
                      className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold shadow-sm"
                   >
                      Get Help
@@ -357,7 +358,7 @@ function ReturningUserCard({ user }: { user: UserProfile }) {
                </p>
                <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button
-                     onClick={() => router.push("/tasks/new")}
+                     onClick={() => redirectToAppStore()}
                      className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold shadow-sm"
                   >
                      Get Help

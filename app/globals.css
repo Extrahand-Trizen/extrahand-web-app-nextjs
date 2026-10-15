@@ -685,6 +685,70 @@ section h1 {
    white-space: normal !important;
 }
 
+.city-page-rich-content {
+   color: var(--color-secondary-900);
+   line-height: 1.7;
+}
+
+.city-page-rich-content h1,
+.city-page-rich-content h2,
+.city-page-rich-content h3 {
+   color: var(--color-secondary-900);
+   font-weight: 700 !important;
+   line-height: 1.25 !important;
+   margin: 1.25em 0 0.5em !important;
+}
+
+.city-page-rich-content h1 {
+   font-size: 2.25rem !important;
+}
+
+.city-page-rich-content h2 {
+   font-size: 1.875rem !important;
+}
+
+.city-page-rich-content h3 {
+   font-size: 1.5rem !important;
+}
+
+.city-page-rich-content p {
+   margin: 0.75em 0;
+}
+
+.city-page-rich-content ul {
+   list-style: disc;
+   padding-left: 1.5rem;
+}
+
+.city-page-rich-content ol {
+   list-style: decimal;
+   padding-left: 1.5rem;
+}
+
+.city-page-rich-content img {
+   max-width: 100%;
+   height: auto;
+}
+
+.city-page-rich-content a {
+   color: #2563eb;
+   text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+   .city-page-rich-content h1 {
+      font-size: 1.875rem !important;
+   }
+
+   .city-page-rich-content h2 {
+      font-size: 1.5rem !important;
+   }
+
+   .city-page-rich-content h3 {
+      font-size: 1.25rem !important;
+   }
+}
+
 /* Mobile responsive toaster styles */
 @media (max-width: 460px) {
    .toaster {
@@ -708,4 +772,3 @@ section h1 {
       width: calc(100vw - 0.5rem) !important;
    }
 }
-

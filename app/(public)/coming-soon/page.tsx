@@ -1,22 +1,26 @@
 "use client";
 
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Construction, ArrowRight } from "lucide-react";
+import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
-function ComingSoonContent() {
+export default function ComingSoonPage() {
   const searchParams = useSearchParams();
-  const type = searchParams.get("type") || undefined;
-  const label = searchParams.get("label") || undefined;
+  const feature = searchParams.get("feature");
+  const label = searchParams.get("label");
 
-  const isInfoPage = type === "info";
+  const title = label
+    ? `${label} Coming Soon`
+    : feature
+      ? `${feature.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())} Coming Soon`
+      : "Coming Soon";
 
-  const title = isInfoPage ? "Page coming soon" : "Coming Soon!";
+  const isInfoPage = Boolean(feature && label);
 
   return (
-    <div className="min-h-[60vh] flex flex-col items-center justify-center px-4 py-12 text-center">
+    <div className="min-h-[60vh] flex items-center justify-center px-4 py-16 text-center">
       <div className="max-w-md mx-auto space-y-6">
         <div className="w-20 h-20 mx-auto rounded-2xl bg-primary-100 flex items-center justify-center">
           <Construction className="w-10 h-10 text-primary-600" />
@@ -31,12 +35,13 @@ function ComingSoonContent() {
         ) : null}
         <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
           {!isInfoPage && (
-            <Link href="/tasks/new">
-              <Button className="w-full sm:w-auto bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold">
-                Get Help
-                <ArrowRight className="w-4 h-4 ml-2 inline" />
-              </Button>
-            </Link>
+            <Button
+              onClick={() => redirectToAppStore()}
+              className="w-full sm:w-auto bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold cursor-pointer"
+            >
+              Get Help
+              <ArrowRight className="w-4 h-4 ml-2 inline" />
+            </Button>
           )}
           <Link href="/">
             <Button variant="outline" className="w-full sm:w-auto">
@@ -46,13 +51,5 @@ function ComingSoonContent() {
         </div>
       </div>
     </div>
-  );
-}
-
-export default function ComingSoonPage() {
-  return (
-    <Suspense fallback={<div className="min-h-[60vh]" />}>
-      <ComingSoonContent />
-    </Suspense>
   );
 }

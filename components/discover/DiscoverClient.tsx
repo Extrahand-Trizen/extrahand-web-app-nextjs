@@ -17,6 +17,7 @@ import { serviceCategories } from "@/lib/data/categories";
 import { PrefetchTaskWrapper } from "@/hooks/usePrefetchTaskDetails";
 import { getLocationCoordinates } from "@/lib/utils/locationMapping";
 import { useAuth } from "@/lib/auth/context";
+import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
 const DEFAULT_CENTER = { lat: 17.385, lng: 78.4867 }; // Hyderabad
 
@@ -85,7 +86,7 @@ const EmptyState = ({ searchQuery }: { searchQuery: string }) => {
           : "Try adjusting your filters or get help with your own task to get started."}
       </p>
       <Button
-        onClick={() => router.push("/tasks/new")}
+        onClick={() => redirectToAppStore()}
         className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold"
       >
         <Plus className="w-4 h-4 mr-2" />

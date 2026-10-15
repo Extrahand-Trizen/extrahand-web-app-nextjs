@@ -8,17 +8,23 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, TrendingUp } from "lucide-react";
-import { CityInfo } from "@/lib/data/cities";
+import type { CityInfo } from "@/lib/data/cities";
+import type { CityPageContent } from "@/lib/data/city-page-content";
 import { SeoHeroImage } from "@/components/shared/SeoHeroImage";
 import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
 interface CityHeroProps {
    city: CityInfo;
+   content?: CityPageContent["hero"];
 }
 
-export function CityHero({ city }: CityHeroProps) {
+export function CityHero({ city, content }: CityHeroProps) {
    const heroImage =
-      city.heroImage || "/assets/images/cities/default.webp";
+      content?.image || city.heroImage || "/assets/images/cities/default.webp";
+   const heading = content?.heading ?? `Find Local Help in ${city.name}`;
+   const cityNameIndex = heading.lastIndexOf(city.name);
+   const hasCityNameInHeading =
+      cityNameIndex >= 0 && cityNameIndex + city.name.length === heading.length;
 
    return (
       <section className="relative h-[600px] lg:h-[700px] flex items-center justify-center overflow-hidden">
@@ -43,19 +49,27 @@ export function CityHero({ city }: CityHeroProps) {
                   Home
                </Link>
                <span>/</span>
-               <span className="text-white font-medium">{city.name}</span>
+               <span className="text-white font-medium">
+                  {content?.title ?? city.name}
+               </span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-white tracking-tight mb-6 leading-tight">
-               Find Local Help in{" "}
-               <span className="relative inline-block">
-                  {city.name}
-                  <div className="absolute -bottom-2 left-0 right-0 h-1.5 bg-primary-400 rounded-full" />
-               </span>
+               {hasCityNameInHeading ? (
+                  <>
+                     {heading.slice(0, cityNameIndex)}
+                     <span className="relative inline-block">
+                        {city.name}
+                        <div className="absolute -bottom-2 left-0 right-0 h-1.5 bg-primary-400 rounded-full" />
+                     </span>
+                  </>
+               ) : (
+                  heading
+               )}
             </h1>
 
             <p className="text-xl sm:text-2xl text-white/95 mb-10 leading-relaxed max-w-4xl mx-auto font-light">
-               {city.description}
+               {content?.description ?? city.description}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">

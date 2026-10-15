@@ -9,6 +9,7 @@ import {
 } from "@/lib/utils/serviceCategoryAnchors";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
 interface CategorySubservicesSectionProps {
    parentSlug: string;
@@ -79,8 +80,8 @@ export function CategorySubservicesSection({
             </ul>
             {variant === "poster" && (
                <div className="mt-8">
-                  <Button asChild>
-                     <Link href="/tasks/new">Get help</Link>
+                  <Button onClick={() => redirectToAppStore()} className="cursor-pointer">
+                     Get help
                   </Button>
                </div>
             )}

@@ -8,6 +8,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
 interface MyTasksEmptyStateProps {
    hasFilters: boolean;
@@ -29,7 +30,7 @@ export function MyTasksEmptyState({ hasFilters }: MyTasksEmptyStateProps) {
             </p>
             {!hasFilters && (
                <Button
-                  onClick={() => router.push("/tasks/new")}
+                  onClick={() => redirectToAppStore()}
                   className="bg-primary-600 hover:bg-primary-700"
                >
                   <Plus className="w-4 h-4 mr-2" />

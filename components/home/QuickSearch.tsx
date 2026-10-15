@@ -8,6 +8,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 import { Search, Command } from "lucide-react";
 import {
    CommandDialog,
@@ -77,7 +78,7 @@ export function QuickSearch({ tasks }: QuickSearchProps) {
                <CommandGroup heading="Quick Actions">
                   <CommandItem
                      onSelect={() => {
-                        router.push("/tasks/new");
+                        redirectToAppStore();
                         setOpen(false);
                      }}
                   >

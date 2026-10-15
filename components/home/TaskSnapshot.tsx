@@ -17,6 +17,7 @@ import {
    ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 import type { TaskSnapshotItem } from "@/types/dashboard";
 import type { Task } from "@/types/task";
 
@@ -263,7 +264,7 @@ function TaskSnapshotEmpty() {
             </p>
             <div className="flex justify-center gap-3">
                <Button
-                  onClick={() => router.push("/tasks/new")}
+                  onClick={() => redirectToAppStore()}
                   className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold"
                >
                   <Plus className="w-4 h-4 mr-2" />

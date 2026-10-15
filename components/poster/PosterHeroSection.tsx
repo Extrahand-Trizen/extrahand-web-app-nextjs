@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import type { PosterCategoryDetail, PosterWhyBookFeature } from "@/types/category";
 import { HeroSection } from "@/components/categories";
+import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
 interface PosterHeroSectionProps {
    category: PosterCategoryDetail | null;
@@ -41,12 +42,13 @@ export default function PosterHeroSection({
             ))}
             <p className="text-xs text-gray-500 pl-7">... or anything else</p>
          </div>
-         <Link
-            href={slug ? `/tasks/new?category=${encodeURIComponent(slug)}` : "/tasks/new"}
-            className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-4 rounded-lg transition-colors duration-200 text-center text-sm sm:text-base"
+         <button
+            type="button"
+            onClick={() => redirectToAppStore()}
+            className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-4 rounded-lg transition-colors duration-200 text-center text-sm sm:text-base cursor-pointer border-0"
          >
             Hire top-rated {serviceLabel.toLowerCase()} near me
-         </Link>
+         </button>
          <p className="text-xs text-gray-500 text-center mt-3">
             It only takes 2 minutes. And it is free.
          </p>

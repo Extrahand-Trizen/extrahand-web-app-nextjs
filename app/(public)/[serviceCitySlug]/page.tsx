@@ -10,6 +10,7 @@ import {
 import { getPublishedSeoPage, getAllPublishedSeoPages } from "@/lib/api/endpoints/seoPages";
 import SeoPageRenderer from "@/components/SeoPageRenderer";
 import SeoPageWrapper from "@/components/SeoPageWrapper";
+import { BookServiceButton } from "@/components/shared/BookServiceButton";
 import { getCityBySlug } from "@/lib/data/cities";
 
 interface ServiceCityPageProps {
@@ -750,12 +751,9 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
                      </p>
 
                      <div className="mt-8 flex flex-wrap gap-3">
-                        <Link
-                           href={postTaskHref}
-                           className="rounded-lg bg-primary-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-700"
-                        >
+                        <BookServiceButton className="rounded-lg bg-primary-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-700 cursor-pointer">
                            Book This Service
-                        </Link>
+                        </BookServiceButton>
                         <Link
                            href={`/locations/${citySlug}`}
                            className="rounded-lg border border-secondary-300 bg-white px-5 py-3 text-sm font-semibold text-secondary-800 transition hover:bg-secondary-100"

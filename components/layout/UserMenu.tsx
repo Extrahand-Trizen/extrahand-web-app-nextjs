@@ -2,6 +2,7 @@
 
 import { UserRound } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
 const USER_MENU_ITEMS = [
    { label: "Home", route: "/home" },
@@ -62,8 +63,12 @@ export const UserMenu: React.FC<UserMenuProps> = ({
    }, [open, setOpen]);
 
    const handleNavigate = (route: string) => {
-      onNavigate(route);
       setOpen(false);
+      if (route === "/tasks/new" || route.startsWith("/tasks/new")) {
+         redirectToAppStore();
+         return;
+      }
+      onNavigate(route);
    };
 
    const tasksRoute = role === "tasker" ? "/tasks?tab=myapplications" : "/tasks?tab=mytasks";
