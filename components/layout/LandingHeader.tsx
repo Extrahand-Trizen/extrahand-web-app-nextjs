@@ -29,9 +29,8 @@ import {
    Home,
    LayoutDashboard,
    User as UserIcon,
-   PlusCircle,
    LogOut,
-   Briefcase,
+   PlusCircle,
    HelpCircle,
    Grid3x3,
    MessageCircle,
@@ -66,7 +65,6 @@ const navItems: Array<{
    hasDropdown?: boolean;
 }> = [
    { label: "Categories", href: "#categories", hasDropdown: true },
-   { label: "Start earning", href: "/discover" },
    { label: "How it works", href: "/how-it-works#how-it-works" },
 ];
 
@@ -89,7 +87,7 @@ const getCategoryDisplayName = (name: string, role: "poster" | "tasker") => {
    return trimmed.replace(/\s+\bTasks\b\s*$/i, "").trim();
 };
 
-const GuestCtaButtons = ({ onBecomeTasker }: { onBecomeTasker: () => void }) => (
+const GuestCtaButtons = () => (
    <>
       <Link href="/login">
          <Button
@@ -109,14 +107,6 @@ const GuestCtaButtons = ({ onBecomeTasker }: { onBecomeTasker: () => void }) => 
             Signup
          </Button>
       </Link>
-      <Button
-         size="sm"
-         variant="outline"
-         onClick={onBecomeTasker}
-         className="border-secondary-300 text-secondary-700 font-medium"
-      >
-         Become a Helper
-      </Button>
    </>
 );
 
@@ -348,10 +338,6 @@ export const LandingHeader: React.FC = () => {
       }
    }, [logout, router]);
 
-   const handleBecomeTasker = useCallback(() => {
-      router.push("/earn-money");
-   }, [router]);
-
    const isLocationActive =
       locationItems.some((loc) => pathname === loc.href) ||
       pathname.startsWith("/locations");
@@ -392,17 +378,17 @@ export const LandingHeader: React.FC = () => {
 
                   {/* Desktop Navigation */}
                   <nav className="hidden lg:flex items-center gap-4 xl:gap-6">
-                     <Button 
-                        variant={pathname === "/tasks/new" ? "default" : "ghost"}
+                     <Button
+                        variant={pathname === "/book-now" ? "default" : "ghost"}
                         className={cn(
                            "font-semibold",
-                           pathname === "/tasks/new"
+                           pathname === "/book-now"
                               ? "bg-primary-500 hover:bg-primary-600 text-secondary-900 shadow-sm"
                               : "text-secondary-600 hover:text-secondary-900 hover:bg-secondary-50"
                         )}
-                        onClick={() => redirectToAppStore()}
+                        onClick={() => router.push("/book-now")}
                      >
-                        Get Help
+                        Book Now
                      </Button>
                      {navItems.map((item) =>
                         item.hasDropdown ? (
@@ -630,7 +616,7 @@ export const LandingHeader: React.FC = () => {
                   {/* Desktop CTA Group — fixed min width avoids auth-state swap CLS */}
                   <div className="hidden lg:flex items-center justify-end gap-2 min-w-[280px]">
                      {!isAuthenticated ? (
-                        <GuestCtaButtons onBecomeTasker={handleBecomeTasker} />
+                        <GuestCtaButtons />
                      ) : (
                         <>
                            <NotificationCenter />
@@ -654,15 +640,15 @@ export const LandingHeader: React.FC = () => {
                      )}
                   </div>
 
-                  {/* Mobile: Post Task + Menu Button — reserved width for stable header */}
+                  {/* Mobile menu button — reserved width for stable header */}
                   <div className="flex items-center justify-end gap-2 lg:hidden min-w-[148px]">
                      <Button
                         size="sm"
                         className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold shadow-sm"
-                        onClick={() => redirectToAppStore()}
+                        onClick={() => router.push("/book-now")}
                      >
                         <PlusCircle className="w-4 h-4 mr-1.5" />
-                        Get Help
+                        Book Now
                      </Button>
                      <button
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -803,18 +789,6 @@ export const LandingHeader: React.FC = () => {
                                  <span className="text-sm font-medium">Categories</span>
                               </button>
                               <button
-                                 onClick={() => handleNavClick("/discover")}
-                                 className={cn(
-                                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors",
-                                    pathname === "/discover"
-                                       ? "text-primary-600 bg-primary-50 font-semibold"
-                                       : "text-secondary-700 hover:bg-secondary-50"
-                                 )}
-                              >
-                                 <Briefcase className="w-4 h-4" />
-                                 <span className="text-sm font-medium">Start Earning</span>
-                              </button>
-                              <button
                                  onClick={() =>
                                     handleNavClick("/how-it-works#how-it-works")
                                  }
@@ -882,33 +856,21 @@ export const LandingHeader: React.FC = () => {
 
                            {/* CTA Section */}
                            <div className="px-2">
-                              <button 
+                              <button
                                  onClick={() => {
                                     setIsMobileMenuOpen(false);
-                                    redirectToAppStore();
+                                    router.push("/book-now");
                                  }}
                                  className={cn(
                                     "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors font-semibold",
-                                    pathname === "/tasks/new"
+                                    pathname === "/book-now"
                                        ? "text-primary-600 bg-primary-50"
                                        : "text-secondary-700 hover:bg-secondary-50"
                                  )}
                               >
                                  <PlusCircle className="w-4 h-4" />
-                                 <span className="text-sm">Get Help</span>
+                                 <span className="text-sm">Book Now</span>
                               </button>
-                              {!isAuthenticated && (
-                                 <button
-                                    onClick={() => {
-                                       setIsMobileMenuOpen(false);
-                                       handleBecomeTasker();
-                                    }}
-                                    className="w-full flex items-center gap-3 px-3 py-2.5 text-secondary-700 hover:bg-secondary-50 rounded-lg transition-colors"
-                                 >
-                                    <Briefcase className="w-4 h-4" />
-                                    <span className="text-sm font-medium">Become a Helper</span>
-                                 </button>
-                              )}
                            </div>
                         </nav>
 

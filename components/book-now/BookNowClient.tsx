@@ -32,6 +32,17 @@ const categoryImageFallbacks: Array<[RegExp, string]> = [
   [/furniture|carpenter|mount/i, "/assets/mobilescreens/furniture.webp"],
 ];
 
+const bookNowCategoryImages: Record<string, string> = {
+  "Hourly Based Services": "/assets/Book-now/hourly-based.png",
+  "Home Cleaning": "/assets/Book-now/fullhouse-booknow.jpg",
+  "AC Services": "/assets/Book-now/acrepair-booknow.jpg",
+  "Appliance Repair": "/assets/Book-now/wachingmachinecheckup-booknow.jpg",
+  "Personal Assistance": "/assets/Book-now/personal-assistance_card.jpg",
+  "Pest Control": "/assets/Book-now/Pest-Control_card.webp",
+  Electrician: "/assets/Book-now/Switch&Socket%E2%80%93SwitchReplacement.png",
+  Plumbing: "/assets/Book-now/plumbing-tap-mixer.jpg",
+};
+
 function slugify(value: string): string {
   return value
     .toLowerCase()
@@ -41,6 +52,9 @@ function slugify(value: string): string {
 }
 
 function getCategoryImage(category: Category): string {
+  const bookNowImage = bookNowCategoryImages[category.name.trim()];
+  if (bookNowImage) return bookNowImage;
+
   const source = (category.heroImage || "").trim();
   if (source) return source;
 
@@ -56,14 +70,22 @@ function ServiceCategoryImage({ category }: { category: Category }) {
   const key = `${category.slug}:${image}`;
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-gradient-to-br from-primary-100 via-amber-50 to-orange-100">
+    <div className="relative aspect-[3/2] w-full overflow-hidden bg-gradient-to-br from-primary-100 via-amber-50 to-orange-100">
+      {/* Fill the frame behind the fully visible image to avoid empty side bars. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={image}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 h-full w-full scale-110 object-cover opacity-30 blur-xl"
+      />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         key={key}
         src={image}
         alt=""
         aria-hidden="true"
-        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        className="absolute inset-0 h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.02]"
         onError={(event) => {
           const target = event.currentTarget;
           if (target.src.endsWith(fallback)) {
@@ -172,8 +194,8 @@ export default function BookNowClient({
               <div className="relative aspect-[4/3] overflow-hidden rounded-[1.25rem] bg-gradient-to-br from-primary-100 to-orange-100">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/assets/mosted-booked-services/homeclean.webp"
-                  alt="ExtraHand home services"
+                  src="/assets/Book-now/hero.png"
+                  alt="Book trusted home services with ExtraHand"
                   className="h-full w-full object-cover"
                 />
                 <div className="absolute inset-x-4 bottom-4 rounded-2xl border border-white/70 bg-white/95 p-4 shadow-lg backdrop-blur sm:inset-x-5 sm:bottom-5">
@@ -264,7 +286,7 @@ export default function BookNowClient({
                       id={`category-${slugify(category.slug)}`}
                       className="group overflow-hidden rounded-2xl border border-secondary-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-primary-300 hover:shadow-lg"
                     >
-                      <div className="h-28 overflow-hidden sm:h-36">
+                      <div className="overflow-hidden">
                         <ServiceCategoryImage category={category} />
                       </div>
                       <div className="p-3.5 sm:p-4">

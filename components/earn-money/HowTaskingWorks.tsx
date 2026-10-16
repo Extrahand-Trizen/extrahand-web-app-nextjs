@@ -10,7 +10,7 @@ export function HowTaskingWorks() {
    const steps = [
       {
          icon: UserCircle,
-         title: "Create a helper profile",
+         title: "Create a partner profile",
          description:
             "Add your skills, service area, and complete ID verification.",
       },
