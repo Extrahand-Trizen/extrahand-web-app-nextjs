@@ -20,12 +20,7 @@ export const getPublishedCityPage = cache(
       const url = `${CONTENT_ADMIN_URL}/api/city-pages/published?citySlug=${encodeURIComponent(citySlug)}`;
 
       try {
-         const response = await fetch(url, {
-            next: {
-               revalidate: 300,
-               tags: [`city-page-${citySlug}`],
-            },
-         });
+         const response = await fetch(url, { cache: "no-store" });
          if (response.status === 404) return null;
          if (!response.ok) {
             throw new Error(

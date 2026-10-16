@@ -19,6 +19,8 @@ interface PageProps {
    params: Promise<{ city: string }>;
 }
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({
    params,
 }: PageProps): Promise<Metadata> {

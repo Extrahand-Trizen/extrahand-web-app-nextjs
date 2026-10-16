@@ -13,7 +13,8 @@ import {
   ChevronDown,
   ArrowRight,
 } from "lucide-react";
-import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
+import { buildBookNowUrl } from "@/lib/utils/bookNowUrl";
+import HyderabadServiceAreas from "@/components/HyderabadServiceAreas";
 
 interface SeoPageRendererProps {
   page: SeoPage;
@@ -123,13 +124,13 @@ export default function SeoPageRenderer({ page }: SeoPageRendererProps) {
 
       {/* CTA buttons */}
       <div className="pt-2 flex flex-wrap gap-4 items-center">
-        <button
-          onClick={() => redirectToAppStore()}
+        <Link
+          href={buildBookNowUrl()}
           className="group inline-flex items-center gap-2 rounded-xl bg-primary-600 px-6 py-3.5 font-bold text-white shadow-sm shadow-primary-600/10 hover:bg-primary-700 hover:shadow-md transition-all duration-200 cursor-pointer"
         >
           Book this service
           <ArrowRight className="h-4.5 w-4.5 transition-transform group-hover:translate-x-0.5" />
-        </button>
+        </Link>
         <a
           href="#faq"
           className="inline-flex items-center justify-center rounded-xl border border-secondary-300 bg-white px-6 py-3.5 font-semibold text-secondary-700 shadow-2xs hover:bg-secondary-50 transition-all duration-200"
@@ -189,6 +190,17 @@ export default function SeoPageRenderer({ page }: SeoPageRendererProps) {
           })()}
         </div>
       </section>
+
+      {page.citySlug === "hyderabad" &&
+        ((page.pageType === "city" && page.slug.endsWith("-in-hyderabad")) ||
+          page.pageType === "area") && (
+          <HyderabadServiceAreas
+            serviceName={page.categoryName}
+            categorySlug={page.categorySlug}
+            currentAreaSlug={page.pageType === "area" ? page.areaSlug : null}
+            currentPageSlug={page.slug}
+          />
+        )}
 
       {/* ================= WHY CHOOSE ================= */}
       {(page.whyChooseHeading || page.whyChooseDescription || (page.whyChoose && page.whyChoose.length > 0)) && (

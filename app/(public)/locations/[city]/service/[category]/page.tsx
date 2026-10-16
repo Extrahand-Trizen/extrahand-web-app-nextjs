@@ -6,6 +6,7 @@ import SeoPageRenderer from "@/components/SeoPageRenderer";
 import SeoPageWrapper from "@/components/SeoPageWrapper";
 import { BookServiceButton } from "@/components/shared/BookServiceButton";
 import { getCityBySlug } from "@/lib/data/cities";
+import { buildBookNowUrl } from "@/lib/utils/bookNowUrl";
 import {
    getCategoryById,
    serviceCategories,
@@ -212,7 +213,10 @@ export default async function CityServicePage({
                   >
                      Explore All Services in {city.name}
                   </Link>
-                  <BookServiceButton className="inline-flex rounded-lg bg-primary-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-700 cursor-pointer">
+                  <BookServiceButton
+                     href={buildBookNowUrl()}
+                     className="inline-flex rounded-lg bg-primary-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-700 cursor-pointer"
+                  >
                      Request This Service
                   </BookServiceButton>
                </div>

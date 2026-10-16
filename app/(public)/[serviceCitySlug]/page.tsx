@@ -12,6 +12,8 @@ import SeoPageRenderer from "@/components/SeoPageRenderer";
 import SeoPageWrapper from "@/components/SeoPageWrapper";
 import { BookServiceButton } from "@/components/shared/BookServiceButton";
 import { getCityBySlug } from "@/lib/data/cities";
+import { buildBookNowUrl } from "@/lib/utils/bookNowUrl";
+import HyderabadServiceAreas from "@/components/HyderabadServiceAreas";
 
 interface ServiceCityPageProps {
    params: Promise<{ serviceCitySlug: string }>;
@@ -751,7 +753,10 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
                      </p>
 
                      <div className="mt-8 flex flex-wrap gap-3">
-                        <BookServiceButton className="rounded-lg bg-primary-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-700 cursor-pointer">
+                        <BookServiceButton
+                           href={buildBookNowUrl()}
+                           className="rounded-lg bg-primary-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-700 cursor-pointer"
+                        >
                            Book This Service
                         </BookServiceButton>
                         <Link
@@ -817,6 +822,14 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
                      </ul>
                   </article>
 
+                  {!isNonHyderabadCity && (
+                     <HyderabadServiceAreas
+                        serviceName={servicePage.serviceName}
+                        categorySlug={servicePage.slug.replace(/-in-hyderabad$/, "")}
+                        className="rounded-2xl border border-secondary-200 bg-white p-6 shadow-xs lg:col-span-2"
+                     />
+                  )}
+
                   <article className="rounded-2xl border border-secondary-200 bg-white p-6 shadow-xs">
                      <h2 className="text-xl font-semibold text-secondary-900">
                         Why People Choose ExtraHand
@@ -864,7 +877,7 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
                            : coverageAreas.map((area) => (
                               <Link
                                  key={area}
-                                 href={`/locations/hyderabad/${toAreaSlug(area)}/${servicePage.slug}`}
+                                 href={`/${servicePage.slug.replace(/-in-hyderabad$/, "")}-in-${toAreaSlug(area)}`}
                                  className="rounded-lg border border-secondary-200 bg-secondary-50 px-3 py-2 text-sm text-secondary-800 transition hover:border-primary-300 hover:bg-white"
                               >
                                  {area}

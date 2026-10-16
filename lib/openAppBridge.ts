@@ -55,6 +55,28 @@ export function buildHomeServicesDeepLink(): string {
   return buildAppDeepLink("services");
 }
 
+export function buildServiceDeepLink({
+  categoryId,
+  categorySlug,
+  subcategoryId,
+  subcategorySlug,
+}: {
+  categoryId?: string;
+  categorySlug: string;
+  subcategoryId?: string;
+  subcategorySlug: string;
+}): string {
+  const params = new URLSearchParams({
+    categorySlug,
+    subcategorySlug,
+  });
+
+  if (categoryId) params.set("categoryId", categoryId);
+  if (subcategoryId) params.set("subcategoryId", subcategoryId);
+
+  return `${buildHomeServicesDeepLink()}?${params.toString()}`;
+}
+
 export function buildTaskOpenDeepLink(taskId: string, track = false): string {
   const id = encodeURIComponent(taskId.trim());
   return track

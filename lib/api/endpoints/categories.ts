@@ -48,7 +48,8 @@ function getContentAdminBaseUrls(): string[] {
  */
 async function fetchContentAdmin<T>(
    path: string,
-   options: RequestInit = {}
+   options: RequestInit = {},
+   throwOnError = false
 ): Promise<T | null> {
    const baseUrls = getContentAdminBaseUrls();
 
@@ -91,6 +92,10 @@ async function fetchContentAdmin<T>(
       }
    }
 
+   if (throwOnError) {
+      throw new Error(`Unable to fetch content-admin resource: ${path}`);
+   }
+
    return null;
 }
 
@@ -126,17 +131,25 @@ function isPublicWebListItem(item: {
 
 async function fetchAllContentAdminPages<T>(
    path: string,
-   pageSize = 200
+   pageSize = 200,
+   throwOnError = false
 ): Promise<T[]> {
    const firstPagePath = path.includes("?")
       ? `${path}&page=1&limit=${pageSize}`
       : `${path}?page=1&limit=${pageSize}`;
 
    const firstPayload = await fetchContentAdmin<T[] | PaginatedListResponse<T>>(
-      firstPagePath
-   );
+       firstPagePath,
+       {},
+       throwOnError
+    );
 
-   if (!firstPayload) return [];
+    if (!firstPayload) {
+       if (throwOnError) {
+          throw new Error(`Content-admin returned no data for ${path}`);
+       }
+       return [];
+    }
 
    if (Array.isArray(firstPayload)) {
       return firstPayload;
@@ -160,7 +173,11 @@ async function fetchAllContentAdminPages<T>(
 
       const pagePayload = await fetchContentAdmin<
          T[] | PaginatedListResponse<T>
-      >(pagePath);
+      >(pagePath, {}, throwOnError);
+
+      if (!pagePayload && throwOnError) {
+         throw new Error(`Content-admin returned no data for ${pagePath}`);
+      }
 
       allItems.push(...normalizeListResponse(pagePayload));
    }
@@ -187,11 +204,13 @@ export const categoriesApi = {
     * @returns Array of categories or empty array on error
     */
    async getCategories(
-      options: { includeUnpublished?: boolean } = {}
+      options: { includeUnpublished?: boolean; throwOnError?: boolean } = {}
    ): Promise<CategoriesListItem[]> {
       const query = options.includeUnpublished ? "?includeUnpublished=true" : "";
       const categories = await fetchAllContentAdminPages<CategoriesListItem>(
-         `/api/task-categories${query}`
+         `/api/task-categories${query}`,
+         200,
+         options.throwOnError
       );
 
       if (categories.length === 0) return [];
@@ -233,9 +252,13 @@ export const categoriesApi = {
    /**
     * Get all published subcategories across every parent category.
     */
-   async getAllSubcategories(): Promise<Subcategory[]> {
+   async getAllSubcategories(
+      options: { throwOnError?: boolean } = {}
+   ): Promise<Subcategory[]> {
       const subcategories = await fetchAllContentAdminPages<Subcategory>(
-         "/api/task-subcategories"
+         "/api/task-subcategories",
+         200,
+         options.throwOnError
       );
 
       if (subcategories.length === 0) return [];
