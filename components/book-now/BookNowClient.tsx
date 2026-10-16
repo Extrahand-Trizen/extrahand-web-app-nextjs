@@ -39,7 +39,7 @@ const bookNowCategoryImages: Record<string, string> = {
   "Appliance Repair": "/assets/Book-now/wachingmachinecheckup-booknow.jpg",
   "Personal Assistance": "/assets/Book-now/personal-assistance_card.jpg",
   "Pest Control": "/assets/Book-now/Pest-Control_card.webp",
-  Electrician: "/assets/Book-now/Switch&Socket%E2%80%93SwitchReplacement.png",
+  Electrician: "/assets/Book-now/electrician-switch-socket.png",
   Plumbing: "/assets/Book-now/plumbing-tap-mixer.jpg",
 };
 
