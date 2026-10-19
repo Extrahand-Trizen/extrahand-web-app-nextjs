@@ -74,11 +74,26 @@ function AreaHeroImage({ src, alt }: { src: string; alt: string }) {
 const richTextClasses = 
   "text-[14px] text-secondary-600 leading-relaxed " +
   "[&_p]:mb-4 [&_p]:last:mb-0 " +
+  "[&_h1]:mb-4 [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:text-secondary-900 " +
+  "[&_h2]:mb-3 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-secondary-900 " +
+  "[&_h3]:mb-2 [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:text-secondary-900 " +
   "[&_a]:text-primary-600 [&_a]:font-semibold [&_a]:underline hover:[&_a]:text-primary-700 " +
   "[&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-4 [&_ul]:mt-2 " +
   "[&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-4 [&_ol]:mt-2 " +
   "[&_li]:mb-1.5 [&_li]:last:mb-0 " +
-  "[&_strong]:font-semibold [&_strong]:text-secondary-900";
+  "[&_strong]:font-semibold [&_strong]:text-secondary-900 " +
+  "[&_img]:my-4 [&_img]:max-w-full [&_img]:h-auto " +
+  "[&_blockquote]:my-4 [&_blockquote]:border-l-4 [&_blockquote]:border-primary-300 [&_blockquote]:pl-4";
+
+const customRichTextClasses =
+  "text-lg font-serif text-secondary-900 leading-relaxed " +
+  "[&_h1]:font-sans [&_h1]:text-3xl sm:[&_h1]:text-4xl [&_h1]:font-extrabold [&_h1]:mt-8 [&_h1]:mb-3 " +
+  "[&_h2]:font-sans [&_h2]:text-2xl sm:[&_h2]:text-3xl [&_h2]:font-bold [&_h2]:mt-6 [&_h2]:mb-2 " +
+  "[&_h3]:font-sans [&_h3]:text-xl sm:[&_h3]:text-2xl [&_h3]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2 " +
+  "[&_blockquote]:border-l-4 [&_blockquote]:border-primary-500 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-secondary-700 [&_blockquote]:my-5 " +
+  "[&_ul]:list-disc [&_ul]:ml-6 [&_ul]:my-3 [&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:my-3 " +
+  "[&_li]:my-1.5 [&_a]:text-primary-600 [&_a]:underline hover:[&_a]:text-primary-700 " +
+  "[&_p]:my-3 [&_img]:rounded-xl [&_img]:max-w-full [&_img]:my-6";
 
 const SectionHeader = ({ title, subtitle }: { title: string; subtitle?: string | null }) => (
   <div className="mb-8 border-l-4 border-primary-500 pl-4">
@@ -92,6 +107,70 @@ const SectionHeader = ({ title, subtitle }: { title: string; subtitle?: string |
 export default function SeoPageRenderer({ page }: SeoPageRendererProps) {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const postTaskHref = `/tasks/new?source=seo&service=${page.categorySlug}`;
+  const sectionOrder = page.sectionOrder || [];
+  const faqOrderIndex = sectionOrder.indexOf("faqs");
+  const orderedSeoBlocks = [...(page.seoContentBlocks || [])].sort((a, b) => {
+    const aIndex = sectionOrder.indexOf(`seo:${a.id}`);
+    const bIndex = sectionOrder.indexOf(`seo:${b.id}`);
+    if (aIndex < 0) return bIndex < 0 ? 0 : 1;
+    if (bIndex < 0) return -1;
+    return aIndex - bIndex;
+  });
+  const renderSeoBlocks = (afterFaqs: boolean) =>
+    orderedSeoBlocks
+      .filter((block) => {
+        const blockOrderIndex = sectionOrder.indexOf(`seo:${block.id}`);
+        return faqOrderIndex >= 0 && blockOrderIndex >= 0
+          ? (blockOrderIndex > faqOrderIndex) === afterFaqs
+          : !afterFaqs;
+      })
+      .map((block, index) => {
+        const html = block.html || "";
+        const hasHtmlContent =
+          !!html.replace(/<[^>]*>/g, "").trim() ||
+          /<(img|iframe|video)\b/i.test(html);
+        const hasFaqContent = block.faqs?.some(
+          (faq) => faq.question.trim() || faq.answer.trim()
+        );
+
+        if (!block.title?.trim() && !hasHtmlContent && !hasFaqContent) {
+          return null;
+        }
+
+        return (
+          <section key={block.id || index} className="space-y-6">
+            {block.title?.trim() && <SectionHeader title={block.title} />}
+            {block.type === "faq" ? (
+              <div className="space-y-4">
+                {block.faqs?.map((faq, faqIndex) => (
+                  <article
+                    key={faq.id || faqIndex}
+                    className="rounded-xl border border-secondary-200 bg-white p-5"
+                  >
+                    {faq.question && (
+                      <h3 className="font-semibold text-secondary-900">
+                        {faq.question}
+                      </h3>
+                    )}
+                    {faq.answer && (
+                      <p className="mt-2 text-sm leading-relaxed text-secondary-600">
+                        {faq.answer}
+                      </p>
+                    )}
+                  </article>
+                ))}
+              </div>
+            ) : (
+              hasHtmlContent && (
+                <div
+                  className={customRichTextClasses}
+                  dangerouslySetInnerHTML={{ __html: html }}
+                />
+              )
+            )}
+          </section>
+        );
+      });
 
   const renderEditorialBlock = () => (
     <div className="max-w-[720px] space-y-6 text-left">
@@ -268,12 +347,38 @@ export default function SeoPageRenderer({ page }: SeoPageRendererProps) {
       )}
 
       {/* ================= SERVICE SOLUTIONS ================= */}
-      {(page.serviceSolutionsHeading || (page.serviceSolutions && page.serviceSolutions.length > 0)) && (
+      {(page.serviceSolutionsHeading ||
+        page.serviceSolutionsDescription ||
+        (page.serviceSolutions && page.serviceSolutions.length > 0) ||
+        (page.serviceSolutionsPoints && page.serviceSolutionsPoints.length > 0)) && (
         <section className="space-y-6">
           <SectionHeader
             title={page.serviceSolutionsHeading || "Service Solutions"}
             subtitle={page.serviceSolutionsHeading2}
           />
+          {page.serviceSolutionsDescription && (
+            <div
+              className={richTextClasses}
+              dangerouslySetInnerHTML={{ __html: page.serviceSolutionsDescription }}
+            />
+          )}
+          {page.serviceSolutionsPoints && page.serviceSolutionsPoints.length > 0 && (
+            <div className="grid gap-4 sm:grid-cols-2 pt-2">
+              {page.serviceSolutionsPoints.map((item, i) => (
+                <div
+                  key={i}
+                  className="flex items-start gap-3 rounded-xl border border-secondary-100 bg-secondary-50/40 p-4"
+                >
+                  <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
+                    <Check className="h-3 w-3" />
+                  </div>
+                  <span className="text-sm font-semibold leading-relaxed text-secondary-750">
+                    {item}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
           {page.serviceSolutions && page.serviceSolutions.length > 0 && (
             <div className="grid gap-6 sm:grid-cols-2 pt-2">
               {page.serviceSolutions.map((item, i) => (
@@ -370,34 +475,61 @@ export default function SeoPageRenderer({ page }: SeoPageRendererProps) {
       )}
 
       {/* ================= HOW IT WORKS ================= */}
-      {page.howItWorks && page.howItWorks.length > 0 && (
+      {((page.howItWorks && page.howItWorks.length > 0) ||
+        page.howItWorksDescription ||
+        (page.howItWorksPoints && page.howItWorksPoints.length > 0)) && (
         <section className="space-y-6">
           <SectionHeader title="How ExtraHand Works" />
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 pt-2">
-            {page.howItWorks.map((step) => (
-              <article
-                key={step.step}
-                className="relative rounded-2xl border border-secondary-200/60 bg-white p-6 shadow-2xs hover:border-secondary-300 transition-colors"
-              >
-                <div className="absolute top-6 right-6 text-4xl font-extrabold text-secondary-100/70 leading-none select-none">
-                  {String(step.step).padStart(2, "0")}
-                </div>
-                <div className="flex flex-col gap-4">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-600 text-white font-bold">
-                    {step.step}
+          {page.howItWorksDescription && (
+            <div
+              className={richTextClasses}
+              dangerouslySetInnerHTML={{ __html: page.howItWorksDescription }}
+            />
+          )}
+          {page.howItWorksPoints && page.howItWorksPoints.length > 0 && (
+            <div className="grid gap-4 sm:grid-cols-2 pt-2">
+              {page.howItWorksPoints.map((item, i) => (
+                <div
+                  key={i}
+                  className="flex items-start gap-3 rounded-xl border border-secondary-100 bg-secondary-50/40 p-4"
+                >
+                  <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
+                    <Check className="h-3 w-3" />
                   </div>
-                  <div>
-                    <h3 className="text-base font-bold text-secondary-900">
-                      {step.title}
-                    </h3>
-                    <p className="mt-2 text-sm leading-relaxed text-secondary-600">
-                      {step.description}
-                    </p>
-                  </div>
+                  <span className="text-sm font-semibold leading-relaxed text-secondary-750">
+                    {item}
+                  </span>
                 </div>
-              </article>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
+          {page.howItWorks && page.howItWorks.length > 0 && (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 pt-2">
+              {page.howItWorks.map((step) => (
+                <article
+                  key={step.step}
+                  className="relative rounded-2xl border border-secondary-200/60 bg-white p-6 shadow-2xs hover:border-secondary-300 transition-colors"
+                >
+                  <div className="absolute top-6 right-6 text-4xl font-extrabold text-secondary-100/70 leading-none select-none">
+                    {String(step.step).padStart(2, "0")}
+                  </div>
+                  <div className="flex flex-col gap-4">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-600 text-white font-bold">
+                      {step.step}
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-secondary-900">
+                        {step.title}
+                      </h3>
+                      <p className="mt-2 text-sm leading-relaxed text-secondary-600">
+                        {step.description}
+                      </p>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
       )}
 
@@ -435,31 +567,66 @@ export default function SeoPageRenderer({ page }: SeoPageRendererProps) {
       )}
 
       {/* ================= COMMON PROBLEMS ================= */}
-      {page.commonProblems && page.commonProblems.length > 0 && (
+      {((page.commonProblems && page.commonProblems.length > 0) || page.commonProblemsDescription || page.commonProblemsHeading) && (
         <section className="space-y-6">
-          <SectionHeader title="Common Problems" />
-          <div className="grid gap-4 sm:grid-cols-2 pt-2">
-            {page.commonProblems.map((problem, i) => (
-              <div
-                key={i}
-                className="flex items-start gap-3.5 rounded-xl border border-amber-100 bg-amber-50/20 p-4"
-              >
-                <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
-                  <AlertTriangle className="h-3.5 w-3.5" />
+          <SectionHeader title={page.commonProblemsHeading || "Common Problems"} />
+          {page.commonProblemsDescription && (
+            <div
+              className={richTextClasses}
+              dangerouslySetInnerHTML={{ __html: page.commonProblemsDescription }}
+            />
+          )}
+          {page.commonProblems && page.commonProblems.length > 0 && (
+            <div className="grid gap-4 sm:grid-cols-2 pt-2">
+              {page.commonProblems.map((problem, i) => (
+                <div
+                  key={i}
+                  className="flex items-start gap-3.5 rounded-xl border border-amber-100 bg-amber-50/20 p-4"
+                >
+                  <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                  </div>
+                  <span className="text-sm font-semibold leading-relaxed text-secondary-750">
+                    {problem}
+                  </span>
                 </div>
-                <span className="text-sm font-semibold leading-relaxed text-secondary-750">
-                  {problem}
-                </span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
       )}
 
+      {renderSeoBlocks(false)}
+
       {/* ================= FAQ ================= */}
-      {page.faqs && page.faqs.length > 0 && (
+      {((page.faqs && page.faqs.length > 0) ||
+        page.faqsDescription ||
+        (page.faqsPoints && page.faqsPoints.length > 0)) && (
         <section id="faq" className="space-y-6">
           <SectionHeader title="Frequently Asked Questions" />
+          {page.faqsDescription && (
+            <div
+              className={richTextClasses}
+              dangerouslySetInnerHTML={{ __html: page.faqsDescription }}
+            />
+          )}
+          {page.faqsPoints && page.faqsPoints.length > 0 && (
+            <div className="grid gap-4 sm:grid-cols-2 pt-2">
+              {page.faqsPoints.map((item, i) => (
+                <div
+                  key={i}
+                  className="flex items-start gap-3 rounded-xl border border-secondary-100 bg-secondary-50/40 p-4"
+                >
+                  <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
+                    <Check className="h-3 w-3" />
+                  </div>
+                  <span className="text-sm font-semibold leading-relaxed text-secondary-750">
+                    {item}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="space-y-4 pt-2">
             {page.faqs.map((faq, i) => {
               const isOpen = openFaq === i;
@@ -516,6 +683,8 @@ export default function SeoPageRenderer({ page }: SeoPageRendererProps) {
           </div>
         </section>
       )}
+
+      {renderSeoBlocks(true)}
     </main>
   );
 }

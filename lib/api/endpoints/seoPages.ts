@@ -37,6 +37,8 @@ export interface SeoPage {
   whyChoose?: Array<{ label: string; description: string }>;
   serviceSolutionsHeading?: string | null;
   serviceSolutionsHeading2?: string | null;
+  serviceSolutionsDescription?: string | null;
+  serviceSolutionsPoints?: string[];
   serviceSolutions?: Array<{ title: string; description: string }>;
   whyExtrahandHeading?: string | null;
   whyExtrahandDescription?: string | null;
@@ -46,6 +48,8 @@ export interface SeoPage {
   whyExtrahandBenefitsIncludedDescription?: string | null;
   whyExtrahandDescription2?: string | null;
   howItWorks?: Array<{ step: number; title: string; description: string }>;
+  howItWorksDescription?: string | null;
+  howItWorksPoints?: string[];
   benefitsHeading?: string | null;
   benefitsDescription?: string | null;
   benefitsOnlyPoints?: boolean;
@@ -53,8 +57,20 @@ export interface SeoPage {
   benefitsIncludedHeading?: string | null;
   benefitsIncluded?: string[];
   benefitsIncludedDescription?: string | null;
+  commonProblemsHeading?: string | null;
+  commonProblemsDescription?: string | null;
   commonProblems?: string[];
+  faqsDescription?: string | null;
+  faqsPoints?: string[];
   faqs?: Array<{ question: string; answer: string }>;
+  sectionOrder?: string[];
+  seoContentBlocks?: Array<{
+    id: string;
+    type?: 'content' | 'faq';
+    title?: string | null;
+    html?: string | null;
+    faqs?: Array<{ id?: string; question: string; answer: string }>;
+  }>;
   faqSchema?: Record<string, unknown>;
   breadcrumbSchema?: Record<string, unknown>;
   status: string;
