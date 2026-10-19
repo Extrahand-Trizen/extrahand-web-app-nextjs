@@ -84,7 +84,9 @@ export async function getPublishedSeoPage(slug: string): Promise<SeoPage | null>
   const url = `${CONTENT_ADMIN_URL}/api/seo-pages/published?slug=${encodeURIComponent(normalized)}`;
   try {
     const res = await fetch(url, {
-      next: { revalidate: 300 },
+      // Always fetch fresh — published content must appear immediately after publish.
+      // The SeoPageWrapper client component also re-fetches on mount for instant hydration.
+      cache: 'no-store',
     });
 
     if (!res.ok) {

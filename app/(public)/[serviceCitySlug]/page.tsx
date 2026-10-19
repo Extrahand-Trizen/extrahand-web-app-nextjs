@@ -15,6 +15,11 @@ import { getCityBySlug } from "@/lib/data/cities";
 import { buildBookNowUrl } from "@/lib/utils/bookNowUrl";
 import HyderabadServiceAreas from "@/components/HyderabadServiceAreas";
 
+// Always server-render fresh on every request — matches how city pages work.
+// This ensures newly published CMS content appears immediately after publish,
+// with no stale static HTML from build time.
+export const dynamic = "force-dynamic";
+
 interface ServiceCityPageProps {
    params: Promise<{ serviceCitySlug: string }>;
 }

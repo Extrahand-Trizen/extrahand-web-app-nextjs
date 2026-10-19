@@ -10,6 +10,11 @@ import { getPublishedSeoPage } from "@/lib/api/endpoints/seoPages";
 import SeoPageRenderer from "@/components/SeoPageRenderer";
 import SeoPageWrapper from "@/components/SeoPageWrapper";
 
+// Always server-render fresh on every request — matches how city pages work.
+// This ensures newly published CMS content appears immediately after publish,
+// with no stale static HTML from build time.
+export const dynamic = "force-dynamic";
+
 interface HyderabadAreaServicePageProps {
    params: Promise<{ area: string; serviceCitySlug: string }>;
 }

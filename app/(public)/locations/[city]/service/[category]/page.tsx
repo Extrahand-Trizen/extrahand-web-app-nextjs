@@ -17,6 +17,11 @@ import {
    hyderabadServicePages,
 } from "@/lib/data/hyderabad-service-pages";
 
+// Always server-render fresh on every request — matches how city pages work.
+// This ensures newly published CMS content appears immediately after publish,
+// with no stale static HTML from build time.
+export const dynamic = "force-dynamic";
+
 interface CityServicePageProps {
    params: Promise<{ city: string; category: string }>;
 }
