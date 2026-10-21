@@ -107,70 +107,95 @@ const SectionHeader = ({ title, subtitle }: { title: string; subtitle?: string |
 export default function SeoPageRenderer({ page }: SeoPageRendererProps) {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const postTaskHref = `/tasks/new?source=seo&service=${page.categorySlug}`;
-  const sectionOrder = page.sectionOrder || [];
-  const faqOrderIndex = sectionOrder.indexOf("faqs");
-  const orderedSeoBlocks = [...(page.seoContentBlocks || [])].sort((a, b) => {
-    const aIndex = sectionOrder.indexOf(`seo:${a.id}`);
-    const bIndex = sectionOrder.indexOf(`seo:${b.id}`);
-    if (aIndex < 0) return bIndex < 0 ? 0 : 1;
-    if (bIndex < 0) return -1;
-    return aIndex - bIndex;
+
+  // -------------------------------------------------------------------------
+  // Section ordering — honour the exact position the editor chose.
+  // effectiveOrder contains standard keys ("hero", "faqs", etc.) AND custom
+  // block keys ("seo:<id>"). We iterate it in the JSX return so custom
+  // sections appear precisely where the editor placed them.
+  // -------------------------------------------------------------------------
+  const DEFAULT_ORDER = [
+    "hero",
+    "whyChoose",
+    "benefitsIncluded",
+    "serviceSolutions",
+    "whyExtrahand",
+    "howItWorks",
+    "benefits",
+    "commonProblems",
+    "faqs",
+  ];
+
+  const savedOrder: string[] =
+    page.sectionOrder && page.sectionOrder.length > 0
+      ? page.sectionOrder
+      : DEFAULT_ORDER;
+
+  // Append any standard key not already listed (backwards-compat for old pages).
+  const effectiveOrder = [...savedOrder];
+  DEFAULT_ORDER.forEach((key) => {
+    if (!effectiveOrder.includes(key)) effectiveOrder.push(key);
   });
-  const renderSeoBlocks = (afterFaqs: boolean) =>
-    orderedSeoBlocks
-      .filter((block) => {
-        const blockOrderIndex = sectionOrder.indexOf(`seo:${block.id}`);
-        return faqOrderIndex >= 0 && blockOrderIndex >= 0
-          ? (blockOrderIndex > faqOrderIndex) === afterFaqs
-          : !afterFaqs;
-      })
-      .map((block, index) => {
-        const html = block.html || "";
-        const hasHtmlContent =
-          !!html.replace(/<[^>]*>/g, "").trim() ||
-          /<(img|iframe|video)\b/i.test(html);
-        const hasFaqContent = block.faqs?.some(
-          (faq) => faq.question.trim() || faq.answer.trim()
-        );
+  // Append any custom block not already listed (safety net).
+  (page.seoContentBlocks || []).forEach((block) => {
+    const key = `seo:${block.id}`;
+    if (!effectiveOrder.includes(key)) effectiveOrder.push(key);
+  });
 
-        if (!block.title?.trim() && !hasHtmlContent && !hasFaqContent) {
-          return null;
-        }
+  // O(1) lookup for custom blocks.
+  const seoBlockMap = new Map(
+    (page.seoContentBlocks || []).map((b) => [b.id, b])
+  );
 
-        return (
-          <section key={block.id || index} className="space-y-6">
-            {block.title?.trim() && <SectionHeader title={block.title} />}
-            {block.type === "faq" ? (
-              <div className="space-y-4">
-                {block.faqs?.map((faq, faqIndex) => (
-                  <article
-                    key={faq.id || faqIndex}
-                    className="rounded-xl border border-secondary-200 bg-white p-5"
-                  >
-                    {faq.question && (
-                      <h3 className="font-semibold text-secondary-900">
-                        {faq.question}
-                      </h3>
-                    )}
-                    {faq.answer && (
-                      <p className="mt-2 text-sm leading-relaxed text-secondary-600">
-                        {faq.answer}
-                      </p>
-                    )}
-                  </article>
-                ))}
-              </div>
-            ) : (
-              hasHtmlContent && (
-                <div
-                  className={customRichTextClasses}
-                  dangerouslySetInnerHTML={{ __html: html }}
-                />
-              )
-            )}
-          </section>
-        );
-      });
+  // Render a single custom section block.
+  const renderSeoBlock = (
+    block: NonNullable<typeof page.seoContentBlocks>[number],
+    blockKey: string
+  ) => {
+    const html = block.html || "";
+    const hasHtmlContent =
+      !!html.replace(/<[^>]*>/g, "").trim() ||
+      /<(img|iframe|video)\b/i.test(html);
+    const hasFaqContent = block.faqs?.some(
+      (faq) => faq.question.trim() || faq.answer.trim()
+    );
+
+    if (!block.title?.trim() && !hasHtmlContent && !hasFaqContent) return null;
+
+    return (
+      <section key={blockKey} className="space-y-6">
+        {block.title?.trim() && <SectionHeader title={block.title} />}
+        {block.type === "faq" ? (
+          <div className="space-y-4">
+            {block.faqs?.map((faq, faqIndex) => (
+              <article
+                key={faq.id || faqIndex}
+                className="rounded-xl border border-secondary-200 bg-white p-5"
+              >
+                {faq.question && (
+                  <h3 className="font-semibold text-secondary-900">
+                    {faq.question}
+                  </h3>
+                )}
+                {faq.answer && (
+                  <p className="mt-2 text-sm leading-relaxed text-secondary-600">
+                    {faq.answer}
+                  </p>
+                )}
+              </article>
+            ))}
+          </div>
+        ) : (
+          hasHtmlContent && (
+            <div
+              className={customRichTextClasses}
+              dangerouslySetInnerHTML={{ __html: html }}
+            />
+          )
+        )}
+      </section>
+    );
+  };
 
   const renderEditorialBlock = () => (
     <div className="max-w-[720px] space-y-6 text-left">
@@ -281,410 +306,412 @@ export default function SeoPageRenderer({ page }: SeoPageRendererProps) {
           />
         )}
 
-      {/* ================= WHY CHOOSE ================= */}
-      {(page.whyChooseHeading || page.whyChooseDescription || (page.whyChoose && page.whyChoose.length > 0)) && (
-        <section className="space-y-6">
-          <SectionHeader title={page.whyChooseHeading || "Why Choose Us"} />
-          {page.whyChooseDescription && (
-            <div
-              className={richTextClasses}
-              dangerouslySetInnerHTML={{ __html: page.whyChooseDescription }}
-            />
-          )}
-          {page.whyChoose && page.whyChoose.length > 0 && (
-            <div className="grid gap-6 sm:grid-cols-2 pt-2">
-              {page.whyChoose.map((item, i) => (
-                <article
-                  key={i}
-                  className="rounded-2xl border border-secondary-200/60 bg-white p-6 shadow-2xs hover:border-secondary-300 transition-colors"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 border border-primary-100">
-                      <Check className="h-4.5 w-4.5" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-secondary-900">
-                        {item.label}
-                      </h3>
-                      <p className="mt-2 text-sm leading-relaxed text-secondary-600">
-                        {item.description}
-                      </p>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
+      {/* ================= ORDER-DRIVEN SECTION RENDERER ================= */}
+      {/* Iterates effectiveOrder so custom seo:* blocks appear at exactly  */}
+      {/* the position the editor chose, not hardcoded before/after FAQs.  */}
+      {effectiveOrder
+        .filter((key) => key !== "hero")
+        .map((key) => {
+          // ---------- custom section block ----------
+          if (key.startsWith("seo:")) {
+            const blockId = key.slice(4);
+            const block = seoBlockMap.get(blockId);
+            if (!block) return null;
+            return renderSeoBlock(block, key);
+          }
 
-      {/* ================= BENEFITS INCLUDED ================= */}
-      {page.benefitsIncluded && page.benefitsIncluded.length > 0 && (
-        <section className="space-y-6">
-          <SectionHeader title={page.benefitsIncludedHeading || "Benefits Included"} />
-          <div className="grid gap-4 sm:grid-cols-2 pt-2">
-            {page.benefitsIncluded.map((item, i) => (
-              <div
-                key={i}
-                className="flex items-start gap-3 rounded-xl border border-secondary-100 bg-secondary-50/40 p-4"
-              >
-                <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
-                  <Check className="h-3 w-3" />
-                </div>
-                <span className="text-sm font-semibold leading-relaxed text-secondary-750">
-                  {item}
-                </span>
-              </div>
-            ))}
-          </div>
-          {page.benefitsIncludedDescription && (
-            <div
-              className={`${richTextClasses} pt-2`}
-              dangerouslySetInnerHTML={{ __html: page.benefitsIncludedDescription }}
-            />
-          )}
-        </section>
-      )}
-
-      {/* ================= SERVICE SOLUTIONS ================= */}
-      {(page.serviceSolutionsHeading ||
-        page.serviceSolutionsDescription ||
-        (page.serviceSolutions && page.serviceSolutions.length > 0) ||
-        (page.serviceSolutionsPoints && page.serviceSolutionsPoints.length > 0)) && (
-        <section className="space-y-6">
-          <SectionHeader
-            title={page.serviceSolutionsHeading || "Service Solutions"}
-            subtitle={page.serviceSolutionsHeading2}
-          />
-          {page.serviceSolutionsDescription && (
-            <div
-              className={richTextClasses}
-              dangerouslySetInnerHTML={{ __html: page.serviceSolutionsDescription }}
-            />
-          )}
-          {page.serviceSolutionsPoints && page.serviceSolutionsPoints.length > 0 && (
-            <div className="grid gap-4 sm:grid-cols-2 pt-2">
-              {page.serviceSolutionsPoints.map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-3 rounded-xl border border-secondary-100 bg-secondary-50/40 p-4"
-                >
-                  <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
-                    <Check className="h-3 w-3" />
-                  </div>
-                  <span className="text-sm font-semibold leading-relaxed text-secondary-750">
-                    {item}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-          {page.serviceSolutions && page.serviceSolutions.length > 0 && (
-            <div className="grid gap-6 sm:grid-cols-2 pt-2">
-              {page.serviceSolutions.map((item, i) => (
-                <article
-                  key={i}
-                  className="relative rounded-2xl border border-secondary-200/60 bg-white p-6 shadow-xs transition-colors hover:border-secondary-300"
-                >
-                  <div className="absolute top-6 right-6 text-sm font-bold font-mono text-secondary-300/80">
-                    {String(i + 1).padStart(2, "0")}
-                  </div>
-                  <h3 className="text-lg font-bold text-secondary-900 pr-8">
-                    {item.title}
-                  </h3>
-                  <p className="mt-3 text-sm leading-relaxed text-secondary-600">
-                    {item.description}
-                  </p>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* ================= WHY EXTRAHAND ================= */}
-      {(page.whyExtrahandHeading ||
-        page.whyExtrahandDescription ||
-        (page.whyExtrahand && page.whyExtrahand.length > 0) ||
-        page.whyExtrahandDescription2) && (
-        <section className="space-y-6">
-          <SectionHeader title={page.whyExtrahandHeading || "Why ExtraHand"} />
-          {page.whyExtrahandDescription && (
-            <div
-              className={richTextClasses}
-              dangerouslySetInnerHTML={{ __html: page.whyExtrahandDescription }}
-            />
-          )}
-
-          {page.whyExtrahandBenefitsIncluded && page.whyExtrahandBenefitsIncluded.length > 0 && (
-            <div className="rounded-2xl border border-secondary-200/50 bg-secondary-50/20 p-6 md:p-8 pt-2">
-              {page.whyExtrahandBenefitsIncludedHeading && (
-                <h3 className="mb-5 text-base font-bold text-secondary-900">
-                  {page.whyExtrahandBenefitsIncludedHeading}
-                </h3>
-              )}
-              <ul className="grid gap-4 sm:grid-cols-2">
-                {page.whyExtrahandBenefitsIncluded.map((item, i) => (
-                  <li
-                    key={i}
-                    className="flex items-start gap-3 rounded-xl bg-white p-4 border border-secondary-100 shadow-2xs"
-                  >
-                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-750 mt-0.5">
-                      <Check className="h-3 w-3" />
-                    </div>
-                    <span className="text-sm font-semibold leading-relaxed text-secondary-750">
-                      {item}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              {page.whyExtrahandBenefitsIncludedDescription && (
-                <div
-                  className={`${richTextClasses} mt-6`}
-                  dangerouslySetInnerHTML={{ __html: page.whyExtrahandBenefitsIncludedDescription }}
-                />
-              )}
-            </div>
-          )}
-
-          {page.whyExtrahand && page.whyExtrahand.length > 0 && (
-            <div className="grid gap-4 sm:grid-cols-2 pt-2">
-              {page.whyExtrahand.map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-3 rounded-xl border border-secondary-100 bg-white p-4 shadow-2xs"
-                >
-                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-750 mt-0.5">
-                    <Check className="h-3 w-3" />
-                  </div>
-                  <span className="text-sm font-semibold leading-relaxed text-secondary-750">
-                    {item}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {page.whyExtrahandDescription2 && (
-            <div
-              className={`${richTextClasses} pt-2`}
-              dangerouslySetInnerHTML={{ __html: page.whyExtrahandDescription2 }}
-            />
-          )}
-        </section>
-      )}
-
-      {/* ================= HOW IT WORKS ================= */}
-      {((page.howItWorks && page.howItWorks.length > 0) ||
-        page.howItWorksDescription ||
-        (page.howItWorksPoints && page.howItWorksPoints.length > 0)) && (
-        <section className="space-y-6">
-          <SectionHeader title="How ExtraHand Works" />
-          {page.howItWorksDescription && (
-            <div
-              className={richTextClasses}
-              dangerouslySetInnerHTML={{ __html: page.howItWorksDescription }}
-            />
-          )}
-          {page.howItWorksPoints && page.howItWorksPoints.length > 0 && (
-            <div className="grid gap-4 sm:grid-cols-2 pt-2">
-              {page.howItWorksPoints.map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-3 rounded-xl border border-secondary-100 bg-secondary-50/40 p-4"
-                >
-                  <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
-                    <Check className="h-3 w-3" />
-                  </div>
-                  <span className="text-sm font-semibold leading-relaxed text-secondary-750">
-                    {item}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-          {page.howItWorks && page.howItWorks.length > 0 && (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 pt-2">
-              {page.howItWorks.map((step) => (
-                <article
-                  key={step.step}
-                  className="relative rounded-2xl border border-secondary-200/60 bg-white p-6 shadow-2xs hover:border-secondary-300 transition-colors"
-                >
-                  <div className="absolute top-6 right-6 text-4xl font-extrabold text-secondary-100/70 leading-none select-none">
-                    {String(step.step).padStart(2, "0")}
-                  </div>
-                  <div className="flex flex-col gap-4">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-600 text-white font-bold">
-                      {step.step}
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-secondary-900">
-                        {step.title}
-                      </h3>
-                      <p className="mt-2 text-sm leading-relaxed text-secondary-600">
-                        {step.description}
-                      </p>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* ================= BENEFITS ================= */}
-      {(page.benefitsHeading ||
-        page.benefitsDescription ||
-        (page.benefits && page.benefits.length > 0)) && (
-        <section className="space-y-6">
-          <SectionHeader title={page.benefitsHeading || "Benefits"} />
-          {page.benefitsDescription && !page.benefitsOnlyPoints && (
-            <div
-              className={richTextClasses}
-              dangerouslySetInnerHTML={{ __html: page.benefitsDescription }}
-            />
-          )}
-          {page.benefits && page.benefits.length > 0 && (
-            <ul className="grid gap-4 sm:grid-cols-2 pt-2">
-              {page.benefits.map((benefit, i) => (
-                <li
-                  key={i}
-                  className="flex gap-3 rounded-xl border border-secondary-100 bg-secondary-50/40 p-4"
-                >
-                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-750 mt-0.5">
-                    <Check className="h-3 w-3" />
-                  </div>
-                  <span
-                    className="text-sm font-semibold leading-relaxed text-secondary-750"
-                    dangerouslySetInnerHTML={{ __html: benefit }}
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      )}
-
-      {/* ================= COMMON PROBLEMS ================= */}
-      {((page.commonProblems && page.commonProblems.length > 0) || page.commonProblemsDescription || page.commonProblemsHeading) && (
-        <section className="space-y-6">
-          <SectionHeader title={page.commonProblemsHeading || "Common Problems"} />
-          {page.commonProblemsDescription && (
-            <div
-              className={richTextClasses}
-              dangerouslySetInnerHTML={{ __html: page.commonProblemsDescription }}
-            />
-          )}
-          {page.commonProblems && page.commonProblems.length > 0 && (
-            <div className="grid gap-4 sm:grid-cols-2 pt-2">
-              {page.commonProblems.map((problem, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-3.5 rounded-xl border border-amber-100 bg-amber-50/20 p-4"
-                >
-                  <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
-                    <AlertTriangle className="h-3.5 w-3.5" />
-                  </div>
-                  <span className="text-sm font-semibold leading-relaxed text-secondary-750">
-                    {problem}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {renderSeoBlocks(false)}
-
-      {/* ================= FAQ ================= */}
-      {((page.faqs && page.faqs.length > 0) ||
-        page.faqsDescription ||
-        (page.faqsPoints && page.faqsPoints.length > 0)) && (
-        <section id="faq" className="space-y-6">
-          <SectionHeader title="Frequently Asked Questions" />
-          {page.faqsDescription && (
-            <div
-              className={richTextClasses}
-              dangerouslySetInnerHTML={{ __html: page.faqsDescription }}
-            />
-          )}
-          {page.faqsPoints && page.faqsPoints.length > 0 && (
-            <div className="grid gap-4 sm:grid-cols-2 pt-2">
-              {page.faqsPoints.map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-3 rounded-xl border border-secondary-100 bg-secondary-50/40 p-4"
-                >
-                  <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
-                    <Check className="h-3 w-3" />
-                  </div>
-                  <span className="text-sm font-semibold leading-relaxed text-secondary-750">
-                    {item}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-          <div className="space-y-4 pt-2">
-            {page.faqs.map((faq, i) => {
-              const isOpen = openFaq === i;
-              return (
-                <div
-                  key={i}
-                  className={`rounded-xl border overflow-hidden transition-all duration-200 ${
-                    isOpen
-                      ? "border-primary-350 bg-primary-50/10 shadow-2xs"
-                      : "border-secondary-200 hover:border-secondary-300 bg-white"
-                  }`}
-                >
-                  <button
-                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                    className="w-full px-6 py-4 flex items-center justify-between gap-4 text-left transition-colors hover:bg-secondary-50/30 cursor-pointer"
-                    aria-expanded={isOpen}
-                  >
-                    <div className="flex items-center gap-4">
-                      <span
-                        className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0 transition-colors ${
-                          isOpen
-                            ? "bg-primary-500 text-white"
-                            : "bg-secondary-100 text-secondary-600"
-                        }`}
-                      >
-                        {String(i + 1).padStart(2, "0")}
-                      </span>
-                      <span className="text-base font-semibold text-secondary-900">
-                        {faq.question}
-                      </span>
-                    </div>
-                    <ChevronDown
-                      className={`h-5 w-5 text-secondary-400 shrink-0 transition-transform duration-200 ${
-                        isOpen ? "rotate-180 text-primary-600" : ""
-                      }`}
+          // ---------- standard sections ----------
+          switch (key) {
+            case "whyChoose":
+              return (page.whyChooseHeading || page.whyChooseDescription || (page.whyChoose && page.whyChoose.length > 0)) ? (
+                <section key="whyChoose" className="space-y-6">
+                  <SectionHeader title={page.whyChooseHeading || "Why Choose Us"} />
+                  {page.whyChooseDescription && (
+                    <div
+                      className={richTextClasses}
+                      dangerouslySetInnerHTML={{ __html: page.whyChooseDescription }}
                     />
-                  </button>
-                  <div
-                    className={`grid transition-all duration-200 ease-in-out ${
-                      isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-                    }`}
-                  >
-                    <div className="overflow-hidden">
-                      <div className="border-t border-secondary-100 px-6 py-5 bg-white">
-                        <p className="text-sm leading-relaxed text-secondary-655">
-                          {faq.answer}
-                        </p>
-                      </div>
+                  )}
+                  {page.whyChoose && page.whyChoose.length > 0 && (
+                    <div className="grid gap-6 sm:grid-cols-2 pt-2">
+                      {page.whyChoose.map((item, i) => (
+                        <article
+                          key={i}
+                          className="rounded-2xl border border-secondary-200/60 bg-white p-6 shadow-2xs hover:border-secondary-300 transition-colors"
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 border border-primary-100">
+                              <Check className="h-4.5 w-4.5" />
+                            </div>
+                            <div>
+                              <h3 className="text-base font-bold text-secondary-900">
+                                {item.label}
+                              </h3>
+                              <p className="mt-2 text-sm leading-relaxed text-secondary-600">
+                                {item.description}
+                              </p>
+                            </div>
+                          </div>
+                        </article>
+                      ))}
                     </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
+                  )}
+                </section>
+              ) : null;
 
-      {renderSeoBlocks(true)}
+            case "benefitsIncluded":
+              return (page.benefitsIncluded && page.benefitsIncluded.length > 0) ? (
+                <section key="benefitsIncluded" className="space-y-6">
+                  <SectionHeader title={page.benefitsIncludedHeading || "Benefits Included"} />
+                  <div className="grid gap-4 sm:grid-cols-2 pt-2">
+                    {page.benefitsIncluded.map((item, i) => (
+                      <div
+                        key={i}
+                        className="flex items-start gap-3 rounded-xl border border-secondary-100 bg-secondary-50/40 p-4"
+                      >
+                        <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
+                          <Check className="h-3 w-3" />
+                        </div>
+                        <span className="text-sm font-semibold leading-relaxed text-secondary-750">
+                          {item}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  {page.benefitsIncludedDescription && (
+                    <div
+                      className={`${richTextClasses} pt-2`}
+                      dangerouslySetInnerHTML={{ __html: page.benefitsIncludedDescription }}
+                    />
+                  )}
+                </section>
+              ) : null;
+
+            case "serviceSolutions":
+              return (page.serviceSolutionsHeading || page.serviceSolutionsDescription || (page.serviceSolutions && page.serviceSolutions.length > 0) || (page.serviceSolutionsPoints && page.serviceSolutionsPoints.length > 0)) ? (
+                <section key="serviceSolutions" className="space-y-6">
+                  <SectionHeader
+                    title={page.serviceSolutionsHeading || "Service Solutions"}
+                    subtitle={page.serviceSolutionsHeading2}
+                  />
+                  {page.serviceSolutionsDescription && (
+                    <div
+                      className={richTextClasses}
+                      dangerouslySetInnerHTML={{ __html: page.serviceSolutionsDescription }}
+                    />
+                  )}
+                  {page.serviceSolutionsPoints && page.serviceSolutionsPoints.length > 0 && (
+                    <div className="grid gap-4 sm:grid-cols-2 pt-2">
+                      {page.serviceSolutionsPoints.map((item, i) => (
+                        <div
+                          key={i}
+                          className="flex items-start gap-3 rounded-xl border border-secondary-100 bg-secondary-50/40 p-4"
+                        >
+                          <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
+                            <Check className="h-3 w-3" />
+                          </div>
+                          <span className="text-sm font-semibold leading-relaxed text-secondary-750">
+                            {item}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {page.serviceSolutions && page.serviceSolutions.length > 0 && (
+                    <div className="grid gap-6 sm:grid-cols-2 pt-2">
+                      {page.serviceSolutions.map((item, i) => (
+                        <article
+                          key={i}
+                          className="relative rounded-2xl border border-secondary-200/60 bg-white p-6 shadow-xs transition-colors hover:border-secondary-300"
+                        >
+                          <div className="absolute top-6 right-6 text-sm font-bold font-mono text-secondary-300/80">
+                            {String(i + 1).padStart(2, "00")}
+                          </div>
+                          <h3 className="text-lg font-bold text-secondary-900 pr-8">
+                            {item.title}
+                          </h3>
+                          <p className="mt-3 text-sm leading-relaxed text-secondary-600">
+                            {item.description}
+                          </p>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              ) : null;
+
+            case "whyExtrahand":
+              return (page.whyExtrahandHeading || page.whyExtrahandDescription || (page.whyExtrahand && page.whyExtrahand.length > 0) || page.whyExtrahandDescription2) ? (
+                <section key="whyExtrahand" className="space-y-6">
+                  <SectionHeader title={page.whyExtrahandHeading || "Why ExtraHand"} />
+                  {page.whyExtrahandDescription && (
+                    <div
+                      className={richTextClasses}
+                      dangerouslySetInnerHTML={{ __html: page.whyExtrahandDescription }}
+                    />
+                  )}
+                  {page.whyExtrahandBenefitsIncluded && page.whyExtrahandBenefitsIncluded.length > 0 && (
+                    <div className="rounded-2xl border border-secondary-200/50 bg-secondary-50/20 p-6 md:p-8 pt-2">
+                      {page.whyExtrahandBenefitsIncludedHeading && (
+                        <h3 className="mb-5 text-base font-bold text-secondary-900">
+                          {page.whyExtrahandBenefitsIncludedHeading}
+                        </h3>
+                      )}
+                      <ul className="grid gap-4 sm:grid-cols-2">
+                        {page.whyExtrahandBenefitsIncluded.map((item, i) => (
+                          <li
+                            key={i}
+                            className="flex items-start gap-3 rounded-xl bg-white p-4 border border-secondary-100 shadow-2xs"
+                          >
+                            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-750 mt-0.5">
+                              <Check className="h-3 w-3" />
+                            </div>
+                            <span className="text-sm font-semibold leading-relaxed text-secondary-750">
+                              {item}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                      {page.whyExtrahandBenefitsIncludedDescription && (
+                        <div
+                          className={`${richTextClasses} mt-6`}
+                          dangerouslySetInnerHTML={{ __html: page.whyExtrahandBenefitsIncludedDescription }}
+                        />
+                      )}
+                    </div>
+                  )}
+                  {page.whyExtrahand && page.whyExtrahand.length > 0 && (
+                    <div className="grid gap-4 sm:grid-cols-2 pt-2">
+                      {page.whyExtrahand.map((item, i) => (
+                        <div
+                          key={i}
+                          className="flex items-start gap-3 rounded-xl border border-secondary-100 bg-white p-4 shadow-2xs"
+                        >
+                          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-750 mt-0.5">
+                            <Check className="h-3 w-3" />
+                          </div>
+                          <span className="text-sm font-semibold leading-relaxed text-secondary-750">
+                            {item}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {page.whyExtrahandDescription2 && (
+                    <div
+                      className={`${richTextClasses} pt-2`}
+                      dangerouslySetInnerHTML={{ __html: page.whyExtrahandDescription2 }}
+                    />
+                  )}
+                </section>
+              ) : null;
+
+            case "howItWorks":
+              return ((page.howItWorks && page.howItWorks.length > 0) || page.howItWorksDescription || (page.howItWorksPoints && page.howItWorksPoints.length > 0)) ? (
+                <section key="howItWorks" className="space-y-6">
+                  <SectionHeader title="How ExtraHand Works" />
+                  {page.howItWorksDescription && (
+                    <div
+                      className={richTextClasses}
+                      dangerouslySetInnerHTML={{ __html: page.howItWorksDescription }}
+                    />
+                  )}
+                  {page.howItWorksPoints && page.howItWorksPoints.length > 0 && (
+                    <div className="grid gap-4 sm:grid-cols-2 pt-2">
+                      {page.howItWorksPoints.map((item, i) => (
+                        <div
+                          key={i}
+                          className="flex items-start gap-3 rounded-xl border border-secondary-100 bg-secondary-50/40 p-4"
+                        >
+                          <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
+                            <Check className="h-3 w-3" />
+                          </div>
+                          <span className="text-sm font-semibold leading-relaxed text-secondary-750">
+                            {item}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {page.howItWorks && page.howItWorks.length > 0 && (
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 pt-2">
+                      {page.howItWorks.map((step) => (
+                        <article
+                          key={step.step}
+                          className="relative rounded-2xl border border-secondary-200/60 bg-white p-6 shadow-2xs hover:border-secondary-300 transition-colors"
+                        >
+                          <div className="absolute top-6 right-6 text-4xl font-extrabold text-secondary-100/70 leading-none select-none">
+                            {String(step.step).padStart(2, "0")}
+                          </div>
+                          <div className="flex flex-col gap-4">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-600 text-white font-bold">
+                              {step.step}
+                            </div>
+                            <div>
+                              <h3 className="text-base font-bold text-secondary-900">
+                                {step.title}
+                              </h3>
+                              <p className="mt-2 text-sm leading-relaxed text-secondary-600">
+                                {step.description}
+                              </p>
+                            </div>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              ) : null;
+
+            case "benefits":
+              return (page.benefitsHeading || page.benefitsDescription || (page.benefits && page.benefits.length > 0)) ? (
+                <section key="benefits" className="space-y-6">
+                  <SectionHeader title={page.benefitsHeading || "Benefits"} />
+                  {page.benefitsDescription && !page.benefitsOnlyPoints && (
+                    <div
+                      className={richTextClasses}
+                      dangerouslySetInnerHTML={{ __html: page.benefitsDescription }}
+                    />
+                  )}
+                  {page.benefits && page.benefits.length > 0 && (
+                    <ul className="grid gap-4 sm:grid-cols-2 pt-2">
+                      {page.benefits.map((benefit, i) => (
+                        <li
+                          key={i}
+                          className="flex gap-3 rounded-xl border border-secondary-100 bg-secondary-50/40 p-4"
+                        >
+                          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-750 mt-0.5">
+                            <Check className="h-3 w-3" />
+                          </div>
+                          <span
+                            className="text-sm font-semibold leading-relaxed text-secondary-750"
+                            dangerouslySetInnerHTML={{ __html: benefit }}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              ) : null;
+
+            case "commonProblems":
+              return ((page.commonProblems && page.commonProblems.length > 0) || page.commonProblemsDescription || page.commonProblemsHeading) ? (
+                <section key="commonProblems" className="space-y-6">
+                  <SectionHeader title={page.commonProblemsHeading || "Common Problems"} />
+                  {page.commonProblemsDescription && (
+                    <div
+                      className={richTextClasses}
+                      dangerouslySetInnerHTML={{ __html: page.commonProblemsDescription }}
+                    />
+                  )}
+                  {page.commonProblems && page.commonProblems.length > 0 && (
+                    <div className="grid gap-4 sm:grid-cols-2 pt-2">
+                      {page.commonProblems.map((problem, i) => (
+                        <div
+                          key={i}
+                          className="flex items-start gap-3.5 rounded-xl border border-amber-100 bg-amber-50/20 p-4"
+                        >
+                          <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                            <AlertTriangle className="h-3.5 w-3.5" />
+                          </div>
+                          <span className="text-sm font-semibold leading-relaxed text-secondary-750">
+                            {problem}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              ) : null;
+
+            case "faqs":
+              return ((page.faqs && page.faqs.length > 0) || page.faqsDescription || (page.faqsPoints && page.faqsPoints.length > 0)) ? (
+                <section key="faqs" id="faq" className="space-y-6">
+                  <SectionHeader title="Frequently Asked Questions" />
+                  {page.faqsDescription && (
+                    <div
+                      className={richTextClasses}
+                      dangerouslySetInnerHTML={{ __html: page.faqsDescription }}
+                    />
+                  )}
+                  {page.faqsPoints && page.faqsPoints.length > 0 && (
+                    <div className="grid gap-4 sm:grid-cols-2 pt-2">
+                      {page.faqsPoints.map((item, i) => (
+                        <div
+                          key={i}
+                          className="flex items-start gap-3 rounded-xl border border-secondary-100 bg-secondary-50/40 p-4"
+                        >
+                          <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
+                            <Check className="h-3 w-3" />
+                          </div>
+                          <span className="text-sm font-semibold leading-relaxed text-secondary-750">
+                            {item}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="space-y-4 pt-2">
+                    {page.faqs.map((faq, i) => {
+                      const isOpen = openFaq === i;
+                      return (
+                        <div
+                          key={i}
+                          className={`rounded-xl border overflow-hidden transition-all duration-200 ${
+                            isOpen
+                              ? "border-primary-350 bg-primary-50/10 shadow-2xs"
+                              : "border-secondary-200 hover:border-secondary-300 bg-white"
+                          }`}
+                        >
+                          <button
+                            onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                            className="w-full px-6 py-4 flex items-center justify-between gap-4 text-left transition-colors hover:bg-secondary-50/30 cursor-pointer"
+                            aria-expanded={isOpen}
+                          >
+                            <div className="flex items-center gap-4">
+                              <span
+                                className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0 transition-colors ${
+                                  isOpen
+                                    ? "bg-primary-500 text-white"
+                                    : "bg-secondary-100 text-secondary-600"
+                                }`}
+                              >
+                                {String(i + 1).padStart(2, "0")}
+                              </span>
+                              <span className="text-base font-semibold text-secondary-900">
+                                {faq.question}
+                              </span>
+                            </div>
+                            <ChevronDown
+                              className={`h-5 w-5 text-secondary-400 shrink-0 transition-transform duration-200 ${
+                                isOpen ? "rotate-180 text-primary-600" : ""
+                              }`}
+                            />
+                          </button>
+                          <div
+                            className={`grid transition-all duration-200 ease-in-out ${
+                              isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                            }`}
+                          >
+                            <div className="overflow-hidden">
+                              <div className="border-t border-secondary-100 px-6 py-5 bg-white">
+                                <p className="text-sm leading-relaxed text-secondary-655">
+                                  {faq.answer}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              ) : null;
+
+            default:
+              return null;
+          }
+        })}
     </main>
   );
 }
