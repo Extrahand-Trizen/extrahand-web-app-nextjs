@@ -220,6 +220,28 @@
    transform: translateY(-1px);
 }
 
+.heroAppLinks {
+   display: flex;
+   align-items: center;
+   flex-wrap: wrap;
+   gap: 12px;
+   margin-top: 16px;
+}
+
+.heroAppLinks > strong {
+   color: #17213a;
+   font-size: 13px;
+   white-space: nowrap;
+}
+
+.heroAppLinks .storeLinks {
+   gap: 8px;
+}
+
+.heroAppLinks .storeLink {
+   min-width: 136px;
+}
+
 .heroTrust {
    display: flex;
    flex-wrap: wrap;
@@ -726,9 +748,17 @@
 }
 
 .storeMark {
-   color: var(--ad-yellow);
-   font-size: 19px;
-   line-height: 1;
+   width: 23px;
+   height: 23px;
+   display: grid;
+   flex: 0 0 23px;
+   place-items: center;
+}
+
+.storeMark svg {
+   width: 100%;
+   height: 100%;
+   display: block;
 }
 
 .storeLink small,
@@ -1433,6 +1463,21 @@
 
    .heroActions {
       gap: 8px;
+   }
+
+   .heroAppLinks {
+      gap: 8px;
+      margin-top: 13px;
+   }
+
+   .heroAppLinks > strong {
+      width: 100%;
+      font-size: 11px;
+   }
+
+   .heroAppLinks .storeLink {
+      min-width: 0;
+      padding: 7px 9px;
    }
 
    .primaryButton,
