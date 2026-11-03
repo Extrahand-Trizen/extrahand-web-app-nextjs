@@ -15,7 +15,7 @@ interface RouteChromeProps {
 export function RouteChrome({ children, variant }: RouteChromeProps) {
    const pathname = usePathname();
 
-   if (variant === "public" && pathname === "/ad") {
+   if (variant === "public" && (pathname === "/ad" || pathname.startsWith("/ad/"))) {
       return <>{children}</>;
    }
 
