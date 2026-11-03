@@ -13,7 +13,7 @@ export default function PartnerCallbackForm({
    categories,
    cities,
 }: {
-   categories: CategoriesListItem[];
+   categories: Pick<CategoriesListItem, "name" | "slug">[];
    cities: string[];
 }) {
    const [isSubmitting, setIsSubmitting] = useState(false);
