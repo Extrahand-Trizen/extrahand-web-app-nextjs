@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { LandingTopBar } from "@/components/layout/LandingTopBar";
 import { LandingFooter } from "@/components/layout/LandingFooter";
 
@@ -12,6 +13,12 @@ interface RouteChromeProps {
 }
 
 export function RouteChrome({ children, variant }: RouteChromeProps) {
+   const pathname = usePathname();
+
+   if (variant === "public" && pathname === "/ad") {
+      return <>{children}</>;
+   }
+
    if (variant === "public") {
       return (
          <div
