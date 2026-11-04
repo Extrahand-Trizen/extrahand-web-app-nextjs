@@ -102,7 +102,7 @@ export default function PartnerCallbackForm({
                      inputMode="tel"
                      maxLength={16}
                      name="mobileNumber"
-                     pattern="(?:\+?91[\s-]?)?[6-9][0-9]{9}"
+                     pattern="(?:\+?91[\s\-]?)?[6-9](?:[\s\-]?[0-9]){9}"
                      placeholder="+91 98765 43210"
                      required
                      title="Enter a valid 10-digit Indian mobile number."
