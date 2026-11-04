@@ -30,9 +30,9 @@ const footerLinks = {
     ],
   },
   forTaskers: {
-    title: "For Helpers",
+    title: "For Partners",
     links: [
-      { label: "Become a Partner", href: "/earn-money#how-to-become-tasker" },
+      { label: "Become a Partner", href: "/earn-money#how-to-become-partner" },
       { label: "How to Earn", href: "/earn-money#how-to-earn" },
       { label: "Helper Guidelines", href: "/tasker-guidelines" },
       { label: "Success Stories", href: "/success-stories" },

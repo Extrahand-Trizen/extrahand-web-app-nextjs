@@ -1,66 +1,70 @@
-import { Wrench, Package, Briefcase, Home, Car, Users } from "lucide-react";
+import {
+   Wrench,
+   Package,
+   Briefcase,
+   Home,
+   Car,
+   Droplets,
+   Snowflake,
+   Bug,
+   Scissors,
+   Paintbrush,
+} from "lucide-react";
+
+const services = [
+   { icon: Home, name: "Cleaning", description: "Home, deep, kitchen and office cleaning" },
+   { icon: Wrench, name: "Electrician", description: "Wiring, switches, fans and light installation" },
+   { icon: Package, name: "Appliance Repair", description: "Washing machine, fridge, TV and purifier repair" },
+   { icon: Snowflake, name: "AC Service", description: "Installation, service, gas filling and repair" },
+   { icon: Droplets, name: "Plumbing", description: "Taps, pipes, toilets, basins and motors" },
+   { icon: Wrench, name: "Carpentry", description: "Furniture, doors, shelves and modular work" },
+   { icon: Bug, name: "Pest Control", description: "Termite, cockroach, mosquito and rodent control" },
+   { icon: Scissors, name: "Beauty Services", description: "Hair, makeup, nails and skin care" },
+   { icon: Paintbrush, name: "Painting", description: "Interior, exterior, putty and texture painting" },
+   { icon: Package, name: "Delivery & Logistics", description: "Pickup, courier, grocery and parcel delivery" },
+   { icon: Car, name: "Driving", description: "Personal, on-demand and commercial driving" },
+   { icon: Briefcase, name: "Daily Labour", description: "Construction, moving, site work and manual labour" },
+];
 
 export function WhoCanBeTasker() {
-   const taskTypes = [
-      {
-         icon: Home,
-         category: "Home Services",
-         examples: "Cleaning, repairs, assembly, gardening",
-      },
-      {
-         icon: Package,
-         category: "Moving & Delivery",
-         examples: "Pick up and drop off, furniture moving, packing",
-      },
-      {
-         icon: Wrench,
-         category: "Handyman Work",
-         examples: "Minor repairs, installations, maintenance",
-      },
-      {
-         icon: Briefcase,
-         category: "Professional Help",
-         examples: "Admin tasks, data entry, research, tutoring",
-      },
-      {
-         icon: Car,
-         category: "Errands",
-         examples: "Shopping, returns, queuing, collecting items",
-      },
-      {
-         icon: Users,
-         category: "Personal Assistance",
-         examples: "Event help, pet care, companionship",
-      },
-   ];
-
    return (
-      <section id="how-to-become-tasker" className="py-12 bg-white">
-         <div className="max-w-6xl mx-auto px-4 lg:px-6">
-            <div className="text-center mb-8 md:mb-12">
-               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-secondary-900 mb-6">
+      <section
+         id="how-to-become-partner"
+         className="relative overflow-hidden bg-linear-to-b from-white to-primary-50/30 py-16 md:py-20"
+      >
+         <div className="pointer-events-none absolute -left-40 top-1/4 size-96 rounded-full bg-primary-100/30 blur-3xl" />
+         <div className="pointer-events-none absolute -right-40 bottom-1/4 size-96 rounded-full bg-amber-100/30 blur-3xl" />
+
+         <div className="relative mx-auto max-w-6xl px-4 lg:px-6">
+            <div className="mb-9 text-center md:mb-12">
+               <span className="mb-4 inline-flex items-center rounded-full border border-primary-200 bg-primary-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-secondary-800">
+                  Find your kind of work
+               </span>
+               <h2 className="mb-3 text-3xl font-bold text-secondary-900 sm:text-4xl lg:text-5xl">
                   Who can become a partner?
                </h2>
+               <p className="mx-auto max-w-2xl text-sm leading-relaxed text-secondary-600 md:text-base">
+                  Put your skills to work. Explore the services you can offer with ExtraHand.
+               </p>
             </div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 mb-8 md:mb-12">
-               {taskTypes.map((type) => (
+            <div className="mb-10 grid gap-4 sm:grid-cols-2 md:gap-5 lg:grid-cols-3 md:mb-14">
+               {services.map(({ icon: Icon, name, description }) => (
                   <div
-                     key={type.category}
-                     className="group bg-white rounded-2xl p-2 md:p-5 border-2 border-secondary-100 hover:border-primary-300 hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                     key={name}
+                     className="group relative flex min-h-36 items-start gap-4 overflow-hidden rounded-2xl border border-secondary-200/80 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary-300 hover:shadow-xl hover:shadow-secondary-900/5 sm:p-5"
                   >
-                     <div className="flex items-start gap-3 md:gap-4 mb-3">
-                        <div className="size-10 md:size-14 rounded-xl bg-linear-to-br from-primary-100 to-primary-50 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                           <type.icon className="size-5 md:size-7 text-primary-600" />
-                        </div>
-                        <div>
-                           <h3 className="font-bold text-secondary-900 mb-1 md:mb-2 md:text-lg">
-                              {type.category}
-                           </h3>
-                           <p className="text-xs md:text-sm text-secondary-600 leading-relaxed">
-                              {type.examples}
-                           </p>
-                        </div>
+                     <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-primary-50/0 via-transparent to-primary-50/70 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                     <div className="relative flex size-12 shrink-0 items-center justify-center rounded-xl border border-primary-100 bg-primary-50 transition-all duration-300 group-hover:scale-105 group-hover:border-primary-200 group-hover:bg-primary-100 sm:size-14">
+                        <Icon aria-hidden="true" className="size-6 text-primary-600 sm:size-7" />
+                     </div>
+                     <div className="relative min-w-0 pt-0.5">
+                        <h3 className="mb-1.5 font-bold text-secondary-900 transition-colors group-hover:text-primary-800 sm:text-lg">
+                           {name}
+                        </h3>
+                        <p className="text-xs leading-relaxed text-secondary-600 sm:text-sm">
+                           {description}
+                        </p>
                      </div>
                   </div>
                ))}

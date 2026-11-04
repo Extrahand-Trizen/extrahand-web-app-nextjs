@@ -3,10 +3,15 @@
  */
 
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle } from "lucide-react";
+import { PartnerInterestButton } from "./PartnerInterestButton";
+import type { CategoriesListItem } from "@/lib/api/endpoints/categories";
 
-export function FinalCTA() {
+export function FinalCTA({
+   categories,
+}: {
+   categories: Pick<CategoriesListItem, "name" | "slug">[];
+}) {
    return (
       <section className="relative py-16 bg-secondary-900 overflow-hidden">
          {/* Background decoration */}
@@ -46,16 +51,13 @@ export function FinalCTA() {
                </div>
             </div>
 
-            <Button
-               size="lg"
-               asChild
-               className="md:text-lg px-7 md:px-10 py-4 md:py-7 bg-primary-500 hover:bg-primary-400 text-secondary-900 font-bold shadow-2xl shadow-primary-500/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+            <PartnerInterestButton
+               categories={categories}
+               className="h-10 px-6 py-2 text-sm bg-primary-500 hover:bg-primary-400 text-secondary-900 font-bold shadow-2xl shadow-primary-500/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
             >
-               <Link href="/login">
-                  Become a Partner
-                  <ArrowRight className="ml-2 w-5 h-5" />
-               </Link>
-            </Button>
+               Become a Partner
+               <ArrowRight className="ml-2 w-5 h-5" />
+            </PartnerInterestButton>
 
             <p className="text-xs md:text-sm text-secondary-400 mt-4 md:mt-6">
                Already have an account?{" "}

@@ -1,8 +1,7 @@
 import {
    UserCircle,
-   Clipboard,
-   Bell,
-   DollarSign,
+   Clock,
+   CheckCircle2,
    IndianRupee,
 } from "lucide-react";
 
@@ -15,16 +14,16 @@ export function HowTaskingWorks() {
             "Add your skills, service area, and complete ID verification.",
       },
       {
-         icon: Clipboard,
-         title: "Choose your work",
+         icon: Clock,
+         title: "Choose your shift timings",
          description:
-            "Start earning by browsing tasks or receiving requests that suit you.",
+            "Turn on notifications and stay active to receive new work requests.",
       },
       {
-         icon: Bell,
-         title: "Confirm task details",
+         icon: CheckCircle2,
+         title: "Accept the work you receive",
          description:
-            "Discuss requirements with the poster and agree on timing and price.",
+            "Review incoming requests and accept the work that suits you.",
       },
       {
          icon: IndianRupee,

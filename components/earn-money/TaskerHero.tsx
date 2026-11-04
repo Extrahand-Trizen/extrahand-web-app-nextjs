@@ -1,8 +1,14 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Clock, Star, Users } from "lucide-react";
+import { PartnerInterestButton } from "./PartnerInterestButton";
+import type { CategoriesListItem } from "@/lib/api/endpoints/categories";
 
-export function TaskerHero() {
+export function TaskerHero({
+   categories,
+}: {
+   categories: Pick<CategoriesListItem, "name" | "slug">[];
+}) {
    return (
       <section className="relative py-12 md:py-20 bg-white overflow-hidden">
          {/* Subtle background tint */}
@@ -18,7 +24,7 @@ export function TaskerHero() {
 
             <p className="mt-5 text-sm md:text-lg text-secondary-600 mb-5 font-medium">
                ExtraHand connects you with people who need help with everyday
-               tasks. Choose the kind of work you want to do and decide when you
+               work. Choose the kind of work you want to do and decide when you
                are available.
             </p>
 
@@ -30,7 +36,7 @@ export function TaskerHero() {
                   </div>
                   <div className="text-left">
                      <p className="md:text-lg font-semibold text-secondary-900">
-                        10K+
+                        1K+
                      </p>
                      <p className="text-[10px] md:text-xs text-secondary-600">
                         Customers using ExtraHand
@@ -69,16 +75,13 @@ export function TaskerHero() {
 
             {/* CTAs */}
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center items-center">
-               <Button
-                  size="lg"
-                  asChild
+               <PartnerInterestButton
+                  categories={categories}
                   className="px-8 py-5 text-base bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold shadow-sm hover:shadow-md transition-shadow"
                >
-                  <Link href="/login">
-                     Become a Partner
-                     <ArrowRight className="ml-2 w-5 h-5" />
-                  </Link>
-               </Button>
+                  Become a Partner
+                  <ArrowRight className="ml-2 w-5 h-5" />
+               </PartnerInterestButton>
 
                <Button
                   size="lg"

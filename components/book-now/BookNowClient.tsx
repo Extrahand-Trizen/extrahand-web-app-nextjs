@@ -178,7 +178,16 @@ export default function BookNowClient({
               <span className="mr-1 text-xs font-bold uppercase tracking-[0.14em] text-secondary-600">
                 Live in
               </span>
-              {["Hyderabad", "Siddipet", "Mahabubnagar"].map((city) => (
+              {[
+                "Warangal",
+                "Karimnagar",
+                "Nalgonda",
+                "Mahabubnagar",
+                "Siddipet",
+                "Nizamabad",
+                "Kalwakurthy",
+                "Wanaparthy",
+              ].map((city) => (
                 <span
                   key={city}
                   className="rounded-full border border-secondary-200 bg-white/80 px-3.5 py-2 text-sm font-semibold text-secondary-800"

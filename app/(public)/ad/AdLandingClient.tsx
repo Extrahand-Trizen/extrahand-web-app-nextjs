@@ -65,15 +65,12 @@ function StoreLink({
 export default function AdLandingClient({
    categories,
    cities,
-   activeCategoryCount,
    partnerPlayStoreUrl,
 }: {
    categories: CategoriesListItem[];
    cities: string[];
-   activeCategoryCount: number;
    partnerPlayStoreUrl: string;
 }) {
-   const additionalCategoryCount = Math.max(0, activeCategoryCount - categories.length);
    const stats = [
       { icon: Users, value: "1,000+", label: "Happy Customers" },
       { icon: Star, value: "4.8", label: "Average Rating", accent: true },
@@ -186,9 +183,6 @@ export default function AdLandingClient({
                   <h2>Our Services <span aria-hidden="true">↗</span></h2>
                   <p>Explore trusted home and everyday services near you.</p>
                </div>
-               <Link className={styles.textLink} href="/services">
-                  View All Services <span aria-hidden="true">→</span>
-               </Link>
             </div>
             {categories.length > 0 ? (
                <div className={styles.categoryGrid}>
@@ -216,7 +210,7 @@ export default function AdLandingClient({
                         <LayoutGrid aria-hidden="true" />
                      </span>
                      <span className={styles.categoryName}>
-                        <strong>+{additionalCategoryCount || 8}</strong>
+                        <strong>10+</strong>
                         More Services
                      </span>
                   </div>

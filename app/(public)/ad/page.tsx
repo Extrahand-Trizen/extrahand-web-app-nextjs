@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { categoriesApi, type CategoriesListItem } from "@/lib/api/endpoints/categories";
+import { partnerPlayStoreUrl } from "@/lib/data/partner-interest";
 import AdLandingClient from "./AdLandingClient";
 
 const featuredCategories = [
@@ -98,11 +99,7 @@ export default async function AdvertisingLandingPage() {
       <AdLandingClient
          categories={categories}
          cities={cities}
-         activeCategoryCount={availableCategories.length}
-         partnerPlayStoreUrl={
-            process.env.NEXT_PUBLIC_PARTNER_PLAY_STORE_URL ||
-            "https://play.google.com/store/search?q=ExtraHand%20Partner&c=apps"
-         }
+         partnerPlayStoreUrl={partnerPlayStoreUrl}
       />
    );
 }

@@ -41,7 +41,7 @@ const footerColumns = [
       { label: 'Start Earning', href: '/discover' },
       { label: 'Login', href: '/login' },
       { label: 'Support Centre', href: 'https://support.extrahand.in' },
-      { label: 'Become a Helper', href: '/earn-money#how-to-become-tasker' },
+      { label: 'Become a Helper', href: '/earn-money#how-to-become-partner' },
     ],
   },
   {

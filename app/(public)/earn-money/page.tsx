@@ -6,17 +6,35 @@ import {
    TaskerFAQ,
    FinalCTA,
 } from "@/components/earn-money";
+import { categoriesApi } from "@/lib/api/endpoints/categories";
+import { partnerCategories } from "@/lib/data/partner-interest";
 
-export default function EarnMoneyPage() {
+async function getPartnerCategories() {
+   try {
+      const categories = await categoriesApi.getCategories({ throwOnError: true });
+      const allCategories = categories
+         .filter((category) => category.name && category.slug)
+         .map(({ name, slug }) => ({ name, slug }));
+
+      return allCategories.length > 0 ? allCategories : partnerCategories;
+   } catch (error) {
+      console.error("Unable to load partner service categories:", error);
+      return partnerCategories;
+   }
+}
+
+export default async function EarnMoneyPage() {
+   const categories = await getPartnerCategories();
+
    return (
       <>
          <main>
-            <TaskerHero />
+            <TaskerHero categories={categories} />
             <WhoCanBeTasker />
             <HowTaskingWorks />
             <TrustAndExpectations />
             <TaskerFAQ />
-            <FinalCTA />
+            <FinalCTA categories={categories} />
          </main>
       </>
    );
