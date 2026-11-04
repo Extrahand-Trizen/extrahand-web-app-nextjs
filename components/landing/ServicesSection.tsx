@@ -10,10 +10,13 @@ import {
    Zap,
    BadgeCheck,
    Coins,
-   Scale,
-   Check,
+   ShoppingCart,
+   LayoutGrid,
+   CalendarDays,
+   FileText,
+   UsersRound,
+   CircleCheck,
 } from "lucide-react";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
@@ -78,23 +81,23 @@ export const ServicesSection: React.FC = () => {
                      <div className="max-w-2xl">
                         <div className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-primary-200 bg-primary-50 px-4 py-1.5 text-xs font-semibold text-secondary-800">
                            <Sparkles className="size-3.5 text-primary-500 animate-pulse" />
-                           Find Trusted Local Helpers
+                           Find Trusted Local Professionals
                         </div>
 
                         <h3 className="text-2xl sm:text-3xl lg:text-[2.2rem] font-extrabold leading-[1.25] text-secondary-900 mb-6">
                            Need a plumber, electrician, cleaner, painter, carpenter, AC technician, or{" "}
                            <span className="bg-gradient-to-r from-primary-600 to-amber-600 bg-clip-text text-transparent">
-                              any local service professional?
+                              any home service professional?
                            </span>
                         </h3>
 
                         <p className="text-secondary-600 text-sm md:text-base leading-relaxed mb-8">
-                           ExtraHand helps you find trusted and verified service providers in your area quickly and easily. Whether you want to compare multiple offers within your budget or book a professional instantly at a fixed price, ExtraHand gives you complete flexibility.
+                           ExtraHand makes it easy to book trusted and verified professionals for your everyday home service needs. Simply choose the service you need, select your preferred schedule, and confirm your booking. We&apos;ll assign a suitable professional to get the job done.
                         </p>
 
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                            <Button size="lg" onClick={() => redirectToAppStore()} className="group w-full sm:w-auto gap-2.5 bg-gradient-to-r from-primary-500 to-amber-500 hover:from-primary-600 hover:to-amber-600 text-white font-bold px-8 py-6 rounded-xl shadow-md shadow-primary-500/20 hover:shadow-primary-500/35 transition-all duration-300 hover:-translate-y-0.5 cursor-pointer">
-                              Get Started Today
+                              Book a Service
                               <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
                            </Button>
                         </div>
@@ -112,30 +115,53 @@ export const ServicesSection: React.FC = () => {
 
                      <div className="space-y-4 relative">
                         {[
-                           "Post Your Requirement",
-                           "Set Your Budget",
-                           "Receive Offers from Verified Professionals",
-                           "Compare & Choose the Best Helper",
-                           "Or Book Instantly at Fixed Prices",
+                           {
+                             title: "Choose Your Service",
+                             description: "Select the home service you need.",
+                             icon: LayoutGrid,
+                           },
+                           {
+                             title: "Select Date & Time",
+                             description: "Choose your preferred service schedule.",
+                             icon: CalendarDays,
+                           },
+                           {
+                             title: "Confirm Your Booking",
+                             description: "Review the details and confirm your booking.",
+                             icon: FileText,
+                           },
+                           {
+                             title: "Get Matched with a Professional",
+                             description: "ExtraHand assigns a suitable verified professional.",
+                             icon: UsersRound,
+                           },
+                           {
+                             title: "Get Your Service Done",
+                             description: "Your assigned professional arrives and completes the service.",
+                             icon: CircleCheck,
+                           },
                         ].map((item, idx) => (
                            <div
-                              key={idx}
-                              className="group flex items-start gap-4 relative pl-8 lg:pl-10"
+                             key={item.title}
+                             className="group flex items-start gap-3 relative pl-8 lg:pl-10"
                            >
-                              {/* Step indicator node */}
-                              <div className="absolute left-0 lg:left-2 top-2.5 size-6 rounded-full bg-emerald-500 text-white flex items-center justify-center z-10 transition-all duration-300 group-hover:bg-primary-500 group-hover:scale-110 shadow-sm">
-                                 <Check className="size-3.5 stroke-[3]" />
-                              </div>
+                             <div className="absolute left-0 lg:left-2 top-2.5 size-6 rounded-full bg-emerald-500 text-white text-xs font-bold flex items-center justify-center z-10 transition-all duration-300 group-hover:bg-primary-500 group-hover:scale-110 shadow-sm">
+                                {idx + 1}
+                             </div>
                               
-                              {/* Step text container */}
-                              <div className="flex-1 bg-white border border-secondary-100 rounded-2xl p-4 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:border-primary-200/80 transition-all duration-300 hover:-translate-y-0.5 flex items-center justify-between gap-4">
-                                 <span className="font-bold text-secondary-800 text-[13px] sm:text-sm leading-snug block transition-colors group-hover:text-secondary-950">
-                                    {item}
-                                 </span>
-                                 <span className="text-[10px] font-black text-secondary-300 select-none">
-                                    0{idx + 1}
-                                 </span>
-                              </div>
+                             <div className="flex-1 bg-white border border-secondary-100 rounded-2xl px-3 py-2.5 md:px-4 md:py-3 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:border-primary-200/80 transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-3">
+                                <div className="size-9 md:size-10 shrink-0 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                                   <item.icon className="size-4 md:size-5" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                   <span className="font-bold text-secondary-800 text-[13px] sm:text-sm leading-snug block transition-colors group-hover:text-secondary-950">
+                                      {item.title}
+                                   </span>
+                                   <span className="mt-0.5 text-[11px] md:text-xs text-secondary-500 leading-snug block">
+                                      {item.description}
+                                   </span>
+                                </div>
+                             </div>
                            </div>
                         ))}
                      </div>
@@ -156,29 +182,29 @@ export const ServicesSection: React.FC = () => {
                </div>
 
                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Choose Your Budget */}
+                  {/* ExtraMart */}
                   <div className="bg-white rounded-3xl border border-secondary-200/90 shadow-[0_8px_26px_rgba(15,23,42,0.06)] p-6 md:p-10 relative overflow-hidden flex flex-col justify-between">
                      <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 blur-2xl rounded-full pointer-events-none" />
                      <div>
                         <div className="flex items-center justify-between gap-4 mb-6">
                            <span className="text-xs font-bold uppercase tracking-wider text-amber-600 bg-amber-50 px-3 py-1 rounded-full border border-amber-200/60">
-                              Want the best deal?
+                              Everyday Essentials
                            </span>
                            <div className="size-12 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 flex items-center justify-center shrink-0">
-                              <Scale className="size-6" />
+                              <ShoppingCart className="size-6" />
                            </div>
                         </div>
 
                         <h3 className="text-2xl font-black text-secondary-900 mb-3">
-                           Choose Your Budget
+                           ExtraMart
                         </h3>
                         
                         <p className="text-secondary-800 font-semibold text-[15px]/relaxed mb-3">
-                           Simply post your requirement and tell us how much you want to spend.
+                           Groceries and daily essentials, delivered to your doorstep.
                         </p>
                         
                         <p className="text-secondary-500 text-sm/relaxed mb-8">
-                           Verified service providers will submit their offers, allowing you to compare prices, profiles, experience, and customer ratings before making a decision.
+                           Shop for groceries, fresh fruits, vegetables, and other everyday essentials conveniently through ExtraHand.
                         </p>
                      </div>
 
@@ -188,11 +214,11 @@ export const ServicesSection: React.FC = () => {
                         </h4>
                         <div className="space-y-3">
                            {[
-                              "Post your service requirement.",
-                              "Set your preferred budget.",
-                              "Receive offers from verified professionals.",
-                              "Compare and select the best service provider.",
-                              "Get the work done confidently.",
+                              "Browse available products.",
+                              "Add items to your cart.",
+                              "Place your order.",
+                              "Get your order delivered.",
+                              "Enjoy convenient doorstep delivery.",
                            ].map((step, idx) => (
                               <div key={idx} className="flex items-start gap-3">
                                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold mt-0.5">
@@ -205,7 +231,7 @@ export const ServicesSection: React.FC = () => {
                      </div>
                   </div>
 
-                  {/* Instant Service */}
+                  {/* Book Services */}
                   <div className="bg-white rounded-3xl border border-secondary-200/90 shadow-[0_8px_26px_rgba(15,23,42,0.06)] p-6 md:p-10 relative overflow-hidden flex flex-col justify-between">
                      <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/5 blur-2xl rounded-full pointer-events-none" />
                      <div>
@@ -219,7 +245,7 @@ export const ServicesSection: React.FC = () => {
                         </div>
 
                         <h3 className="text-2xl font-black text-secondary-900 mb-3">
-                           Instant Service
+                           Book Services
                         </h3>
                         
                         <p className="text-secondary-800 font-semibold text-[15px]/relaxed mb-3">

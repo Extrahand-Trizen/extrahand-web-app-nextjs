@@ -11,13 +11,13 @@ import { cn } from "@/lib/utils";
 const metrics = [
    {
       icon: Users,
-      value: "50,000+",
+      value: "1,000+",
       label: "Happy Customers",
    },
    {
       icon: CheckCircle,
-      value: "1,00,000+",
-      label: "Tasks Completed",
+      value: "Verified",
+      label: "Service Professionals",
    },
    {
       icon: Star,

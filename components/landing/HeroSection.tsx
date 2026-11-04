@@ -34,31 +34,10 @@ const heroContentStyle = {
    position: "relative",
    zIndex: 10,
    width: "100%",
-   maxWidth: "48rem",
+   maxWidth: "64rem",
    paddingLeft: "1rem",
    paddingRight: "1rem",
    textAlign: "center",
-} as const;
-
-const heroTitleStyle = {
-   margin: 0,
-   marginBottom: "0.75rem",
-   fontSize: "1.875rem",
-   lineHeight: 1.25,
-   fontWeight: 600,
-   letterSpacing: "-0.025em",
-   color: "#ffffff",
-   fontFamily: "Inter, system-ui, sans-serif",
-} as const;
-
-const heroSubtitleStyle = {
-   margin: 0,
-   marginBottom: "1.25rem",
-   fontSize: "0.875rem",
-   lineHeight: 1.5,
-   fontWeight: 500,
-   color: "rgba(255,255,255,0.9)",
-   fontFamily: "Inter, system-ui, sans-serif",
 } as const;
 
 export function HeroSection() {
@@ -79,19 +58,18 @@ export function HeroSection() {
          </picture>
          <div className="absolute inset-0 z-0 bg-black/40" style={heroOverlayStyle} />
 
-         <div className="relative z-10 w-full max-w-3xl px-4 text-center" style={heroContentStyle}>
+         <div className="relative z-10 w-full max-w-5xl px-4 text-center" style={heroContentStyle}>
             <h1
                className="text-3xl md:text-4xl lg:text-5xl font-semibold text-white mb-3 leading-tight tracking-tight"
-               style={heroTitleStyle}
             >
-               ExtraHand – Find Trusted Local Service Professionals Near You
+               ExtraHand – Your Trusted Partner for Home Services & Daily Essentials
             </h1>
 
             <p
                className="text-sm md:text-lg text-white/90 mb-5 font-medium"
-               style={heroSubtitleStyle}
             >
-               Choose Your Budget or Book Instantly. The Choice is Yours.
+               Book trusted professionals for home services and shop groceries,
+               fruits, vegetables and everyday essentials with ExtraHand.
             </p>
 
             <HeroSearchFormLazy />

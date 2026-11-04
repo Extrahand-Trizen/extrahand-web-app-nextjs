@@ -1,6 +1,5 @@
 import React from "react";
-import { Coins, Zap, ShieldAlert, Sparkles, Scale, Check } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Zap, Sparkles, ShoppingCart, Check } from "lucide-react";
 
 export const WhyDifferentSection: React.FC = () => {
    return (
@@ -18,15 +17,15 @@ export const WhyDifferentSection: React.FC = () => {
                   Why ExtraHand is Different
                </h2>
                <p className="text-secondary-600 text-base sm:text-lg/relaxed">
-                  Most service platforms offer only one way to hire, leaving you with no options. 
-                  <strong className="text-secondary-950 font-bold block sm:inline"> ExtraHand gives customers complete control.</strong>
+                  Book trusted home services or shop for everyday essentials.
+                  <strong className="text-secondary-950 font-bold block sm:inline"> ExtraHand makes both convenient.</strong>
                </p>
             </div>
 
             {/* Comparison Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-16">
                
-               {/* Model 1: Choose Your Budget */}
+               {/* ExtraMart */}
                <div className="group relative rounded-3xl border border-secondary-200/80 bg-white p-8 md:p-10 shadow-lg shadow-secondary-100/50 hover:shadow-xl hover:shadow-secondary-200/30 transition-all duration-300 hover:-translate-y-1 overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 blur-2xl rounded-full pointer-events-none" />
                   
@@ -34,38 +33,43 @@ export const WhyDifferentSection: React.FC = () => {
                   <div className="flex items-start justify-between gap-4 mb-6">
                      <div>
                         <span className="text-xs font-bold uppercase tracking-wider text-amber-600 bg-amber-50 px-3 py-1 rounded-full border border-amber-200/60">
-                           Want multiple quotes?
+                           Everyday Essentials
                         </span>
                         <h3 className="text-2xl font-black text-secondary-900 mt-3">
-                           Use Choose Your Budget
+                           ExtraMart
                         </h3>
                      </div>
                      <div className="inline-flex size-14 items-center justify-center rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 shadow-inner group-hover:scale-110 transition-transform duration-300 shrink-0">
-                        <Scale className="size-7" />
+                        <ShoppingCart className="size-7" />
                      </div>
                   </div>
 
                   <p className="text-secondary-600 text-sm/relaxed mb-6">
-                     Post your specific requirement, name your preferred target price, and receive competing bids from trusted local professionals. Compare bids, view ratings, and hire the best match for your budget.
+                     Groceries and daily essentials, delivered to your doorstep. Shop for groceries, fresh fruits, vegetables, and other everyday essentials conveniently through ExtraHand.
                   </p>
 
                   <div className="space-y-3 border-t border-secondary-100 pt-6">
-                     <div className="flex items-center gap-2 text-sm text-secondary-700">
-                        <Check className="size-4 text-emerald-600 shrink-0" />
-                        <span>You specify the target price</span>
-                     </div>
-                     <div className="flex items-center gap-2 text-sm text-secondary-700">
-                        <Check className="size-4 text-emerald-600 shrink-0" />
-                        <span>Compare bids from multiple experts</span>
-                     </div>
-                     <div className="flex items-center gap-2 text-sm text-secondary-700">
-                        <Check className="size-4 text-emerald-600 shrink-0" />
-                        <span>Best for large, custom, or flexible tasks</span>
-                     </div>
+                     <h4 className="text-xs font-bold uppercase tracking-wider text-secondary-400 mb-4">
+                        How It Works
+                     </h4>
+                     {[
+                        "Browse available products.",
+                        "Add items to your cart.",
+                        "Place your order.",
+                        "Get your order delivered.",
+                        "Enjoy convenient doorstep delivery.",
+                     ].map((step, idx) => (
+                        <div key={step} className="flex items-start gap-3">
+                           <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold mt-0.5">
+                              {idx + 1}
+                           </span>
+                           <span className="text-secondary-700 text-sm font-medium">{step}</span>
+                        </div>
+                     ))}
                   </div>
                </div>
 
-               {/* Model 2: Instant Service */}
+               {/* Book Services */}
                <div className="group relative rounded-3xl border border-secondary-200/80 bg-white p-8 md:p-10 shadow-lg shadow-secondary-100/50 hover:shadow-xl hover:shadow-secondary-200/30 transition-all duration-300 hover:-translate-y-1 overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/5 blur-2xl rounded-full pointer-events-none" />
                   
@@ -76,7 +80,7 @@ export const WhyDifferentSection: React.FC = () => {
                            Need someone immediately?
                         </span>
                         <h3 className="text-2xl font-black text-secondary-900 mt-3">
-                           Use Instant Service
+                           Book Services
                         </h3>
                      </div>
                      <div className="inline-flex size-14 items-center justify-center rounded-2xl bg-primary-500/10 border border-primary-500/20 text-primary-600 shadow-inner group-hover:scale-110 transition-transform duration-300 shrink-0">
@@ -112,7 +116,7 @@ export const WhyDifferentSection: React.FC = () => {
                   <div className="absolute inset-0 bg-gradient-to-r from-primary-200/10 to-amber-200/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <Sparkles className="size-4 text-primary-500 animate-pulse shrink-0" />
                   <span className="text-sm md:text-base font-bold text-secondary-900 tracking-tight">
-                     One platform. Two smart ways to hire.{" "}
+                     One platform for services and everyday essentials.{" "}
                      <span className="text-primary-600 bg-gradient-to-r from-primary-600 to-amber-600 bg-clip-text text-transparent">
                         That&apos;s the ExtraHand advantage.
                      </span>

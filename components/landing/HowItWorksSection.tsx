@@ -3,36 +3,42 @@
  */
 
 import React from "react";
-import { FileText, Users, CheckCircle, CalendarCheck, Wallet } from "lucide-react";
+import {
+   LayoutGrid,
+   CalendarCheck,
+   ClipboardCheck,
+   Home,
+   CheckCircle,
+} from "lucide-react";
 
 const bookingSteps = [
    {
       step: 1,
-      icon: FileText,
-      title: "Post Your Task or Choose a Service",
-      description: "Share what you need and include your preferred budget.",
+      icon: LayoutGrid,
+      title: "Choose Your Service",
+      description: "Browse available home services and select the service you need.",
       highlight: "Easy to start",
    },
    {
       step: 2,
-      icon: Users,
-      title: "Get Matched with Verified Experts",
-      description: "Review trusted professionals matched to your requirement.",
-      highlight: "Verified professionals",
-   },
-   {
-      step: 3,
       icon: CalendarCheck,
-      title: "Select Time & Confirm Booking",
-      description: "Pick a convenient slot and confirm quickly.",
+      title: "Select Date & Time",
+      description: "Choose your preferred date and available time slot.",
       highlight: "Flexible scheduling",
    },
    {
+      step: 3,
+      icon: ClipboardCheck,
+      title: "Confirm Your Booking",
+      description: "Review your service details and pricing, then confirm.",
+      highlight: "Simple booking",
+   },
+   {
       step: 4,
-      icon: Wallet,
-      title: "Get Work Done at Your Doorstep",
-      description: "Sit back while experts complete the job safely and on time.",
-      highlight: "Simple and budget-friendly",
+      icon: Home,
+      title: "Get Your Service Done",
+      description: "ExtraHand assigns a verified professional who arrives at your doorstep and completes the service.",
+      highlight: "Trusted professionals",
    },
 ];
 
@@ -93,7 +99,7 @@ export const HowItWorksSection: React.FC = () => {
                   How It Works
                </h2>
                <p className="text-sm md:text-lg text-secondary-600 max-w-2xl mx-auto">
-                  Simple, Smart & Budget-Friendly Booking
+                  Simple, Convenient & Hassle-Free Booking
                </p>
             </div>
 

@@ -12,14 +12,11 @@ const POPULAR_TAGS = [
    "Business",
 ];
 
-/** Matches HeroSearchForm bar + popular-tags row so lazy load does not shift layout. */
+/** Matches the popular-tags row so lazy loading does not shift layout. */
 function HeroSearchFormPlaceholder() {
    return (
       <div className="max-w-2xl mx-auto" aria-hidden="true">
-         <div className="bg-white px-2 md:py-2 rounded-lg shadow-lg">
-            <div className="flex items-center gap-1 md:gap-2 min-h-[40px] md:min-h-[48px]" />
-         </div>
-         <div className="mt-8 flex flex-wrap justify-center gap-3 min-h-[28px] md:min-h-[36px]">
+         <div className="flex flex-wrap justify-center gap-3 min-h-[28px] md:min-h-[36px]">
             {POPULAR_TAGS.map((tag) => (
                <span
                   key={tag}

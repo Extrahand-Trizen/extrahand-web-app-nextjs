@@ -34,6 +34,7 @@ import {
    HelpCircle,
    Grid3x3,
    MessageCircle,
+   Download,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
@@ -45,6 +46,14 @@ import type { Category } from "@/types/category";
 import { mergeCarCategories } from "@/lib/utils/mergeCarCategories";
 import { filterCategoriesByRole } from "@/lib/utils/categoryRoleFilter";
 import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
+import {
+   Dialog,
+   DialogContent,
+   DialogDescription,
+   DialogTitle,
+   DialogTrigger,
+} from "@/components/ui/dialog";
+import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/openAppBridge";
 
 const UserMenu = dynamic(
    () => import("./UserMenu").then((mod) => ({ default: mod.UserMenu })),
@@ -87,29 +96,6 @@ const getCategoryDisplayName = (name: string, role: "poster" | "tasker") => {
    return trimmed.replace(/\s+\bTasks\b\s*$/i, "").trim();
 };
 
-const GuestCtaButtons = () => (
-   <>
-      <Link href="/login">
-         <Button
-            size="sm"
-            variant="ghost"
-            className="text-secondary-700 font-medium"
-         >
-            Log in
-         </Button>
-      </Link>
-      <Link href="/signup">
-         <Button
-            size="sm"
-            variant="ghost"
-            className="border-secondary-300 text-secondary-700 font-medium"
-         >
-            Signup
-         </Button>
-      </Link>
-   </>
-);
-
 const emptyStatus: UserCurrentStatus = {
    activeTasks: [],
    pendingOffers: [],
@@ -127,6 +113,7 @@ export const LandingHeader: React.FC = () => {
    const [isLocationsOpen, setIsLocationsOpen] = useState(false);
    const [isMobileLocationsOpen, setIsMobileLocationsOpen] = useState(false);
    const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+   const [isAppDownloadOpen, setIsAppDownloadOpen] = useState(false);
    const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false);
    const [activeRole, setActiveRole] = useState<"poster" | "tasker">("poster");
    const [mobileActiveRole, setMobileActiveRole] = useState<"poster" | "tasker">(
@@ -343,7 +330,7 @@ export const LandingHeader: React.FC = () => {
       pathname.startsWith("/locations");
 
    return (
-      <>
+      <Dialog open={isAppDownloadOpen} onOpenChange={setIsAppDownloadOpen}>
          <header
             style={{
                position: "fixed",
@@ -360,7 +347,7 @@ export const LandingHeader: React.FC = () => {
             )}
          >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-               <div className="flex items-center justify-between h-14 md:h-16" style={{ minHeight: "3.5rem" }}>
+               <div className="flex items-center justify-between lg:justify-start lg:gap-8 h-14 md:h-16" style={{ minHeight: "3.5rem" }}>
                   {/* Logo */}
                   <Link href="/" className="flex items-center gap-2 shrink-0">
                      <Image
@@ -613,11 +600,17 @@ export const LandingHeader: React.FC = () => {
                      </div>
                   </nav>
 
-                  {/* Desktop CTA Group — fixed min width avoids auth-state swap CLS */}
-                  <div className="hidden lg:flex items-center justify-end gap-2 min-w-[280px]">
-                     {!isAuthenticated ? (
-                        <GuestCtaButtons />
-                     ) : (
+                  <div className="hidden lg:flex items-center justify-end gap-2 lg:ml-auto">
+                     <DialogTrigger asChild>
+                        <Button
+                           size="sm"
+                           className="bg-primary-500 font-semibold text-secondary-900 shadow-sm hover:bg-primary-600"
+                        >
+                           <Download className="mr-1.5 size-4" />
+                           Download App
+                        </Button>
+                     </DialogTrigger>
+                     {isAuthenticated && (
                         <>
                            <NotificationCenter />
 
@@ -642,14 +635,14 @@ export const LandingHeader: React.FC = () => {
 
                   {/* Mobile menu button — reserved width for stable header */}
                   <div className="flex items-center justify-end gap-2 lg:hidden min-w-[148px]">
-                     <Button
-                        size="sm"
-                        className="bg-primary-500 hover:bg-primary-600 text-secondary-900 font-semibold shadow-sm"
-                        onClick={() => router.push("/book-now")}
-                     >
-                        <PlusCircle className="w-4 h-4 mr-1.5" />
-                        Book Now
-                     </Button>
+                     <DialogTrigger asChild>
+                        <Button
+                           size="sm"
+                           className="bg-primary-500 font-semibold text-secondary-900 shadow-sm hover:bg-primary-600"
+                        >
+                           Download App
+                        </Button>
+                     </DialogTrigger>
                      <button
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                         className="p-2 rounded-lg hover:bg-secondary-100 transition-colors"
@@ -876,7 +869,7 @@ export const LandingHeader: React.FC = () => {
 
                         {/* Bottom Section */}
                         <div className="border-t border-secondary-200 p-3">
-                           {isAuthenticated ? (
+                           {isAuthenticated && (
                               <button
                                  onClick={async () => {
                                     setIsMobileMenuOpen(false);
@@ -887,19 +880,6 @@ export const LandingHeader: React.FC = () => {
                                  <LogOut className="w-4 h-4" />
                                  <span>Logout</span>
                               </button>
-                           ) : (
-                              <div className="flex flex-col gap-2">
-                                 <Link href="/login" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <Button variant="outline" className="w-full text-sm py-2">
-                                       Log in
-                                    </Button>
-                                 </Link>
-                                 <Link href="/signup" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <Button className="w-full bg-primary-500 hover:bg-primary-600 text-sm py-2">
-                                       Sign up
-                                    </Button>
-                                 </Link>
-                              </div>
                            )}
                         </div>
                      </>
@@ -1021,6 +1001,57 @@ export const LandingHeader: React.FC = () => {
 
          {/* Spacer for fixed header */}
          <div className="h-14 md:h-16" style={{ minHeight: "3.5rem" }} />
-      </>
+         <DialogContent className="max-w-2xl rounded-3xl border-0 bg-white px-6 py-10 shadow-2xl sm:px-10 sm:py-12">
+            <DialogTitle className="text-center text-3xl font-extrabold tracking-tight text-secondary-950 sm:text-4xl">
+               Get the <span className="text-primary-500">ExtraHand</span> App
+            </DialogTitle>
+            <DialogDescription className="mx-auto max-w-xl text-center text-base leading-relaxed text-secondary-600 sm:text-lg">
+               Book trusted home services and shop for groceries, fruits,
+               vegetables and everyday essentials right from your phone.
+            </DialogDescription>
+            <div className="mt-4 flex flex-col justify-center gap-4 sm:flex-row">
+               <a
+                  href={PLAY_STORE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Get ExtraHand on Google Play"
+                  className="inline-flex min-h-14 items-center justify-center gap-3 rounded-xl bg-black px-5 py-3 text-white shadow-sm transition hover:bg-secondary-900"
+               >
+                  <svg aria-hidden="true" width="30" height="30" viewBox="0 0 36 36" fill="none">
+                     <polygon points="3,2 33,18 3,34" fill="#34A853" />
+                     <polygon points="3,2 19,18 3,34" fill="#FBBC05" />
+                     <polygon points="19,18 33,18 3,34" fill="#EA4335" />
+                  </svg>
+                  <span className="flex flex-col text-left leading-tight">
+                     <span className="text-[10px]">GET IT ON</span>
+                     <span className="text-lg font-semibold">Google Play</span>
+                  </span>
+               </a>
+               <a
+                  href={APP_STORE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Download ExtraHand on the App Store"
+                  className="inline-flex min-h-14 items-center justify-center gap-3 rounded-xl bg-black px-5 py-3 text-white shadow-sm transition hover:bg-secondary-900"
+               >
+                  <svg aria-hidden="true" width="30" height="30" viewBox="0 0 28 28" fill="none">
+                     <path
+                        d="M21.7 14.7c-.1-2.1 1.7-3.1 1.8-3.2-1-1.5-2.6-1.7-3.1-1.7-1.3-.1-2.5.8-3.1.8-.6 0-1.6-.8-2.7-.8-1.4.1-2.7.8-3.4 2-1.5 2.6-.4 6.4 1.1 8.5.7 1 1.5 2.1 2.6 2.1 1 0 1.3-.7 2.6-.7s1.6.7 2.7.7c1.1 0 1.8-1 2.5-2 .8-1.1 1.1-2.2 1.1-2.3 0-.1-2.1-.8-2.1-3.2zm-2-6c.6-.7 1-1.7.9-2.7-.9.1-2 .6-2.6 1.3-.6.6-1.1 1.6-.9 2.5 1 .1 2-.5 2.6-1.1z"
+                        fill="white"
+                     />
+                  </svg>
+                  <span className="flex flex-col text-left leading-tight">
+                     <span className="text-[10px]">Download on the</span>
+                     <span className="text-lg font-semibold">App Store</span>
+                  </span>
+               </a>
+            </div>
+            <div className="mx-auto mt-2 flex w-full max-w-sm items-center gap-4 text-sm text-secondary-500">
+               <span className="h-px flex-1 bg-secondary-200" />
+               <span>Available on Android and iOS</span>
+               <span className="h-px flex-1 bg-secondary-200" />
+            </div>
+         </DialogContent>
+      </Dialog>
    );
 };

@@ -13,32 +13,32 @@ const faqs: FAQItem[] = [
    {
       question: "What is ExtraHand?",
       answer:
-         "ExtraHand is a local services marketplace that connects customers with verified professionals for home, office, maintenance, repair, and cleaning services.",
+         "ExtraHand is an on-demand platform that helps you book trusted professionals for home services such as plumbing, electrical work, cleaning, painting, carpentry, and more. You can also shop for groceries, fresh fruits, vegetables, and everyday essentials through ExtraMart.",
    },
    {
-      question: "How does Choose Your Budget work?",
+      question: "How do I book a home service?",
       answer:
-         "Customers post a requirement and set their preferred budget. Verified service providers send offers, and customers choose the best one.",
+         "Choose the service you need, select your preferred date and time, review the details, and confirm your booking. ExtraHand will assign a suitable professional to complete your service.",
    },
    {
-      question: "What is Instant Service?",
+      question: "Are the service professionals verified?",
       answer:
-         "Instant Service allows customers to book services immediately at fixed prices. A verified professional is assigned automatically.",
+         "Yes. ExtraHand follows a partner onboarding and verification process to connect customers with trusted service professionals.",
    },
    {
-      question: "Are service providers verified?",
+      question: "What is ExtraMart?",
       answer:
-         "Yes. Service providers go through a verification process before joining the platform.",
+         "ExtraMart is your convenient destination for everyday shopping. You can order groceries, fresh fruits, vegetables, and other daily essentials and get them delivered to your doorstep.",
    },
    {
-      question: "Can I compare multiple offers?",
+      question: "Can I schedule a service for a later date?",
       answer:
-         "Yes. The Choose Your Budget model allows customers to compare offers from different professionals.",
+         "Yes. You can select your preferred date and available time slot while booking a service, depending on availability in your location.",
    },
    {
-      question: "Can I book emergency services?",
+      question: "How can I track my booking or order?",
       answer:
-         "Yes. Instant Service is designed for faster booking and urgent requirements.",
+         "You can check your booking and order details through the ExtraHand customer app to stay updated on the status of your service or delivery.",
    },
 ];
 

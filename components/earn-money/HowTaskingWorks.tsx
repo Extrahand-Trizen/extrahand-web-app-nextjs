@@ -27,7 +27,7 @@ export function HowTaskingWorks() {
       },
       {
          icon: IndianRupee,
-         title: "Complete the task and get paid",
+         title: "Complete the work and get paid",
          description:
             "Finish the work and receive payment after completion is confirmed.",
       },
