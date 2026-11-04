@@ -18,7 +18,7 @@ export const partnerCategories: Pick<CategoriesListItem, "name" | "slug">[] = [
    { name: "Carpentry", slug: "carpentry-services" },
    { name: "Beauty Services", slug: "beauticians-services" },
    { name: "Painting", slug: "painting-services" },
-   { name: "Car Wash", slug: "car-wash" },
+   { name: "Car Wash", slug: "car-washing" },
    { name: "Laundry", slug: "laundry-services" },
    { name: "Personal Assistance", slug: "admin-services" },
    { name: "Daily Labour", slug: "hourly-based-services" },
