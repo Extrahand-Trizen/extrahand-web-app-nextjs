@@ -181,14 +181,14 @@
 .primaryButton,
 .secondaryButton,
 .submitButton {
-   min-height: 54px;
+   min-height: 48px;
    display: inline-flex;
    align-items: center;
    justify-content: center;
    gap: 12px;
-   padding: 0 22px;
-   border-radius: 12px;
-   font-size: 16px;
+   padding: 0 18px;
+   border-radius: 10px;
+   font-size: 15px;
    font-weight: 800;
    text-decoration: none;
    transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
@@ -1022,8 +1022,8 @@
 }
 
 .callbackCard {
-   width: min(100%, 700px);
-   padding: 30px;
+   width: min(100%, 620px);
+   padding: 28px;
    border: 1px solid #eee7d8;
    border-radius: 22px;
    background: #fff;
@@ -1056,10 +1056,10 @@
 
 .modalCard {
    position: relative;
-   width: min(100%, 700px);
+   width: min(100%, 620px);
    max-height: min(90vh, 760px);
    overflow-y: auto;
-   padding: 30px;
+   padding: 28px;
    border: 1px solid #eee7d8;
    border-radius: 22px;
    background: #fff;
@@ -1224,18 +1224,18 @@
 .leadForm {
    display: grid;
    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-   gap: 14px;
+   gap: 12px;
 }
 
 .field {
    display: grid;
-   gap: 7px;
+   gap: 6px;
    min-width: 0;
 }
 
 .field > span {
    color: #34405a;
-   font-size: 12px;
+   font-size: 11px;
    font-weight: 750;
 }
 
@@ -1243,15 +1243,15 @@
 .field select {
    width: 100%;
    min-width: 0;
-   height: 48px;
-   padding: 0 12px;
+   height: 42px;
+   padding: 0 10px;
    border: 1px solid #dfe3ea;
-   border-radius: 10px;
+   border-radius: 9px;
    outline: none;
    background: #fff;
    color: #27324a;
    font: inherit;
-   font-size: 14px;
+   font-size: 13px;
 }
 
 .field input:focus,

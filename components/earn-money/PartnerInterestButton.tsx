@@ -40,7 +40,7 @@ export function PartnerInterestButton({
             {children}
          </DialogTrigger>
          <DialogContent
-            className="!w-[calc(100%-1rem)] !max-w-[760px] !border-0 !bg-transparent !p-0 !shadow-none"
+            className="!w-[calc(100%-1rem)] !max-w-[620px] !border-0 !bg-transparent !p-0 !shadow-none"
             onCloseAutoFocus={(event) => {
                event.preventDefault();
             }}

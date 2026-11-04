@@ -13,7 +13,7 @@ import {
    saveConsentPreferences,
 } from "@/lib/consent/cookieConsent";
 
-const CONSENT_BANNER_PATHS = new Set(["/", "/home"]);
+const CONSENT_BANNER_PATHS = new Set(["/home"]);
 
 export default function CookieConsentBanner() {
    const pathname = usePathname();
