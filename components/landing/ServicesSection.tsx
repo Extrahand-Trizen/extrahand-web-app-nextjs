@@ -32,7 +32,7 @@ const bookingSteps = [
 export const ServicesSection: React.FC = () => {
    return (
       <section className="rounded-[30px] border border-secondary-200/80 bg-[#f5f1e8] p-5 shadow-[0_4px_22px_rgba(17,24,39,0.04)] sm:p-7">
-         <div className="grid gap-6 xl:grid-cols-[1.08fr_1fr] xl:items-center">
+         <div className="grid gap-6 xl:grid-cols-[1.35fr_1fr] xl:items-center">
             <div className="space-y-5">
                <div className="inline-flex items-center gap-2 rounded-full border border-primary-200 bg-primary-50 px-3 py-1.5 text-xs font-semibold text-secondary-800 shadow-sm">
                   <Sparkles className="size-3.5 text-primary-500" />
@@ -40,10 +40,12 @@ export const ServicesSection: React.FC = () => {
                </div>
 
                <div>
-                  <h2 className="text-[2.6rem] font-black leading-[0.96] tracking-[-0.06em] text-secondary-900 sm:text-[3.2rem]">
+                  <h2 className="max-w-[280px] text-[2.3rem] font-black leading-[0.8] tracking-[-0.06em] text-secondary-900 sm:text-[3rem]">
                      Book Trusted
                      <br />
-                     Home Services
+                     Home
+                     <br />
+                     Services
                   </h2>
                   <p className="mt-4 max-w-md text-base leading-relaxed text-secondary-600">
                      Find verified professionals for your home needs.

@@ -75,9 +75,9 @@ export default function PartnerCallbackForm({
             )}
             <p className={styles.sectionKicker}>Let’s work together</p>
             {variant === "modal" ? (
-               <h2 id="partner-callback-title">Register with ExtraHand</h2>
+               <h2 id="partner-callback-title">Join as Partner</h2>
             ) : (
-               <h1 id="partner-callback-title">Register with ExtraHand</h1>
+               <h1 id="partner-callback-title">Join as Partner</h1>
             )}
             <p className={styles.modalDescription}>
                Share your details and our team will contact you about becoming an ExtraHand partner.

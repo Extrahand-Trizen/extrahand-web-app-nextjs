@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
    Dialog,
    DialogContent,
@@ -22,21 +22,30 @@ export function PartnerInterestButton({
    children,
    categories,
    className,
+   defaultOpen = false,
 }: {
    children: ReactNode;
    categories: Pick<CategoriesListItem, "name" | "slug">[];
    className?: string;
+   defaultOpen?: boolean;
 }) {
+   const [isOpen, setIsOpen] = useState(defaultOpen);
+
    return (
-      <Dialog>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
          <DialogTrigger
             className={cn(buttonVariants({ size: "lg" }), className)}
             type="button"
          >
             {children}
          </DialogTrigger>
-         <DialogContent className="!w-[calc(100%-2rem)] !max-w-[520px] !border-0 !bg-transparent !p-0 !shadow-none">
-            <DialogTitle className="sr-only">Register with ExtraHand</DialogTitle>
+         <DialogContent
+            className="!w-[calc(100%-1rem)] !max-w-[760px] !border-0 !bg-transparent !p-0 !shadow-none"
+            onCloseAutoFocus={(event) => {
+               event.preventDefault();
+            }}
+         >
+            <DialogTitle className="sr-only">Join as Partner</DialogTitle>
             <DialogDescription className="sr-only">
                Share your details and our team will contact you about becoming an ExtraHand partner.
             </DialogDescription>
