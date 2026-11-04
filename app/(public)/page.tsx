@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { SocialProofBar } from "@/components/landing/SocialProofBar";
-import { HowItWorksSection } from "@/components/landing/HowItWorksSection";
 
 const WhyDifferentSection = dynamic(
    () => import("@/components/landing/WhyDifferentSection")
@@ -130,9 +129,12 @@ export default function LandingPage() {
          <div style={{ minHeight: "100vh", position: "relative" }}>
             <HeroSection />
             <SocialProofBar />
-            <HowItWorksSection />
-            <ServicesSection />
-            <PartnerSection />
+            <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+               <div className="grid grid-cols-1 gap-8 xl:grid-cols-[1.05fr_1fr]">
+                  <ServicesSection />
+                  <PartnerSection />
+               </div>
+            </div>
             <div
                aria-label="Why ExtraHand is different"
                className="scroll-mt-28"

@@ -99,19 +99,19 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({ testimonial }) => {
    const [imgError, setImgError] = useState(false);
 
    return (
-   <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-secondary-100 hover:shadow-lg transition-shadow">
+   <div className="h-full bg-white rounded-2xl p-4 shadow-sm border border-secondary-100 hover:shadow-lg transition-shadow flex flex-col">
       {/* Quote icon */}
-      <Quote className="size-6 md:size-8 text-[#E8CB63] mb-4" />
+      <Quote className="size-5 text-[#E8CB63] mb-2" />
 
       {/* Quote text */}
-      <p className="text-secondary-700 leading-relaxed mb-4 md:mb-6 text-sm md:text-base">
+      <p className="text-secondary-700 leading-5 mb-3 text-xs">
          &quot;{testimonial.quote}&quot;
       </p>
 
       {/* Highlight badge */}
       <div
          className={cn(
-            "inline-flex items-center px-3 py-1.5 text-xs md:text-sm font-semibold rounded-full mb-6",
+            "self-start inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full mb-3",
             highlightStyles[testimonial.highlightType]
          )}
       >
@@ -119,13 +119,13 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({ testimonial }) => {
       </div>
 
       {/* Author info */}
-      <div className="flex items-center gap-4 pt-4 border-t border-secondary-100">
+      <div className="flex items-center gap-2 pt-3 border-t border-secondary-100 mt-auto">
          {/* Avatar */}
-         <div className="size-8 md:size-12 rounded-full overflow-hidden border border-secondary-100 bg-white">
+         <div className="size-9 shrink-0 rounded-full overflow-hidden border border-secondary-100 bg-white">
             {imgError ? (
                <div
                   className={cn(
-                     "size-full flex items-center justify-center text-xs md:text-sm font-semibold",
+                     "size-full flex items-center justify-center text-xs font-semibold",
                      roleStyles[testimonial.role]
                   )}
                >
@@ -135,9 +135,9 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({ testimonial }) => {
                <Image
                   src={testimonial.avatar}
                   alt={`${testimonial.name} profile`}
-                  width={48}
-                  height={48}
-                  sizes="48px"
+                  width={36}
+                  height={36}
+                  sizes="36px"
                   className="size-full object-cover"
                   loading="lazy"
                   onError={() => setImgError(true)}
@@ -146,20 +146,20 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({ testimonial }) => {
          </div>
 
          {/* Name and details */}
-         <div className="flex-1">
-            <p className="font-bold text-secondary-900 text-sm md:text-base">{testimonial.name}</p>
-            <p className="text-xs md:text-sm text-secondary-500">
+         <div className="min-w-0 flex-1">
+            <p className="font-bold text-secondary-900 text-xs">{testimonial.name}</p>
+            <p className="text-[11px] text-secondary-500">
                {testimonial.role} • {testimonial.location}
             </p>
          </div>
 
          {/* Rating */}
-         <div className="flex items-center gap-1">
+         <div className="flex shrink-0 items-center gap-0.5">
             {[...Array(5)].map((_, i) => (
                <Star
                   key={i}
                   className={cn(
-                     "size-4",
+                     "size-3",
                      i < testimonial.rating
                         ? "text-yellow-400 fill-yellow-400"
                         : "text-secondary-200"
@@ -174,11 +174,11 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({ testimonial }) => {
 
 export const TestimonialsSection: React.FC = () => {
    return (
-      <section id="testimonials" className="py-12 md:py-20 bg-secondary-50/50">
+      <section id="testimonials" className="py-10 md:py-14 bg-secondary-50/50">
          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Section header */}
-            <div className="text-center mb-8 md:mb-12">
-               <h2 className="text-2xl md:text-4xl font-bold text-secondary-900 mb-4">
+            <div className="text-center mb-6 md:mb-8">
+               <h2 className="text-2xl md:text-3xl font-bold text-secondary-900 mb-3">
                   What Our Customers Say
                </h2>
                <p className="text-sm md:text-lg text-secondary-600 max-w-2xl mx-auto">
@@ -204,7 +204,7 @@ export const TestimonialsSection: React.FC = () => {
             </div>
 
             {/* Desktop grid */}
-            <div className="hidden md:grid md:grid-cols-2 gap-6">
+            <div className="hidden md:grid md:grid-cols-2 xl:grid-cols-4 gap-4">
                {testimonials.map((testimonial) => (
                   <TestimonialCard
                      key={testimonial.id}
@@ -214,8 +214,8 @@ export const TestimonialsSection: React.FC = () => {
             </div>
 
             {/* Overall rating */}
-            <div className="mt-6 md:mt-12 text-center">
-               <div className="inline-flex items-center gap-3 bg-white px-6 py-4 rounded-2xl shadow-sm border border-secondary-100">
+            <div className="mt-6 md:mt-8 text-center">
+               <div className="inline-flex items-center gap-3 bg-white px-5 py-3 rounded-2xl shadow-sm border border-secondary-100">
                   <div className="flex items-center gap-1">
                      {[...Array(5)].map((_, i) => (
                         <Star

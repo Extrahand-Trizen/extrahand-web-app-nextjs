@@ -36,7 +36,7 @@ export function PartnerInterestButton({
             {children}
          </DialogTrigger>
          <DialogContent className="!w-[calc(100%-2rem)] !max-w-[520px] !border-0 !bg-transparent !p-0 !shadow-none">
-            <DialogTitle className="sr-only">Request a Callback</DialogTitle>
+            <DialogTitle className="sr-only">Register with ExtraHand</DialogTitle>
             <DialogDescription className="sr-only">
                Share your details and our team will contact you about becoming an ExtraHand partner.
             </DialogDescription>
