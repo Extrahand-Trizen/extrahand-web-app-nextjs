@@ -39,10 +39,10 @@ export function HeroSearchForm() {
                type="button"
                onClick={() => redirectToAppStore()}
                className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/20 px-6 py-2.5 text-sm font-semibold text-white shadow-sm backdrop-blur-md transition-colors hover:bg-white/30 md:text-base"
-               aria-label="Get ExtraHand Mart in the ExtraHand app"
+               aria-label="Get ExtraMart in the ExtraHand app"
             >
                <ShoppingCart className="size-5" aria-hidden="true" />
-               ExtraHand Mart
+               ExtraMart
             </button>
          </div>
       </div>
