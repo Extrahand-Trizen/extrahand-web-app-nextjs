@@ -42,7 +42,14 @@ const heroContentStyle = {
 
 export function HeroSection() {
    return (
-      <section className="relative flex h-[450px] items-center justify-center md:h-[650px]" style={heroSectionStyle}>
+      <section
+         aria-label="ExtraHand homepage introduction"
+         className="relative flex h-[450px] items-center justify-center scroll-mt-28 md:h-[650px]"
+         data-home-tab-step
+         role="region"
+         style={heroSectionStyle}
+         tabIndex={-1}
+      >
          <picture className="absolute inset-0 z-0 h-full w-full">
             <source media="(max-width: 767px)" srcSet={HERO_IMAGE_MOBILE} />
             <img

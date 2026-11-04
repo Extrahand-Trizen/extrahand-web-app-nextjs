@@ -133,9 +133,25 @@ export default function LandingPage() {
             <HowItWorksSection />
             <ServicesSection />
             <PartnerSection />
-            <WhyDifferentSection />
+            <div
+               aria-label="Why ExtraHand is different"
+               className="scroll-mt-28"
+               data-home-tab-step
+               role="region"
+               tabIndex={-1}
+            >
+               <WhyDifferentSection />
+            </div>
             <TestimonialsSection />
-            <FAQSection />
+            <div
+               aria-label="Frequently asked questions"
+               className="scroll-mt-28"
+               data-home-tab-step
+               role="region"
+               tabIndex={-1}
+            >
+               <FAQSection />
+            </div>
             <FinalCTASection />
          </div>
       </>

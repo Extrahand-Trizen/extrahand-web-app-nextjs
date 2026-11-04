@@ -10,7 +10,6 @@ import {
    Zap,
    BadgeCheck,
    Coins,
-   ShoppingCart,
    LayoutGrid,
    CalendarDays,
    FileText,
@@ -72,7 +71,13 @@ export const ServicesSection: React.FC = () => {
          <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-linear-to-b from-primary-100/35 to-transparent" />
          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Introductory Banner Section */}
-            <div className="mb-16 overflow-hidden rounded-3xl border border-secondary-200/90 bg-gradient-to-br from-white via-secondary-50/20 to-primary-50/15 shadow-[0_8px_30px_rgb(0,0,0,0.03)] md:mb-24">
+            <div
+               aria-label="Home service booking steps"
+               className="mb-16 scroll-mt-28 overflow-hidden rounded-3xl border border-secondary-200/90 bg-gradient-to-br from-white via-secondary-50/20 to-primary-50/15 shadow-[0_8px_30px_rgb(0,0,0,0.03)] md:mb-24"
+               data-home-tab-step
+               role="region"
+               tabIndex={-1}
+            >
                <div className="grid grid-cols-1 lg:grid-cols-12">
                   
                   {/* Left Column: Heading & Description */}
@@ -170,120 +175,14 @@ export const ServicesSection: React.FC = () => {
                </div>
             </div>
 
-            {/* Why ExtraHand? Section */}
-            <div className="mb-16 md:mb-24">
-               <div className="text-center max-w-3xl mx-auto mb-12">
-                  <h2 className="text-3xl md:text-5xl font-extrabold text-secondary-900 tracking-tight mb-4">
-                     Why ExtraHand?
-                  </h2>
-                  <p className="text-secondary-600 text-base md:text-lg">
-                     Unlike other service platforms, ExtraHand gives customers two powerful ways to hire professionals.
-                  </p>
-               </div>
-
-               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* ExtraMart */}
-                  <div className="bg-white rounded-3xl border border-secondary-200/90 shadow-[0_8px_26px_rgba(15,23,42,0.06)] p-6 md:p-10 relative overflow-hidden flex flex-col justify-between">
-                     <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 blur-2xl rounded-full pointer-events-none" />
-                     <div>
-                        <div className="flex items-center justify-between gap-4 mb-6">
-                           <span className="text-xs font-bold uppercase tracking-wider text-amber-600 bg-amber-50 px-3 py-1 rounded-full border border-amber-200/60">
-                              Everyday Essentials
-                           </span>
-                           <div className="size-12 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 flex items-center justify-center shrink-0">
-                              <ShoppingCart className="size-6" />
-                           </div>
-                        </div>
-
-                        <h3 className="text-2xl font-black text-secondary-900 mb-3">
-                           ExtraMart
-                        </h3>
-                        
-                        <p className="text-secondary-800 font-semibold text-[15px]/relaxed mb-3">
-                           Groceries and daily essentials, delivered to your doorstep.
-                        </p>
-                        
-                        <p className="text-secondary-500 text-sm/relaxed mb-8">
-                           Shop for groceries, fresh fruits, vegetables, and other everyday essentials conveniently through ExtraHand.
-                        </p>
-                     </div>
-
-                     <div className="border-t border-secondary-100 pt-6">
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-secondary-400 mb-4">
-                           How It Works
-                        </h4>
-                        <div className="space-y-3">
-                           {[
-                              "Browse available products.",
-                              "Add items to your cart.",
-                              "Place your order.",
-                              "Get your order delivered.",
-                              "Enjoy convenient doorstep delivery.",
-                           ].map((step, idx) => (
-                              <div key={idx} className="flex items-start gap-3">
-                                 <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold mt-0.5">
-                                    {idx + 1}
-                                 </span>
-                                 <span className="text-secondary-700 text-sm font-medium">{step}</span>
-                              </div>
-                           ))}
-                        </div>
-                     </div>
-                  </div>
-
-                  {/* Book Services */}
-                  <div className="bg-white rounded-3xl border border-secondary-200/90 shadow-[0_8px_26px_rgba(15,23,42,0.06)] p-6 md:p-10 relative overflow-hidden flex flex-col justify-between">
-                     <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/5 blur-2xl rounded-full pointer-events-none" />
-                     <div>
-                        <div className="flex items-center justify-between gap-4 mb-6">
-                           <span className="text-xs font-bold uppercase tracking-wider text-primary-600 bg-primary-50 px-3 py-1 rounded-full border border-primary-200/60">
-                              Need help right now?
-                           </span>
-                           <div className="size-12 rounded-xl bg-primary-500/10 border border-primary-500/20 text-primary-600 flex items-center justify-center shrink-0">
-                              <Zap className="size-6" />
-                           </div>
-                        </div>
-
-                        <h3 className="text-2xl font-black text-secondary-900 mb-3">
-                           Book Services
-                        </h3>
-                        
-                        <p className="text-secondary-800 font-semibold text-[15px]/relaxed mb-3">
-                           Choose a service and book instantly at a transparent fixed price.
-                        </p>
-                        
-                        <p className="text-secondary-500 text-sm/relaxed mb-8">
-                           ExtraHand automatically assigns a verified nearby professional so your work starts faster.
-                        </p>
-                     </div>
-
-                     <div className="border-t border-secondary-100 pt-6">
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-secondary-400 mb-4">
-                           How It Works
-                        </h4>
-                        <div className="space-y-3">
-                           {[
-                              "Select your service.",
-                              "View the fixed price.",
-                              "Confirm your booking.",
-                              "Get matched with a verified professional.",
-                              "Enjoy hassle-free service.",
-                           ].map((step, idx) => (
-                              <div key={idx} className="flex items-start gap-3">
-                                 <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-800 text-[10px] font-bold mt-0.5">
-                                    {idx + 1}
-                                 </span>
-                                 <span className="text-secondary-700 text-sm font-medium">{step}</span>
-                              </div>
-                           ))}
-                        </div>
-                     </div>
-                  </div>
-               </div>
-            </div>
-
             {/* Why Choose ExtraHand - H2 */}
-            <div>
+            <div
+               aria-label="Why customers trust ExtraHand"
+               className="scroll-mt-28"
+               data-home-tab-step
+               role="region"
+               tabIndex={-1}
+            >
                <div className="mx-auto max-w-4xl text-center mb-8 md:mb-10">
                   <div className="inline-flex items-center gap-2 rounded-full border border-green-200 bg-green-100 px-4 py-1.5 text-green-700 text-sm md:text-[15px] font-medium mb-4">
                      <Shield className="size-4" />
