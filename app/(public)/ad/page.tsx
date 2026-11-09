@@ -32,7 +32,7 @@ const featuredCategories = [
    {
       name: "Electrical",
       slugs: ["electricians-services", "electrician"],
-      image: "/assets/Book-now/electrician-switch-socket.png",
+      image: "/assets/Book-now/electrician-switch-socket.webp",
    },
    {
       name: "Plumbing",

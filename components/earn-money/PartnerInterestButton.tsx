@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState, type ReactNode } from "react";
 import {
    Dialog,
@@ -16,7 +17,11 @@ import {
    partnerPlayStoreUrl,
 } from "@/lib/data/partner-interest";
 import type { CategoriesListItem } from "@/lib/api/endpoints/categories";
-import PartnerCallbackForm from "@/app/(public)/ad/PartnerCallbackForm";
+
+const PartnerCallbackForm = dynamic(
+   () => import("@/app/(public)/ad/PartnerCallbackForm"),
+   { ssr: false }
+);
 
 export function PartnerInterestButton({
    children,

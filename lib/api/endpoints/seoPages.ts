@@ -1,3 +1,5 @@
+import { cache } from 'react';
+
 /**
  * SEO Pages API - Fetches published SEO pages from content-admin backend
  */
@@ -37,8 +39,6 @@ export interface SeoPage {
   whyChoose?: Array<{ label: string; description: string }>;
   serviceSolutionsHeading?: string | null;
   serviceSolutionsHeading2?: string | null;
-  serviceSolutionsDescription?: string | null;
-  serviceSolutionsPoints?: string[];
   serviceSolutions?: Array<{ title: string; description: string }>;
   whyExtrahandHeading?: string | null;
   whyExtrahandDescription?: string | null;
@@ -48,8 +48,6 @@ export interface SeoPage {
   whyExtrahandBenefitsIncludedDescription?: string | null;
   whyExtrahandDescription2?: string | null;
   howItWorks?: Array<{ step: number; title: string; description: string }>;
-  howItWorksDescription?: string | null;
-  howItWorksPoints?: string[];
   benefitsHeading?: string | null;
   benefitsDescription?: string | null;
   benefitsOnlyPoints?: boolean;
@@ -57,51 +55,48 @@ export interface SeoPage {
   benefitsIncludedHeading?: string | null;
   benefitsIncluded?: string[];
   benefitsIncludedDescription?: string | null;
-  commonProblemsHeading?: string | null;
-  commonProblemsDescription?: string | null;
   commonProblems?: string[];
-  faqsDescription?: string | null;
-  faqsPoints?: string[];
   faqs?: Array<{ question: string; answer: string }>;
-  sectionOrder?: string[];
-  seoContentBlocks?: Array<{
-    id: string;
-    type?: 'content' | 'faq';
-    title?: string | null;
-    html?: string | null;
-    faqs?: Array<{ id?: string; question: string; answer: string }>;
-  }>;
   faqSchema?: Record<string, unknown>;
   breadcrumbSchema?: Record<string, unknown>;
   status: string;
   isPublished: boolean;
 }
 
-export async function getPublishedSeoPage(slug: string): Promise<SeoPage | null> {
+const seoPagePromiseCache = new Map<string, Promise<SeoPage | null>>();
+
+export const getPublishedSeoPage = cache(async (slug: string): Promise<SeoPage | null> => {
   const normalized = (slug || '').trim().toLowerCase();
   if (!normalized) return null;
 
-  const url = `${CONTENT_ADMIN_URL}/api/seo-pages/published?slug=${encodeURIComponent(normalized)}`;
-  try {
-    const res = await fetch(url, {
-      // Always fetch fresh — published content must appear immediately after publish.
-      // The SeoPageWrapper client component also re-fetches on mount for instant hydration.
-      cache: 'no-store',
-    });
+  if (seoPagePromiseCache.has(normalized)) {
+    return seoPagePromiseCache.get(normalized)!;
+  }
 
-    if (!res.ok) {
+  const fetchPromise = (async () => {
+    const url = `${CONTENT_ADMIN_URL}/api/seo-pages/published?slug=${encodeURIComponent(normalized)}`;
+    try {
+      const res = await fetch(url, {
+        next: { revalidate: 3600 },
+      });
+
+      if (!res.ok) {
+        return null;
+      }
+
+      const data: SeoPage = await res.json();
+      return data || null;
+    } catch (err: unknown) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[SEO ERROR] getPublishedSeoPage failed for slug:', slug, err);
+      }
       return null;
     }
+  })();
 
-    const data: SeoPage = await res.json();
-    return data || null;
-  } catch (err: unknown) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('[SEO ERROR] getPublishedSeoPage failed for slug:', slug, err);
-    }
-    return null;
-  }
-}
+  seoPagePromiseCache.set(normalized, fetchPromise);
+  return fetchPromise;
+});
 
 export interface PublishedSeoSlug {
   slug: string;
@@ -130,7 +125,7 @@ export async function getAllPublishedSeoPages(): Promise<Array<PublishedSeoSlug>
       const data = await res.json();
       if (Array.isArray(data)) return data;
     }
-  } catch {
+  } catch (err) {
     // Try fallback endpoint
   }
 
@@ -148,3 +143,4 @@ export async function getAllPublishedSeoPages(): Promise<Array<PublishedSeoSlug>
     return null;
   }
 }
+

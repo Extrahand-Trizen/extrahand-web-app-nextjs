@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -145,10 +143,10 @@ export default function AdLandingClient({
                   <Image
                      alt="A local service professional ready to help"
                      className={styles.heroImage}
-                     src="/assets/ad/Friendly%20ExtraHand%20Service%20Team.png"
-                     height={600}
+                     src="/assets/ad/friendly-extrahand-service-team.webp"
+                     height={800}
                      priority
-                     width={600}
+                     width={1200}
                   />
                   <div className={styles.verifiedBadge}>
                      <span aria-hidden="true">✓</span>
@@ -312,10 +310,10 @@ export default function AdLandingClient({
                <Image
                   alt="ExtraHand partner app earnings and service professional"
                   className={styles.partnerBannerImage}
-                  height={1024}
+                  height={800}
                   loading="lazy"
-                  src="/assets/ad/ExtraHand%20Partner%20Earnings%20Showcase.png"
-                  width={1536}
+                  src="/assets/ad/extrahand-partner-earnings-showcase.webp"
+                  width={1200}
                />
             </div>
          </section>
