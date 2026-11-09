@@ -9,7 +9,10 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, TrendingUp } from "lucide-react";
 import type { CityInfo } from "@/lib/data/cities";
-import type { CityPageContent } from "@/lib/data/city-page-content";
+import {
+   DEFAULT_CITY_HERO_IMAGE,
+   type CityPageContent,
+} from "@/lib/data/city-page-content";
 import { SeoHeroImage } from "@/components/shared/SeoHeroImage";
 import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
@@ -20,7 +23,9 @@ interface CityHeroProps {
 
 export function CityHero({ city, content }: CityHeroProps) {
    const heroImage =
-      content?.image || city.heroImage || "/assets/images/cities/default.webp";
+      content?.image?.trim() ||
+      city.heroImage?.trim() ||
+      DEFAULT_CITY_HERO_IMAGE;
    const heading = content?.heading ?? `Find Local Help in ${city.name}`;
    const cityNameIndex = heading.lastIndexOf(city.name);
    const hasCityNameInHeading =
@@ -78,7 +83,7 @@ export function CityHero({ city, content }: CityHeroProps) {
                   onClick={() => redirectToAppStore()}
                   className="w-full sm:w-auto bg-primary-500 hover:bg-primary-600 text-white font-bold text-lg px-10 py-7 rounded-2xl shadow-2xl transition-colors cursor-pointer"
                >
-                  Get Help
+                  Book Now
                   <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                </Button>
                <Link href="/earn-money">
@@ -87,7 +92,7 @@ export function CityHero({ city, content }: CityHeroProps) {
                      size="lg"
                      className="w-full sm:w-auto border-2 border-white/80 font-semibold text-lg px-8 py-7 rounded-2xl backdrop-blur-sm transition-colors hover:bg-white/90"
                   >
-                     Become a Helper
+                     Become a Partner
                   </Button>
                </Link>
             </div>
@@ -99,7 +104,7 @@ export function CityHero({ city, content }: CityHeroProps) {
                      <div className="text-2xl font-bold text-white">
                         {city.activeTasks.toLocaleString()}
                      </div>
-                     <div className="text-sm">Active Tasks</div>
+                     <div className="text-sm">Active Works</div>
                   </div>
                </div>
                <div className="w-px h-12 bg-white/30 hidden sm:block" />
@@ -108,7 +113,7 @@ export function CityHero({ city, content }: CityHeroProps) {
                      <div className="text-2xl font-bold text-white">
                         {city.activeTaskers.toLocaleString()}+
                      </div>
-                     <div className="text-sm">Verified Helpers</div>
+                     <div className="text-sm">Verified Partners</div>
                   </div>
                </div>
                <div className="w-px h-12 bg-white/30 hidden sm:block" />

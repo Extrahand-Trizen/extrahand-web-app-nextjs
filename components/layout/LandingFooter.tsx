@@ -68,12 +68,24 @@ const footerLinks = {
       { label: "Pet Care Services", href: "/services/pet-care-services" },
     ],
   },
+  areas: {
+    title: "Popular Areas",
+    links: [
+      { label: "Siddipet", href: "/locations/siddipet" },
+      { label: "Mahabubnagar", href: "/locations/mahabubnagar" },
+      { label: "Warangal", href: "/locations/warangal" },
+      { label: "Karimnagar", href: "/locations/karimnagar" },
+      { label: "Nalgonda", href: "/locations/nalgonda" },
+      { label: "Nizamabad", href: "/locations/nizamabad" },
+      { label: "Wanaparthy", href: "/locations/wanaparthy" },
+      { label: "Sircilla", href: "/locations/sircilla" },
+      { label: "Jadcherla", href: "/locations/jadcherla" },
+    ],
+  },
   cities: {
     title: "Popular Cities",
     links: [
       { label: "Hyderabad", href: "/locations/hyderabad" },
-      { label: "Siddipet", href: "/locations/siddipet" },
-      { label: "Mahabubnagar", href: "/locations/mahabubnagar" },
       { label: "Delhi NCR", href: "/locations/delhi" },
       { label: "Mumbai", href: "/locations/mumbai" },
       { label: "Bangalore", href: "/locations/bangalore" },
@@ -210,7 +222,7 @@ export const LandingFooter: React.FC = () => {
         </div>
 
         {/* Desktop / tablet: grid of link columns */}
-        <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-5 gap-8 lg:gap-10 mb-12">
+        <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-6 gap-8 lg:gap-10 mb-12">
           {Object.values(footerLinks).map((column) => {
             const links = getColumnLinks(column);
             return (

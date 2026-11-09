@@ -2,6 +2,9 @@ import type { CityInfo } from "@/lib/data/cities";
 import { getFeaturedCategories } from "@/lib/data/categories";
 import { hyderabadServicePages } from "@/lib/data/hyderabad-service-pages";
 
+export const DEFAULT_CITY_HERO_IMAGE =
+   "/assets/ad/friendly-extrahand-service-team.webp";
+
 export interface CityPageSeoContentBlock {
    id: string;
    title: string;
@@ -57,7 +60,7 @@ export function getCityPageDefaultContent(city: CityInfo): CityPageContent {
          title: city.name,
          heading: `Find Local Help in ${city.name}`,
          description: city.description,
-         image: city.heroImage || "/assets/images/cities/default.webp",
+         image: city.heroImage || DEFAULT_CITY_HERO_IMAGE,
       },
       popularServices: {
          title: `Popular Services in ${city.name}`,
@@ -74,20 +77,20 @@ export function getCityPageDefaultContent(city: CityInfo): CityPageContent {
          steps: [
             {
                id: "describe-task",
-               title: `Get help in ${city.name}`,
-               description:
-                  "Describe what you need help with and set your budget.",
+               title: "1. Choose Your Service",
+               description: `Select the service you need from the available categories in ${city.name}.`,
             },
             {
                id: "review-offers",
-               title: "Get offers from local helpers",
+               title: "2. Book Your Service",
                description:
-                  "Review profiles, ratings, and prices from verified helpers.",
+                  "Choose your preferred service, provide the required details, and confirm your booking.",
             },
             {
                id: "choose-helper",
-               title: "Choose and confirm",
-               description: "Pick the right helper and get your task done.",
+               title: "3. Get Your Service Done",
+               description:
+                  "A verified local professional will visit your location and complete the service.",
             },
          ],
       },
@@ -146,7 +149,6 @@ export function mergeCityPageContent(
       new Map(items.map((item) => [item.id, item]));
 
    const popularServices = publishedById(published.popularServices.items);
-   const steps = publishedById(published.howItWorks.steps);
    const areas = publishedById(published.neighborhoods.areas);
    const exploreServices = publishedById(published.exploreServices.items);
    const seoContentBlocks = published.seoContentBlocks ?? [];
@@ -190,14 +192,7 @@ export function mergeCityPageContent(
             ...popularServices.get(item.id),
          })),
       },
-      howItWorks: {
-         ...defaults.howItWorks,
-         ...published.howItWorks,
-         steps: defaults.howItWorks.steps.map((step) => ({
-            ...step,
-            ...steps.get(step.id),
-         })),
-      },
+      howItWorks: defaults.howItWorks,
       stats: { ...defaults.stats, ...published.stats },
       neighborhoods: {
          ...defaults.neighborhoods,

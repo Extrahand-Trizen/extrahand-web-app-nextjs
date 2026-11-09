@@ -122,8 +122,19 @@ const FAQItemComponent: React.FC<FAQItemComponentProps> = ({
    );
 };
 
-export const FAQSection: React.FC = () => {
-   const [openIndex, setOpenIndex] = useState<number | null>(0);
+interface FAQSectionProps {
+   includeExtraMart?: boolean;
+}
+
+export const FAQSection: React.FC<FAQSectionProps> = ({
+   includeExtraMart = true,
+}) => {
+   const visibleFaqs = includeExtraMart
+      ? faqs
+      : faqs.filter((faq) => faq.question !== "What is ExtraMart?");
+   const [openIndex, setOpenIndex] = useState<number | null>(
+      includeExtraMart ? 0 : null
+   );
 
    return (
       <section
@@ -150,7 +161,7 @@ export const FAQSection: React.FC = () => {
 
             {/* FAQ Items */}
             <div className="space-y-4">
-               {faqs.map((faq, idx) => (
+               {visibleFaqs.map((faq, idx) => (
                   <FAQItemComponent
                      key={idx}
                      index={idx}

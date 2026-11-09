@@ -13,9 +13,9 @@ import {
 import { getPublishedCityPage } from "@/lib/api/endpoints/cityPages";
 import { CityHero } from "@/components/locations/CityHero";
 import { ServiceCategoriesGrid } from "@/components/locations/ServiceCategoriesGrid";
-import { NeighborhoodsGrid } from "@/components/locations/NeighborhoodsGrid";
 import { CityStats } from "@/components/locations/CityStats";
 import { hyderabadServicePages } from "@/lib/data/hyderabad-service-pages";
+import { FAQSection } from "@/components/landing/FAQSection";
 
 interface PageProps {
    params: Promise<{ city: string }>;
@@ -214,15 +214,7 @@ export default async function CityPage({ params }: PageProps) {
                />
             );
          case "neighborhoods":
-            return cityInfo.slug !== "mahabubnagar" &&
-               cityInfo.slug !== "siddipet" ? (
-               <NeighborhoodsGrid
-                  neighborhoods={cityInfo.neighborhoods}
-                  citySlug={cityInfo.slug}
-                  cityName={cityInfo.name}
-                  content={content.neighborhoods}
-               />
-            ) : null;
+            return <FAQSection includeExtraMart={false} />;
          case "exploreServices":
             if (
                cityInfo.slug !== "hyderabad" &&

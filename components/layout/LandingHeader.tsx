@@ -85,6 +85,13 @@ const locationItems: Array<{
    { name: "Hyderabad", slug: "hyderabad", href: "/locations/hyderabad" },
    { name: "Siddipet", slug: "siddipet", href: "/locations/siddipet" },
    { name: "Mahabubnagar", slug: "mahabubnagar", href: "/locations/mahabubnagar" },
+   { name: "Warangal", slug: "warangal", href: "/locations/warangal" },
+   { name: "Karimnagar", slug: "karimnagar", href: "/locations/karimnagar" },
+   { name: "Nalgonda", slug: "nalgonda", href: "/locations/nalgonda" },
+   { name: "Nizamabad", slug: "nizamabad", href: "/locations/nizamabad" },
+   { name: "Wanaparthy", slug: "wanaparthy", href: "/locations/wanaparthy" },
+   { name: "Sircilla", slug: "sircilla", href: "/locations/sircilla" },
+   { name: "Jadcherla", slug: "jadcherla", href: "/locations/jadcherla" },
 ];
 
 /** Strip role-specific suffix from CMS labels: poster → no "Services", tasker → no "Tasks". */

@@ -26,21 +26,22 @@ export function CityStats({
       {
          id: "describe-task",
          icon: Upload,
-         title: `Get help in ${city.name}`,
-         description: "Describe what you need help with and set your budget.",
+         title: "1. Choose Your Service",
+         description: `Select the service you need from the available categories in ${city.name}.`,
       },
       {
          id: "review-offers",
          icon: Users,
-         title: "Get offers from local helpers",
+         title: "2. Book Your Service",
          description:
-            "Review profiles, ratings, and prices from verified helpers.",
+            "Choose your preferred service, provide the required details, and confirm your booking.",
       },
       {
          id: "choose-helper",
          icon: CheckCircle,
-         title: "Choose and confirm",
-         description: "Pick the right helper and get your task done.",
+         title: "3. Get Your Service Done",
+         description:
+            "A verified local professional will visit your location and complete the service.",
       },
    ];
 
@@ -92,13 +93,13 @@ export function CityStats({
                         <div className="text-3xl font-bold text-gray-900 mb-1">
                            {city.activeTasks.toLocaleString()}
                         </div>
-                        <div className="text-sm text-gray-600">Active tasks</div>
+                        <div className="text-sm text-gray-600">Active works</div>
                      </div>
                      <div>
                         <div className="text-3xl font-bold text-gray-900 mb-1">
                            {city.activeTaskers.toLocaleString()}+
                         </div>
-                        <div className="text-sm text-gray-600">Local helpers</div>
+                        <div className="text-sm text-gray-600">Verified partners</div>
                      </div>
                      <div>
                         <div className="text-3xl font-bold text-gray-900 mb-1">

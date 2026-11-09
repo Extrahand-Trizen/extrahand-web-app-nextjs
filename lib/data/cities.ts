@@ -287,6 +287,209 @@ export const cities: Record<string, CityInfo> = {
       },
    },
 
+   warangal: {
+      name: "Warangal",
+      state: "Telangana",
+      slug: "warangal",
+      description:
+         "Find trusted local helpers in Warangal for home repairs, cleaning, moving, and everyday services.",
+      longDescription:
+         "ExtraHand helps Warangal residents connect with local professionals for home maintenance, cleaning, moving, and other everyday tasks.",
+      population: "0.8M+",
+      activeTasks: 320,
+      activeTaskers: 760,
+      avgRating: 4.6,
+      completedTasks: 2840,
+      neighborhoods: [
+         "Hanamkonda",
+         "Kazipet",
+         "Subedari",
+         "Nakkalagutta",
+         "Lashkar Bazar",
+         "Kakatiya University",
+         "Enumamula",
+         "Warangal Fort",
+      ],
+      coordinates: {
+         lat: 17.9689,
+         lng: 79.5941,
+      },
+   },
+
+   karimnagar: {
+      name: "Karimnagar",
+      state: "Telangana",
+      slug: "karimnagar",
+      description:
+         "Connect with local helpers in Karimnagar for home services, repairs, cleaning, moving, and more.",
+      longDescription:
+         "ExtraHand connects Karimnagar residents with local professionals for home repairs, cleaning, moving, and a wide range of everyday services.",
+      population: "0.3M+",
+      activeTasks: 210,
+      activeTaskers: 490,
+      avgRating: 4.6,
+      completedTasks: 1760,
+      neighborhoods: [
+         "Mukarampura",
+         "Kothirampur",
+         "Mankammathota",
+         "Ramnagar",
+         "Jyothinagar",
+         "Rekurthi",
+         "Alugunur",
+         "Sai Nagar",
+      ],
+      coordinates: {
+         lat: 18.4386,
+         lng: 79.1288,
+      },
+   },
+
+   nalgonda: {
+      name: "Nalgonda",
+      state: "Telangana",
+      slug: "nalgonda",
+      description:
+         "Find reliable local helpers in Nalgonda for repairs, cleaning, moving, and everyday tasks.",
+      longDescription:
+         "ExtraHand helps Nalgonda residents find local professionals for home maintenance, cleaning, moving, and other everyday services.",
+      population: "0.2M+",
+      activeTasks: 150,
+      activeTaskers: 360,
+      avgRating: 4.6,
+      completedTasks: 1260,
+      neighborhoods: [
+         "Clock Tower",
+         "Panagallu",
+         "Marriguda",
+         "NG College Road",
+         "Devarakonda Road",
+         "Miryalaguda Road",
+         "Cherlapally",
+         "SLBC Colony",
+      ],
+      coordinates: {
+         lat: 17.0575,
+         lng: 79.269,
+      },
+   },
+
+   nizamabad: {
+      name: "Nizamabad",
+      state: "Telangana",
+      slug: "nizamabad",
+      description:
+         "Get help with home services, repairs, cleaning, and moving from local professionals in Nizamabad.",
+      longDescription:
+         "ExtraHand connects Nizamabad residents with trusted local professionals for home maintenance and everyday tasks.",
+      population: "0.3M+",
+      activeTasks: 220,
+      activeTaskers: 510,
+      avgRating: 4.6,
+      completedTasks: 1840,
+      neighborhoods: [
+         "Khaleelwadi",
+         "Vinayak Nagar",
+         "Kanteshwar",
+         "Bodhan Road",
+         "Arsapally",
+         "Yellammagutta",
+         "Auto Nagar",
+         "Mubarak Nagar",
+      ],
+      coordinates: {
+         lat: 18.6725,
+         lng: 78.0941,
+      },
+   },
+
+   wanaparthy: {
+      name: "Wanaparthy",
+      state: "Telangana",
+      slug: "wanaparthy",
+      description:
+         "Find local helpers in Wanaparthy for home repairs, cleaning, moving, and everyday services.",
+      longDescription:
+         "ExtraHand helps Wanaparthy residents connect with local professionals for home maintenance and a wide range of everyday tasks.",
+      population: "0.1M+",
+      activeTasks: 90,
+      activeTaskers: 210,
+      avgRating: 4.6,
+      completedTasks: 720,
+      neighborhoods: [
+         "Rajanagar",
+         "Kothakota Road",
+         "Pebbair Road",
+         "Raghavendra Colony",
+         "Market Yard",
+         "Chityala",
+         "Gopalpet",
+         "Madanapur",
+      ],
+      coordinates: {
+         lat: 16.3623,
+         lng: 78.0622,
+      },
+   },
+
+   sircilla: {
+      name: "Sircilla",
+      state: "Telangana",
+      slug: "sircilla",
+      description:
+         "Connect with local helpers in Sircilla for home services, repairs, cleaning, moving, and more.",
+      longDescription:
+         "ExtraHand connects Sircilla residents with local professionals for home repairs, cleaning, moving, and everyday services.",
+      population: "0.1M+",
+      activeTasks: 100,
+      activeTaskers: 240,
+      avgRating: 4.6,
+      completedTasks: 840,
+      neighborhoods: [
+         "Vemulawada Road",
+         "Gandhi Nagar",
+         "Nehru Nagar",
+         "Shanti Nagar",
+         "Sardar Nagar",
+         "B.Y. Nagar",
+         "Mustabad Road",
+         "Textile Park",
+      ],
+      coordinates: {
+         lat: 18.3886,
+         lng: 78.8105,
+      },
+   },
+
+   jadcherla: {
+      name: "Jadcherla",
+      state: "Telangana",
+      slug: "jadcherla",
+      description:
+         "Find trusted local helpers in Jadcherla for repairs, cleaning, moving, and everyday tasks.",
+      longDescription:
+         "ExtraHand helps Jadcherla residents find local professionals for home maintenance, cleaning, moving, and other everyday services.",
+      population: "0.1M+",
+      activeTasks: 80,
+      activeTaskers: 190,
+      avgRating: 4.6,
+      completedTasks: 640,
+      neighborhoods: [
+         "Jadcherla Town",
+         "Hanuman Temple Road",
+         "Nethaji Nagar",
+         "Shadnagar Road",
+         "Hyderabad-Bangalore Highway",
+         "Dhanwada Road",
+         "Gollapally",
+         "Gangapur",
+      ],
+      coordinates: {
+         lat: 16.7692,
+         lng: 78.1365,
+      },
+   },
+
    pune: {
       name: "Pune",
       state: "Maharashtra",
