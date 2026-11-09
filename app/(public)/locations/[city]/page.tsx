@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fragment } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { ArrowRight, Construction, MapPin } from "lucide-react";
 import { getCityBySlug, getAllCitySlugs } from "@/lib/data/cities";
 import { getFeaturedCategories } from "@/lib/data/categories";
 import {
@@ -30,6 +31,13 @@ export async function generateMetadata({
    if (!cityInfo) {
       return {
          title: "Location Not Found | ExtraHand",
+      };
+   }
+
+   if (cityInfo.slug === "delhi") {
+      return {
+         title: "Delhi Coming Soon | ExtraHand",
+         description: "ExtraHand is coming soon to Delhi. Please check back soon.",
       };
    }
 
@@ -78,6 +86,40 @@ export default async function CityPage({ params }: PageProps) {
                </Link>
             </div>
          </div>
+      );
+   }
+
+   if (cityInfo.slug === "delhi") {
+      return (
+         <main className="relative isolate flex min-h-[68vh] items-center justify-center overflow-hidden bg-linear-to-br from-amber-50 via-white to-orange-50 px-4 py-16 sm:px-6">
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+               <div className="absolute -left-24 top-8 size-72 rounded-full bg-amber-200/30 blur-3xl" />
+               <div className="absolute -right-20 bottom-0 size-80 rounded-full bg-orange-200/30 blur-3xl" />
+            </div>
+            <div className="relative w-full max-w-3xl rounded-3xl border border-white/80 bg-white/80 px-6 py-12 text-center shadow-xl shadow-amber-900/5 backdrop-blur-sm sm:px-12 sm:py-16">
+               <div className="mx-auto mb-7 flex size-20 items-center justify-center rounded-3xl bg-amber-100 text-amber-600 shadow-inner shadow-amber-200/60">
+                  <Construction className="size-9" aria-hidden="true" />
+               </div>
+               <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3.5 py-1.5 text-sm font-semibold text-amber-800">
+                  <MapPin className="size-4" aria-hidden="true" />
+                  <span>Our next destination</span>
+               </div>
+               <h1 className="text-3xl font-bold tracking-tight text-secondary-900 sm:text-5xl">
+                  Delhi, we&apos;re on our way.
+               </h1>
+               <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-secondary-600 sm:text-lg">
+                  We&apos;re getting ready to bring ExtraHand to Delhi. Check back soon to find trusted local help for the things that matter.
+               </p>
+               <div className="mt-9 flex justify-center">
+                  <Link href="/">
+                     <Button size="lg" className="gap-2 bg-primary-500 font-semibold text-secondary-900 shadow-sm hover:bg-primary-600">
+                        Explore ExtraHand
+                        <ArrowRight className="size-4" aria-hidden="true" />
+                     </Button>
+                  </Link>
+               </div>
+            </div>
+         </main>
       );
    }
 
