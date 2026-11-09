@@ -20,6 +20,16 @@ interface PageProps {
    params: Promise<{ city: string }>;
 }
 
+const COMING_SOON_CITY_SLUGS = [
+   "delhi",
+   "mumbai",
+   "bangalore",
+   "chennai",
+   "kolkata",
+   "pune",
+   "ahmedabad",
+];
+
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
@@ -34,10 +44,10 @@ export async function generateMetadata({
       };
    }
 
-   if (cityInfo.slug === "delhi") {
+   if (COMING_SOON_CITY_SLUGS.includes(cityInfo.slug)) {
       return {
-         title: "Delhi Coming Soon | ExtraHand",
-         description: "ExtraHand is coming soon to Delhi. Please check back soon.",
+         title: `${cityInfo.name} Coming Soon | ExtraHand`,
+         description: `ExtraHand is coming soon to ${cityInfo.name}. Please check back soon.`,
       };
    }
 
@@ -89,7 +99,7 @@ export default async function CityPage({ params }: PageProps) {
       );
    }
 
-   if (cityInfo.slug === "delhi") {
+   if (COMING_SOON_CITY_SLUGS.includes(cityInfo.slug)) {
       return (
          <main className="relative isolate flex min-h-[68vh] items-center justify-center overflow-hidden bg-linear-to-br from-amber-50 via-white to-orange-50 px-4 py-16 sm:px-6">
             <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -105,10 +115,10 @@ export default async function CityPage({ params }: PageProps) {
                   <span>Our next destination</span>
                </div>
                <h1 className="text-3xl font-bold tracking-tight text-secondary-900 sm:text-5xl">
-                  Delhi, we&apos;re on our way.
+                  {cityInfo.name}, we&apos;re on our way.
                </h1>
                <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-secondary-600 sm:text-lg">
-                  We&apos;re getting ready to bring ExtraHand to Delhi. Check back soon to find trusted local help for the things that matter.
+                  We&apos;re getting ready to bring ExtraHand to {cityInfo.name}. Check back soon to find trusted local help for the things that matter.
                </p>
                <div className="mt-9 flex justify-center">
                   <Link href="/">

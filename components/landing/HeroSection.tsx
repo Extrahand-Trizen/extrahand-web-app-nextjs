@@ -45,6 +45,7 @@ const heroContentStyle = {
 export function HeroSection() {
    return (
       <section
+         id="homepage-hero"
          aria-label="ExtraHand homepage introduction"
          className="relative flex h-[450px] items-center justify-center scroll-mt-28 md:h-[650px]"
          data-home-tab-step
