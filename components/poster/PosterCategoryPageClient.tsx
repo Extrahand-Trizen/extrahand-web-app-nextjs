@@ -26,6 +26,7 @@ import {
 } from "@/lib/posterCategoryDefaults";
 import type { PosterCategoryDetail, PosterTopTasker, PosterReview, PosterWhyBookFeature, Question, PosterStaticTask } from "@/types/category";
 import { CategorySubservicesSection } from "@/components/shared/CategorySubservicesSection";
+import { NeedHelpSection } from "@/components/shared/NeedHelpSection";
 import { useScrollToHash } from "@/hooks/useScrollToHash";
 
 interface PosterCategoryPageClientProps {
@@ -134,6 +135,8 @@ export default function PosterCategoryPageClient({ category }: PosterCategoryPag
             sectionDescription={staticTasksSectionDescription}
             tasks={staticTasks}
          />
+
+         <NeedHelpSection />
 
          {/* <PosterFooter footerData={category?.footer ?? DEFAULT_FOOTER} /> */}
       </div>

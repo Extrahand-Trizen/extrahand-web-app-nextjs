@@ -1,7 +1,4 @@
-"use client";
-
-import React from "react";
-import { Button } from "@/components/ui/button";
+import { AppStoreRedirectButton } from "@/components/landing/AppStoreRedirectButton";
 import {
    ArrowRight,
    LayoutGrid,
@@ -9,7 +6,6 @@ import {
    CircleCheck,
    Sparkles,
 } from "lucide-react";
-import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
 const bookingSteps = [
    {
@@ -29,7 +25,7 @@ const bookingSteps = [
    },
 ];
 
-export const ServicesSection: React.FC = () => {
+export function ServicesSection() {
    return (
       <section className="rounded-[30px] border border-secondary-200/80 bg-[#f5f1e8] p-5 shadow-[0_4px_22px_rgba(17,24,39,0.04)] sm:p-7">
          <div className="grid gap-6 xl:grid-cols-[1.35fr_1fr] xl:items-center">
@@ -52,14 +48,12 @@ export const ServicesSection: React.FC = () => {
                   </p>
                </div>
 
-               <Button
-                  size="lg"
-                  onClick={() => redirectToAppStore()}
+               <AppStoreRedirectButton
                   className="group w-full gap-2.5 bg-gradient-to-r from-primary-500 to-amber-500 px-6 py-6 text-base font-bold text-white shadow-md shadow-primary-500/20 hover:from-primary-600 hover:to-amber-600 sm:w-auto"
                >
                   Book a Service
                   <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
-               </Button>
+               </AppStoreRedirectButton>
             </div>
 
             <div className="rounded-[24px] border border-secondary-200/80 bg-white/60 p-4 backdrop-blur-sm sm:p-5">
@@ -94,6 +88,6 @@ export const ServicesSection: React.FC = () => {
          </div>
       </section>
    );
-};
+}
 
 export default ServicesSection;

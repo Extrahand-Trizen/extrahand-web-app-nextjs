@@ -1,6 +1,3 @@
-"use client";
-
-import React from "react";
 import { PartnerInterestButton } from "@/components/earn-money/PartnerInterestButton";
 import { partnerCategories } from "@/lib/data/partner-interest";
 import {
@@ -32,7 +29,7 @@ const partnerBenefits = [
    },
 ];
 
-export const PartnerSection: React.FC = () => {
+export function PartnerSection() {
    return (
       <section className="rounded-[30px] border border-secondary-200/80 bg-[#f5f1e8] p-5 shadow-[0_4px_22px_rgba(17,24,39,0.04)] sm:p-7">
          <div className="grid gap-6 xl:grid-cols-[1.1fr_1fr] xl:items-center">
@@ -90,6 +87,6 @@ export const PartnerSection: React.FC = () => {
          </div>
       </section>
    );
-};
+}
 
 export default PartnerSection;

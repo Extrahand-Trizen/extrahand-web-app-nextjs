@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { buildBookNowUrl } from "@/lib/utils/bookNowUrl";
 import HyderabadServiceAreas from "@/components/HyderabadServiceAreas";
+import { NeedHelpSection } from "@/components/shared/NeedHelpSection";
 
 interface SeoPageRendererProps {
   page: SeoPage;
@@ -712,6 +713,7 @@ export default function SeoPageRenderer({ page }: SeoPageRendererProps) {
               return null;
           }
         })}
+      <NeedHelpSection />
     </main>
   );
 }

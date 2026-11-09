@@ -3,6 +3,7 @@ import { Fragment } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Construction, MapPin } from "lucide-react";
+import { NeedHelpSection } from "@/components/shared/NeedHelpSection";
 import { getCityBySlug, getAllCitySlugs } from "@/lib/data/cities";
 import { getFeaturedCategories } from "@/lib/data/categories";
 import {
@@ -300,6 +301,7 @@ export default async function CityPage({ params }: PageProps) {
                   {renderSection(sectionKey)}
                </Fragment>
             ))}
+            <NeedHelpSection />
          </main>
       </>
    );

@@ -5,6 +5,7 @@ import { getPublishedSeoPage } from "@/lib/api/endpoints/seoPages";
 import SeoPageRenderer from "@/components/SeoPageRenderer";
 import SeoPageWrapper from "@/components/SeoPageWrapper";
 import { BookServiceButton } from "@/components/shared/BookServiceButton";
+import { NeedHelpSection } from "@/components/shared/NeedHelpSection";
 import { getCityBySlug } from "@/lib/data/cities";
 import { buildBookNowUrl } from "@/lib/utils/bookNowUrl";
 import {
@@ -355,6 +356,7 @@ export default async function CityServicePage({
                </div>
             </article>
          </section>
+         <NeedHelpSection />
       </main>
    );
 }
