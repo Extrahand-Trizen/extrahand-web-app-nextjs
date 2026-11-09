@@ -1,6 +1,5 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useState, type ReactNode } from "react";
 import {
    Dialog,
@@ -17,11 +16,7 @@ import {
    partnerPlayStoreUrl,
 } from "@/lib/data/partner-interest";
 import type { CategoriesListItem } from "@/lib/api/endpoints/categories";
-
-const PartnerCallbackForm = dynamic(
-   () => import("@/app/(public)/ad/PartnerCallbackForm"),
-   { ssr: false }
-);
+import PartnerCallbackForm from "@/app/(public)/ad/PartnerCallbackForm";
 
 export function PartnerInterestButton({
    children,
@@ -45,6 +40,7 @@ export function PartnerInterestButton({
             {children}
          </DialogTrigger>
          <DialogContent
+            portal={false}
             className="!w-[calc(100%-1rem)] !max-w-[620px] !border-0 !bg-transparent !p-0 !shadow-none"
             onCloseAutoFocus={(event) => {
                event.preventDefault();

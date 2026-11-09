@@ -58,6 +58,7 @@ export const PartnerSection: React.FC = () => {
 
                <PartnerInterestButton
                   categories={partnerCategories}
+                  defaultOpen
                   className="group w-full gap-2.5 bg-gradient-to-r from-primary-500 to-amber-500 px-6 py-6 text-base font-bold text-white shadow-md shadow-primary-500/20 hover:from-primary-600 hover:to-amber-600 sm:w-auto"
                >
                   Register as a Partner
