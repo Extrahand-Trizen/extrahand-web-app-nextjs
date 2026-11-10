@@ -213,8 +213,8 @@ export default async function CityPage({ params }: PageProps) {
                   section="stats"
                />
             );
-         case "neighborhoods":
-            return <FAQSection includeExtraMart={false} />;
+         case "faqs":
+            return <FAQSection includeExtraMart={false} content={content.faqs} />;
          case "exploreServices":
             if (
                cityInfo.slug !== "hyderabad" &&

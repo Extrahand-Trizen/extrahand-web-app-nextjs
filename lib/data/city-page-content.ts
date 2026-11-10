@@ -5,6 +5,43 @@ import { hyderabadServicePages } from "@/lib/data/hyderabad-service-pages";
 export const DEFAULT_CITY_HERO_IMAGE =
    "/assets/ad/friendly-extrahand-service-team.webp";
 
+export const DEFAULT_CITY_FAQS = {
+   title: "Frequently Asked Questions",
+   description: "Find answers to common questions about ExtraHand and how it works.",
+   items: [
+      {
+         id: "what-is-extrahand",
+         question: "What is ExtraHand?",
+         answer:
+            "ExtraHand is an on-demand platform that helps you book trusted professionals for home services such as plumbing, electrical work, cleaning, painting, carpentry, and more. You can also shop for groceries, fresh fruits, vegetables, and everyday essentials through ExtraMart.",
+      },
+      {
+         id: "how-to-book",
+         question: "How do I book a home service?",
+         answer:
+            "Choose the service you need, select your preferred date and time, review the details, and confirm your booking. ExtraHand will assign a suitable professional to complete your service.",
+      },
+      {
+         id: "verified-professionals",
+         question: "Are the service professionals verified?",
+         answer:
+            "Yes. ExtraHand follows a partner onboarding and verification process to connect customers with trusted service professionals.",
+      },
+      {
+         id: "schedule-later",
+         question: "Can I schedule a service for a later date?",
+         answer:
+            "Yes. You can select your preferred date and available time slot while booking a service, depending on availability in your location.",
+      },
+      {
+         id: "track-booking",
+         question: "How can I track my booking or order?",
+         answer:
+            "You can check your booking and order details through the ExtraHand customer app to stay updated on the status of your service or delivery.",
+      },
+   ],
+};
+
 export interface CityPageSeoContentBlock {
    id: string;
    title: string;
@@ -32,6 +69,11 @@ export interface CityPageContent {
       steps: Array<{ id: string; title: string; description: string }>;
    };
    stats: { title: string };
+   faqs: {
+      title: string;
+      description: string;
+      items: Array<{ id: string; question: string; answer: string }>;
+   };
    neighborhoods: {
       title: string;
       description: string;
@@ -95,6 +137,7 @@ export function getCityPageDefaultContent(city: CityInfo): CityPageContent {
          ],
       },
       stats: { title: "" },
+      faqs: DEFAULT_CITY_FAQS,
       neighborhoods: {
          title: "Neighborhood Coverage",
          description: `ExtraHand is available across ${city.name}`,
@@ -128,7 +171,7 @@ export function getCityPageDefaultContent(city: CityInfo): CityPageContent {
          "popularServices",
          "howItWorks",
          "stats",
-         "neighborhoods",
+         "faqs",
          "exploreServices",
       ],
       seo: {
@@ -157,7 +200,7 @@ export function mergeCityPageContent(
       "popularServices",
       "howItWorks",
       "stats",
-      "neighborhoods",
+      "faqs",
       "exploreServices",
       ...seoContentBlocks.map((block) => `seo:${block.id}`),
    ]);
@@ -166,7 +209,7 @@ export function mergeCityPageContent(
       "popularServices",
       "howItWorks",
       "stats",
-      "neighborhoods",
+      "faqs",
       ...seoContentBlocks.map((block) => `seo:${block.id}`),
       "exploreServices",
    ];
@@ -194,6 +237,7 @@ export function mergeCityPageContent(
       },
       howItWorks: defaults.howItWorks,
       stats: { ...defaults.stats, ...published.stats },
+      faqs: published.faqs ?? defaults.faqs,
       neighborhoods: {
          ...defaults.neighborhoods,
          ...published.neighborhoods,
@@ -244,6 +288,12 @@ export function isCityPageContent(value: unknown): value is CityPageContent {
          ["title", "description"]
       ) &&
       stringFields(value.stats, ["title"]) &&
+      (value.faqs === undefined ||
+         (stringFields(value.faqs, ["title", "description"]) &&
+            items(
+               isRecord(value.faqs) ? value.faqs.items : null,
+               ["question", "answer"]
+            ))) &&
       stringFields(value.neighborhoods, [
          "title",
          "description",

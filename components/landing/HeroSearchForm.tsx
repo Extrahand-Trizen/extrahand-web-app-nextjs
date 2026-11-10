@@ -1,18 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useCallback } from "react";
 import { ShoppingCart } from "lucide-react";
 import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
 export function HeroSearchForm() {
-   const router = useRouter();
-   const navigateWithTag = useCallback((tag: string) => {
-      const searchParams = new URLSearchParams();
-      searchParams.set("q", tag);
-      router.push(`/discover?${searchParams.toString()}`);
-   }, [router]);
-
    return (
       <div className="mx-auto max-w-2xl">
          <div className="flex min-h-[28px] flex-wrap justify-center gap-3 md:min-h-[36px]">
@@ -24,14 +15,12 @@ export function HeroSearchForm() {
                "Gardening",
                "Plumbing",
             ].map((tag) => (
-               <button
+               <span
                   key={tag}
-                  type="button"
-                  onClick={() => navigateWithTag(tag)}
                   className="px-3 md:px-4 py-1 md:py-2 rounded-full bg-white/20 hover:bg-white/30 text-white backdrop-blur-md text-xs md:text-sm font-medium transition-colors border border-white/30"
                >
                   {tag}
-               </button>
+               </span>
             ))}
          </div>
          <div className="mt-4 flex justify-center">

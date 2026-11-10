@@ -124,14 +124,20 @@ const FAQItemComponent: React.FC<FAQItemComponentProps> = ({
 
 interface FAQSectionProps {
    includeExtraMart?: boolean;
+   content?: {
+      title: string;
+      description: string;
+      items: FAQItem[];
+   };
 }
 
 export const FAQSection: React.FC<FAQSectionProps> = ({
    includeExtraMart = true,
+   content,
 }) => {
-   const visibleFaqs = includeExtraMart
+   const visibleFaqs = content?.items ?? (includeExtraMart
       ? faqs
-      : faqs.filter((faq) => faq.question !== "What is ExtraMart?");
+      : faqs.filter((faq) => faq.question !== "What is ExtraMart?"));
    const [openIndex, setOpenIndex] = useState<number | null>(
       includeExtraMart ? 0 : null
    );
@@ -152,10 +158,10 @@ export const FAQSection: React.FC<FAQSectionProps> = ({
                   Help Center
                </span>
                <h3 className="text-3xl md:text-5xl font-bold text-secondary-900 mb-4">
-                  Frequently Asked Questions
+                  {content?.title ?? "Frequently Asked Questions"}
                </h3>
                <p className="text-secondary-600 text-base md:text-lg max-w-2xl mx-auto">
-                  Find answers to common questions about ExtraHand and how it works.
+                  {content?.description ?? "Find answers to common questions about ExtraHand and how it works."}
                </p>
             </div>
 
