@@ -307,3 +307,34 @@ export const getCategoryById = (id: string): ServiceCategory | undefined => {
 export const getFeaturedCategories = (limit: number = 6): ServiceCategory[] => {
    return serviceCategories.slice(0, limit);
 };
+
+const cityPageExcludedCategoryIds = new Set([
+   "accounting",
+   "cooking-home-chef",
+   "fitness-trainers",
+   "event-services",
+   "driver-chauffeur",
+]);
+
+const cityPageAdditionalCategoryIds = new Set([
+   "painting",
+   "plumbing",
+]);
+
+const cityPagePersonalAssistanceCategory: ServiceCategory = {
+   id: "personal-assistance",
+   name: "Personal Assistance",
+   description: "Everyday personal and household assistance",
+   icon: "",
+   gradient: "from-slate-500 via-gray-500 to-zinc-500",
+};
+
+export const getCityPageCategories = (): ServiceCategory[] => [
+   ...getFeaturedCategories(12).filter(
+      (category) => !cityPageExcludedCategoryIds.has(category.id)
+   ),
+   ...serviceCategories.filter((category) =>
+      cityPageAdditionalCategoryIds.has(category.id)
+   ),
+   cityPagePersonalAssistanceCategory,
+];

@@ -8,12 +8,10 @@
  * - Option for both user types
  */
 
-"use client";
-
 import Image from "next/image";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/openAppBridge";
 
-export const FinalCTASection: React.FC = () => {
+export const FinalCTASection = () => {
    return (
       <section className="bg-white px-4 py-12 md:py-20">
          <div className="mx-auto max-w-7xl">

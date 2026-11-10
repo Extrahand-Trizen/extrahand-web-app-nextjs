@@ -16,7 +16,7 @@ import {
    partnerPlayStoreUrl,
 } from "@/lib/data/partner-interest";
 import type { CategoriesListItem } from "@/lib/api/endpoints/categories";
-import PartnerCallbackForm from "@/app/(public)/ad/PartnerCallbackForm";
+import { PartnerInterestModalForm } from "@/components/earn-money/PartnerInterestModalForm";
 
 export function PartnerInterestButton({
    children,
@@ -50,12 +50,11 @@ export function PartnerInterestButton({
             <DialogDescription className="sr-only">
                Share your details and our team will contact you about becoming an ExtraHand partner.
             </DialogDescription>
-            <PartnerCallbackForm
+            <PartnerInterestModalForm
                categories={categories}
                cities={partnerCities}
                partnerPlayStoreUrl={partnerPlayStoreUrl}
                partnerAppStoreUrl={partnerAppStoreUrl}
-               variant="modal"
             />
          </DialogContent>
       </Dialog>

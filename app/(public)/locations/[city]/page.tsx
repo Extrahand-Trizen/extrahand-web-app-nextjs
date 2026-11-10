@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Construction, MapPin } from "lucide-react";
 import { NeedHelpSection } from "@/components/shared/NeedHelpSection";
 import { getCityBySlug, getAllCitySlugs } from "@/lib/data/cities";
-import { getFeaturedCategories } from "@/lib/data/categories";
+import { getCityPageCategories } from "@/lib/data/categories";
 import {
    getCityPageDefaultContent,
    mergeCityPageContent,
@@ -143,7 +143,7 @@ export default async function CityPage({ params }: PageProps) {
    const categoryCopy = new Map(
       content.popularServices.items.map((item) => [item.id, item])
    );
-   const categories = getFeaturedCategories(12).map((category) => {
+   const categories = getCityPageCategories().map((category) => {
       const copy = categoryCopy.get(category.id);
       return copy
          ? { ...category, name: copy.name, description: copy.description }

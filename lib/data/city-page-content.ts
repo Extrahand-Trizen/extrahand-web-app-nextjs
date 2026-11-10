@@ -1,5 +1,5 @@
 import type { CityInfo } from "@/lib/data/cities";
-import { getFeaturedCategories } from "@/lib/data/categories";
+import { getCityPageCategories } from "@/lib/data/categories";
 import { hyderabadServicePages } from "@/lib/data/hyderabad-service-pages";
 
 export const DEFAULT_CITY_HERO_IMAGE =
@@ -65,7 +65,7 @@ export function getCityPageDefaultContent(city: CityInfo): CityPageContent {
       popularServices: {
          title: `Popular Services in ${city.name}`,
          subtitle: `What do people in ${city.name} need help with?`,
-         items: getFeaturedCategories(12).map(({ id, name, description }) => ({
+         items: getCityPageCategories().map(({ id, name, description }) => ({
             id,
             name,
             description,

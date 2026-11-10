@@ -418,6 +418,20 @@ export const hyderabadServicePages: HyderabadServicePage[] = [
          },
       ],
    },
+   {
+      slug: "personal-assistance-in-hyderabad",
+      serviceName: "Personal Assistance Services",
+      shortDescription: "Arrange personal assistance in Hyderabad for everyday errands, appointment support, and practical help with routine tasks.",
+      heroDescription: "Get dependable help with everyday errands and personal tasks around Hyderabad.",
+      whatYouGet: ["Errand and appointment assistance", "Help with routine personal tasks", "Flexible support based on your needs"],
+      commonNeeds: ["Help with local errands", "Assistance with appointments", "Extra support during a busy week"],
+      faq: [
+         {
+            question: "Can I describe the tasks I need help with?",
+            answer: "Yes, share your requirements and preferred timing when booking so the assistance can be matched to your needs.",
+         },
+      ],
+   },
 ];
 
 const serviceCategoryByPageSlug: Record<string, string> = {
@@ -450,6 +464,7 @@ const serviceCategoryByPageSlug: Record<string, string> = {
    "fitness-trainers-in-hyderabad": "fitness-trainers",
    "furniture-assembly-in-hyderabad": "furniture-assembly",
    "cctv-installation-in-hyderabad": "electrical",
+   "personal-assistance-in-hyderabad": "personal-assistance",
 };
 
 export const hyderabadServicePageSlugs = hyderabadServicePages.map(

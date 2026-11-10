@@ -467,6 +467,18 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
          answer: "Yes, placement planning is part of setup to improve practical coverage.",
       },
    },
+   "personal-assistance-in-hyderabad": {
+      imagePath: "/assets/Book-now/personal-assistance_card.webp",
+      overview: "Personal assistance offers practical support with routine errands and everyday tasks, arranged around your schedule and requirements.",
+      bestFor: "People who need help managing local errands, appointments, or other routine tasks.",
+      serviceDeepDive: "Personal assistance works best when the requested tasks, timing, and any location details are discussed in advance. Share clear priorities so the support can be planned around your needs.",
+      prepTips: ["List the tasks you need help with", "Share preferred timing and locations", "Mention any important instructions in advance"],
+      postServiceTips: ["Confirm completed tasks before closing the request", "Share feedback about any follow-up needs", "Plan ahead for recurring assistance"],
+      secondFaq: {
+         question: "Can I request help with more than one errand?",
+         answer: "Yes, include each task and its location when describing your assistance request.",
+      },
+   },
 };
 
 function getServicePageEnhancement(servicePage: HyderabadServicePage): ServicePageEnhancement {
