@@ -108,6 +108,7 @@ const socialLinks = [
 export const LandingFooter: React.FC = () => {
   const [openSection, setOpenSection] = useState<string | null>(null);
   const isExternalLink = (href: string) => /^https?:\/\//.test(href);
+  const scrollToTop = () => window.scrollTo({ top: 0, left: 0, behavior: "auto" });
 
   const handleToggle = (title: string) => {
     setOpenSection((prev) => (prev === title ? null : title));
@@ -207,6 +208,11 @@ export const LandingFooter: React.FC = () => {
                         ) : (
                           <Link
                             href={link.href}
+                            onNavigate={
+                              column.title === "Popular Areas" || column.title === "Popular Cities"
+                                ? scrollToTop
+                                : undefined
+                            }
                             className="text-secondary-200 hover:text-white text-xs transition-colors"
                           >
                             {link.label}
@@ -244,6 +250,11 @@ export const LandingFooter: React.FC = () => {
                       ) : (
                         <Link
                           href={link.href}
+                          onNavigate={
+                            column.title === "Popular Areas" || column.title === "Popular Cities"
+                              ? scrollToTop
+                              : undefined
+                          }
                           className="text-secondary-200 hover:text-white text-sm transition-colors"
                         >
                           {link.label}

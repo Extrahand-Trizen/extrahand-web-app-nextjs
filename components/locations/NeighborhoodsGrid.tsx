@@ -72,6 +72,9 @@ export function NeighborhoodsGrid({
                         key={neighborhood.id}
                         href={getNeighborhoodHref(neighborhood.id)}
                         onClick={handleNeighborhoodClick}
+                        onNavigate={() =>
+                           window.scrollTo({ top: 0, left: 0, behavior: "auto" })
+                        }
                         className="flex items-center gap-2 px-4 py-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors cursor-pointer"
                      >
                         <MapPin className="w-4 h-4 text-blue-600 flex-shrink-0" />
@@ -95,6 +98,9 @@ export function NeighborhoodsGrid({
                            key={neighborhood.id}
                            href={getNeighborhoodHref(neighborhood.id)}
                            onClick={handleNeighborhoodClick}
+                           onNavigate={() =>
+                              window.scrollTo({ top: 0, left: 0, behavior: "auto" })
+                           }
                            className="px-3 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded-md text-sm text-gray-700 hover:text-gray-900 transition-colors cursor-pointer"
                         >
                            {neighborhood.name}

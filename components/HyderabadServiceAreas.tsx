@@ -60,6 +60,9 @@ export default function HyderabadServiceAreas({
                <li key={area}>
                   <Link
                      href={`/${categorySlug}-in-${toAreaSlug(area)}`}
+                     onNavigate={() =>
+                        window.scrollTo({ top: 0, left: 0, behavior: "auto" })
+                     }
                      className="block rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-3 text-sm font-semibold text-secondary-800 transition hover:border-primary-300 hover:bg-white"
                   >
                      {area}
