@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPublishedSeoPage } from "@/lib/api/endpoints/seoPages";
@@ -6,11 +7,11 @@ import SeoPageRenderer from "@/components/SeoPageRenderer";
 import SeoPageWrapper from "@/components/SeoPageWrapper";
 import { BookServiceButton } from "@/components/shared/BookServiceButton";
 import { NeedHelpSection } from "@/components/shared/NeedHelpSection";
-import { getCityBySlug } from "@/lib/data/cities";
+import { getAllCitySlugs, getCityBySlug } from "@/lib/data/cities";
 import { buildBookNowUrl } from "@/lib/utils/bookNowUrl";
 import {
    getCategoryById,
-   serviceCategories,
+   getCityPageCategories,
 } from "@/lib/data/categories";
 import {
    getHyderabadServicePageByLocationSlug,
@@ -27,15 +28,53 @@ interface CityServicePageProps {
    params: Promise<{ city: string; category: string }>;
 }
 
-const supportedCitySlugs = ["mahabubnagar", "siddipet"];
+const COMING_SOON_CITY_SLUGS = [
+   "delhi",
+   "mumbai",
+   "bangalore",
+   "chennai",
+   "kolkata",
+   "pune",
+   "ahmedabad",
+];
+const supportedCitySlugs = getAllCitySlugs().filter(
+   (citySlug) =>
+      citySlug !== "hyderabad" && !COMING_SOON_CITY_SLUGS.includes(citySlug)
+);
 const serviceLocationSlugs = hyderabadServicePages.map((page) =>
    page.slug.replace(/-in-hyderabad$/, "")
 );
-const genericCategoryIds = serviceCategories
-   .filter(
-      (category) => !serviceLocationSlugs.includes(category.id)
-   )
-   .map((category) => category.id);
+const genericCategoryIds = getCityPageCategories().map(
+   (category) => category.id
+);
+const serviceCategorySlugs = Array.from(
+   new Set([...serviceLocationSlugs, ...genericCategoryIds])
+);
+
+const serviceImages: Record<string, string> = {
+   "ac-repair": "/assets/Book-now/acrepair-booknow.webp",
+   "appliance-repair": "/assets/Book-now/wachingmachinecheckup-booknow.webp",
+   "beauty-services": "/assets/mosted-booked-services/homefacial.webp",
+   "car-washing":
+      "https://img.freepik.com/free-photo/professional-washer-blue-uniform-washing-luxury-car-with-water-gun-open-air-car-wash_496169-333.jpg?semt=ais_hybrid&w=740&q=80",
+   carpenter: "/assets/mobilescreens/furniture.webp",
+   "deep-cleaning": "/assets/mosted-booked-services/homeclean.webp",
+   electrical: "/assets/Book-now/electrician-switch-socket.webp",
+   painting: "/assets/mobilescreens/painting.webp",
+   plumbing: "/assets/Book-now/plumbing-tap-mixer.webp",
+   "personal-assistance": "/assets/Book-now/personal-assistance_card.webp",
+   "home-cleaning": "/assets/Book-now/fullhouse-booknow.webp",
+   "it-support": "/assets/mobilescreens/tech.webp",
+   "packers-movers": "/assets/mobilescreens/moving.webp",
+   "pest-control": "/assets/Book-now/Pest-Control_card.webp",
+   "photographer-videographer": "/assets/images/creative.webp",
+   "senior-care-elder-care": "/assets/images/assist.webp",
+   tutors: "/assets/images/tutor.webp",
+   gardening: "/assets/mobilescreens/garden.webp",
+   "water-tanker-services": "/assets/mobilescreens/delivery.webp",
+   "furniture-assembly": "/assets/mobilescreens/mounting.webp",
+   handyperson: "/assets/mobilescreens/handy.webp",
+};
 
 function getPageData(serviceSlug: string) {
    const servicePage = getHyderabadServicePageByLocationSlug(serviceSlug);
@@ -45,7 +84,9 @@ function getPageData(serviceSlug: string) {
 
    return {
       servicePage,
-      category: getCategoryById(categoryId),
+      category:
+         getCategoryById(categoryId) ??
+         getCityPageCategories().find((item) => item.id === categoryId),
    };
 }
 
@@ -141,6 +182,8 @@ export default async function CityServicePage({
    }
 
    const serviceName = servicePage?.serviceName ?? category.name;
+   const serviceImage =
+      category.image || serviceImages[category.id] || "/assets/mobilescreens/work.webp";
    const description = servicePage
       ? localize(servicePage.heroDescription, city.name)
       : `${category.description} in ${city.name}. Find trusted local professionals to help with your task.`;
@@ -197,34 +240,46 @@ export default async function CityServicePage({
                <span className="text-secondary-900">{serviceName}</span>
             </nav>
 
-            <div className="rounded-2xl border border-secondary-200 bg-white p-6 sm:p-10">
-               <p className="text-sm font-semibold uppercase tracking-wide text-primary-600">
-                  Local Services in {city.name}
-               </p>
-               <h1 className="mt-3 text-3xl font-bold text-secondary-900 sm:text-4xl">
-                  {serviceName} in {city.name}
-               </h1>
-               <p className="mt-4 max-w-3xl text-base leading-7 text-secondary-700 sm:text-lg">
-                  {description}
-               </p>
-               <p className="mt-4 max-w-3xl leading-7 text-secondary-700">
-                  Find the right {serviceName.toLowerCase()} help in {city.name}.
-                  Compare your options and review the details before requesting
-                  a service.
-               </p>
-               <div className="mt-7 flex flex-wrap gap-3">
-                  <Link
-                     href={`/locations/${city.slug}`}
-                     className="inline-flex rounded-lg border border-secondary-300 bg-white px-5 py-3 text-sm font-semibold text-secondary-800 transition hover:bg-secondary-100"
-                  >
-                     Explore All Services in {city.name}
-                  </Link>
-                  <BookServiceButton
-                     href={buildBookNowUrl()}
-                     className="inline-flex rounded-lg bg-primary-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-700 cursor-pointer"
-                  >
-                     Request This Service
-                  </BookServiceButton>
+            <div className="grid gap-8 rounded-2xl border border-secondary-200 bg-white p-6 sm:p-10 md:grid-cols-[minmax(0,1.3fr)_minmax(240px,0.7fr)] md:items-center">
+               <div>
+                  <p className="text-sm font-semibold uppercase tracking-wide text-primary-600">
+                     Local Services in {city.name}
+                  </p>
+                  <h1 className="mt-3 text-3xl font-bold text-secondary-900 sm:text-4xl">
+                     {serviceName} in {city.name}
+                  </h1>
+                  <p className="mt-4 max-w-3xl text-base leading-7 text-secondary-700 sm:text-lg">
+                     {description}
+                  </p>
+                  <p className="mt-4 max-w-3xl leading-7 text-secondary-700">
+                     Find the right {serviceName.toLowerCase()} help in {city.name}.
+                     Compare your options and review the details before requesting
+                     a service.
+                  </p>
+                  <div className="mt-7 flex flex-wrap gap-3">
+                     <Link
+                        href={`/locations/${city.slug}`}
+                        className="inline-flex rounded-lg border border-secondary-300 bg-white px-5 py-3 text-sm font-semibold text-secondary-800 transition hover:bg-secondary-100"
+                     >
+                        Explore All Services in {city.name}
+                     </Link>
+                     <BookServiceButton
+                        href={buildBookNowUrl()}
+                        className="inline-flex rounded-lg bg-primary-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-700 cursor-pointer"
+                     >
+                        Request This Service
+                     </BookServiceButton>
+                  </div>
+               </div>
+               <div className="relative aspect-square w-full max-w-80 justify-self-center overflow-hidden rounded-xl">
+                  <Image
+                     src={serviceImage}
+                     alt={`${serviceName} services in ${city.name}`}
+                     fill
+                     sizes="(max-width: 768px) 100vw, 320px"
+                     priority
+                     className="object-cover"
+                  />
                </div>
             </div>
          </section>
@@ -363,7 +418,7 @@ export default async function CityServicePage({
 
 export function generateStaticParams() {
    return supportedCitySlugs.flatMap((city) =>
-      [...serviceLocationSlugs, ...genericCategoryIds].map((category) => ({
+      serviceCategorySlugs.map((category) => ({
          city,
          category,
       }))

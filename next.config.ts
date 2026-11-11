@@ -31,15 +31,6 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  async redirects() {
-    return [
-      {
-        source: "/locations/:city(mahabubnagar|siddipet)/service/:service",
-        destination: "/:service-in-:city",
-        permanent: true,
-      },
-    ];
-  },
   async headers() {
     return [
       {

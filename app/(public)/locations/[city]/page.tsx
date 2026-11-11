@@ -14,7 +14,7 @@ import { getPublishedCityPage } from "@/lib/api/endpoints/cityPages";
 import { CityHero } from "@/components/locations/CityHero";
 import { ServiceCategoriesGrid } from "@/components/locations/ServiceCategoriesGrid";
 import { CityStats } from "@/components/locations/CityStats";
-import { hyderabadServicePages } from "@/lib/data/hyderabad-service-pages";
+import { cityExploreServicePages } from "@/lib/data/hyderabad-service-pages";
 import { FAQSection } from "@/components/landing/FAQSection";
 
 interface PageProps {
@@ -216,13 +216,6 @@ export default async function CityPage({ params }: PageProps) {
          case "faqs":
             return <FAQSection includeExtraMart={false} content={content.faqs} />;
          case "exploreServices":
-            if (
-               cityInfo.slug !== "hyderabad" &&
-               cityInfo.slug !== "mahabubnagar" &&
-               cityInfo.slug !== "siddipet"
-            ) {
-               return null;
-            }
             return (
                <section
                   id={
@@ -241,7 +234,7 @@ export default async function CityPage({ params }: PageProps) {
                      </p>
 
                      <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {hyderabadServicePages.map((servicePage) => {
+                        {cityExploreServicePages.map((servicePage) => {
                            const copy = content.exploreServices.items.find(
                               (item) => item.id === servicePage.slug
                            );
@@ -251,7 +244,7 @@ export default async function CityPage({ params }: PageProps) {
                                     href={
                                        cityInfo.slug === "hyderabad"
                                           ? `/${servicePage.slug}`
-                                          : `/${servicePage.slug.replace(/-in-hyderabad$/, "")}-in-${cityInfo.slug}`
+                                          : `/locations/${cityInfo.slug}/service/${servicePage.slug.replace(/-in-hyderabad$/, "")}`
                                     }
                                     className="block rounded-xl border border-secondary-200 bg-secondary-50 p-4 transition hover:border-primary-300 hover:bg-white"
                                  >

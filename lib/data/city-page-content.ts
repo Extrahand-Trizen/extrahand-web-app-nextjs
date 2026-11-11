@@ -1,6 +1,6 @@
 import type { CityInfo } from "@/lib/data/cities";
 import { getCityPageCategories } from "@/lib/data/categories";
-import { hyderabadServicePages } from "@/lib/data/hyderabad-service-pages";
+import { cityExploreServicePages } from "@/lib/data/hyderabad-service-pages";
 
 export const DEFAULT_CITY_HERO_IMAGE =
    "/assets/ad/friendly-extrahand-service-team.webp";
@@ -151,19 +151,14 @@ export function getCityPageDefaultContent(city: CityInfo): CityPageContent {
       exploreServices: {
          title: `Explore Services in ${city.name}`,
          subtitle: `Explore all available services in ${city.name} and find the right local help for your task.`,
-         items:
-            city.slug === "hyderabad" ||
-            city.slug === "mahabubnagar" ||
-            city.slug === "siddipet"
-               ? hyderabadServicePages.map((servicePage) => ({
-                    id: servicePage.slug,
-                    title: `${servicePage.serviceName} in ${city.name}`,
-                    description: servicePage.shortDescription.replaceAll(
-                       "Hyderabad",
-                       city.name
-                    ),
-                 }))
-               : [],
+         items: cityExploreServicePages.map((servicePage) => ({
+            id: servicePage.slug,
+            title: `${servicePage.serviceName} in ${city.name}`,
+            description: servicePage.shortDescription.replaceAll(
+               "Hyderabad",
+               city.name
+            ),
+         })),
       },
       seoContentBlocks: [],
       sectionOrder: [

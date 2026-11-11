@@ -467,6 +467,21 @@ const serviceCategoryByPageSlug: Record<string, string> = {
    "personal-assistance-in-hyderabad": "personal-assistance",
 };
 
+export const cityExploreServicePages = hyderabadServicePages.filter(
+   (servicePage) =>
+      ![
+         "packers-and-movers-in-hyderabad",
+         "house-shifting-in-hyderabad",
+         "office-relocation-in-hyderabad",
+         "furniture-assembly-in-hyderabad",
+         "home-chef-services-in-hyderabad",
+         "fitness-trainers-in-hyderabad",
+         "cctv-installation-in-hyderabad",
+         "driver-services-in-hyderabad",
+         "event-services-in-hyderabad",
+      ].includes(servicePage.slug)
+);
+
 export const hyderabadServicePageSlugs = hyderabadServicePages.map(
    (servicePage) => servicePage.slug
 );

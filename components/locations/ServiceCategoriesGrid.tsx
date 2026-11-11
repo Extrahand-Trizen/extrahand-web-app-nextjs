@@ -10,28 +10,18 @@ import { ArrowRight } from "lucide-react";
 import type { ServiceCategory } from "@/lib/data/categories";
 import type { CityPageContent } from "@/lib/data/city-page-content";
 import { getHyderabadServicePageByCategoryId } from "@/lib/data/hyderabad-service-pages";
-import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
 function getCategoryHref(categoryId: string, citySlug: string): string {
-   if (citySlug === "siddipet" || citySlug === "mahabubnagar") {
+   if (citySlug === "hyderabad") {
       const matchingServicePage = getHyderabadServicePageByCategoryId(categoryId);
-      const serviceSlug = matchingServicePage
-         ? matchingServicePage.slug.replace(/-in-hyderabad$/, "")
-         : categoryId;
-      return `/${serviceSlug}-in-${citySlug}`;
+      if (matchingServicePage) {
+         return `/${matchingServicePage.slug}`;
+      }
+
+      return "/locations/hyderabad#hyderabad-service-pages";
    }
 
-   if (citySlug !== "hyderabad") {
-      return "#";
-   }
-
-   const matchingServicePage = getHyderabadServicePageByCategoryId(categoryId);
-
-   if (matchingServicePage) {
-      return `/${matchingServicePage.slug}`;
-   }
-
-   return "/locations/hyderabad#hyderabad-service-pages";
+   return `/locations/${citySlug}/service/${categoryId}`;
 }
 
 interface ServiceCategoriesGridProps {
@@ -47,11 +37,6 @@ export function ServiceCategoriesGrid({
    cityName,
    content,
 }: ServiceCategoriesGridProps) {
-   const isAppRedirectCity =
-      citySlug !== "hyderabad" &&
-      citySlug !== "siddipet" &&
-      citySlug !== "mahabubnagar";
-
    return (
       <section className="py-16 bg-gray-50">
          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -72,12 +57,6 @@ export function ServiceCategoriesGrid({
                   <Link
                      key={category.id}
                      href={getCategoryHref(category.id, citySlug)}
-                     onClick={(e) => {
-                        if (isAppRedirectCity) {
-                           e.preventDefault();
-                           redirectToAppStore();
-                        }
-                     }}
                      className="group block cursor-pointer"
                   >
                      <div className="bg-white border border-gray-200 rounded-lg p-6 hover:border-blue-500 hover:shadow-md transition-all">
