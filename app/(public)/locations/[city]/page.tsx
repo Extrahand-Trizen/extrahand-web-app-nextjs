@@ -244,7 +244,7 @@ export default async function CityPage({ params }: PageProps) {
                                     href={
                                        cityInfo.slug === "hyderabad"
                                           ? `/${servicePage.slug}`
-                                          : `/locations/${cityInfo.slug}/service/${servicePage.slug.replace(/-in-hyderabad$/, "")}`
+                                          : `/${servicePage.slug.replace(/-in-hyderabad$/, `-in-${cityInfo.slug}`)}`
                                     }
                                     className="block rounded-xl border border-secondary-200 bg-secondary-50 p-4 transition hover:border-primary-300 hover:bg-white"
                                  >

@@ -486,6 +486,21 @@ export const hyderabadServicePageSlugs = hyderabadServicePages.map(
    (servicePage) => servicePage.slug
 );
 
+export const hyderabadServiceAreas = [
+   "HITEC City",
+   "Gachibowli",
+   "Madhapur",
+   "Kondapur",
+   "Banjara Hills",
+   "Jubilee Hills",
+   "Secunderabad",
+   "Begumpet",
+   "Ameerpet",
+   "Kukatpally",
+   "Miyapur",
+   "Uppal",
+];
+
 export const HYDERABAD_CITY_SLUG = "hyderabad";
 
 const HYDERABAD_LEGACY_SUFFIX = `-in-${HYDERABAD_CITY_SLUG}`;

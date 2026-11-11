@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const sourcePath = path.join(projectRoot, "sitemap.xml");
-const outputPath = path.join(projectRoot, "public", "sitemap.xml");
+const outputPath = path.join(projectRoot, "public", "sitemap-generated.xml");
 const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://extrahand.in").replace(/\/+$/, "");
 const backendUrl = (
   process.env.CONTENT_ADMIN_URL ||

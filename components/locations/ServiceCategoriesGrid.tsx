@@ -12,16 +12,20 @@ import type { CityPageContent } from "@/lib/data/city-page-content";
 import { getHyderabadServicePageByCategoryId } from "@/lib/data/hyderabad-service-pages";
 
 function getCategoryHref(categoryId: string, citySlug: string): string {
-   if (citySlug === "hyderabad") {
-      const matchingServicePage = getHyderabadServicePageByCategoryId(categoryId);
-      if (matchingServicePage) {
-         return `/${matchingServicePage.slug}`;
-      }
+   const matchingServicePage = getHyderabadServicePageByCategoryId(categoryId);
+   if (matchingServicePage) {
+      const serviceSlug =
+         citySlug === "hyderabad"
+            ? matchingServicePage.slug
+            : matchingServicePage.slug.replace(/-in-hyderabad$/, `-in-${citySlug}`);
+      return `/${serviceSlug}`;
+   }
 
+   if (citySlug === "hyderabad") {
       return "/locations/hyderabad#hyderabad-service-pages";
    }
 
-   return `/locations/${citySlug}/service/${categoryId}`;
+   return `/${categoryId}-in-${citySlug}`;
 }
 
 interface ServiceCategoriesGridProps {

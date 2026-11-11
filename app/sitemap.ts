@@ -1,6 +1,9 @@
 import type { MetadataRoute } from "next";
 import { cities } from "@/lib/data/cities";
-import { hyderabadServicePageSlugs } from "@/lib/data/hyderabad-service-pages";
+import {
+   hyderabadServiceAreas,
+   hyderabadServicePageSlugs,
+} from "@/lib/data/hyderabad-service-pages";
 import { manualServicePrimaryPaths } from "@/lib/data/manual-services-catalog";
 import { categoriesApi } from "@/lib/api/endpoints/categories";
 import { getAllPublishedSeoPages } from "@/lib/api/endpoints/seoPages";
@@ -8,6 +11,15 @@ import { getAllPublishedSeoPages } from "@/lib/api/endpoints/seoPages";
 export const revalidate = 300;
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://extrahand.in";
+const comingSoonCitySlugs = new Set([
+   "delhi",
+   "mumbai",
+   "bangalore",
+   "chennai",
+   "kolkata",
+   "pune",
+   "ahmedabad",
+]);
 
 function joinUrl(base: string, path: string) {
    const baseClean = base.replace(/\/+$/, "");
@@ -74,6 +86,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
    for (const slug of hyderabadServicePageSlugs) {
       addEntry(joinUrl(baseUrl, `/${slug}/`), 0.75);
+   }
+
+   const serviceCities = Object.values(cities).filter(
+      (city) => city.slug !== "hyderabad" && !comingSoonCitySlugs.has(city.slug)
+   );
+   for (const city of serviceCities) {
+      for (const slug of hyderabadServicePageSlugs) {
+         const cityServiceSlug = slug.replace(/-in-hyderabad$/, `-in-${city.slug}`);
+         addEntry(joinUrl(baseUrl, `/${cityServiceSlug}`), 0.75);
+      }
+   }
+
+   for (const area of hyderabadServiceAreas) {
+      const areaSlug = area.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+      for (const slug of hyderabadServicePageSlugs) {
+         const serviceBase = slug.replace(/-in-hyderabad$/, "");
+         addEntry(joinUrl(baseUrl, `/${serviceBase}-in-${areaSlug}`), 0.75);
+      }
    }
 
    for (const path of manualServicePrimaryPaths) {

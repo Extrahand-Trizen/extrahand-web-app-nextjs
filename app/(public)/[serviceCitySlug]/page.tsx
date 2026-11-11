@@ -3,15 +3,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
+   getHyderabadServicePageByCategoryId,
+   getHyderabadServicePageByLocationSlug,
    getHyderabadServicePageBySlug,
    type HyderabadServicePage,
+   hyderabadServiceAreas,
    hyderabadServicePageSlugs,
 } from "@/lib/data/hyderabad-service-pages";
 import { getPublishedSeoPage, getAllPublishedSeoPages } from "@/lib/api/endpoints/seoPages";
 import SeoPageRenderer from "@/components/SeoPageRenderer";
 import SeoPageWrapper from "@/components/SeoPageWrapper";
 import { BookServiceButton } from "@/components/shared/BookServiceButton";
-import { getCityBySlug } from "@/lib/data/cities";
+import { getAllCitySlugs, getCityBySlug } from "@/lib/data/cities";
 import { buildBookNowUrl } from "@/lib/utils/bookNowUrl";
 import HyderabadServiceAreas from "@/components/HyderabadServiceAreas";
 
@@ -53,27 +56,31 @@ function buildCanonicalServiceUrl(slug: string): string {
    return `${baseUrl.replace(/\/+$/, "")}/${slug.replace(/^\/+|\/+$/g, "")}`;
 }
 
-const hyderabadAreas = [
-   "HITEC City",
-   "Gachibowli",
-   "Madhapur",
-   "Kondapur",
-   "Banjara Hills",
-   "Jubilee Hills",
-   "Secunderabad",
-   "Begumpet",
-   "Ameerpet",
-   "Kukatpally",
-   "Miyapur",
-   "Uppal",
-];
-
 function toAreaSlug(area: string) {
    return area.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
-const supportedNonHyderabadCities = ["mahabubnagar", "siddipet"] as const;
-type SupportedCity = (typeof supportedNonHyderabadCities)[number];
+const comingSoonCitySlugs = new Set([
+   "delhi",
+   "mumbai",
+   "bangalore",
+   "chennai",
+   "kolkata",
+   "pune",
+   "ahmedabad",
+]);
+const supportedNonHyderabadCities = getAllCitySlugs().filter(
+   (citySlug) => citySlug !== "hyderabad" && !comingSoonCitySlugs.has(citySlug)
+);
+
+function getCanonicalServicePage(serviceBase: string): HyderabadServicePage | undefined {
+   return (
+      getHyderabadServicePageBySlug(`${serviceBase}-in-hyderabad`) ??
+      getHyderabadServicePageBySlug(serviceBase) ??
+      getHyderabadServicePageByLocationSlug(serviceBase) ??
+      getHyderabadServicePageByCategoryId(serviceBase)
+   );
+}
 
 function normalizeServiceCitySlug(slug: string): string | null {
    const trimmed = slug?.trim();
@@ -90,32 +97,27 @@ function normalizeServiceCitySlug(slug: string): string | null {
    const [, serviceBase, areaSlug] = areaAliasMatch;
    if (!serviceBase || !areaSlug) return null;
 
-   // Handle mahabubnagar / siddipet slugs like "plumber-in-mahabubnagar"
-   if (supportedNonHyderabadCities.includes(areaSlug as SupportedCity)) {
-      const canonicalServiceSlug = `${serviceBase}-in-hyderabad`;
-      return hyderabadServicePageSlugs.includes(canonicalServiceSlug)
-         ? canonicalServiceSlug
-         : null;
+   const servicePage = getCanonicalServicePage(serviceBase);
+   if (!servicePage) return null;
+
+   // City-specific routes use the default service template when no CMS page exists.
+   if (supportedNonHyderabadCities.includes(areaSlug)) {
+      return servicePage.slug;
    }
 
    // Handle Hyderabad area aliases like "plumber-in-gachibowli"
-   const areaName = hyderabadAreas.find((area) => toAreaSlug(area) === areaSlug);
+   const areaName = hyderabadServiceAreas.find((area) => toAreaSlug(area) === areaSlug);
    if (!areaName) return null;
 
-   const canonicalServiceSlug = `${serviceBase}-in-hyderabad`;
-   return hyderabadServicePageSlugs.includes(canonicalServiceSlug)
-      ? canonicalServiceSlug
-      : null;
+   return servicePage.slug;
 }
 
-/** Extract the city slug from a non-Hyderabad service slug like "plumber-in-mahabubnagar" */
-function extractNonHyderabadCity(slug: string): SupportedCity | null {
+/** Extract a supported non-Hyderabad city from a service URL. */
+function extractNonHyderabadCity(slug: string): string | null {
    const match = slug.match(/^(.*)-in-([a-z0-9-]+)$/i);
    if (!match) return null;
    const city = match[2];
-   return supportedNonHyderabadCities.includes(city as SupportedCity)
-      ? (city as SupportedCity)
-      : null;
+   return supportedNonHyderabadCities.includes(city) ? city : null;
 }
 
 const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
@@ -512,11 +514,11 @@ function getServicePageEnhancement(servicePage: HyderabadServicePage): ServicePa
 
 function getAreaSlice(slug: string) {
    const sum = slug.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-   const start = sum % hyderabadAreas.length;
+   const start = sum % hyderabadServiceAreas.length;
    const selected = new Set<string>();
 
    for (let i = 0; i < 6; i += 1) {
-      selected.add(hyderabadAreas[(start + i) % hyderabadAreas.length]);
+      selected.add(hyderabadServiceAreas[(start + i) % hyderabadServiceAreas.length]);
    }
 
    return Array.from(selected);
@@ -536,7 +538,7 @@ export async function generateMetadata({
 
    // 1. Try CMS lookup with the exact slug from the URL first (e.g. "ac-repair-in-gachibowli").
    //    Area-level pages published via Content Admin live under their own slug, not the canonical.
-   // 2. For non-Hyderabad cities (mahabubnagar/siddipet), NEVER fall back to the Hyderabad CMS
+   // 2. For non-Hyderabad cities, NEVER fall back to the Hyderabad CMS
    //    page — metadata must reflect the actual city, not Hyderabad's content.
    const isNonHyderabadCitySlug = !!extractNonHyderabadCity(serviceCitySlug);
    const cmsPageForExactSlug = await getPublishedSeoPage(serviceCitySlug);
@@ -651,7 +653,7 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
       );
    }
 
-   // Detect non-Hyderabad city early (e.g. "plumber-in-mahabubnagar" → "mahabubnagar")
+   // Detect the city early (e.g. "plumber-in-warangal" → "warangal")
    const detectedCitySlug = extractNonHyderabadCity(serviceCitySlug);
    const isNonHyderabadCity = !!detectedCitySlug;
 
@@ -659,7 +661,7 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
    // static template (e.g. "ac-repair-in-hyderabad").
    const canonicalSlug = normalizeServiceCitySlug(serviceCitySlug) ?? serviceCitySlug;
 
-   // For non-Hyderabad cities (mahabubnagar, siddipet), NEVER render the Hyderabad
+   // For non-Hyderabad cities, NEVER render the Hyderabad
    // CMS page — those pages are city-specific and the Hyderabad content would be
    // incorrect. Only fetch the CMS page when serving Hyderabad or area slugs.
    const cmsPage = isNonHyderabadCity
