@@ -14,6 +14,7 @@ import { getPublishedSeoPage, getAllPublishedSeoPages } from "@/lib/api/endpoint
 import SeoPageRenderer from "@/components/SeoPageRenderer";
 import SeoPageWrapper from "@/components/SeoPageWrapper";
 import { BookServiceButton } from "@/components/shared/BookServiceButton";
+import { NeedHelpSection } from "@/components/shared/NeedHelpSection";
 import { getAllCitySlugs, getCityBySlug } from "@/lib/data/cities";
 import { buildBookNowUrl } from "@/lib/utils/bookNowUrl";
 import HyderabadServiceAreas from "@/components/HyderabadServiceAreas";
@@ -350,7 +351,7 @@ const servicePageEnhancements: Record<string, ServicePageEnhancement> = {
       },
    },
    "appliance-repair-in-hyderabad": {
-      imagePath: "https://www.zuper.co/wp-content/uploads/2023/11/Blog-Feature-Image-Appliance-repair.webp",
+      imagePath: "/assets/Book-now/wachingmachinecheckup-booknow.webp",
       overview: "Appliance repair support covers common home devices with practical diagnostics and clear recommendations.",
       bestFor: "Households facing appliance faults, sudden shutdowns, and recurring performance issues.",
       serviceDeepDive: "Appliance reliability improves when diagnosis checks both electrical and mechanical causes before replacement decisions.",
@@ -972,6 +973,7 @@ export default async function ServiceCityPage({ params }: ServiceCityPageProps) 
                      )}
                   </article>
                </section>
+               <NeedHelpSection />
             </main>
          </SeoPageWrapper>
       </>
