@@ -7,8 +7,11 @@ type MergedSubcategory = Subcategory & {
 export function isCarRelatedCategory(category: Category): boolean {
    const name = (category.name || "").toLowerCase();
    const slug = (category.slug || "").toLowerCase();
+   const combined = `${name} ${slug}`;
 
-   return name.includes("car") || slug.includes("car-") || slug.startsWith("car");
+   // Only treat true car-service categories as car-related. "Carpentry" should
+   // remain a distinct category and not get merged into the car-services group.
+   return /(^|[\s-])car(?:[\s-]|$)/.test(combined) && !/carpentry/.test(combined);
 }
 
 /**

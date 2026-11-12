@@ -41,6 +41,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/context";
 import { categoriesApi } from "@/lib/api/endpoints/categories";
 import type { CategoriesListItem } from "@/lib/api/endpoints/categories";
+import { PUBLIC_CATEGORY_SLUGS } from "@/lib/data/public-category-allowlist";
 import type { UserCurrentStatus } from "@/types/dashboard";
 import type { Category } from "@/types/category";
 import { mergeCarCategories } from "@/lib/utils/mergeCarCategories";
@@ -100,8 +101,33 @@ const getCategoryDisplayName = (name: string, role: "poster" | "tasker") => {
    if (role === "poster") {
       return trimmed.replace(/\s+\bServices\b\s*$/i, "").trim();
    }
-   return trimmed.replace(/\s+\bTasks\b\s*$/i, "").trim();
+   return trimmed.replace(/\s+\b(?:Tasks|Services)\b\s*$/i, "").trim();
 };
+
+const excludedNavCategoryNames = new Set([
+   "cat care",
+   "dog care",
+   "lawn care",
+   "pet care",
+]);
+
+const getCategoriesForNav = (categories: CategoriesListItem[]): Category[] =>
+   mergeCarCategories(
+      filterCategoriesByRole(categories, "poster").filter((category) => {
+         const normalizedName = getCategoryDisplayName(
+            category.name,
+            "poster"
+         ).toLowerCase();
+         const normalizedSlug = category.slug.trim().toLowerCase();
+         return (
+            !excludedNavCategoryNames.has(normalizedName) &&
+            normalizedName !== "handyman" &&
+            normalizedSlug !== "handyman" &&
+            normalizedSlug !== "handyman-services" &&
+            normalizedSlug !== "handyperson-general-repairs"
+         );
+      })
+   );
 
 const emptyStatus: UserCurrentStatus = {
    activeTasks: [],
@@ -150,19 +176,13 @@ export const LandingHeader: React.FC = () => {
    const tasksRoute = activeRole === "tasker" ? "/tasks?tab=myapplications" : "/tasks?tab=mytasks";
 
    const desktopCategoriesForNav = useMemo(
-      () =>
-         mergeCarCategories(
-            filterCategoriesByRole(categories, activeRole) as Category[]
-         ),
-      [categories, activeRole]
+      () => getCategoriesForNav(categories),
+      [categories]
    );
 
    const mobileCategoriesForNav = useMemo(
-      () =>
-         mergeCarCategories(
-            filterCategoriesByRole(categories, mobileActiveRole) as Category[]
-         ),
-      [categories, mobileActiveRole]
+      () => getCategoriesForNav(categories),
+      [categories]
    );
 
    // Handle scroll for sticky header styling
@@ -203,9 +223,10 @@ export const LandingHeader: React.FC = () => {
       categoriesFetchStartedRef.current = true;
       setCategoriesLoading(true);
       try {
-         const data = await categoriesApi.getCategories({
-            includeUnpublished: false,
-         });
+         const data = await categoriesApi.getCategoriesBySlugs(
+            PUBLIC_CATEGORY_SLUGS,
+            { includeUnpublished: false }
+         );
          setCategories(data || []);
       } catch (error) {
          console.error("Error fetching categories:", error);
@@ -421,7 +442,7 @@ export const LandingHeader: React.FC = () => {
                                                 What are you looking for?
                                              </h3>
                                              <p className="text-xs text-secondary-500 mb-4">
-                                                Pick a type of task.
+                                                Pick a type of work.
                                              </p>
                                              <div className="space-y-2">
                                                 <button
@@ -437,7 +458,7 @@ export const LandingHeader: React.FC = () => {
                                                    )}
                                                 >
                                                    <span className="text-xs font-semibold text-primary-600 uppercase tracking-wide">
-                                                      As a Helper
+                                                      As a Partner
                                                    </span>
                                                    <p className="text-xs text-secondary-600 mt-0.5">
                                                       I&apos;m looking for work
@@ -457,7 +478,7 @@ export const LandingHeader: React.FC = () => {
                                                    )}
                                                 >
                                                    <span className="text-xs font-semibold text-primary-600 uppercase tracking-wide">
-                                                      As a Poster
+                                                      As a Customer
                                                    </span>
                                                    <p className="text-xs text-secondary-600 mt-0.5">
                                                       I&apos;m looking to hire
@@ -468,7 +489,7 @@ export const LandingHeader: React.FC = () => {
                                           </div>
 
                                           {/* Task types grid */}
-                                          <div className="flex-1 text-sm max-h-[360px] overflow-y-auto overflow-x-hidden pr-1 grid grid-cols-2 xl:grid-cols-3 gap-2 content-start">
+                                          <div className="flex-1 text-sm max-h-[360px] overflow-y-auto overflow-x-hidden pr-1 grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2 content-start auto-rows-fr">
                                              {categoriesLoading ? (
                                                 <div className="text-secondary-500">
                                                    Loading categories...
@@ -487,12 +508,12 @@ export const LandingHeader: React.FC = () => {
                                                       <Link
                                                          key={cat.slug}
                                                          href={primaryHref}
-                                                         className="block w-full h-full text-left py-2 px-2 rounded-lg border border-secondary-200 hover:bg-secondary-50 transition-colors"
+                                                         className="flex min-h-[44px] w-full items-center text-left rounded-lg border border-secondary-200 bg-white px-2.5 py-2 hover:bg-secondary-50 transition-colors"
                                                          onClick={() =>
                                                             setIsCategoriesOpen(false)
                                                          }
                                                       >
-                                                         <span className="block text-sm font-semibold text-secondary-800 wrap-break-word">
+                                                         <span className="block text-sm font-semibold text-secondary-800 wrap-break-word leading-snug">
                                                             {getCategoryDisplayName(
                                                                cat.name,
                                                                activeRole
@@ -503,21 +524,6 @@ export const LandingHeader: React.FC = () => {
                                                 })
                                              )}
                                           </div>
-                                       </div>
-                                       <div className="mt-3 pt-3 border-t border-secondary-100 text-right">
-                                          <Link
-                                             href={
-                                                activeRole === "poster"
-                                                   ? "/services"
-                                                   : "/jobs"
-                                             }
-                                             className="text-sm font-medium text-primary-600 hover:underline"
-                                             onClick={() =>
-                                                setIsCategoriesOpen(false)
-                                             }
-                                          >
-                                             View All
-                                          </Link>
                                        </div>
                                     </div>
                                  </div>
@@ -927,7 +933,7 @@ export const LandingHeader: React.FC = () => {
                                  )}
                               >
                                  <span className="text-xs font-semibold text-primary-600 uppercase tracking-wide">
-                                    As a Helper
+                                    As a Partner
                                  </span>
                                  <p className="text-[10px] text-secondary-600 mt-0.5">
                                     I&apos;m looking for work
@@ -944,7 +950,7 @@ export const LandingHeader: React.FC = () => {
                                  )}
                               >
                                  <span className="text-xs font-semibold text-primary-600 uppercase tracking-wide">
-                                    As a Poster
+                                    As a Customer
                                  </span>
                                  <p className="text-[10px] text-secondary-600 mt-0.5">
                                     I&apos;m looking to hire someone

@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/design/utils";
 import { Button } from "@/components/ui/button";
 import { categoriesApi } from "@/lib/api/endpoints/categories";
+import { PUBLIC_CATEGORY_SLUGS } from "@/lib/data/public-category-allowlist";
 import { redirectToAppStore } from "@/lib/utils/getAppStoreUrl";
 
 const menuItems = [
@@ -46,9 +47,10 @@ export const Header: React.FC = () => {
    useEffect(() => {
       const fetchCategories = async () => {
          try {
-            const categoriesData = await categoriesApi.getCategories({
-               includeUnpublished: false,
-            });
+            const categoriesData = await categoriesApi.getCategoriesBySlugs(
+               PUBLIC_CATEGORY_SLUGS,
+               { includeUnpublished: false }
+            );
             const categoryItems = (categoriesData || []).map((cat) => ({
                name: cat.name,
                isPublished: cat.isPublished,
@@ -228,7 +230,7 @@ export const Header: React.FC = () => {
                                     What are you looking for?
                                  </p>
                                  <p className="text-xs text-secondary-500 mb-4">
-                                    Pick a type of task.
+                                    Pick a type of work.
                                  </p>
                                  <div className="space-y-3">
                                     <button
@@ -240,7 +242,7 @@ export const Header: React.FC = () => {
                                              : "bg-white border-neutral-gray-200 text-secondary-600"
                                        )}
                                     >
-                                       AS A HELPER
+                                       AS A PARTNER
                                        <span className="block text-[11px] font-normal text-secondary-500 mt-1">
                                           I&apos;m looking for work in ...
                                        </span>
@@ -254,7 +256,7 @@ export const Header: React.FC = () => {
                                              : "bg-white border-neutral-gray-200 text-secondary-600"
                                        )}
                                     >
-                                       AS A POSTER
+                                       AS A CUSTOMER
                                        <span className="block text-[11px] font-normal text-secondary-500 mt-1">
                                           I&apos;m looking to hire someone for ...
                                        </span>

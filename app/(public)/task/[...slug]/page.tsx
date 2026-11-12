@@ -1,9 +1,11 @@
 import React from "react";
+import { notFound } from "next/navigation";
 import { categoriesApi } from "@/lib/api/endpoints/categories";
 import CategoryDetailClient from "@/components/categories/CategoryDetailClient";
 import { CategoryDetail } from "@/types/category";
 import { CategoryNotFound } from "@/components/shared/CategoryNotFound";
 import { getTaskCatchAllStaticParams } from "@/lib/data/categoryStaticParams";
+import { isAllowedPublicCategorySlug } from "@/lib/data/public-category-allowlist";
 
 // Required for static export: pre-build every published /task/* page at build time.
 export async function generateStaticParams() {
@@ -51,14 +53,18 @@ export default async function TaskPage({ params }: TaskPageProps) {
       return <CategoryNotFound type="job" />;
    }
 
+   if (!isAllowedPublicCategorySlug(segments[0])) {
+      notFound();
+   }
+
    // Try category first; if not found, fall back to subcategory by slug,
    // then finally by full \"category/subcategory\" slug.
-   let categoryData = await categoriesApi.getCategoryBySlug(slug);
+   let categoryData = await categoriesApi.getCategoryBySlug(slug, segments[0]);
    if (!categoryData) {
-      categoryData = await categoriesApi.getSubcategoryBySlug(slug);
+      categoryData = await categoriesApi.getSubcategoryBySlug(slug, segments[0]);
    }
    if (!categoryData && fullSlug) {
-      categoryData = await categoriesApi.getSubcategoryBySlug(fullSlug);
+      categoryData = await categoriesApi.getSubcategoryBySlug(fullSlug, segments[0]);
    }
 
    if (!categoryData) {
@@ -94,15 +100,21 @@ export async function generateMetadata({ params }: TaskPageProps) {
    const slug = segments[segments.length - 1] || "";
    const fullSlug = segments.join("/");
 
+   if (!isAllowedPublicCategorySlug(segments[0])) {
+      return {
+         title: "Page Not Found",
+      };
+   }
+
    let category = slug
-      ? await categoriesApi.getCategoryBySlug(slug)
+      ? await categoriesApi.getCategoryBySlug(slug, segments[0])
       : null;
 
    if (!category && slug) {
-      category = await categoriesApi.getSubcategoryBySlug(slug);
+      category = await categoriesApi.getSubcategoryBySlug(slug, segments[0]);
    }
    if (!category && fullSlug) {
-      category = await categoriesApi.getSubcategoryBySlug(fullSlug);
+      category = await categoriesApi.getSubcategoryBySlug(fullSlug, segments[0]);
    }
 
    if (!category) {

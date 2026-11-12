@@ -1,5 +1,9 @@
 import React from "react";
-import { categoriesApi } from "@/lib/api/endpoints/categories";
+import { notFound } from "next/navigation";
+import {
+   categoriesApi,
+   isExcludedPublicCategorySlug,
+} from "@/lib/api/endpoints/categories";
 import PosterCategoryPageClient from "@/components/poster/PosterCategoryPageClient";
 import { CategoryDetail, PosterCategoryDetail } from "@/types/category";
 import { CategoryNotFound } from "@/components/shared/CategoryNotFound";
@@ -8,6 +12,7 @@ import {
    getManualServicesByCategorySlug,
 } from "@/lib/data/manual-services-catalog";
 import { getServiceCategoryStaticParams } from "@/lib/data/categoryStaticParams";
+import { isAllowedPublicCategorySlug } from "@/lib/data/public-category-allowlist";
 
 interface ServicePageProps {
    params: Promise<{
@@ -64,10 +69,16 @@ export default async function ServicePage({ params }: ServicePageProps) {
       return <CategoryNotFound type="service" />;
    }
 
+   if (!isAllowedPublicCategorySlug(slug)) {
+      notFound();
+   }
+
    const categoryData = await categoriesApi.getCategoryBySlug(slug);
 
    if (!categoryData) {
-      const manualServices = getManualServicesByCategorySlug(slug);
+      const manualServices = isExcludedPublicCategorySlug(slug)
+         ? []
+         : getManualServicesByCategorySlug(slug);
 
       if (manualServices.length > 0) {
          const manualOverview = buildManualPosterCategoryOverview(slug);
@@ -99,10 +110,18 @@ export default async function ServicePage({ params }: ServicePageProps) {
 export async function generateMetadata({ params }: ServicePageProps) {
    const { slug } = await params;
 
+   if (!isAllowedPublicCategorySlug(slug)) {
+      return {
+         title: "Page Not Found",
+      };
+   }
+
    const category = await categoriesApi.getCategoryBySlug(slug);
 
    if (!category) {
-      const manualServices = getManualServicesByCategorySlug(slug);
+      const manualServices = isExcludedPublicCategorySlug(slug)
+         ? []
+         : getManualServicesByCategorySlug(slug);
 
       if (manualServices.length > 0) {
          return {

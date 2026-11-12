@@ -1,9 +1,11 @@
 import React from "react";
+import { notFound } from "next/navigation";
 import { categoriesApi } from "@/lib/api/endpoints/categories";
 import CategoryDetailClient from "@/components/categories/CategoryDetailClient";
 import { CategoryDetail } from "@/types/category";
 import { CategoryNotFound } from "@/components/shared/CategoryNotFound";
 import { getJobCategoryStaticParams } from "@/lib/data/categoryStaticParams";
+import { isAllowedPublicCategorySlug } from "@/lib/data/public-category-allowlist";
 
 // Required for static export: pre-build all known job/category pages at build time.
 export async function generateStaticParams() {
@@ -59,6 +61,10 @@ export default async function JobPage({ params }: JobPageProps) {
       return <CategoryNotFound type="job" />;
    }
 
+   if (!isAllowedPublicCategorySlug(slug)) {
+      notFound();
+   }
+
    const categoryData = await categoriesApi.getCategoryBySlug(slug);
 
    if (!categoryData) {
@@ -86,6 +92,12 @@ export default async function JobPage({ params }: JobPageProps) {
 
 export async function generateMetadata({ params }: JobPageProps) {
    const { slug } = await params;
+
+   if (!isAllowedPublicCategorySlug(slug)) {
+      return {
+         title: "Page Not Found",
+      };
+   }
 
    const category = await categoriesApi.getCategoryBySlug(slug);
 

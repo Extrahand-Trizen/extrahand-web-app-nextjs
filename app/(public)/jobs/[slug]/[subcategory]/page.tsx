@@ -1,9 +1,11 @@
 import React from "react";
+import { notFound } from "next/navigation";
 import { categoriesApi } from "@/lib/api/endpoints/categories";
 import CategoryDetailClient from "@/components/categories/CategoryDetailClient";
 import { SubcategoryDetail } from "@/types/category";
 import { CategoryNotFound } from "@/components/shared/CategoryNotFound";
 import { getSubcategoryStaticParams } from "@/lib/data/categoryStaticParams";
+import { isAllowedPublicCategorySlug } from "@/lib/data/public-category-allowlist";
 
 export async function generateStaticParams() {
    return getSubcategoryStaticParams("tasker");
@@ -50,13 +52,20 @@ export default async function JobSubcategoryPage({
       return <CategoryNotFound type="job" />;
    }
 
+   if (!isAllowedPublicCategorySlug(slug)) {
+      notFound();
+   }
+
    // Try fetching with full slug first (e.g., "accounting/bookkeeping")
    const fullSlug = `${slug}/${subcategorySlug}`;
-   let subcategoryData = await categoriesApi.getSubcategoryBySlug(fullSlug);
+   let subcategoryData = await categoriesApi.getSubcategoryBySlug(fullSlug, slug);
 
    // If not found, try with just the subcategory slug
    if (!subcategoryData) {
-      subcategoryData = await categoriesApi.getSubcategoryBySlug(subcategorySlug);
+      subcategoryData = await categoriesApi.getSubcategoryBySlug(
+         subcategorySlug,
+         slug
+      );
    }
 
    if (!subcategoryData) {
@@ -79,11 +88,20 @@ export async function generateMetadata({ params }: JobSubcategoryPageProps) {
    const slug = resolvedParams?.slug;
    const subcategorySlug = resolvedParams?.subcategory;
 
+   if (!isAllowedPublicCategorySlug(slug)) {
+      return {
+         title: "Page Not Found",
+      };
+   }
+
    const fullSlug = `${slug}/${subcategorySlug}`;
-   let subcategory = await categoriesApi.getSubcategoryBySlug(fullSlug);
+   let subcategory = await categoriesApi.getSubcategoryBySlug(fullSlug, slug);
 
    if (!subcategory) {
-      subcategory = await categoriesApi.getSubcategoryBySlug(subcategorySlug);
+      subcategory = await categoriesApi.getSubcategoryBySlug(
+         subcategorySlug,
+         slug
+      );
    }
 
    if (!subcategory) {

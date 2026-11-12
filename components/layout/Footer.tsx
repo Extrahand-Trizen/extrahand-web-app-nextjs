@@ -47,13 +47,17 @@ const footerColumns = [
   {
     title: 'Popular Categories',
     links: [
+      { label: 'Appliances', href: '/services/appliances-services' },
+      { label: 'Beauticians', href: '/services/beauticians-services' },
+      { label: 'Carpentry', href: '/services/carpentry-services' },
+      { label: 'Cleaning', href: '/services/cleaning-services' },
       { label: 'Electricians', href: '/services/electricians-services' },
-      { label: 'Plumbers', href: '/services/plumbing-services' },
-      { label: 'Home Cleaning', href: '/services/cleaning-services' },
-      { label: 'Delivery & Pickup', href: '/services/delivery-services' },
-      { label: 'Flooring Services', href: '/services/flooring-services' },
-      { label: 'Carpenters', href: '/services/carpentry-services' },
-      { label: 'Pet Care Services', href: '/services/pet-care-services' },
+      { label: 'Hairdressers', href: '/services/hairdressers-services' },
+      { label: 'Heating & Cooling', href: '/services/heating-cooling-services' },
+      { label: 'Laundry', href: '/services/laundry-services' },
+      { label: 'Painting', href: '/services/painting-services' },
+      { label: 'Pest Control', href: '/services/pest-control-services' },
+      { label: 'Plumbing', href: '/services/plumbing-services' },
     ],
   },
   {

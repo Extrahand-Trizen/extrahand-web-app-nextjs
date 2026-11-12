@@ -1,5 +1,9 @@
 import React from "react";
-import { categoriesApi } from "@/lib/api/endpoints/categories";
+import { notFound } from "next/navigation";
+import {
+   categoriesApi,
+   isExcludedPublicCategorySlug,
+} from "@/lib/api/endpoints/categories";
 import PosterCategoryPageClient from "@/components/poster/PosterCategoryPageClient";
 import { PosterCategoryDetail, SubcategoryDetail } from "@/types/category";
 import { CategoryNotFound } from "@/components/shared/CategoryNotFound";
@@ -8,6 +12,7 @@ import {
    getManualServiceBySlugs,
 } from "@/lib/data/manual-services-catalog";
 import { getSubcategoryStaticParams } from "@/lib/data/categoryStaticParams";
+import { isAllowedPublicCategorySlug } from "@/lib/data/public-category-allowlist";
 
 // Required for static export: pre-build every published /services/[category]/[subcategory].
 export async function generateStaticParams() {
@@ -55,16 +60,25 @@ export default async function ServiceSubcategoryPage({
       return <CategoryNotFound type="service" />;
    }
 
+   if (!isAllowedPublicCategorySlug(slug)) {
+      notFound();
+   }
+
    // Try fetching with full slug first (e.g., "accounting/bookkeeping")
    const fullSlug = `${slug}/${subcategorySlug}`;
-   let subcategoryData = await categoriesApi.getSubcategoryBySlug(fullSlug);
+   let subcategoryData = await categoriesApi.getSubcategoryBySlug(fullSlug, slug);
 
    // If not found, try with just the subcategory slug
    if (!subcategoryData) {
-      subcategoryData = await categoriesApi.getSubcategoryBySlug(subcategorySlug);
+      subcategoryData = await categoriesApi.getSubcategoryBySlug(
+         subcategorySlug,
+         slug
+      );
    }
 
-   const manualService = getManualServiceBySlugs(slug, subcategorySlug);
+   const manualService = isExcludedPublicCategorySlug(slug)
+      ? null
+      : getManualServiceBySlugs(slug, subcategorySlug);
 
    if (!subcategoryData && manualService) {
       const manualCategoryDetail = buildManualPosterCategoryDetail(manualService);
@@ -96,15 +110,26 @@ export async function generateMetadata({
    const slug = resolvedParams?.slug;
    const subcategorySlug = resolvedParams?.subcategory;
 
+   if (!isAllowedPublicCategorySlug(slug)) {
+      return {
+         title: "Page Not Found",
+      };
+   }
+
    const fullSlug = `${slug}/${subcategorySlug}`;
-   let subcategory = await categoriesApi.getSubcategoryBySlug(fullSlug);
+   let subcategory = await categoriesApi.getSubcategoryBySlug(fullSlug, slug);
 
    if (!subcategory) {
-      subcategory = await categoriesApi.getSubcategoryBySlug(subcategorySlug);
+      subcategory = await categoriesApi.getSubcategoryBySlug(
+         subcategorySlug,
+         slug
+      );
    }
 
    if (!subcategory) {
-      const manualService = getManualServiceBySlugs(slug, subcategorySlug);
+      const manualService = isExcludedPublicCategorySlug(slug)
+         ? null
+         : getManualServiceBySlugs(slug, subcategorySlug);
 
       if (manualService) {
          return {

@@ -5,7 +5,14 @@ import {
    hyderabadServicePageSlugs,
 } from "@/lib/data/hyderabad-service-pages";
 import { manualServicePrimaryPaths } from "@/lib/data/manual-services-catalog";
-import { categoriesApi } from "@/lib/api/endpoints/categories";
+import {
+   categoriesApi,
+   isExcludedPublicCategorySlug,
+} from "@/lib/api/endpoints/categories";
+import {
+   isAllowedPublicCategorySlug,
+   PUBLIC_CATEGORY_SLUGS,
+} from "@/lib/data/public-category-allowlist";
 import { getAllPublishedSeoPages } from "@/lib/api/endpoints/seoPages";
 
 export const revalidate = 300;
@@ -107,6 +114,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
    }
 
    for (const path of manualServicePrimaryPaths) {
+      const categorySlug = path.match(/^\/services\/([^/]+)/)?.[1];
+      if (
+         isExcludedPublicCategorySlug(categorySlug) ||
+         !isAllowedPublicCategorySlug(categorySlug)
+      ) {
+         continue;
+      }
       addEntry(joinUrl(baseUrl, path), 0.65);
    }
 
@@ -131,7 +145,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }
    }
 
-   const allCategories = await categoriesApi.getCategories({
+   const allCategories = await categoriesApi.getCategoriesBySlugs(PUBLIC_CATEGORY_SLUGS, {
       includeUnpublished: false,
    });
 

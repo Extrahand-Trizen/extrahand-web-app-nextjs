@@ -129,6 +129,194 @@ function isPublicWebListItem(item: {
    );
 }
 
+const excludedPublicCategorySlugs = new Set([
+   "alterations-services",
+   "architects-services",
+   "assembly-services",
+   "auto-electricians-services",
+   "accountants-services",
+   "accountant",
+   "admin-services",
+   "admin-assistant",
+   "appliance-repair",
+   "architect",
+   "auto-electrician",
+   "bakers-services",
+   "barista",
+   "bartender",
+   "barbers-services",
+   "bicycle-service-services",
+   "bricklayer",
+   "bricklaying-services",
+   "building-construction-services",
+   "business-services",
+   "cabinet-maker",
+   "catering-services",
+   "caterer",
+   "chef",
+   "chef-services",
+   "cladding-services",
+   "clothing-alteration",
+   "computers-it-services",
+   "concreter",
+   "concreting-services",
+   "cooking",
+   "car-body-work-services",
+   "car-detailing-services",
+   "car-repair-services",
+   "car-service-services",
+   "data-entry-specialist",
+   "decking",
+   "decking-services",
+   "delivery-services",
+   "design-services",
+   "draftsman-services",
+   "entertainment-services",
+   "events-services",
+   "fencing-services",
+   "flooring-services",
+   "florist-services",
+   "furniture-assembly-services",
+   "gardening-services",
+   "gate-installation-services",
+   "home-automation-and-security-services",
+   "home-theatre-services",
+   "interior-designer-services",
+   "landscaping-services",
+   "lessons-services",
+   "logo-designer",
+   "locksmith-services",
+   "marketing-services",
+   "makeup-artist-services",
+   "makeup-artist",
+   "mobile-mechanic-services",
+   "mechanic",
+   "paving-services",
+   "photographers-services",
+   "plasterer-services",
+   "pool-maintenance-services",
+   "receptionist",
+   "removals-services",
+   "roofing-services",
+   "sharpening-services",
+   "staffing-services",
+   "tailors-services",
+   "tattoo-artists-services",
+   "tiling-services",
+   "tradesman-services",
+   "tutoring-services",
+   "wall-hanging-mounting-services",
+   "wallpapering-services",
+   "waterproofing-services",
+   "wheel-tyre-service-services",
+   "web-services",
+   "web-design-developer",
+   "writing-services",
+   "copywriter",
+   "proofreader",
+   "resume-writer",
+   "delivery",
+   "designer",
+   "digital-design",
+   "interior-designer",
+   "landscaper",
+   "locksmith",
+   "marketing",
+   "paver",
+   "plasterer",
+   "removalist",
+   "roofing",
+   "tradesman",
+   "tutor",
+   "waterproofing",
+   "wait-staff",
+]);
+
+const excludedPublicSubcategorySlugs = new Set([
+   "appliance-repair",
+   "bosch-appliance-repair",
+   "coffee-machine-repairs",
+   "cooker-hood-installation-repair",
+   "cooktop-installation",
+   "dishdrawer-installation",
+   "dishwasher-not-draining",
+   "dishwasher-repair",
+   "dryer-installation",
+   "freezer-installation",
+   "gas-fitters",
+   "gas-oven-repair-and-installation",
+   "gas-stove-installation-repair",
+   "ice-machine-repair-installation",
+   "microwave-repair",
+   "oven-fan-repair",
+   "oven-repair",
+   "rangehood-installation",
+   "car-bumper-repair",
+   "car-glass-repair",
+   "car-respray",
+   "car-scratch-repair",
+   "car-welding",
+   "car-window-tinting",
+   "data-entry",
+   "bootstrap-developer",
+   "cms-developer",
+   "css-developer",
+   "database-developer",
+   "html-developer",
+   "magento-developer",
+   "mysql-developer",
+   "php-developer",
+   "programming",
+   "shopify-developer",
+   "web-design-development",
+   "web-hosting",
+   "website-app-testing",
+   "wix-help",
+   "article-writing",
+   "academic-writing",
+   "blog-writing",
+   "copywriting",
+   "creative-writer",
+   "ghostwriting",
+   "proofreading",
+   "report-writing",
+   "resume-writing",
+   "technical-writer",
+   "transcription",
+   "travel-writer",
+]);
+
+function normalizeSlug(slug: string | null | undefined): string {
+   return (slug || "").trim().toLowerCase().replace(/^\/+|\/+$/g, "");
+}
+
+export function isExcludedPublicCategorySlug(slug: string | null | undefined): boolean {
+   return excludedPublicCategorySlugs.has(normalizeSlug(slug));
+}
+
+function isExcludedPublicSubcategorySlug(
+   slug: string | null | undefined,
+   parentCategorySlug?: string | null
+): boolean {
+   const normalized = normalizeSlug(slug);
+   const segments = normalized.split("/");
+   const [parentSlug] = segments;
+   const leafSlug = segments[segments.length - 1];
+   return (
+      isExcludedPublicCategorySlug(parentCategorySlug) ||
+      excludedPublicCategorySlugs.has(parentSlug) ||
+      excludedPublicSubcategorySlugs.has(normalized) ||
+      excludedPublicSubcategorySlugs.has(leafSlug)
+   );
+}
+
+function isExcludedPublicSubcategory(subcategory: Subcategory): boolean {
+   return (
+      isExcludedPublicCategorySlug(subcategory.categorySlug) ||
+      isExcludedPublicSubcategorySlug(subcategory.slug)
+   );
+}
+
 async function fetchAllContentAdminPages<T>(
    path: string,
    pageSize = 200,
@@ -215,10 +403,56 @@ export const categoriesApi = {
 
       if (categories.length === 0) return [];
 
-      if (options.includeUnpublished) return categories;
+      const visibleCategories = categories
+         .filter((category) => !isExcludedPublicCategorySlug(category.slug))
+         .map((category) => ({
+            ...category,
+            subcategories: category.subcategories?.filter(
+               (subcategory) => !isExcludedPublicSubcategory(subcategory)
+            ),
+         }));
+
+      if (options.includeUnpublished) return visibleCategories;
 
       // Public website: approved + published rows only (not draft/pending).
-      return categories.filter(isPublicWebListItem);
+      return visibleCategories.filter(isPublicWebListItem);
+   },
+
+   /**
+    * Fetch only the requested category slugs from content-admin.
+    */
+   async getCategoriesBySlugs(
+      slugs: readonly string[],
+      options: { includeUnpublished?: boolean; throwOnError?: boolean } = {}
+   ): Promise<CategoriesListItem[]> {
+      const uniqueSlugs = [...new Set(slugs.map(normalizeSlug).filter(Boolean))];
+      if (uniqueSlugs.length === 0) return [];
+      const requestedSlugs = new Set(uniqueSlugs);
+
+      const slugsQuery = uniqueSlugs.map(encodeURIComponent).join(",");
+      const includeUnpublishedQuery = options.includeUnpublished
+         ? "&includeUnpublished=true"
+         : "";
+      const categories = await fetchAllContentAdminPages<CategoriesListItem>(
+         `/api/task-categories?slugs=${slugsQuery}${includeUnpublishedQuery}`,
+         200,
+         options.throwOnError
+      );
+      const visibleCategories = categories
+         .filter(
+            (category) =>
+               requestedSlugs.has(normalizeSlug(category.slug)) &&
+               !isExcludedPublicCategorySlug(category.slug)
+         )
+         .map((category) => ({
+            ...category,
+            subcategories: category.subcategories?.filter(
+               (subcategory) => !isExcludedPublicSubcategory(subcategory)
+            ),
+         }));
+
+      if (options.includeUnpublished) return visibleCategories;
+      return visibleCategories.filter(isPublicWebListItem);
    },
 
    /**
@@ -228,10 +462,29 @@ export const categoriesApi = {
     * @param slug The category/subcategory slug
     * @returns Category data or null if not found
     */
-   getCategoryBySlug: cache(async (slug: string): Promise<CategoryDetail | null> => {
-      return fetchContentAdmin<CategoryDetail>(
+   getCategoryBySlug: cache(async (
+       slug: string,
+       parentCategorySlug?: string
+   ): Promise<CategoryDetail | null> => {
+       if (
+          isExcludedPublicCategorySlug(slug) ||
+          isExcludedPublicSubcategorySlug(slug, parentCategorySlug)
+       ) {
+          return null;
+       }
+
+      const category = await fetchContentAdmin<CategoryDetail>(
          `/api/task-categories?slug=${encodeURIComponent(slug)}`
       );
+
+      if (!category?.subcategories) return category;
+
+      return {
+         ...category,
+         subcategories: category.subcategories.filter(
+            (subcategory) => !isExcludedPublicSubcategory(subcategory)
+         ),
+      };
    }),
 
    /**
@@ -240,13 +493,17 @@ export const categoriesApi = {
     * @returns Array of subcategories or empty array on error
     */
    async getSubcategories(categorySlug: string): Promise<Subcategory[]> {
+      if (isExcludedPublicCategorySlug(categorySlug)) return [];
+
       const subcategories = await fetchAllContentAdminPages<Subcategory>(
          `/api/task-subcategories?categorySlug=${encodeURIComponent(categorySlug)}`
       );
 
       if (subcategories.length === 0) return [];
 
-      return subcategories.filter(isPublicWebListItem);
+      return subcategories
+         .filter(isPublicWebListItem)
+         .filter((subcategory) => !isExcludedPublicSubcategory(subcategory));
    },
 
    /**
@@ -263,7 +520,9 @@ export const categoriesApi = {
 
       if (subcategories.length === 0) return [];
 
-      return subcategories.filter(isPublicWebListItem);
+      return subcategories
+         .filter(isPublicWebListItem)
+         .filter((subcategory) => !isExcludedPublicSubcategory(subcategory));
    },
 
    /**
@@ -272,7 +531,12 @@ export const categoriesApi = {
     * @param slug The subcategory slug
     * @returns Subcategory data or null if not found
     */
-   getSubcategoryBySlug: cache(async (slug: string): Promise<CategoryDetail | null> => {
+   getSubcategoryBySlug: cache(async (
+      slug: string,
+      parentCategorySlug?: string
+   ): Promise<CategoryDetail | null> => {
+      if (isExcludedPublicSubcategorySlug(slug, parentCategorySlug)) return null;
+
       return fetchContentAdmin<CategoryDetail>(
          `/api/task-subcategories?slug=${encodeURIComponent(slug)}`
       );
